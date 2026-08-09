@@ -2,158 +2,1278 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>GlobalSIM — Your Number. Your Control. Anywhere.</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>GlobalSIM — Global Virtual Numbers</title>
+
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:Arial,Helvetica,sans-serif;background:#07101d;color:#f5f8ff;line-height:1.5}
-a{text-decoration:none;color:inherit}
-.nav{height:76px;display:flex;align-items:center;justify-content:space-between;padding:0 6%;border-bottom:1px solid #1c2a3c;background:#091522;position:sticky;top:0;z-index:10}
-.brand{display:flex;align-items:center;gap:10px}
-.brand-mark{width:38px;height:38px;border:2px solid #27a8ff;border-radius:50%;display:grid;place-items:center;color:#27a8ff;font-size:22px}
-.brand strong{font-size:24px;display:block}
-.brand strong span{color:#27a8ff}
-.brand small{display:block;color:#8190a5;font-size:9px;letter-spacing:1px}
-nav{display:flex;gap:24px;color:#aab7c8;font-size:14px}
-nav a:hover,nav .active{color:#27a8ff}
-.nav-actions{display:flex;gap:10px;align-items:center}
-.currency,.login,.signup{padding:10px 15px;border-radius:9px;border:1px solid #26364b;background:#101d2c;color:white}
-.signup,.btn.primary{background:#168cff;border-color:#168cff}
-.hero{min-height:650px;padding:90px 7%;display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center;background:radial-gradient(circle at 75% 40%,#123d65 0,transparent 35%),#07101d}
-.eyebrow,.section-kicker{color:#27a8ff;font-weight:bold;font-size:12px;letter-spacing:2px}
-h1{font-size:58px;line-height:1.05;margin:18px 0}
-h1 span{color:#27a8ff}
-.hero-copy>p{max-width:600px;color:#aebbc9;font-size:18px}
-.hero-buttons{display:flex;gap:14px;margin:30px 0}
-.btn{display:inline-block;padding:14px 22px;border-radius:9px;font-weight:bold}
-.btn.secondary{border:1px solid #34465c;background:#101d2c}
-.trust-row{display:flex;gap:24px;color:#8e9caf;font-size:12px;flex-wrap:wrap}
-.trust-row b{color:#27a8ff;margin-right:5px}
-.hero-visual{position:relative}
-.glow{position:absolute;width:400px;height:400px;background:#168cff;filter:blur(120px);opacity:.15}
-.globe{height:280px;width:280px;margin:auto;border-radius:50%;display:grid;place-items:center;font-size:130px;color:#168cff;background:radial-gradient(circle,#173d61,#091522 65%);border:1px solid #214a6d}
-.search-card{position:relative;margin:-20px auto 0;max-width:500px;padding:24px;background:#101d2c;border:1px solid #2b4057;border-radius:15px;box-shadow:0 20px 60px #0008}
-.search-card h3{margin-bottom:15px}
-.search-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:8px}
-select,.search-btn{padding:13px;border-radius:8px;border:1px solid #344b62;background:#07101d;color:white}
-.search-btn{background:#168cff;border-color:#168cff}
-.popular{color:#8291a5;font-size:11px;margin-top:12px}
-.search-result{margin-top:12px;color:#27a8ff;font-size:13px}
-.logos{padding:28px 7%;text-align:center;border-top:1px solid #172537;border-bottom:1px solid #172537;background:#091522}
-.logos p{color:#66768c;font-size:10px;letter-spacing:2px;margin-bottom:15px}
-.logo-row{display:flex;justify-content:space-around;gap:15px;flex-wrap:wrap;color:#9aa9bb}
-.section{padding:90px 7%;text-align:center}
-.section h2{font-size:40px;margin:10px 0}
-.section-lead{color:#8493a7;margin-bottom:40px}
-.steps,.price-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
-.steps article,.price-card{padding:28px;background:#0d1927;border:1px solid #203247;border-radius:14px;text-align:left}
-.steps i{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#168cff;font-style:normal;font-weight:bold;margin-bottom:18px}
-.steps p,.price-card p,.price-card li{color:#8796a9;font-size:14px}
-.pricing{background:#091522}
-.price-grid{grid-template-columns:1fr 1fr;max-width:800px;margin:auto}
-.price-card.featured{border-color:#168cff;box-shadow:0 0 40px #168cff18}
-.tag{color:#27a8ff;font-size:11px;font-weight:bold;letter-spacing:2px}
-.price-card h3{font-size:25px;margin:8px 0}
-.price{font-size:22px;margin:15px 0}.price strong{font-size:42px}
-.price-card ul{list-style:none;margin:18px 0}.price-card li{margin:8px 0}.price-card li:before{content:"✓";color:#27a8ff;margin-right:8px}
-.fineprint{color:#627288;font-size:11px;margin-top:25px}
-.wallet{padding:60px 7%;display:flex;justify-content:space-between;gap:40px;align-items:center;background:linear-gradient(100deg,#0d1d30,#08111d)}
-.wallet h2{font-size:38px;margin:8px 0}.wallet p{color:#8d9caf;max-width:550px}
-.wallet-cards{display:flex;gap:15px}
-.wallet-cards div{min-width:180px;padding:22px;background:#101f30;border:1px solid #294057;border-radius:12px}
-.wallet-cards span,.wallet-cards small{display:block;color:#78899e;font-size:11px}
-.wallet-cards strong{display:block;font-size:25px;margin:8px 0}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);text-align:center;padding:45px 7%;gap:20px}
-.stats strong{display:block;font-size:32px;color:#27a8ff}.stats span{color:#7f8da0;font-size:12px}
-footer{padding:40px 7%;border-top:1px solid #1b2b3d;color:#6f7f92}
-footer .brand{margin-bottom:20px}
-@media(max-width:850px){
-nav{display:none}.hero{grid-template-columns:1fr;padding:60px 6%}h1{font-size:43px}
-.steps{grid-template-columns:1fr 1fr}.price-grid,.wallet{grid-template-columns:1fr;display:grid}
-.wallet-cards{flex-wrap:wrap}.stats{grid-template-columns:1fr 1fr}
-.search-grid{grid-template-columns:1fr}.hero-visual{margin-top:20px}
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    background: #020b18;
+    color: #eef6ff;
+    font-family: Arial, sans-serif;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+button,
+select {
+    font-family: inherit;
+}
+
+.nav {
+    height: 74px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 5%;
+    background: #06111f;
+    border-bottom: 1px solid #14263b;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.brand {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.mark {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #087cf5;
+    font-weight: 900;
+}
+
+.brand b {
+    font-size: 22px;
+}
+
+.brand b span {
+    color: #168cff;
+}
+
+.brand small {
+    display: block;
+    color: #71869c;
+    font-size: 9px;
+}
+
+.navlinks {
+    display: flex;
+    gap: 24px;
+    color: #aebed0;
+    font-size: 14px;
+}
+
+.navlinks a:hover {
+    color: #2a9cff;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+.actions a,
+.currency {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #29405a;
+    background: #0a192b;
+    color: #dce8f4;
+}
+
+.actions .signup {
+    background: #087cf5;
+    border-color: #087cf5;
+}
+
+.hero {
+    padding: 80px 5%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 45px;
+    align-items: center;
+    background: radial-gradient(
+        circle at 80% 35%,
+        #0b4a7b33,
+        transparent 38%
+    );
+}
+
+.eyebrow,
+.kicker {
+    color: #25a0ff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.hero h1 {
+    font-size: 55px;
+    line-height: 1.04;
+    margin: 15px 0;
+}
+
+.hero h1 span {
+    color: #168cff;
+}
+
+.hero p {
+    color: #91a6ba;
+    font-size: 17px;
+    line-height: 1.7;
+    max-width: 580px;
+}
+
+.buttons {
+    display: flex;
+    gap: 12px;
+    margin: 27px 0;
+}
+
+.btn {
+    padding: 13px 19px;
+    border-radius: 9px;
+    font-weight: 800;
+    border: 1px solid #29435f;
+}
+
+.primary {
+    background: #087cf5;
+    border-color: #087cf5;
+}
+
+.secondary {
+    background: #09192a;
+}
+
+.hero-card {
+    border: 1px solid #23405d;
+    background: #07192c;
+    border-radius: 18px;
+    padding: 26px;
+    box-shadow: 0 30px 80px #0008;
+}
+
+.hero-card h3 {
+    margin: 0 0 18px;
+}
+
+.filters {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 10px;
+}
+
+.filters label {
+    font-size: 10px;
+    color: #8094a9;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.filters select {
+    width: 100%;
+    padding: 13px;
+    border-radius: 8px;
+    border: 1px solid #29445f;
+    background: #041120;
+    color: #e6f1fb;
+}
+
+.wide {
+    grid-column: 1 / -1;
+}
+
+.search {
+    width: 100%;
+    margin-top: 14px;
+    padding: 13px;
+    border: 0;
+    border-radius: 8px;
+    background: #087cf5;
+    color: white;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.note {
+    font-size: 11px;
+    color: #71879e;
+    margin-top: 12px;
+}
+
+.section {
+    padding: 80px 5%;
+    text-align: center;
+}
+
+.section h2 {
+    font-size: 38px;
+    margin: 8px 0;
+}
+
+.lead {
+    color: #8499ad;
+}
+
+.services {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    max-width: 1050px;
+    margin: 35px auto;
+}
+
+.service {
+    padding: 22px;
+    text-align: left;
+    background: #061527;
+    border: 1px solid #1a334d;
+    border-radius: 13px;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.service:hover,
+.service.selected {
+    border-color: #168cff;
+    box-shadow: 0 0 25px #168cff12;
+    transform: translateY(-2px);
+}
+
+.service .icon {
+    font-size: 25px;
+}
+
+.service b {
+    display: block;
+    margin: 10px 0 4px;
+}
+
+.service span {
+    color: #7f94aa;
+    font-size: 12px;
+}
+
+.results {
+    max-width: 1050px;
+    margin: 25px auto 0;
+    text-align: left;
+}
+
+.result {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: center;
+    padding: 18px;
+    background: #061527;
+    border: 1px solid #1a334d;
+    border-radius: 12px;
+    margin: 10px 0;
+}
+
+.result .number {
+    font-weight: 800;
+}
+
+.badges {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-top: 7px;
+}
+
+.badge {
+    font-size: 10px;
+    padding: 4px 7px;
+    border-radius: 5px;
+    background: #0d2a44;
+    color: #69bdff;
+}
+
+.result small {
+    display: block;
+    color: #71879c;
+    margin-top: 5px;
+}
+
+.price {
+    font-weight: 800;
+    color: #fff;
+}
+
+.price span {
+    display: block;
+    color: #6f849a;
+    font-size: 10px;
+    font-weight: 400;
+}
+
+.get {
+    padding: 10px 15px;
+    border: 0;
+    border-radius: 8px;
+    background: #087cf5;
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 8px;
+}
+
+.pricing {
+    background: #030e1b;
+}
+
+.plans {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+    max-width: 820px;
+    margin: 35px auto;
+}
+
+.plan {
+    padding: 28px;
+    text-align: left;
+    border: 1px solid #1a334d;
+    background: #061527;
+    border-radius: 14px;
+}
+
+.plan.featured {
+    border-color: #168cff;
+}
+
+.plan h3 {
+    font-size: 23px;
+}
+
+.plan p,
+.plan li {
+    color: #8297ab;
+    font-size: 13px;
+}
+
+.plan ul {
+    padding-left: 20px;
+}
+
+.amount {
+    font-size: 38px;
+    font-weight: 900;
+}
+
+.wallet {
+    margin: 0 5% 70px;
+    padding: 40px;
+    border: 1px solid #1b3854;
+    border-radius: 17px;
+    background: #07192a;
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+    align-items: center;
+}
+
+.wallet p {
+    color: #8499ad;
+    max-width: 580px;
+}
+
+.wallets {
+    display: flex;
+    gap: 10px;
+}
+
+.wallets div {
+    padding: 18px;
+    border: 1px solid #27435e;
+    border-radius: 10px;
+    min-width: 150px;
+}
+
+.wallets small {
+    color: #71869c;
+}
+
+.wallets b {
+    display: block;
+    font-size: 24px;
+    margin-top: 7px;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin: 0 5% 70px;
+    border: 1px solid #183149;
+    border-radius: 13px;
+}
+
+.stats div {
+    text-align: center;
+    padding: 25px;
+    border-right: 1px solid #183149;
+}
+
+.stats div:last-child {
+    border: 0;
+}
+
+.stats b {
+    display: block;
+    color: #299dff;
+    font-size: 28px;
+}
+
+.stats span {
+    color: #7c91a6;
+    font-size: 11px;
+}
+
+footer {
+    padding: 35px 5%;
+    border-top: 1px solid #14263b;
+    color: #70869c;
+    font-size: 11px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #000b;
+    z-index: 50;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal.open {
+    display: flex;
+}
+
+.modalbox {
+    max-width: 480px;
+    width: 100%;
+    padding: 25px;
+    border-radius: 15px;
+    background: #07192b;
+    border: 1px solid #29445f;
+}
+
+.modalbox h3 {
+    margin-top: 0;
+}
+
+.modalbox p {
+    color: #8499ad;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.close {
+    float: right;
+    background: none;
+    border: 0;
+    color: #9eb1c4;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+@media(max-width:900px) {
+
+    .navlinks {
+        display: none;
+    }
+
+    .hero {
+        grid-template-columns: 1fr;
+    }
+
+    .services {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .wallet {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .stats {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .plans {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media(max-width:600px) {
+
+    .hero h1 {
+        font-size: 41px;
+    }
+
+    .filters {
+        grid-template-columns: 1fr;
+    }
+
+    .services {
+        grid-template-columns: 1fr;
+    }
+
+    .result {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .wallets {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .stats {
+        margin-left: 5%;
+        margin-right: 5%;
+    }
 }
 </style>
 </head>
+
 <body>
 
 <header class="nav">
-<a class="brand" href="#"><span class="brand-mark">◎</span><span><strong>Global<span>SIM</span></strong><small>Your Number. Your Control. Anywhere.</small></span></a>
-<nav>
-<a class="active" href="#home">Home</a><a href="#numbers">Numbers</a><a href="#pricing">Pricing</a><a href="#how">How It Works</a><a href="#support">Support</a>
+
+<a class="brand" href="#">
+    <span class="mark">◎</span>
+
+    <span>
+        <b>Global<span>SIM</span></b>
+        <small>Your Number. Your Control. Anywhere.</small>
+    </span>
+</a>
+
+<nav class="navlinks">
+    <a href="#numbers">Numbers</a>
+    <a href="#services">Services</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#how">How It Works</a>
 </nav>
-<div class="nav-actions"><button class="currency">USD ▾</button><a class="login" href="#">Log In</a><a class="signup" href="#">Sign Up</a></div>
+
+<div class="actions">
+    <button class="currency">USD ▾</button>
+    <a href="#">Log In</a>
+    <a class="signup" href="#">Sign Up</a>
+</div>
+
 </header>
 
-<main id="home">
+
 <section class="hero">
-<div class="hero-copy">
-<div class="eyebrow">GLOBAL VIRTUAL NUMBERS</div>
-<h1>Virtual Numbers<br>for a World of <span>Possibilities.</span></h1>
-<p>Get reliable virtual numbers for SMS and voice from supported countries — managed from one secure dashboard.</p>
-<div class="hero-buttons"><a class="btn primary" href="#numbers">Rent a Number →</a><a class="btn secondary" href="#pricing">Buy Lifetime Number</a></div>
-<div class="trust-row"><div><b>✓</b>Reliable & Secure</div><div><b>ϟ</b>Fast Activation</div><div><b>◎</b>Global Coverage</div><div><b>24/7</b>Support</div></div>
+
+<div>
+
+<div class="eyebrow">
+GLOBAL VIRTUAL NUMBERS
 </div>
 
-<div class="hero-visual">
-<div class="glow"></div><div class="globe">◉</div>
-<div class="search-card" id="numbers">
-<h3>Find your perfect number</h3>
-<div class="search-grid">
-<select id="country"><option>🇺🇸 United States (+1)</option><option>🇬🇧 United Kingdom (+44)</option><option>🇨🇦 Canada (+1)</option><option>🇳🇬 Nigeria (+234)</option><option>🇩🇪 Germany (+49)</option></select>
-<select id="service"><option>Any Service</option><option>SMS</option><option>SMS + Voice</option></select>
-<button class="search-btn" onclick="findNumber()">⌕</button>
+<h1>
+One place for <span>global numbers.</span>
+</h1>
+
+<p>
+Choose a supported country, select the platform or communication service you need,
+and browse compatible number options.
+</p>
+
+<div class="buttons">
+<a class="btn primary" href="#numbers">
+Find a Number
+</a>
+
+<a class="btn secondary" href="#pricing">
+View Pricing
+</a>
 </div>
-<div class="popular">Popular: 🇺🇸 USA · 🇬🇧 UK · 🇨🇦 Canada · 🇳🇬 Nigeria · 🇩🇪 Germany</div>
-<div id="result" class="search-result"></div>
+
+<p class="note">
+Availability and compatibility depend on the number provider and each platform's policies.
+</p>
+
 </div>
+
+
+<div class="hero-card" id="numbers">
+
+<h3>Find your number</h3>
+
+<div class="filters">
+
+<div>
+
+<label>COUNTRY</label>
+
+<select id="country">
+
+<option>🇺🇸 United States (+1)</option>
+<option>🇬🇧 United Kingdom (+44)</option>
+<option>🇨🇦 Canada (+1)</option>
+<option>🇳🇬 Nigeria (+234)</option>
+<option>🇩🇪 Germany (+49)</option>
+<option>🇦🇺 Australia (+61)</option>
+<option>🇫🇷 France (+33)</option>
+<option>🇮🇹 Italy (+39)</option>
+<option>🇪🇸 Spain (+34)</option>
+<option>🇿🇦 South Africa (+27)</option>
+
+</select>
+
 </div>
+
+
+<div>
+
+<label>NUMBER TYPE</label>
+
+<select id="type">
+
+<option>Rental</option>
+<option>Lifetime</option>
+
+</select>
+
+</div>
+
+
+<div class="wide">
+
+<label>PLATFORM / SERVICE</label>
+
+<select id="platform">
+
+<option>WhatsApp</option>
+<option>Telegram</option>
+<option>TikTok</option>
+<option>Instagram</option>
+<option>Google / Gmail</option>
+<option>Facebook</option>
+<option>X</option>
+<option>General SMS</option>
+<option>SMS + Voice</option>
+
+</select>
+
+</div>
+
+</div>
+
+<button class="search" onclick="searchNumbers()">
+Search Compatible Numbers
+</button>
+
+<div id="notice" class="note"></div>
+
+</div>
+
 </section>
 
-<section class="logos">
-<p>BUILT FOR MODERN COMMUNICATION</p>
-<div class="logo-row"><span>◉ WhatsApp</span><span>➤ Telegram</span><span>f Facebook</span><span>G Google</span><span>◎ Instagram</span><span>♪ TikTok</span><span>𝕏 X</span></div>
+
+<section class="section" id="services">
+
+<div class="kicker">
+CHOOSE A SERVICE
+</div>
+
+<h2>
+What do you need the number for?
+</h2>
+
+<p class="lead">
+Select a platform to filter the number inventory by supported use.
+</p>
+
+
+<div class="services">
+
+<div class="service selected"
+onclick="pick('WhatsApp',this)">
+
+<div class="icon">◉</div>
+
+<b>WhatsApp</b>
+
+<span>
+Supported numbers only
+</span>
+
+</div>
+
+
+<div class="service"
+onclick="pick('Telegram',this)">
+
+<div class="icon">➤</div>
+
+<b>Telegram</b>
+
+<span>
+Supported numbers only
+</span>
+
+</div>
+
+
+<div class="service"
+onclick="pick('TikTok',this)">
+
+<div class="icon">♪</div>
+
+<b>TikTok</b>
+
+<span>
+Supported numbers only
+</span>
+
+</div>
+
+
+<div class="service"
+onclick="pick('Instagram',this)">
+
+<div class="icon">◎</div>
+
+<b>Instagram</b>
+
+<span>
+Supported numbers only
+</span>
+
+</div>
+
+
+<div class="service"
+onclick="pick('Google / Gmail',this)">
+
+<div class="icon">G</div>
+
+<b>Google / Gmail</b>
+
+<span>
+Availability varies
+</span>
+
+</div>
+
+
+<div class="service"
+onclick="pick('Facebook',this)">
+
+<div class="icon">f</div>
+
+<b>Facebook</b>
+
+<span>
+Supported numbers only
+</span>
+
+</div>
+
+
+<div class="service"
+onclick="pick('X',this)">
+
+<div class="icon">𝕏</div>
+
+<b>X</b>
+
+<span>
+Supported numbers only
+</span>
+
+</div>
+
+
+<div class="service"
+onclick="pick('General SMS',this)">
+
+<div class="icon">✉</div>
+
+<b>General SMS</b>
+
+<span>
+SMS-capable numbers
+</span>
+
+</div>
+
+</div>
+
+
+<div class="results" id="results">
+
+<div class="result">
+
+<div>
+
+<div class="number">
+🇺🇸 +1 (202) 555-0148
+</div>
+
+<div class="badges">
+
+<span class="badge">WhatsApp</span>
+<span class="badge">Telegram</span>
+<span class="badge">SMS</span>
+
+</div>
+
+<small>
+Demo data only until a live provider is connected.
+</small>
+
+</div>
+
+
+<div>
+
+<div class="price">
+$12
+<span>monthly rental</span>
+</div>
+
+<button class="get" onclick="openModal()">
+Get Number
+</button>
+
+</div>
+
+</div>
+
+
+<div class="result">
+
+<div>
+
+<div class="number">
+🇬🇧 +44 20 7946 0958
+</div>
+
+<div class="badges">
+
+<span class="badge">WhatsApp</span>
+<span class="badge">Instagram</span>
+<span class="badge">SMS</span>
+
+</div>
+
+<small>
+Provider compatibility will be verified before purchase.
+</small>
+
+</div>
+
+
+<div>
+
+<div class="price">
+$15
+<span>monthly rental</span>
+</div>
+
+<button class="get" onclick="openModal()">
+Get Number
+</button>
+
+</div>
+
+</div>
+
+</div>
+
 </section>
 
-<section class="section" id="how">
-<div class="section-kicker">SIMPLE STEPS</div><h2>How GlobalSIM Works</h2><p class="section-lead">Get a number and manage it from one place.</p>
-<div class="steps">
-<article><i>1</i><h3>Choose a Country</h3><p>Select a supported country and your preferred number.</p></article>
-<article><i>2</i><h3>Choose Your Plan</h3><p>Pick a rental or long-term ownership option.</p></article>
-<article><i>3</i><h3>Use & Receive SMS</h3><p>Manage supported SMS and voice activity.</p></article>
-<article><i>4</i><h3>Keep Control</h3><p>Track numbers, renewals and transactions.</p></article>
-</div>
-</section>
 
 <section class="section pricing" id="pricing">
-<div class="section-kicker">CHOOSE YOUR PLAN</div><h2>Flexible Number Plans</h2><p class="section-lead">Rental pricing and lifetime pricing are separate.</p>
-<div class="price-grid">
-<article class="price-card"><span class="tag">RENTAL</span><h3>Monthly</h3><div class="price">$<strong>—</strong><small>/ month</small></div><p>Flexible access with renewal.</p><ul><li>SMS where supported</li><li>Voice where supported</li><li>Number management</li></ul><a class="btn primary" href="#numbers">Browse Rentals</a></article>
-<article class="price-card featured"><span class="tag">LIFETIME</span><h3>One-Time</h3><div class="price">$<strong>—</strong></div><p>Long-term number assignment subject to provider terms.</p><ul><li>One-time purchase</li><li>SMS where supported</li><li>Number retention</li></ul><a class="btn primary" href="#numbers">Browse Lifetime</a></article>
+
+<div class="kicker">
+NUMBER PLANS
 </div>
+
+<h2>
+Rental or Lifetime
+</h2>
+
+<p class="lead">
+Pricing can vary by country, provider and number type.
+</p>
+
+
+<div class="plans">
+
+<div class="plan">
+
+<div class="kicker">
+RENTAL
+</div>
+
+<h3>
+Flexible access
+</h3>
+
+<div class="amount">
+From $12
+</div>
+
+<p>
+Monthly pricing is determined by the selected country and number.
+</p>
+
+<ul>
+
+<li>Renewable access</li>
+
+<li>Supported SMS/voice features</li>
+
+<li>Compatibility shown before purchase</li>
+
+</ul>
+
+</div>
+
+
+<div class="plan featured">
+
+<div class="kicker">
+LIFETIME
+</div>
+
+<h3>
+Long-term ownership
+</h3>
+
+<div class="amount">
+From $49
+</div>
+
+<p>
+One-time pricing varies by country and provider terms.
+</p>
+
+<ul>
+
+<li>Long-term number assignment</li>
+
+<li>Supported SMS/voice features</li>
+
+<li>Provider terms apply</li>
+
+</ul>
+
+</div>
+
+</div>
+
 </section>
+
 
 <section class="wallet">
-<div><div class="section-kicker">PAY YOUR WAY</div><h2>USD + NGN Wallets</h2><p>Fund your GlobalSIM account in US dollars or Nigerian naira. Checkout will show the exact amount before payment.</p></div>
-<div class="wallet-cards"><div><span>USD BALANCE</span><strong>$0.00</strong><small>Dollar wallet</small></div><div><span>NGN BALANCE</span><strong>₦0</strong><small>Naira wallet</small></div></div>
+
+<div>
+
+<div class="kicker">
+PAY YOUR WAY
+</div>
+
+<h2>
+USD + NGN Wallets
+</h2>
+
+<p>
+GlobalSIM can support dollar and naira balances.
+Live payment processing will be connected after the account and provider systems are built.
+</p>
+
+</div>
+
+
+<div class="wallets">
+
+<div>
+
+<small>
+USD BALANCE
+</small>
+
+<b>
+$0.00
+</b>
+
+</div>
+
+
+<div>
+
+<small>
+NGN BALANCE
+</small>
+
+<b>
+₦0
+</b>
+
+</div>
+
+</div>
+
 </section>
 
-<section class="stats"><div><strong>100+</strong><span>Potential countries</span></div><div><strong>24/7</strong><span>Dashboard access</span></div><div><strong>2</strong><span>Wallet currencies</span></div><div><strong>1</strong><span>GlobalSIM account</span></div></section>
-</main>
 
-<footer id="support">
-<div class="brand"><span class="brand-mark">◎</span><span><strong>Global<span>SIM</span></strong><small>Your Number. Your Control. Anywhere.</small></span></div>
-<p>© 2026 GlobalSIM. Virtual-number availability and capabilities depend on telecom providers.</p>
+<section class="stats">
+
+<div>
+<b>100+</b>
+<span>Potential countries</span>
+</div>
+
+<div>
+<b>24/7</b>
+<span>Dashboard access</span>
+</div>
+
+<div>
+<b>2</b>
+<span>Wallet currencies</span>
+</div>
+
+<div>
+<b>1</b>
+<span>GlobalSIM account</span>
+</div>
+
+</section>
+
+
+<section class="section" id="how">
+
+<div class="kicker">
+HOW IT WORKS
+</div>
+
+<h2>
+From country to number
+</h2>
+
+<p class="lead">
+Choose a supported service, review compatibility, then purchase.
+</p>
+
+
+<div class="services">
+
+<div class="service">
+
+<div class="icon">1</div>
+
+<b>
+Choose country
+</b>
+
+<span>
+Select the country you want.
+</span>
+
+</div>
+
+
+<div class="service">
+
+<div class="icon">2</div>
+
+<b>
+Choose platform
+</b>
+
+<span>
+Filter by WhatsApp, Telegram, TikTok and more.
+</span>
+
+</div>
+
+
+<div class="service">
+
+<div class="icon">3</div>
+
+<b>
+Choose number type
+</b>
+
+<span>
+Rental or lifetime where available.
+</span>
+
+</div>
+
+
+<div class="service">
+
+<div class="icon">4</div>
+
+<b>
+Manage your number
+</b>
+
+<span>
+View your number and supported messages from your dashboard.
+</span>
+
+</div>
+
+</div>
+
+</section>
+
+
+<footer>
+
+© 2026 GlobalSIM · Virtual-number availability and platform compatibility depend on providers and applicable platform policies.
+
 </footer>
 
+
+<div class="modal" id="modal">
+
+<div class="modalbox">
+
+<button class="close" onclick="closeModal()">
+×
+</button>
+
+<h3>
+GlobalSIM checkout
+</h3>
+
+<p>
+This is currently a prototype. The next stage is connecting a legitimate
+number-provider API, user accounts and payment processing. Numbers will only
+be offered where the provider and destination platform permit their use.
+</p>
+
+</div>
+
+</div>
+
+
 <script>
-function findNumber(){
-let c=document.getElementById("country").value;
-let s=document.getElementById("service").value;
-document.getElementById("result").textContent="Searching available "+s+" numbers for "+c+"…";
-setTimeout(()=>{document.getElementById("result").textContent="Number availability will appear here when GlobalSIM is connected to a live provider API.";},700);
+
+function pick(name, element) {
+
+    document
+        .querySelectorAll(".service")
+        .forEach(function(item) {
+            item.classList.remove("selected");
+        });
+
+    element.classList.add("selected");
+
+    document.getElementById("platform").value = name;
+
+    document.getElementById("numbers")
+        .scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
 }
+
+
+function searchNumbers() {
+
+    const country =
+        document.getElementById("country").value;
+
+    const type =
+        document.getElementById("type").value;
+
+    const platform =
+        document.getElementById("platform").value;
+
+    const notice =
+        document.getElementById("notice");
+
+    notice.textContent =
+        "Searching " +
+        type.toLowerCase() +
+        " numbers for " +
+        platform +
+        " in " +
+        country +
+        "…";
+
+    setTimeout(function() {
+
+        notice.textContent =
+            "Demo results shown below. Live availability and compatibility will appear after a provider API is connected.";
+
+    }, 700);
+
+    document.getElementById("results")
+        .scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+}
+
+
+function openModal() {
+
+    document
+        .getElementById("modal")
+        .classList.add("open");
+
+}
+
+
+function closeModal() {
+
+    document
+        .getElementById("modal")
+        .classList.remove("open");
+
+}
+
+
+document
+    .getElementById("modal")
+    .addEventListener("click", function(event) {
+
+        if (event.target === this) {
+            closeModal();
+        }
+
+    });
+
 </script>
+
 </body>
 </html>
