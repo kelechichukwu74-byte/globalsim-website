@@ -28,7 +28,8 @@ a {
 }
 
 button,
-select {
+select,
+input {
     font-family: inherit;
 }
 
@@ -215,6 +216,11 @@ select {
     cursor: pointer;
 }
 
+.search:disabled {
+    opacity: .6;
+    cursor: wait;
+}
+
 .note {
     font-size: 11px;
     color: #71879e;
@@ -338,6 +344,25 @@ select {
     font-weight: 800;
     cursor: pointer;
     margin-top: 8px;
+}
+
+.get:hover {
+    background: #168cff;
+}
+
+.loading {
+    text-align: center;
+    padding: 30px;
+    color: #71879c;
+}
+
+.empty {
+    text-align: center;
+    padding: 30px;
+    color: #71879c;
+    background: #061527;
+    border: 1px solid #1a334d;
+    border-radius: 12px;
 }
 
 .pricing {
@@ -618,7 +643,7 @@ View Pricing
 </div>
 
 <p class="note">
-Availability and compatibility depend on the number provider and each platform's policies.
+Live availability is loaded from the GlobalSIM provider API.
 </p>
 
 </div>
@@ -635,18 +660,7 @@ Availability and compatibility depend on the number provider and each platform's
 <label>COUNTRY</label>
 
 <select id="country">
-
-<option>🇺🇸 United States (+1)</option>
-<option>🇬🇧 United Kingdom (+44)</option>
-<option>🇨🇦 Canada (+1)</option>
-<option>🇳🇬 Nigeria (+234)</option>
-<option>🇩🇪 Germany (+49)</option>
-<option>🇦🇺 Australia (+61)</option>
-<option>🇫🇷 France (+33)</option>
-<option>🇮🇹 Italy (+39)</option>
-<option>🇪🇸 Spain (+34)</option>
-<option>🇿🇦 South Africa (+27)</option>
-
+<option value="">Loading countries...</option>
 </select>
 
 </div>
@@ -658,8 +672,8 @@ Availability and compatibility depend on the number provider and each platform's
 
 <select id="type">
 
-<option>Rental</option>
-<option>Lifetime</option>
+<option value="short">Rental</option>
+<option value="long">Lifetime</option>
 
 </select>
 
@@ -672,15 +686,15 @@ Availability and compatibility depend on the number provider and each platform's
 
 <select id="platform">
 
-<option>WhatsApp</option>
-<option>Telegram</option>
-<option>TikTok</option>
-<option>Instagram</option>
-<option>Google / Gmail</option>
-<option>Facebook</option>
-<option>X</option>
-<option>General SMS</option>
-<option>SMS + Voice</option>
+<option value="whatsapp">WhatsApp</option>
+<option value="telegram">Telegram</option>
+<option value="tiktok">TikTok</option>
+<option value="instagram">Instagram</option>
+<option value="google">Google / Gmail</option>
+<option value="facebook">Facebook</option>
+<option value="x">X</option>
+<option value="general_sms">General SMS</option>
+<option value="sms_voice">SMS + Voice</option>
 
 </select>
 
@@ -688,7 +702,7 @@ Availability and compatibility depend on the number provider and each platform's
 
 </div>
 
-<button class="search" onclick="searchNumbers()">
+<button class="search" id="searchButton" onclick="searchNumbers()">
 Search Compatible Numbers
 </button>
 
@@ -717,114 +731,66 @@ Select a platform to filter the number inventory by supported use.
 <div class="services">
 
 <div class="service selected"
-onclick="pick('WhatsApp',this)">
-
+onclick="pick('whatsapp',this)">
 <div class="icon">◉</div>
-
 <b>WhatsApp</b>
-
-<span>
-Supported numbers only
-</span>
-
+<span>Supported numbers only</span>
 </div>
 
 
 <div class="service"
-onclick="pick('Telegram',this)">
-
+onclick="pick('telegram',this)">
 <div class="icon">➤</div>
-
 <b>Telegram</b>
-
-<span>
-Supported numbers only
-</span>
-
+<span>Supported numbers only</span>
 </div>
 
 
 <div class="service"
-onclick="pick('TikTok',this)">
-
+onclick="pick('tiktok',this)">
 <div class="icon">♪</div>
-
 <b>TikTok</b>
-
-<span>
-Supported numbers only
-</span>
-
+<span>Supported numbers only</span>
 </div>
 
 
 <div class="service"
-onclick="pick('Instagram',this)">
-
+onclick="pick('instagram',this)">
 <div class="icon">◎</div>
-
 <b>Instagram</b>
-
-<span>
-Supported numbers only
-</span>
-
+<span>Supported numbers only</span>
 </div>
 
 
 <div class="service"
-onclick="pick('Google / Gmail',this)">
-
+onclick="pick('google',this)">
 <div class="icon">G</div>
-
 <b>Google / Gmail</b>
-
-<span>
-Availability varies
-</span>
-
+<span>Availability varies</span>
 </div>
 
 
 <div class="service"
-onclick="pick('Facebook',this)">
-
+onclick="pick('facebook',this)">
 <div class="icon">f</div>
-
 <b>Facebook</b>
-
-<span>
-Supported numbers only
-</span>
-
+<span>Supported numbers only</span>
 </div>
 
 
 <div class="service"
-onclick="pick('X',this)">
-
+onclick="pick('x',this)">
 <div class="icon">𝕏</div>
-
 <b>X</b>
-
-<span>
-Supported numbers only
-</span>
-
+<span>Supported numbers only</span>
 </div>
 
 
 <div class="service"
-onclick="pick('General SMS',this)">
-
+onclick="pick('general_sms',this)">
 <div class="icon">✉</div>
-
 <b>General SMS</b>
-
-<span>
-SMS-capable numbers
-</span>
-
+<span>SMS-capable numbers</span>
 </div>
 
 </div>
@@ -832,81 +798,8 @@ SMS-capable numbers
 
 <div class="results" id="results">
 
-<div class="result">
-
-<div>
-
-<div class="number">
-🇺🇸 +1 (202) 555-0148
-</div>
-
-<div class="badges">
-
-<span class="badge">WhatsApp</span>
-<span class="badge">Telegram</span>
-<span class="badge">SMS</span>
-
-</div>
-
-<small>
-Demo data only until a live provider is connected.
-</small>
-
-</div>
-
-
-<div>
-
-<div class="price">
-$12
-<span>monthly rental</span>
-</div>
-
-<button class="get" onclick="openModal()">
-Get Number
-</button>
-
-</div>
-
-</div>
-
-
-<div class="result">
-
-<div>
-
-<div class="number">
-🇬🇧 +44 20 7946 0958
-</div>
-
-<div class="badges">
-
-<span class="badge">WhatsApp</span>
-<span class="badge">Instagram</span>
-<span class="badge">SMS</span>
-
-</div>
-
-<small>
-Provider compatibility will be verified before purchase.
-</small>
-
-</div>
-
-
-<div>
-
-<div class="price">
-$15
-<span>monthly rental</span>
-</div>
-
-<button class="get" onclick="openModal()">
-Get Number
-</button>
-
-</div>
-
+<div class="loading">
+Choose a country and service, then search for live availability.
 </div>
 
 </div>
@@ -925,7 +818,7 @@ Rental or Lifetime
 </h2>
 
 <p class="lead">
-Pricing can vary by country, provider and number type.
+Pricing depends on the selected country, provider and number type.
 </p>
 
 
@@ -942,20 +835,20 @@ Flexible access
 </h3>
 
 <div class="amount">
-From $12
+Live
 </div>
 
 <p>
-Monthly pricing is determined by the selected country and number.
+Rental prices are loaded from the connected number provider.
 </p>
 
 <ul>
 
-<li>Renewable access</li>
+<li>Provider-based pricing</li>
 
-<li>Supported SMS/voice features</li>
+<li>Supported SMS features</li>
 
-<li>Compatibility shown before purchase</li>
+<li>Country availability</li>
 
 </ul>
 
@@ -973,20 +866,20 @@ Long-term ownership
 </h3>
 
 <div class="amount">
-From $49
+Live
 </div>
 
 <p>
-One-time pricing varies by country and provider terms.
+Lifetime availability and pricing depend on the provider.
 </p>
 
 <ul>
 
-<li>Long-term number assignment</li>
-
-<li>Supported SMS/voice features</li>
+<li>Long-term assignment where available</li>
 
 <li>Provider terms apply</li>
+
+<li>Availability shown before purchase</li>
 
 </ul>
 
@@ -1011,7 +904,7 @@ USD + NGN Wallets
 
 <p>
 GlobalSIM can support dollar and naira balances.
-Live payment processing will be connected after the account and provider systems are built.
+Payment processing and account management will be connected to the dashboard.
 </p>
 
 </div>
@@ -1052,8 +945,8 @@ NGN BALANCE
 <section class="stats">
 
 <div>
-<b>100+</b>
-<span>Potential countries</span>
+<b>173+</b>
+<span>Countries available in database</span>
 </div>
 
 <div>
@@ -1085,7 +978,7 @@ From country to number
 </h2>
 
 <p class="lead">
-Choose a supported service, review compatibility, then purchase.
+Choose a supported service, review availability, then continue to checkout.
 </p>
 
 
@@ -1170,15 +1063,17 @@ View your number and supported messages from your dashboard.
 ×
 </button>
 
-<h3>
+<h3 id="modalTitle">
 GlobalSIM checkout
 </h3>
 
-<p>
-This is currently a prototype. The next stage is connecting a legitimate
-number-provider API, user accounts and payment processing. Numbers will only
-be offered where the provider and destination platform permit their use.
+<p id="modalText">
+Select an available number to continue.
 </p>
+
+<button class="search" onclick="closeModal()">
+Close
+</button>
 
 </div>
 
@@ -1187,12 +1082,96 @@ be offered where the provider and destination platform permit their use.
 
 <script>
 
+/*
+====================================================
+GLOBAL SIM LIVE API CONNECTION
+====================================================
+*/
+
+let countries = [];
+let prices = [];
+
+
+/*
+----------------------------------------------------
+LOAD COUNTRIES
+----------------------------------------------------
+*/
+
+async function loadCountries() {
+
+    const countrySelect =
+        document.getElementById("country");
+
+    try {
+
+        const response =
+            await fetch("/api/countries");
+
+        if (!response.ok) {
+            throw new Error("Countries API failed");
+        }
+
+        const result =
+            await response.json();
+
+        if (!result.success || !Array.isArray(result.data)) {
+            throw new Error("Invalid countries response");
+        }
+
+        countries = result.data;
+
+        countrySelect.innerHTML =
+            '<option value="">Select a country</option>';
+
+        countries.forEach(function(country) {
+
+            const option =
+                document.createElement("option");
+
+            option.value = country.id;
+
+            option.textContent =
+                country.flag +
+                " " +
+                country.name +
+                " (" +
+                country.iso_code +
+                ")";
+
+            countrySelect.appendChild(option);
+
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        countrySelect.innerHTML =
+            '<option value="">Unable to load countries</option>';
+
+        document.getElementById("notice").textContent =
+            "Could not load countries. Please refresh the page.";
+
+    }
+
+}
+
+
+/*
+----------------------------------------------------
+SERVICE PICKER
+----------------------------------------------------
+*/
+
 function pick(name, element) {
 
     document
         .querySelectorAll(".service")
         .forEach(function(item) {
+
             item.classList.remove("selected");
+
         });
 
     element.classList.add("selected");
@@ -1204,12 +1183,19 @@ function pick(name, element) {
             behavior: "smooth",
             block: "center"
         });
+
 }
 
 
-function searchNumbers() {
+/*
+----------------------------------------------------
+SEARCH LIVE NUMBERS
+----------------------------------------------------
+*/
 
-    const country =
+async function searchNumbers() {
+
+    const countryId =
         document.getElementById("country").value;
 
     const type =
@@ -1221,35 +1207,298 @@ function searchNumbers() {
     const notice =
         document.getElementById("notice");
 
-    notice.textContent =
-        "Searching " +
-        type.toLowerCase() +
-        " numbers for " +
-        platform +
-        " in " +
-        country +
-        "…";
+    const results =
+        document.getElementById("results");
 
-    setTimeout(function() {
+    const button =
+        document.getElementById("searchButton");
+
+
+    if (!countryId) {
 
         notice.textContent =
-            "Demo results shown below. Live availability and compatibility will appear after a provider API is connected.";
+            "Please select a country first.";
 
-    }, 700);
+        return;
 
-    document.getElementById("results")
-        .scrollIntoView({
-            behavior: "smooth",
-            block: "center"
-        });
+    }
+
+
+    button.disabled = true;
+
+    button.textContent = "Searching...";
+
+    notice.textContent =
+        "Checking live number availability...";
+
+
+    results.innerHTML =
+        '<div class="loading">Loading live numbers...</div>';
+
+
+    try {
+
+        /*
+        The prices endpoint provides the provider
+        inventory and pricing.
+        */
+
+        const response =
+            await fetch(
+                "/api/prices?service=" +
+                encodeURIComponent(platform)
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Prices API failed with status " +
+                response.status
+            );
+
+        }
+
+
+        const result =
+            await response.json();
+
+
+        if (
+            !result.success ||
+            !Array.isArray(result.data)
+        ) {
+
+            throw new Error(
+                "Invalid prices response"
+            );
+
+        }
+
+
+        prices = result.data;
+
+
+        /*
+        Filter the provider response by:
+        country + rental type
+        */
+
+        const matching =
+            prices.filter(function(item) {
+
+                const sameCountry =
+                    String(item.country_id) ===
+                    String(countryId);
+
+                const sameType =
+                    !type ||
+                    !item.rental_type ||
+                    item.rental_type === type;
+
+                return sameCountry && sameType;
+
+            });
+
+
+        renderResults(matching, platform);
+
+
+        notice.textContent =
+            matching.length +
+            " available option" +
+            (matching.length === 1 ? "" : "s") +
+            " found.";
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        results.innerHTML =
+            '<div class="empty">' +
+            'Unable to load live numbers right now.' +
+            '<br><br>' +
+            'Please try again in a moment.' +
+            '</div>';
+
+        notice.textContent =
+            "There was a problem connecting to the number provider.";
+
+    }
+
+
+    button.disabled = false;
+
+    button.textContent =
+        "Search Compatible Numbers";
+
 }
 
 
-function openModal() {
+/*
+----------------------------------------------------
+DISPLAY LIVE RESULTS
+----------------------------------------------------
+*/
 
-    document
-        .getElementById("modal")
-        .classList.add("open");
+function renderResults(items, platform) {
+
+    const results =
+        document.getElementById("results");
+
+
+    if (!items.length) {
+
+        results.innerHTML =
+            '<div class="empty">' +
+            'No numbers are currently available for this country and service.' +
+            '</div>';
+
+        return;
+
+    }
+
+
+    results.innerHTML = "";
+
+
+    items.forEach(function(item) {
+
+        const result =
+            document.createElement("div");
+
+        result.className = "result";
+
+
+        const countryName =
+            item.country_name || "Unknown country";
+
+        const flag =
+            item.flag || "";
+
+        const provider =
+            item.provider_name || "Provider";
+
+
+        const price =
+            item.final_price !== undefined
+                ? item.final_price
+                : "0.00";
+
+
+        const stockText =
+            item.stock !== null &&
+            item.stock !== undefined
+                ? "Stock: " + item.stock
+                : "Availability verified by provider";
+
+
+        result.innerHTML = `
+
+            <div>
+
+                <div class="number">
+                    ${flag} ${countryName}
+                </div>
+
+                <div class="badges">
+
+                    <span class="badge">
+                        ${escapeHTML(platform)}
+                    </span>
+
+                    <span class="badge">
+                        ${escapeHTML(provider)}
+                    </span>
+
+                    <span class="badge">
+                        ${escapeHTML(item.rental_type || "short")}
+                    </span>
+
+                </div>
+
+                <small>
+                    ${escapeHTML(stockText)}
+                </small>
+
+            </div>
+
+
+            <div>
+
+                <div class="price">
+
+                    ₦${formatMoney(price)}
+
+                    <span>
+                        provider price
+                    </span>
+
+                </div>
+
+                <button
+                    class="get"
+                    onclick='openCheckout(${JSON.stringify(item)})'
+                >
+                    Get Number
+                </button>
+
+            </div>
+
+        `;
+
+
+        results.appendChild(result);
+
+    });
+
+}
+
+
+/*
+----------------------------------------------------
+CHECKOUT MODAL
+----------------------------------------------------
+*/
+
+function openCheckout(item) {
+
+    const modal =
+        document.getElementById("modal");
+
+    const title =
+        document.getElementById("modalTitle");
+
+    const text =
+        document.getElementById("modalText");
+
+
+    title.textContent =
+        "GlobalSIM — Number Selection";
+
+
+    text.innerHTML =
+        "Country: <b>" +
+        escapeHTML(item.country_name || "") +
+        "</b><br><br>" +
+
+        "Provider: <b>" +
+        escapeHTML(item.provider_name || "") +
+        "</b><br><br>" +
+
+        "Price: <b>₦" +
+        formatMoney(item.final_price || 0) +
+        "</b><br><br>" +
+
+        "Number ID: <b>" +
+        escapeHTML(String(item.id || "")) +
+        "</b><br><br>" +
+
+        "The number can only be purchased after account, wallet/payment and provider checkout systems are connected.";
+
+
+    modal.classList.add("open");
 
 }
 
@@ -1263,15 +1512,77 @@ function closeModal() {
 }
 
 
+/*
+----------------------------------------------------
+FORMAT MONEY
+----------------------------------------------------
+*/
+
+function formatMoney(value) {
+
+    const number =
+        Number(value);
+
+    if (Number.isNaN(number)) {
+        return "0.00";
+    }
+
+    return number.toLocaleString(
+        "en-NG",
+        {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }
+    );
+
+}
+
+
+/*
+----------------------------------------------------
+SECURITY: ESCAPE API DATA BEFORE DISPLAYING
+----------------------------------------------------
+*/
+
+function escapeHTML(value) {
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+/*
+----------------------------------------------------
+CLOSE MODAL WHEN CLICKING OUTSIDE
+----------------------------------------------------
+*/
+
 document
     .getElementById("modal")
-    .addEventListener("click", function(event) {
+    .addEventListener(
+        "click",
+        function(event) {
 
-        if (event.target === this) {
-            closeModal();
+            if (event.target === this) {
+                closeModal();
+            }
+
         }
+    );
 
-    });
+
+/*
+----------------------------------------------------
+START APPLICATION
+----------------------------------------------------
+*/
+
+loadCountries();
 
 </script>
 
