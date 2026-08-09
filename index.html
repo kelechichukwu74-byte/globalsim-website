@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GlobalSIM — Your Number. Your Control. Anywhere.</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:Arial,Helvetica,sans-serif;background:#07101d;color:#f5f8ff;line-height:1.5}
+a{text-decoration:none;color:inherit}
+.nav{height:76px;display:flex;align-items:center;justify-content:space-between;padding:0 6%;border-bottom:1px solid #1c2a3c;background:#091522;position:sticky;top:0;z-index:10}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:38px;height:38px;border:2px solid #27a8ff;border-radius:50%;display:grid;place-items:center;color:#27a8ff;font-size:22px}
+.brand strong{font-size:24px;display:block}
+.brand strong span{color:#27a8ff}
+.brand small{display:block;color:#8190a5;font-size:9px;letter-spacing:1px}
+nav{display:flex;gap:24px;color:#aab7c8;font-size:14px}
+nav a:hover,nav .active{color:#27a8ff}
+.nav-actions{display:flex;gap:10px;align-items:center}
+.currency,.login,.signup{padding:10px 15px;border-radius:9px;border:1px solid #26364b;background:#101d2c;color:white}
+.signup,.btn.primary{background:#168cff;border-color:#168cff}
+.hero{min-height:650px;padding:90px 7%;display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center;background:radial-gradient(circle at 75% 40%,#123d65 0,transparent 35%),#07101d}
+.eyebrow,.section-kicker{color:#27a8ff;font-weight:bold;font-size:12px;letter-spacing:2px}
+h1{font-size:58px;line-height:1.05;margin:18px 0}
+h1 span{color:#27a8ff}
+.hero-copy>p{max-width:600px;color:#aebbc9;font-size:18px}
+.hero-buttons{display:flex;gap:14px;margin:30px 0}
+.btn{display:inline-block;padding:14px 22px;border-radius:9px;font-weight:bold}
+.btn.secondary{border:1px solid #34465c;background:#101d2c}
+.trust-row{display:flex;gap:24px;color:#8e9caf;font-size:12px;flex-wrap:wrap}
+.trust-row b{color:#27a8ff;margin-right:5px}
+.hero-visual{position:relative}
+.glow{position:absolute;width:400px;height:400px;background:#168cff;filter:blur(120px);opacity:.15}
+.globe{height:280px;width:280px;margin:auto;border-radius:50%;display:grid;place-items:center;font-size:130px;color:#168cff;background:radial-gradient(circle,#173d61,#091522 65%);border:1px solid #214a6d}
+.search-card{position:relative;margin:-20px auto 0;max-width:500px;padding:24px;background:#101d2c;border:1px solid #2b4057;border-radius:15px;box-shadow:0 20px 60px #0008}
+.search-card h3{margin-bottom:15px}
+.search-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:8px}
+select,.search-btn{padding:13px;border-radius:8px;border:1px solid #344b62;background:#07101d;color:white}
+.search-btn{background:#168cff;border-color:#168cff}
+.popular{color:#8291a5;font-size:11px;margin-top:12px}
+.search-result{margin-top:12px;color:#27a8ff;font-size:13px}
+.logos{padding:28px 7%;text-align:center;border-top:1px solid #172537;border-bottom:1px solid #172537;background:#091522}
+.logos p{color:#66768c;font-size:10px;letter-spacing:2px;margin-bottom:15px}
+.logo-row{display:flex;justify-content:space-around;gap:15px;flex-wrap:wrap;color:#9aa9bb}
+.section{padding:90px 7%;text-align:center}
+.section h2{font-size:40px;margin:10px 0}
+.section-lead{color:#8493a7;margin-bottom:40px}
+.steps,.price-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.steps article,.price-card{padding:28px;background:#0d1927;border:1px solid #203247;border-radius:14px;text-align:left}
+.steps i{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#168cff;font-style:normal;font-weight:bold;margin-bottom:18px}
+.steps p,.price-card p,.price-card li{color:#8796a9;font-size:14px}
+.pricing{background:#091522}
+.price-grid{grid-template-columns:1fr 1fr;max-width:800px;margin:auto}
+.price-card.featured{border-color:#168cff;box-shadow:0 0 40px #168cff18}
+.tag{color:#27a8ff;font-size:11px;font-weight:bold;letter-spacing:2px}
+.price-card h3{font-size:25px;margin:8px 0}
+.price{font-size:22px;margin:15px 0}.price strong{font-size:42px}
+.price-card ul{list-style:none;margin:18px 0}.price-card li{margin:8px 0}.price-card li:before{content:"✓";color:#27a8ff;margin-right:8px}
+.fineprint{color:#627288;font-size:11px;margin-top:25px}
+.wallet{padding:60px 7%;display:flex;justify-content:space-between;gap:40px;align-items:center;background:linear-gradient(100deg,#0d1d30,#08111d)}
+.wallet h2{font-size:38px;margin:8px 0}.wallet p{color:#8d9caf;max-width:550px}
+.wallet-cards{display:flex;gap:15px}
+.wallet-cards div{min-width:180px;padding:22px;background:#101f30;border:1px solid #294057;border-radius:12px}
+.wallet-cards span,.wallet-cards small{display:block;color:#78899e;font-size:11px}
+.wallet-cards strong{display:block;font-size:25px;margin:8px 0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);text-align:center;padding:45px 7%;gap:20px}
+.stats strong{display:block;font-size:32px;color:#27a8ff}.stats span{color:#7f8da0;font-size:12px}
+footer{padding:40px 7%;border-top:1px solid #1b2b3d;color:#6f7f92}
+footer .brand{margin-bottom:20px}
+@media(max-width:850px){
+nav{display:none}.hero{grid-template-columns:1fr;padding:60px 6%}h1{font-size:43px}
+.steps{grid-template-columns:1fr 1fr}.price-grid,.wallet{grid-template-columns:1fr;display:grid}
+.wallet-cards{flex-wrap:wrap}.stats{grid-template-columns:1fr 1fr}
+.search-grid{grid-template-columns:1fr}.hero-visual{margin-top:20px}
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+<a class="brand" href="#"><span class="brand-mark">◎</span><span><strong>Global<span>SIM</span></strong><small>Your Number. Your Control. Anywhere.</small></span></a>
+<nav>
+<a class="active" href="#home">Home</a><a href="#numbers">Numbers</a><a href="#pricing">Pricing</a><a href="#how">How It Works</a><a href="#support">Support</a>
+</nav>
+<div class="nav-actions"><button class="currency">USD ▾</button><a class="login" href="#">Log In</a><a class="signup" href="#">Sign Up</a></div>
+</header>
+
+<main id="home">
+<section class="hero">
+<div class="hero-copy">
+<div class="eyebrow">GLOBAL VIRTUAL NUMBERS</div>
+<h1>Virtual Numbers<br>for a World of <span>Possibilities.</span></h1>
+<p>Get reliable virtual numbers for SMS and voice from supported countries — managed from one secure dashboard.</p>
+<div class="hero-buttons"><a class="btn primary" href="#numbers">Rent a Number →</a><a class="btn secondary" href="#pricing">Buy Lifetime Number</a></div>
+<div class="trust-row"><div><b>✓</b>Reliable & Secure</div><div><b>ϟ</b>Fast Activation</div><div><b>◎</b>Global Coverage</div><div><b>24/7</b>Support</div></div>
+</div>
+
+<div class="hero-visual">
+<div class="glow"></div><div class="globe">◉</div>
+<div class="search-card" id="numbers">
+<h3>Find your perfect number</h3>
+<div class="search-grid">
+<select id="country"><option>🇺🇸 United States (+1)</option><option>🇬🇧 United Kingdom (+44)</option><option>🇨🇦 Canada (+1)</option><option>🇳🇬 Nigeria (+234)</option><option>🇩🇪 Germany (+49)</option></select>
+<select id="service"><option>Any Service</option><option>SMS</option><option>SMS + Voice</option></select>
+<button class="search-btn" onclick="findNumber()">⌕</button>
+</div>
+<div class="popular">Popular: 🇺🇸 USA · 🇬🇧 UK · 🇨🇦 Canada · 🇳🇬 Nigeria · 🇩🇪 Germany</div>
+<div id="result" class="search-result"></div>
+</div>
+</div>
+</section>
+
+<section class="logos">
+<p>BUILT FOR MODERN COMMUNICATION</p>
+<div class="logo-row"><span>◉ WhatsApp</span><span>➤ Telegram</span><span>f Facebook</span><span>G Google</span><span>◎ Instagram</span><span>♪ TikTok</span><span>𝕏 X</span></div>
+</section>
+
+<section class="section" id="how">
+<div class="section-kicker">SIMPLE STEPS</div><h2>How GlobalSIM Works</h2><p class="section-lead">Get a number and manage it from one place.</p>
+<div class="steps">
+<article><i>1</i><h3>Choose a Country</h3><p>Select a supported country and your preferred number.</p></article>
+<article><i>2</i><h3>Choose Your Plan</h3><p>Pick a rental or long-term ownership option.</p></article>
+<article><i>3</i><h3>Use & Receive SMS</h3><p>Manage supported SMS and voice activity.</p></article>
+<article><i>4</i><h3>Keep Control</h3><p>Track numbers, renewals and transactions.</p></article>
+</div>
+</section>
+
+<section class="section pricing" id="pricing">
+<div class="section-kicker">CHOOSE YOUR PLAN</div><h2>Flexible Number Plans</h2><p class="section-lead">Rental pricing and lifetime pricing are separate.</p>
+<div class="price-grid">
+<article class="price-card"><span class="tag">RENTAL</span><h3>Monthly</h3><div class="price">$<strong>—</strong><small>/ month</small></div><p>Flexible access with renewal.</p><ul><li>SMS where supported</li><li>Voice where supported</li><li>Number management</li></ul><a class="btn primary" href="#numbers">Browse Rentals</a></article>
+<article class="price-card featured"><span class="tag">LIFETIME</span><h3>One-Time</h3><div class="price">$<strong>—</strong></div><p>Long-term number assignment subject to provider terms.</p><ul><li>One-time purchase</li><li>SMS where supported</li><li>Number retention</li></ul><a class="btn primary" href="#numbers">Browse Lifetime</a></article>
+</div>
+</section>
+
+<section class="wallet">
+<div><div class="section-kicker">PAY YOUR WAY</div><h2>USD + NGN Wallets</h2><p>Fund your GlobalSIM account in US dollars or Nigerian naira. Checkout will show the exact amount before payment.</p></div>
+<div class="wallet-cards"><div><span>USD BALANCE</span><strong>$0.00</strong><small>Dollar wallet</small></div><div><span>NGN BALANCE</span><strong>₦0</strong><small>Naira wallet</small></div></div>
+</section>
+
+<section class="stats"><div><strong>100+</strong><span>Potential countries</span></div><div><strong>24/7</strong><span>Dashboard access</span></div><div><strong>2</strong><span>Wallet currencies</span></div><div><strong>1</strong><span>GlobalSIM account</span></div></section>
+</main>
+
+<footer id="support">
+<div class="brand"><span class="brand-mark">◎</span><span><strong>Global<span>SIM</span></strong><small>Your Number. Your Control. Anywhere.</small></span></div>
+<p>© 2026 GlobalSIM. Virtual-number availability and capabilities depend on telecom providers.</p>
+</footer>
+
+<script>
+function findNumber(){
+let c=document.getElementById("country").value;
+let s=document.getElementById("service").value;
+document.getElementById("result").textContent="Searching available "+s+" numbers for "+c+"…";
+setTimeout(()=>{document.getElementById("result").textContent="Number availability will appear here when GlobalSIM is connected to a live provider API.";},700);
+}
+</script>
+</body>
+</html>
