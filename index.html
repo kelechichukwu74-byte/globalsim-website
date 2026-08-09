@@ -597,6 +597,11 @@ footer {
     color: white;
     font-weight: 800;
     cursor: pointer;
+    width: 100%;
+}
+
+.google-btn:hover {
+    background: #10263d;
 }
 
 .auth-divider {
@@ -638,6 +643,7 @@ footer {
     font-size: 12px;
     line-height: 1.5;
     display: none;
+    margin-bottom: 12px;
 }
 
 .dashboard-button {
@@ -750,6 +756,7 @@ footer {
     </button>
 
     <div id="guestActions">
+
         <button
             class="auth-button"
             onclick="openAuth('login')">
@@ -761,6 +768,7 @@ footer {
             onclick="openAuth('signup')">
             Sign Up
         </button>
+
     </div>
 
     <div
@@ -1437,6 +1445,7 @@ OR
 
 <button
     class="google-btn"
+    type="button"
     onclick="signInWithGoogle()">
 
 Continue with Google
@@ -1451,6 +1460,7 @@ Don't have an account?
 </span>
 
 <button
+    type="button"
     onclick="switchAuthMode()"
     id="authSwitchButton">
 
@@ -1512,12 +1522,28 @@ const SUPABASE_URL =
 const SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_DpcHNrR_B3ZHQyIfWyLJjw_I9axcQ3h";
 
-
 const supabaseClient =
     window.supabase.createClient(
         SUPABASE_URL,
         SUPABASE_PUBLISHABLE_KEY
     );
+
+
+/*
+====================================================
+AUTH CONFIGURATION
+====================================================
+*/
+
+/*
+IMPORTANT:
+This is the production URL of the GlobalSIM website.
+
+Do NOT combine this with localhost.
+*/
+
+const PRODUCTION_REDIRECT_URL =
+    "https://globalsim-website-dfou.vercel.app/";
 
 
 /*
@@ -1580,6 +1606,7 @@ function updateAuthModal() {
 
     const switchButton =
         document.getElementById("authSwitchButton");
+
 
     if (authMode === "signup") {
 
@@ -1687,7 +1714,7 @@ async function handleEmailAuth(event) {
                     options: {
 
                         emailRedirectTo:
-                            window.location.origin
+                            PRODUCTION_REDIRECT_URL
 
                     }
 
@@ -1754,7 +1781,10 @@ async function handleEmailAuth(event) {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "Email authentication error:",
+            error
+        );
 
         showAuthMessage(
             error.message ||
@@ -1778,13 +1808,32 @@ async function handleEmailAuth(event) {
 ====================================================
 GOOGLE LOGIN
 ====================================================
+
+IMPORTANT:
+Google OAuth will always return through the
+Supabase callback first.
+
+Supabase then redirects the user back to:
+
+https://globalsim-website-dfou.vercel.app/
+
+We explicitly use the production URL here so that
+localhost and Vercel URLs cannot accidentally be
+combined into one invalid URL.
+====================================================
 */
 
 async function signInWithGoogle() {
 
+    showAuthMessage(
+        "Connecting to Google..."
+    );
+
+
     try {
 
         const {
+            data,
             error
         } =
             await supabaseClient.auth.signInWithOAuth({
@@ -1794,7 +1843,7 @@ async function signInWithGoogle() {
                 options: {
 
                     redirectTo:
-                        window.location.origin
+                        PRODUCTION_REDIRECT_URL
 
                 }
 
@@ -1802,13 +1851,34 @@ async function signInWithGoogle() {
 
 
         if (error) {
-            throw error;
+
+            console.error(
+                "Google OAuth error:",
+                error
+            );
+
+            showAuthMessage(
+                error.message ||
+                "Google sign-in could not be started."
+            );
+
+            return;
+
         }
+
+
+        console.log(
+            "Google OAuth started:",
+            data
+        );
 
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "Google sign-in error:",
+            error
+        );
 
         showAuthMessage(
             error.message ||
