@@ -6,6 +6,8 @@
 
 <title>GlobalSIM — Global Virtual Numbers</title>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 * {
     box-sizing: border-box;
@@ -34,11 +36,11 @@ input {
 }
 
 .nav {
-    height: 74px;
+    min-height: 74px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 5%;
+    padding: 12px 5%;
     background: #06111f;
     border-bottom: 1px solid #14263b;
     position: sticky;
@@ -90,20 +92,51 @@ input {
 .actions {
     display: flex;
     gap: 8px;
+    align-items: center;
 }
 
 .actions a,
-.currency {
+.currency,
+.auth-button {
     padding: 10px 14px;
     border-radius: 8px;
     border: 1px solid #29405a;
     background: #0a192b;
     color: #dce8f4;
+    cursor: pointer;
 }
 
-.actions .signup {
+.actions .signup,
+.auth-button.primary {
     background: #087cf5;
     border-color: #087cf5;
+}
+
+.user-area {
+    display: none;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-area.visible {
+    display: flex;
+}
+
+.user-email {
+    color: #8fa5ba;
+    font-size: 11px;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.logout {
+    background: #09192a;
+    color: #fff;
+    border: 1px solid #29405a;
+    padding: 9px 12px;
+    border-radius: 8px;
+    cursor: pointer;
 }
 
 .hero {
@@ -350,12 +383,7 @@ input {
     background: #168cff;
 }
 
-.loading {
-    text-align: center;
-    padding: 30px;
-    color: #71879c;
-}
-
+.loading,
 .empty {
     text-align: center;
     padding: 30px;
@@ -526,6 +554,101 @@ footer {
     cursor: pointer;
 }
 
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.auth-form label {
+    color: #8ea4b9;
+    font-size: 11px;
+}
+
+.auth-form input {
+    width: 100%;
+    padding: 13px;
+    border-radius: 8px;
+    border: 1px solid #29445f;
+    background: #041120;
+    color: #fff;
+    outline: none;
+}
+
+.auth-form input:focus {
+    border-color: #168cff;
+}
+
+.auth-btn {
+    padding: 13px;
+    border: 0;
+    border-radius: 8px;
+    background: #087cf5;
+    color: white;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.google-btn {
+    padding: 13px;
+    border-radius: 8px;
+    border: 1px solid #29445f;
+    background: #0a192b;
+    color: white;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 15px 0;
+    color: #667d93;
+    font-size: 11px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: "";
+    height: 1px;
+    background: #1c334b;
+    flex: 1;
+}
+
+.auth-switch {
+    text-align: center;
+    color: #8297ab;
+    font-size: 12px;
+    margin-top: 15px;
+}
+
+.auth-switch button {
+    border: 0;
+    background: none;
+    color: #299dff;
+    cursor: pointer;
+}
+
+.auth-message {
+    padding: 10px;
+    border-radius: 8px;
+    background: #0b2238;
+    color: #8fc8ff;
+    font-size: 12px;
+    line-height: 1.5;
+    display: none;
+}
+
+.dashboard-button {
+    padding: 9px 12px;
+    border-radius: 8px;
+    background: #087cf5;
+    color: #fff;
+    font-weight: 800;
+    font-size: 12px;
+}
+
 @media(max-width:900px) {
 
     .navlinks {
@@ -556,6 +679,11 @@ footer {
 
 @media(max-width:600px) {
 
+    .nav {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
     .hero h1 {
         font-size: 41px;
     }
@@ -582,6 +710,15 @@ footer {
         margin-left: 5%;
         margin-right: 5%;
     }
+
+    .actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .user-email {
+        display: none;
+    }
 }
 </style>
 </head>
@@ -607,9 +744,48 @@ footer {
 </nav>
 
 <div class="actions">
-    <button class="currency">USD ▾</button>
-    <a href="#">Log In</a>
-    <a class="signup" href="#">Sign Up</a>
+
+    <button class="currency">
+        USD ▾
+    </button>
+
+    <div id="guestActions">
+        <button
+            class="auth-button"
+            onclick="openAuth('login')">
+            Log In
+        </button>
+
+        <button
+            class="auth-button primary"
+            onclick="openAuth('signup')">
+            Sign Up
+        </button>
+    </div>
+
+    <div
+        id="userArea"
+        class="user-area">
+
+        <span
+            id="userEmail"
+            class="user-email">
+        </span>
+
+        <a
+            href="#dashboard"
+            class="dashboard-button">
+            Dashboard
+        </a>
+
+        <button
+            class="logout"
+            onclick="logoutUser()">
+            Log Out
+        </button>
+
+    </div>
+
 </div>
 
 </header>
@@ -633,6 +809,7 @@ and browse compatible number options.
 </p>
 
 <div class="buttons">
+
 <a class="btn primary" href="#numbers">
 Find a Number
 </a>
@@ -640,6 +817,7 @@ Find a Number
 <a class="btn secondary" href="#pricing">
 View Pricing
 </a>
+
 </div>
 
 <p class="note">
@@ -651,7 +829,9 @@ Live availability is loaded from the GlobalSIM provider API.
 
 <div class="hero-card" id="numbers">
 
-<h3>Find your number</h3>
+<h3>
+Find your number
+</h3>
 
 <div class="filters">
 
@@ -660,7 +840,11 @@ Live availability is loaded from the GlobalSIM provider API.
 <label>COUNTRY</label>
 
 <select id="country">
-<option value="">Loading countries...</option>
+
+<option value="">
+Loading countries...
+</option>
+
 </select>
 
 </div>
@@ -672,8 +856,13 @@ Live availability is loaded from the GlobalSIM provider API.
 
 <select id="type">
 
-<option value="short">Rental</option>
-<option value="long">Lifetime</option>
+<option value="short">
+Rental
+</option>
+
+<option value="long">
+Lifetime
+</option>
 
 </select>
 
@@ -682,19 +871,47 @@ Live availability is loaded from the GlobalSIM provider API.
 
 <div class="wide">
 
-<label>PLATFORM / SERVICE</label>
+<label>
+PLATFORM / SERVICE
+</label>
 
 <select id="platform">
 
-<option value="whatsapp">WhatsApp</option>
-<option value="telegram">Telegram</option>
-<option value="tiktok">TikTok</option>
-<option value="instagram">Instagram</option>
-<option value="google">Google / Gmail</option>
-<option value="facebook">Facebook</option>
-<option value="x">X</option>
-<option value="general_sms">General SMS</option>
-<option value="sms_voice">SMS + Voice</option>
+<option value="whatsapp">
+WhatsApp
+</option>
+
+<option value="telegram">
+Telegram
+</option>
+
+<option value="tiktok">
+TikTok
+</option>
+
+<option value="instagram">
+Instagram
+</option>
+
+<option value="google">
+Google / Gmail
+</option>
+
+<option value="facebook">
+Facebook
+</option>
+
+<option value="x">
+X
+</option>
+
+<option value="general_sms">
+General SMS
+</option>
+
+<option value="sms_voice">
+SMS + Voice
+</option>
 
 </select>
 
@@ -702,18 +919,29 @@ Live availability is loaded from the GlobalSIM provider API.
 
 </div>
 
-<button class="search" id="searchButton" onclick="searchNumbers()">
+
+<button
+    class="search"
+    id="searchButton"
+    onclick="searchNumbers()">
+
 Search Compatible Numbers
+
 </button>
 
-<div id="notice" class="note"></div>
+<div
+    id="notice"
+    class="note">
+</div>
 
 </div>
 
 </section>
 
 
-<section class="section" id="services">
+<section
+    class="section"
+    id="services">
 
 <div class="kicker">
 CHOOSE A SERVICE
@@ -730,73 +958,131 @@ Select a platform to filter the number inventory by supported use.
 
 <div class="services">
 
-<div class="service selected"
-onclick="pick('whatsapp',this)">
+<div
+    class="service selected"
+    onclick="pick('whatsapp',this)">
+
 <div class="icon">◉</div>
+
 <b>WhatsApp</b>
-<span>Supported numbers only</span>
+
+<span>
+Supported numbers only
+</span>
+
 </div>
 
 
-<div class="service"
-onclick="pick('telegram',this)">
+<div
+    class="service"
+    onclick="pick('telegram',this)">
+
 <div class="icon">➤</div>
+
 <b>Telegram</b>
-<span>Supported numbers only</span>
+
+<span>
+Supported numbers only
+</span>
+
 </div>
 
 
-<div class="service"
-onclick="pick('tiktok',this)">
+<div
+    class="service"
+    onclick="pick('tiktok',this)">
+
 <div class="icon">♪</div>
+
 <b>TikTok</b>
-<span>Supported numbers only</span>
+
+<span>
+Supported numbers only
+</span>
+
 </div>
 
 
-<div class="service"
-onclick="pick('instagram',this)">
+<div
+    class="service"
+    onclick="pick('instagram',this)">
+
 <div class="icon">◎</div>
+
 <b>Instagram</b>
-<span>Supported numbers only</span>
+
+<span>
+Supported numbers only
+</span>
+
 </div>
 
 
-<div class="service"
-onclick="pick('google',this)">
+<div
+    class="service"
+    onclick="pick('google',this)">
+
 <div class="icon">G</div>
+
 <b>Google / Gmail</b>
-<span>Availability varies</span>
+
+<span>
+Availability varies
+</span>
+
 </div>
 
 
-<div class="service"
-onclick="pick('facebook',this)">
+<div
+    class="service"
+    onclick="pick('facebook',this)">
+
 <div class="icon">f</div>
+
 <b>Facebook</b>
-<span>Supported numbers only</span>
+
+<span>
+Supported numbers only
+</span>
+
 </div>
 
 
-<div class="service"
-onclick="pick('x',this)">
+<div
+    class="service"
+    onclick="pick('x',this)">
+
 <div class="icon">𝕏</div>
+
 <b>X</b>
-<span>Supported numbers only</span>
+
+<span>
+Supported numbers only
+</span>
+
 </div>
 
 
-<div class="service"
-onclick="pick('general_sms',this)">
+<div
+    class="service"
+    onclick="pick('general_sms',this)">
+
 <div class="icon">✉</div>
+
 <b>General SMS</b>
-<span>SMS-capable numbers</span>
-</div>
+
+<span>
+SMS-capable numbers
+</span>
 
 </div>
 
+</div>
 
-<div class="results" id="results">
+
+<div
+    class="results"
+    id="results">
 
 <div class="loading">
 Choose a country and service, then search for live availability.
@@ -807,7 +1093,9 @@ Choose a country and service, then search for live availability.
 </section>
 
 
-<section class="section pricing" id="pricing">
+<section
+    class="section pricing"
+    id="pricing">
 
 <div class="kicker">
 NUMBER PLANS
@@ -844,11 +1132,17 @@ Rental prices are loaded from the connected number provider.
 
 <ul>
 
-<li>Provider-based pricing</li>
+<li>
+Provider-based pricing
+</li>
 
-<li>Supported SMS features</li>
+<li>
+Supported SMS features
+</li>
 
-<li>Country availability</li>
+<li>
+Country availability
+</li>
 
 </ul>
 
@@ -875,11 +1169,17 @@ Lifetime availability and pricing depend on the provider.
 
 <ul>
 
-<li>Long-term assignment where available</li>
+<li>
+Long-term assignment where available
+</li>
 
-<li>Provider terms apply</li>
+<li>
+Provider terms apply
+</li>
 
-<li>Availability shown before purchase</li>
+<li>
+Availability shown before purchase
+</li>
 
 </ul>
 
@@ -946,28 +1246,38 @@ NGN BALANCE
 
 <div>
 <b>173+</b>
-<span>Countries available in database</span>
+<span>
+Countries available in database
+</span>
 </div>
 
 <div>
 <b>24/7</b>
-<span>Dashboard access</span>
+<span>
+Dashboard access
+</span>
 </div>
 
 <div>
 <b>2</b>
-<span>Wallet currencies</span>
+<span>
+Wallet currencies
+</span>
 </div>
 
 <div>
 <b>1</b>
-<span>GlobalSIM account</span>
+<span>
+GlobalSIM account
+</span>
 </div>
 
 </section>
 
 
-<section class="section" id="how">
+<section
+    class="section"
+    id="how">
 
 <div class="kicker">
 HOW IT WORKS
@@ -1055,11 +1365,117 @@ View your number and supported messages from your dashboard.
 </footer>
 
 
-<div class="modal" id="modal">
+<!-- AUTH MODAL -->
+
+<div
+    class="modal"
+    id="authModal">
 
 <div class="modalbox">
 
-<button class="close" onclick="closeModal()">
+<button
+    class="close"
+    onclick="closeAuth()">
+×
+</button>
+
+<h3 id="authTitle">
+Log in to GlobalSIM
+</h3>
+
+
+<div
+    id="authMessage"
+    class="auth-message">
+</div>
+
+
+<form
+    id="authForm"
+    class="auth-form"
+    onsubmit="handleEmailAuth(event)">
+
+<label>
+EMAIL ADDRESS
+</label>
+
+<input
+    id="authEmail"
+    type="email"
+    placeholder="you@example.com"
+    required>
+
+
+<label>
+PASSWORD
+</label>
+
+<input
+    id="authPassword"
+    type="password"
+    placeholder="Your password"
+    minlength="6"
+    required>
+
+
+<button
+    id="authSubmit"
+    class="auth-btn"
+    type="submit">
+
+Sign In
+
+</button>
+
+</form>
+
+
+<div class="auth-divider">
+OR
+</div>
+
+
+<button
+    class="google-btn"
+    onclick="signInWithGoogle()">
+
+Continue with Google
+
+</button>
+
+
+<div class="auth-switch">
+
+<span id="authSwitchText">
+Don't have an account?
+</span>
+
+<button
+    onclick="switchAuthMode()"
+    id="authSwitchButton">
+
+Sign Up
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- CHECKOUT MODAL -->
+
+<div
+    class="modal"
+    id="modal">
+
+<div class="modalbox">
+
+<button
+    class="close"
+    onclick="closeModal()">
 ×
 </button>
 
@@ -1071,7 +1487,9 @@ GlobalSIM checkout
 Select an available number to continue.
 </p>
 
-<button class="search" onclick="closeModal()">
+<button
+    class="search"
+    onclick="closeModal()">
 Close
 </button>
 
@@ -1084,11 +1502,443 @@ Close
 
 /*
 ====================================================
-GLOBAL SIM LIVE API CONNECTION
+SUPABASE CONFIGURATION
+====================================================
+*/
+
+const SUPABASE_URL =
+    "https://yhtfdojvmlzlsncsxaug.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+    "sb_publishable_DpcHNrR_B3ZHQyIfWyLJjw_I9axcQ3h";
+
+
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+    );
+
+
+/*
+====================================================
+AUTH STATE
+====================================================
+*/
+
+let authMode = "login";
+
+
+function openAuth(mode) {
+
+    authMode = mode;
+
+    updateAuthModal();
+
+    document
+        .getElementById("authModal")
+        .classList.add("open");
+
+}
+
+
+function closeAuth() {
+
+    document
+        .getElementById("authModal")
+        .classList.remove("open");
+
+    document
+        .getElementById("authMessage")
+        .style.display = "none";
+
+}
+
+
+function switchAuthMode() {
+
+    authMode =
+        authMode === "login"
+            ? "signup"
+            : "login";
+
+    updateAuthModal();
+
+}
+
+
+function updateAuthModal() {
+
+    const title =
+        document.getElementById("authTitle");
+
+    const submit =
+        document.getElementById("authSubmit");
+
+    const switchText =
+        document.getElementById("authSwitchText");
+
+    const switchButton =
+        document.getElementById("authSwitchButton");
+
+    if (authMode === "signup") {
+
+        title.textContent =
+            "Create your GlobalSIM account";
+
+        submit.textContent =
+            "Create Account";
+
+        switchText.textContent =
+            "Already have an account?";
+
+        switchButton.textContent =
+            "Log In";
+
+    } else {
+
+        title.textContent =
+            "Log in to GlobalSIM";
+
+        submit.textContent =
+            "Sign In";
+
+        switchText.textContent =
+            "Don't have an account?";
+
+        switchButton.textContent =
+            "Sign Up";
+
+    }
+
+}
+
+
+function showAuthMessage(message) {
+
+    const box =
+        document.getElementById("authMessage");
+
+    box.textContent =
+        message;
+
+    box.style.display =
+        "block";
+
+}
+
+
+/*
+====================================================
+EMAIL SIGNUP / LOGIN
+====================================================
+*/
+
+async function handleEmailAuth(event) {
+
+    event.preventDefault();
+
+    const email =
+        document.getElementById("authEmail")
+            .value
+            .trim();
+
+    const password =
+        document.getElementById("authPassword")
+            .value;
+
+    const button =
+        document.getElementById("authSubmit");
+
+
+    if (!email || !password) {
+
+        showAuthMessage(
+            "Please enter your email and password."
+        );
+
+        return;
+
+    }
+
+
+    button.disabled = true;
+
+    button.textContent =
+        authMode === "signup"
+            ? "Creating account..."
+            : "Signing in...";
+
+
+    try {
+
+        if (authMode === "signup") {
+
+            const {
+                data,
+                error
+            } =
+                await supabaseClient.auth.signUp({
+
+                    email: email,
+
+                    password: password,
+
+                    options: {
+
+                        emailRedirectTo:
+                            window.location.origin
+
+                    }
+
+                });
+
+
+            if (error) {
+                throw error;
+            }
+
+
+            if (data.session) {
+
+                showAuthMessage(
+                    "Account created successfully. You are now signed in."
+                );
+
+                setTimeout(
+                    closeAuth,
+                    1200
+                );
+
+            } else {
+
+                showAuthMessage(
+                    "Account created. Please check your email to confirm your account before signing in."
+                );
+
+            }
+
+
+        } else {
+
+            const {
+                data,
+                error
+            } =
+                await supabaseClient.auth.signInWithPassword({
+
+                    email: email,
+
+                    password: password
+
+                });
+
+
+            if (error) {
+                throw error;
+            }
+
+
+            showAuthMessage(
+                "Login successful."
+            );
+
+
+            setTimeout(
+                closeAuth,
+                700
+            );
+
+        }
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        showAuthMessage(
+            error.message ||
+            "Authentication failed. Please try again."
+        );
+
+    }
+
+
+    button.disabled = false;
+
+    button.textContent =
+        authMode === "signup"
+            ? "Create Account"
+            : "Sign In";
+
+}
+
+
+/*
+====================================================
+GOOGLE LOGIN
+====================================================
+*/
+
+async function signInWithGoogle() {
+
+    try {
+
+        const {
+            error
+        } =
+            await supabaseClient.auth.signInWithOAuth({
+
+                provider: "google",
+
+                options: {
+
+                    redirectTo:
+                        window.location.origin
+
+                }
+
+            });
+
+
+        if (error) {
+            throw error;
+        }
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        showAuthMessage(
+            error.message ||
+            "Google sign-in could not be started."
+        );
+
+    }
+
+}
+
+
+/*
+====================================================
+LOGOUT
+====================================================
+*/
+
+async function logoutUser() {
+
+    const {
+        error
+    } =
+        await supabaseClient.auth.signOut();
+
+
+    if (error) {
+
+        console.error(error);
+
+        return;
+
+    }
+
+
+    updateAuthUI(null);
+
+}
+
+
+/*
+====================================================
+UPDATE NAVIGATION
+====================================================
+*/
+
+function updateAuthUI(user) {
+
+    const guestActions =
+        document.getElementById("guestActions");
+
+    const userArea =
+        document.getElementById("userArea");
+
+    const userEmail =
+        document.getElementById("userEmail");
+
+
+    if (user) {
+
+        guestActions.style.display =
+            "none";
+
+        userArea.classList.add(
+            "visible"
+        );
+
+        userEmail.textContent =
+            user.email || "Account";
+
+    } else {
+
+        guestActions.style.display =
+            "flex";
+
+        userArea.classList.remove(
+            "visible"
+        );
+
+        userEmail.textContent =
+            "";
+
+    }
+
+}
+
+
+/*
+====================================================
+INITIAL AUTH CHECK
+====================================================
+*/
+
+async function checkAuth() {
+
+    const {
+        data
+    } =
+        await supabaseClient.auth.getSession();
+
+
+    updateAuthUI(
+        data.session
+            ? data.session.user
+            : null
+    );
+
+}
+
+
+supabaseClient.auth.onAuthStateChange(
+    function(event, session) {
+
+        updateAuthUI(
+            session
+                ? session.user
+                : null
+        );
+
+    }
+);
+
+
+/*
+====================================================
+LIVE NUMBER API
 ====================================================
 */
 
 let countries = [];
+
 let prices = [];
 
 
@@ -1103,54 +1953,85 @@ async function loadCountries() {
     const countrySelect =
         document.getElementById("country");
 
+
     try {
 
         const response =
             await fetch("/api/countries");
 
+
         if (!response.ok) {
-            throw new Error("Countries API failed");
+
+            throw new Error(
+                "Countries API failed"
+            );
+
         }
+
 
         const result =
             await response.json();
 
-        if (!result.success || !Array.isArray(result.data)) {
-            throw new Error("Invalid countries response");
+
+        if (
+            !result.success ||
+            !Array.isArray(result.data)
+        ) {
+
+            throw new Error(
+                "Invalid countries response"
+            );
+
         }
 
-        countries = result.data;
+
+        countries =
+            result.data;
+
 
         countrySelect.innerHTML =
             '<option value="">Select a country</option>';
 
-        countries.forEach(function(country) {
 
-            const option =
-                document.createElement("option");
+        countries.forEach(
+            function(country) {
 
-            option.value = country.id;
+                const option =
+                    document.createElement("option");
 
-            option.textContent =
-                country.flag +
-                " " +
-                country.name +
-                " (" +
-                country.iso_code +
-                ")";
 
-            countrySelect.appendChild(option);
+                option.value =
+                    country.id;
 
-        });
+
+                option.textContent =
+                    (country.flag || "") +
+                    " " +
+                    country.name +
+                    " (" +
+                    country.iso_code +
+                    ")";
+
+
+                countrySelect.appendChild(
+                    option
+                );
+
+            }
+        );
+
 
     } catch (error) {
 
         console.error(error);
 
+
         countrySelect.innerHTML =
             '<option value="">Unable to load countries</option>';
 
-        document.getElementById("notice").textContent =
+
+        document.getElementById("notice")
+            .textContent =
             "Could not load countries. Please refresh the page.";
 
     }
@@ -1168,20 +2049,34 @@ function pick(name, element) {
 
     document
         .querySelectorAll(".service")
-        .forEach(function(item) {
+        .forEach(
+            function(item) {
 
-            item.classList.remove("selected");
+                item.classList.remove(
+                    "selected"
+                );
 
-        });
+            }
+        );
 
-    element.classList.add("selected");
 
-    document.getElementById("platform").value = name;
+    element.classList.add(
+        "selected"
+    );
+
+
+    document.getElementById("platform")
+        .value =
+        name;
+
 
     document.getElementById("numbers")
         .scrollIntoView({
+
             behavior: "smooth",
+
             block: "center"
+
         });
 
 }
@@ -1196,19 +2091,27 @@ SEARCH LIVE NUMBERS
 async function searchNumbers() {
 
     const countryId =
-        document.getElementById("country").value;
+        document.getElementById("country")
+            .value;
+
 
     const type =
-        document.getElementById("type").value;
+        document.getElementById("type")
+            .value;
+
 
     const platform =
-        document.getElementById("platform").value;
+        document.getElementById("platform")
+            .value;
+
 
     const notice =
         document.getElementById("notice");
 
+
     const results =
         document.getElementById("results");
+
 
     const button =
         document.getElementById("searchButton");
@@ -1224,9 +2127,13 @@ async function searchNumbers() {
     }
 
 
-    button.disabled = true;
+    button.disabled =
+        true;
 
-    button.textContent = "Searching...";
+
+    button.textContent =
+        "Searching...";
+
 
     notice.textContent =
         "Checking live number availability...";
@@ -1237,11 +2144,6 @@ async function searchNumbers() {
 
 
     try {
-
-        /*
-        The prices endpoint provides the provider
-        inventory and pricing.
-        */
 
         const response =
             await fetch(
@@ -1276,44 +2178,59 @@ async function searchNumbers() {
         }
 
 
-        prices = result.data;
+        prices =
+            result.data;
 
-
-        /*
-        Filter the provider response by:
-        country + rental type
-        */
 
         const matching =
-            prices.filter(function(item) {
+            prices.filter(
+                function(item) {
 
-                const sameCountry =
-                    String(item.country_id) ===
-                    String(countryId);
-
-                const sameType =
-                    !type ||
-                    !item.rental_type ||
-                    item.rental_type === type;
-
-                return sameCountry && sameType;
-
-            });
+                    const sameCountry =
+                        String(
+                            item.country_id
+                        ) ===
+                        String(
+                            countryId
+                        );
 
 
-        renderResults(matching, platform);
+                    const sameType =
+                        !type ||
+                        !item.rental_type ||
+                        item.rental_type === type;
+
+
+                    return (
+                        sameCountry &&
+                        sameType
+                    );
+
+                }
+            );
+
+
+        renderResults(
+            matching,
+            platform
+        );
 
 
         notice.textContent =
             matching.length +
             " available option" +
-            (matching.length === 1 ? "" : "s") +
+            (
+                matching.length === 1
+                    ? ""
+                    : "s"
+            ) +
             " found.";
 
 
     } catch (error) {
 
         console.error(error);
+
 
         results.innerHTML =
             '<div class="empty">' +
@@ -1322,13 +2239,16 @@ async function searchNumbers() {
             'Please try again in a moment.' +
             '</div>';
 
+
         notice.textContent =
             "There was a problem connecting to the number provider.";
 
     }
 
 
-    button.disabled = false;
+    button.disabled =
+        false;
+
 
     button.textContent =
         "Search Compatible Numbers";
@@ -1342,7 +2262,10 @@ DISPLAY LIVE RESULTS
 ----------------------------------------------------
 */
 
-function renderResults(items, platform) {
+function renderResults(
+    items,
+    platform
+) {
 
     const results =
         document.getElementById("results");
@@ -1360,98 +2283,114 @@ function renderResults(items, platform) {
     }
 
 
-    results.innerHTML = "";
+    results.innerHTML =
+        "";
 
 
-    items.forEach(function(item) {
+    items.forEach(
+        function(item) {
 
-        const result =
-            document.createElement("div");
-
-        result.className = "result";
-
-
-        const countryName =
-            item.country_name || "Unknown country";
-
-        const flag =
-            item.flag || "";
-
-        const provider =
-            item.provider_name || "Provider";
+            const result =
+                document.createElement(
+                    "div"
+                );
 
 
-        const price =
-            item.final_price !== undefined
-                ? item.final_price
-                : "0.00";
+            result.className =
+                "result";
 
 
-        const stockText =
-            item.stock !== null &&
-            item.stock !== undefined
-                ? "Stock: " + item.stock
-                : "Availability verified by provider";
+            const countryName =
+                item.country_name ||
+                "Unknown country";
 
 
-        result.innerHTML = `
+            const flag =
+                item.flag ||
+                "";
 
-            <div>
 
-                <div class="number">
-                    ${flag} ${countryName}
+            const provider =
+                item.provider_name ||
+                "Provider";
+
+
+            const price =
+                item.final_price !== undefined
+                    ? item.final_price
+                    : "0.00";
+
+
+            const stockText =
+                item.stock !== null &&
+                item.stock !== undefined
+                    ? "Stock: " +
+                      item.stock
+                    : "Availability verified by provider";
+
+
+            result.innerHTML = `
+
+                <div>
+
+                    <div class="number">
+                        ${escapeHTML(flag)}
+                        ${escapeHTML(countryName)}
+                    </div>
+
+                    <div class="badges">
+
+                        <span class="badge">
+                            ${escapeHTML(platform)}
+                        </span>
+
+                        <span class="badge">
+                            ${escapeHTML(provider)}
+                        </span>
+
+                        <span class="badge">
+                            ${escapeHTML(item.rental_type || "short")}
+                        </span>
+
+                    </div>
+
+                    <small>
+                        ${escapeHTML(stockText)}
+                    </small>
+
                 </div>
 
-                <div class="badges">
 
-                    <span class="badge">
-                        ${escapeHTML(platform)}
-                    </span>
+                <div>
 
-                    <span class="badge">
-                        ${escapeHTML(provider)}
-                    </span>
+                    <div class="price">
 
-                    <span class="badge">
-                        ${escapeHTML(item.rental_type || "short")}
-                    </span>
+                        ₦${formatMoney(price)}
 
-                </div>
+                        <span>
+                            provider price
+                        </span>
 
-                <small>
-                    ${escapeHTML(stockText)}
-                </small>
+                    </div>
 
-            </div>
-
-
-            <div>
-
-                <div class="price">
-
-                    ₦${formatMoney(price)}
-
-                    <span>
-                        provider price
-                    </span>
+                    <button
+                        class="get"
+                        onclick='openCheckout(${JSON.stringify(item)})'
+                    >
+                        Get Number
+                    </button>
 
                 </div>
 
-                <button
-                    class="get"
-                    onclick='openCheckout(${JSON.stringify(item)})'
-                >
-                    Get Number
-                </button>
-
-            </div>
-
-        `;
+            `;
 
 
-        results.appendChild(result);
+            results.appendChild(
+                result
+            );
 
-    });
+        }
+    );
 
 }
 
@@ -1465,13 +2404,21 @@ CHECKOUT MODAL
 function openCheckout(item) {
 
     const modal =
-        document.getElementById("modal");
+        document.getElementById(
+            "modal"
+        );
+
 
     const title =
-        document.getElementById("modalTitle");
+        document.getElementById(
+            "modalTitle"
+        );
+
 
     const text =
-        document.getElementById("modalText");
+        document.getElementById(
+            "modalText"
+        );
 
 
     title.textContent =
@@ -1480,34 +2427,54 @@ function openCheckout(item) {
 
     text.innerHTML =
         "Country: <b>" +
-        escapeHTML(item.country_name || "") +
+        escapeHTML(
+            item.country_name || ""
+        ) +
         "</b><br><br>" +
 
         "Provider: <b>" +
-        escapeHTML(item.provider_name || "") +
+        escapeHTML(
+            item.provider_name || ""
+        ) +
         "</b><br><br>" +
 
         "Price: <b>₦" +
-        formatMoney(item.final_price || 0) +
+        formatMoney(
+            item.final_price || 0
+        ) +
         "</b><br><br>" +
 
         "Number ID: <b>" +
-        escapeHTML(String(item.id || "")) +
+        escapeHTML(
+            String(
+                item.id || ""
+            )
+        ) +
         "</b><br><br>" +
 
-        "The number can only be purchased after account, wallet/payment and provider checkout systems are connected.";
+        "Please sign in before purchasing a number. Your wallet and provider checkout will be connected in the next stage.";
 
 
-    modal.classList.add("open");
+    modal.classList.add(
+        "open"
+    );
 
 }
 
+
+/*
+----------------------------------------------------
+CLOSE CHECKOUT
+----------------------------------------------------
+*/
 
 function closeModal() {
 
     document
         .getElementById("modal")
-        .classList.remove("open");
+        .classList.remove(
+            "open"
+        );
 
 }
 
@@ -1523,15 +2490,23 @@ function formatMoney(value) {
     const number =
         Number(value);
 
-    if (Number.isNaN(number)) {
+
+    if (
+        Number.isNaN(number)
+    ) {
+
         return "0.00";
+
     }
+
 
     return number.toLocaleString(
         "en-NG",
         {
             minimumFractionDigits: 2,
+
             maximumFractionDigits: 2
+
         }
     );
 
@@ -1540,26 +2515,46 @@ function formatMoney(value) {
 
 /*
 ----------------------------------------------------
-SECURITY: ESCAPE API DATA BEFORE DISPLAYING
+SECURITY
 ----------------------------------------------------
 */
 
 function escapeHTML(value) {
 
     return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
 }
 
 
 /*
-----------------------------------------------------
-CLOSE MODAL WHEN CLICKING OUTSIDE
-----------------------------------------------------
+====================================================
+MODAL EVENTS
+====================================================
 */
 
 document
@@ -1568,8 +2563,30 @@ document
         "click",
         function(event) {
 
-            if (event.target === this) {
+            if (
+                event.target === this
+            ) {
+
                 closeModal();
+
+            }
+
+        }
+    );
+
+
+document
+    .getElementById("authModal")
+    .addEventListener(
+        "click",
+        function(event) {
+
+            if (
+                event.target === this
+            ) {
+
+                closeAuth();
+
             }
 
         }
@@ -1577,10 +2594,12 @@ document
 
 
 /*
-----------------------------------------------------
+====================================================
 START APPLICATION
-----------------------------------------------------
+====================================================
 */
+
+checkAuth();
 
 loadCountries();
 
