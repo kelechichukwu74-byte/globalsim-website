@@ -112,6 +112,12 @@ input {
     border-color: #087cf5;
 }
 
+#guestActions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
 .user-area {
     display: none;
     align-items: center;
@@ -136,6 +142,17 @@ input {
     border: 1px solid #29405a;
     padding: 9px 12px;
     border-radius: 8px;
+    cursor: pointer;
+}
+
+.dashboard-button {
+    padding: 9px 12px;
+    border-radius: 8px;
+    background: #087cf5;
+    color: #fff;
+    font-weight: 800;
+    font-size: 12px;
+    border: 0;
     cursor: pointer;
 }
 
@@ -504,6 +521,49 @@ input {
     font-size: 11px;
 }
 
+.dashboard {
+    display: none;
+    padding: 70px 5%;
+    background: #030e1b;
+}
+
+.dashboard.visible {
+    display: block;
+}
+
+.dashboard-box {
+    max-width: 1050px;
+    margin: auto;
+    background: #061527;
+    border: 1px solid #1a334d;
+    border-radius: 16px;
+    padding: 30px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.dashboard-card {
+    padding: 22px;
+    border: 1px solid #1a334d;
+    background: #07192a;
+    border-radius: 12px;
+}
+
+.dashboard-card small {
+    color: #71869c;
+}
+
+.dashboard-card b {
+    display: block;
+    font-size: 25px;
+    margin-top: 8px;
+}
+
 footer {
     padding: 35px 5%;
     border-top: 1px solid #14263b;
@@ -600,10 +660,6 @@ footer {
     width: 100%;
 }
 
-.google-btn:hover {
-    background: #10263d;
-}
-
 .auth-divider {
     display: flex;
     align-items: center;
@@ -646,15 +702,6 @@ footer {
     margin-bottom: 12px;
 }
 
-.dashboard-button {
-    padding: 9px 12px;
-    border-radius: 8px;
-    background: #087cf5;
-    color: #fff;
-    font-weight: 800;
-    font-size: 12px;
-}
-
 @media(max-width:900px) {
 
     .navlinks {
@@ -676,6 +723,10 @@ footer {
 
     .stats {
         grid-template-columns: 1fr 1fr;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
     }
 
     .plans {
@@ -746,6 +797,7 @@ footer {
     <a href="#numbers">Numbers</a>
     <a href="#services">Services</a>
     <a href="#pricing">Pricing</a>
+    <a href="#dashboard">Dashboard</a>
     <a href="#how">How It Works</a>
 </nav>
 
@@ -755,6 +807,7 @@ footer {
         USD ▾
     </button>
 
+    <!-- SHOWN ONLY WHEN USER IS NOT LOGGED IN -->
     <div id="guestActions">
 
         <button
@@ -771,6 +824,7 @@ footer {
 
     </div>
 
+    <!-- SHOWN ONLY WHEN USER IS LOGGED IN -->
     <div
         id="userArea"
         class="user-area">
@@ -780,11 +834,11 @@ footer {
             class="user-email">
         </span>
 
-        <a
-            href="#dashboard"
-            class="dashboard-button">
+        <button
+            class="dashboard-button"
+            onclick="goToDashboard()">
             Dashboard
-        </a>
+        </button>
 
         <button
             class="logout"
@@ -966,123 +1020,60 @@ Select a platform to filter the number inventory by supported use.
 
 <div class="services">
 
-<div
-    class="service selected"
+<div class="service selected"
     onclick="pick('whatsapp',this)">
-
 <div class="icon">◉</div>
-
 <b>WhatsApp</b>
-
-<span>
-Supported numbers only
-</span>
-
+<span>Supported numbers only</span>
 </div>
 
-
-<div
-    class="service"
+<div class="service"
     onclick="pick('telegram',this)">
-
 <div class="icon">➤</div>
-
 <b>Telegram</b>
-
-<span>
-Supported numbers only
-</span>
-
+<span>Supported numbers only</span>
 </div>
 
-
-<div
-    class="service"
+<div class="service"
     onclick="pick('tiktok',this)">
-
 <div class="icon">♪</div>
-
 <b>TikTok</b>
-
-<span>
-Supported numbers only
-</span>
-
+<span>Supported numbers only</span>
 </div>
 
-
-<div
-    class="service"
+<div class="service"
     onclick="pick('instagram',this)">
-
 <div class="icon">◎</div>
-
 <b>Instagram</b>
-
-<span>
-Supported numbers only
-</span>
-
+<span>Supported numbers only</span>
 </div>
 
-
-<div
-    class="service"
+<div class="service"
     onclick="pick('google',this)">
-
 <div class="icon">G</div>
-
 <b>Google / Gmail</b>
-
-<span>
-Availability varies
-</span>
-
+<span>Availability varies</span>
 </div>
 
-
-<div
-    class="service"
+<div class="service"
     onclick="pick('facebook',this)">
-
 <div class="icon">f</div>
-
 <b>Facebook</b>
-
-<span>
-Supported numbers only
-</span>
-
+<span>Supported numbers only</span>
 </div>
 
-
-<div
-    class="service"
+<div class="service"
     onclick="pick('x',this)">
-
 <div class="icon">𝕏</div>
-
 <b>X</b>
-
-<span>
-Supported numbers only
-</span>
-
+<span>Supported numbers only</span>
 </div>
 
-
-<div
-    class="service"
+<div class="service"
     onclick="pick('general_sms',this)">
-
 <div class="icon">✉</div>
-
 <b>General SMS</b>
-
-<span>
-SMS-capable numbers
-</span>
-
+<span>SMS-capable numbers</span>
 </div>
 
 </div>
@@ -1139,19 +1130,9 @@ Rental prices are loaded from the connected number provider.
 </p>
 
 <ul>
-
-<li>
-Provider-based pricing
-</li>
-
-<li>
-Supported SMS features
-</li>
-
-<li>
-Country availability
-</li>
-
+<li>Provider-based pricing</li>
+<li>Supported SMS features</li>
+<li>Country availability</li>
 </ul>
 
 </div>
@@ -1176,20 +1157,83 @@ Lifetime availability and pricing depend on the provider.
 </p>
 
 <ul>
-
-<li>
-Long-term assignment where available
-</li>
-
-<li>
-Provider terms apply
-</li>
-
-<li>
-Availability shown before purchase
-</li>
-
+<li>Long-term assignment where available</li>
+<li>Provider terms apply</li>
+<li>Availability shown before purchase</li>
 </ul>
+
+</div>
+
+</div>
+
+</section>
+
+
+<section
+    class="dashboard"
+    id="dashboard">
+
+<div class="dashboard-box">
+
+<div class="kicker">
+YOUR ACCOUNT
+</div>
+
+<h2>
+GlobalSIM Dashboard
+</h2>
+
+<p class="lead">
+Welcome to your GlobalSIM account.
+</p>
+
+<p>
+Logged in as:
+<strong id="dashboardEmail">
+Not logged in
+</strong>
+</p>
+
+
+<div class="dashboard-grid">
+
+<div class="dashboard-card">
+
+<small>
+USD BALANCE
+</small>
+
+<b>
+$0.00
+</b>
+
+</div>
+
+
+<div class="dashboard-card">
+
+<small>
+NGN BALANCE
+</small>
+
+<b>
+₦0.00
+</b>
+
+</div>
+
+
+<div class="dashboard-card">
+
+<small>
+ACTIVE NUMBERS
+</small>
+
+<b>
+0
+</b>
+
+</div>
 
 </div>
 
@@ -1254,30 +1298,22 @@ NGN BALANCE
 
 <div>
 <b>173+</b>
-<span>
-Countries available in database
-</span>
+<span>Countries available in database</span>
 </div>
 
 <div>
 <b>24/7</b>
-<span>
-Dashboard access
-</span>
+<span>Dashboard access</span>
 </div>
 
 <div>
 <b>2</b>
-<span>
-Wallet currencies
-</span>
+<span>Wallet currencies</span>
 </div>
 
 <div>
 <b>1</b>
-<span>
-GlobalSIM account
-</span>
+<span>GlobalSIM account</span>
 </div>
 
 </section>
@@ -1303,62 +1339,27 @@ Choose a supported service, review availability, then continue to checkout.
 <div class="services">
 
 <div class="service">
-
 <div class="icon">1</div>
-
-<b>
-Choose country
-</b>
-
-<span>
-Select the country you want.
-</span>
-
+<b>Choose country</b>
+<span>Select the country you want.</span>
 </div>
 
-
 <div class="service">
-
 <div class="icon">2</div>
-
-<b>
-Choose platform
-</b>
-
-<span>
-Filter by WhatsApp, Telegram, TikTok and more.
-</span>
-
+<b>Choose platform</b>
+<span>Filter by WhatsApp, Telegram, TikTok and more.</span>
 </div>
 
-
 <div class="service">
-
 <div class="icon">3</div>
-
-<b>
-Choose number type
-</b>
-
-<span>
-Rental or lifetime where available.
-</span>
-
+<b>Choose number type</b>
+<span>Rental or lifetime where available.</span>
 </div>
 
-
 <div class="service">
-
 <div class="icon">4</div>
-
-<b>
-Manage your number
-</b>
-
-<span>
-View your number and supported messages from your dashboard.
-</span>
-
+<b>Manage your number</b>
+<span>View your number and supported messages from your dashboard.</span>
 </div>
 
 </div>
@@ -1400,8 +1401,7 @@ Log in to GlobalSIM
 
 <form
     id="authForm"
-    class="auth-form"
-    onsubmit="handleEmailAuth(event)">
+    class="auth-form">
 
 <label>
 EMAIL ADDRESS
@@ -1445,7 +1445,6 @@ OR
 
 <button
     class="google-btn"
-    type="button"
     onclick="signInWithGoogle()">
 
 Continue with Google
@@ -1460,7 +1459,6 @@ Don't have an account?
 </span>
 
 <button
-    type="button"
     onclick="switchAuthMode()"
     id="authSwitchButton">
 
@@ -1522,38 +1520,35 @@ const SUPABASE_URL =
 const SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_DpcHNrR_B3ZHQyIfWyLJjw_I9axcQ3h";
 
+
 const supabaseClient =
     window.supabase.createClient(
         SUPABASE_URL,
-        SUPABASE_PUBLISHABLE_KEY
+        SUPABASE_PUBLISHABLE_KEY,
+        {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true
+            }
+        }
     );
 
 
 /*
 ====================================================
-AUTH CONFIGURATION
-====================================================
-*/
-
-/*
-IMPORTANT:
-This is the production URL of the GlobalSIM website.
-
-Do NOT combine this with localhost.
-*/
-
-const PRODUCTION_REDIRECT_URL =
-    "https://globalsim-website-dfou.vercel.app/";
-
-
-/*
-====================================================
-AUTH STATE
+AUTH VARIABLES
 ====================================================
 */
 
 let authMode = "login";
 
+
+/*
+====================================================
+OPEN AUTH
+====================================================
+*/
 
 function openAuth(mode) {
 
@@ -1561,12 +1556,19 @@ function openAuth(mode) {
 
     updateAuthModal();
 
-    document
-        .getElementById("authModal")
-        .classList.add("open");
+    const modal =
+        document.getElementById("authModal");
+
+    modal.classList.add("open");
 
 }
 
+
+/*
+====================================================
+CLOSE AUTH
+====================================================
+*/
 
 function closeAuth() {
 
@@ -1581,6 +1583,12 @@ function closeAuth() {
 }
 
 
+/*
+====================================================
+SWITCH LOGIN / SIGNUP
+====================================================
+*/
+
 function switchAuthMode() {
 
     authMode =
@@ -1592,6 +1600,12 @@ function switchAuthMode() {
 
 }
 
+
+/*
+====================================================
+UPDATE AUTH MODAL
+====================================================
+*/
 
 function updateAuthModal() {
 
@@ -1641,6 +1655,12 @@ function updateAuthModal() {
 }
 
 
+/*
+====================================================
+AUTH MESSAGE
+====================================================
+*/
+
 function showAuthMessage(message) {
 
     const box =
@@ -1657,7 +1677,7 @@ function showAuthMessage(message) {
 
 /*
 ====================================================
-EMAIL SIGNUP / LOGIN
+EMAIL AUTHENTICATION
 ====================================================
 */
 
@@ -1666,12 +1686,14 @@ async function handleEmailAuth(event) {
     event.preventDefault();
 
     const email =
-        document.getElementById("authEmail")
+        document
+            .getElementById("authEmail")
             .value
             .trim();
 
     const password =
-        document.getElementById("authPassword")
+        document
+            .getElementById("authPassword")
             .value;
 
     const button =
@@ -1714,7 +1736,7 @@ async function handleEmailAuth(event) {
                     options: {
 
                         emailRedirectTo:
-                            PRODUCTION_REDIRECT_URL
+                            window.location.origin
 
                     }
 
@@ -1726,21 +1748,25 @@ async function handleEmailAuth(event) {
             }
 
 
+            /*
+            If email confirmation is disabled,
+            Supabase gives us a session immediately.
+            */
+
             if (data.session) {
 
-                showAuthMessage(
-                    "Account created successfully. You are now signed in."
+                updateAuthUI(
+                    data.session.user
                 );
 
-                setTimeout(
-                    closeAuth,
-                    1200
-                );
+                closeAuth();
+
+                goToDashboard();
 
             } else {
 
                 showAuthMessage(
-                    "Account created. Please check your email to confirm your account before signing in."
+                    "Account created. Please check your email and confirm your account before logging in."
                 );
 
             }
@@ -1766,15 +1792,27 @@ async function handleEmailAuth(event) {
             }
 
 
-            showAuthMessage(
-                "Login successful."
-            );
+            if (
+                data &&
+                data.session &&
+                data.session.user
+            ) {
 
+                updateAuthUI(
+                    data.session.user
+                );
 
-            setTimeout(
-                closeAuth,
-                700
-            );
+                closeAuth();
+
+                goToDashboard();
+
+            } else {
+
+                throw new Error(
+                    "Login succeeded but no session was returned."
+                );
+
+            }
 
         }
 
@@ -1782,7 +1820,7 @@ async function handleEmailAuth(event) {
     } catch (error) {
 
         console.error(
-            "Email authentication error:",
+            "EMAIL AUTH ERROR:",
             error
         );
 
@@ -1806,31 +1844,22 @@ async function handleEmailAuth(event) {
 
 /*
 ====================================================
-GOOGLE LOGIN
-====================================================
-
-IMPORTANT:
-Google OAuth will always return through the
-Supabase callback first.
-
-Supabase then redirects the user back to:
-
-https://globalsim-website-dfou.vercel.app/
-
-We explicitly use the production URL here so that
-localhost and Vercel URLs cannot accidentally be
-combined into one invalid URL.
+GOOGLE AUTHENTICATION
 ====================================================
 */
 
 async function signInWithGoogle() {
 
-    showAuthMessage(
-        "Connecting to Google..."
-    );
-
-
     try {
+
+        showAuthMessage(
+            "Connecting to Google..."
+        );
+
+
+        const redirectUrl =
+            window.location.origin;
+
 
         const {
             data,
@@ -1843,7 +1872,15 @@ async function signInWithGoogle() {
                 options: {
 
                     redirectTo:
-                        PRODUCTION_REDIRECT_URL
+                        redirectUrl,
+
+                    queryParams: {
+
+                        access_type: "offline",
+
+                        prompt: "select_account"
+
+                    }
 
                 }
 
@@ -1851,19 +1888,7 @@ async function signInWithGoogle() {
 
 
         if (error) {
-
-            console.error(
-                "Google OAuth error:",
-                error
-            );
-
-            showAuthMessage(
-                error.message ||
-                "Google sign-in could not be started."
-            );
-
-            return;
-
+            throw error;
         }
 
 
@@ -1876,7 +1901,7 @@ async function signInWithGoogle() {
     } catch (error) {
 
         console.error(
-            "Google sign-in error:",
+            "GOOGLE AUTH ERROR:",
             error
         );
 
@@ -1892,73 +1917,90 @@ async function signInWithGoogle() {
 
 /*
 ====================================================
-LOGOUT
-====================================================
-*/
-
-async function logoutUser() {
-
-    const {
-        error
-    } =
-        await supabaseClient.auth.signOut();
-
-
-    if (error) {
-
-        console.error(error);
-
-        return;
-
-    }
-
-
-    updateAuthUI(null);
-
-}
-
-
-/*
-====================================================
-UPDATE NAVIGATION
+AUTH UI
 ====================================================
 */
 
 function updateAuthUI(user) {
 
     const guestActions =
-        document.getElementById("guestActions");
+        document.getElementById(
+            "guestActions"
+        );
 
     const userArea =
-        document.getElementById("userArea");
+        document.getElementById(
+            "userArea"
+        );
 
     const userEmail =
-        document.getElementById("userEmail");
+        document.getElementById(
+            "userEmail"
+        );
+
+    const dashboardEmail =
+        document.getElementById(
+            "dashboardEmail"
+        );
 
 
     if (user) {
 
+        /*
+        HIDE LOGIN + SIGNUP
+        */
+
         guestActions.style.display =
             "none";
+
+
+        /*
+        SHOW USER AREA
+        */
 
         userArea.classList.add(
             "visible"
         );
 
+
+        const email =
+            user.email ||
+            "Account";
+
+
         userEmail.textContent =
-            user.email || "Account";
+            email;
+
+
+        dashboardEmail.textContent =
+            email;
+
 
     } else {
 
+        /*
+        SHOW LOGIN + SIGNUP
+        */
+
         guestActions.style.display =
             "flex";
+
+
+        /*
+        HIDE USER AREA
+        */
 
         userArea.classList.remove(
             "visible"
         );
 
+
         userEmail.textContent =
             "";
+
+
+        dashboardEmail.textContent =
+            "Not logged in";
 
     }
 
@@ -1967,38 +2009,255 @@ function updateAuthUI(user) {
 
 /*
 ====================================================
-INITIAL AUTH CHECK
+CHECK CURRENT SESSION
 ====================================================
 */
 
 async function checkAuth() {
 
-    const {
-        data
-    } =
-        await supabaseClient.auth.getSession();
+    try {
+
+        const {
+            data,
+            error
+        } =
+            await supabaseClient.auth.getSession();
 
 
-    updateAuthUI(
-        data.session
-            ? data.session.user
-            : null
-    );
+        if (error) {
+
+            console.error(
+                "SESSION ERROR:",
+                error
+            );
+
+            updateAuthUI(null);
+
+            return;
+
+        }
+
+
+        const session =
+            data.session;
+
+
+        if (
+            session &&
+            session.user
+        ) {
+
+            updateAuthUI(
+                session.user
+            );
+
+        } else {
+
+            updateAuthUI(null);
+
+        }
+
+
+    } catch (error) {
+
+        console.error(
+            "AUTH CHECK ERROR:",
+            error
+        );
+
+        updateAuthUI(null);
+
+    }
 
 }
 
 
+/*
+====================================================
+AUTH STATE LISTENER
+====================================================
+
+This is the important part that keeps the
+navigation updated after Google/email login.
+====================================================
+*/
+
 supabaseClient.auth.onAuthStateChange(
     function(event, session) {
 
-        updateAuthUI(
-            session
-                ? session.user
-                : null
+        console.log(
+            "AUTH EVENT:",
+            event
         );
+
+
+        if (
+            session &&
+            session.user
+        ) {
+
+            updateAuthUI(
+                session.user
+            );
+
+        } else {
+
+            updateAuthUI(null);
+
+        }
 
     }
 );
+
+
+/*
+====================================================
+HANDLE GOOGLE CALLBACK
+====================================================
+
+When Google sends the user back to the website,
+Supabase detects the session automatically.
+We then refresh the navigation.
+====================================================
+*/
+
+async function handleAuthCallback() {
+
+    try {
+
+        const {
+            data,
+            error
+        } =
+            await supabaseClient.auth.getSession();
+
+
+        if (error) {
+
+            console.error(
+                "CALLBACK SESSION ERROR:",
+                error
+            );
+
+            return;
+
+        }
+
+
+        if (
+            data.session &&
+            data.session.user
+        ) {
+
+            updateAuthUI(
+                data.session.user
+            );
+
+
+            /*
+            Remove OAuth parameters from
+            the browser address bar.
+            */
+
+            if (
+                window.location.search ||
+                window.location.hash
+            ) {
+
+                window.history.replaceState(
+                    {},
+                    document.title,
+                    window.location.pathname
+                );
+
+            }
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "CALLBACK ERROR:",
+            error
+        );
+
+    }
+
+}
+
+
+/*
+====================================================
+LOGOUT
+====================================================
+*/
+
+async function logoutUser() {
+
+    try {
+
+        const {
+            error
+        } =
+            await supabaseClient.auth.signOut();
+
+
+        if (error) {
+            throw error;
+        }
+
+
+        updateAuthUI(null);
+
+
+        document
+            .getElementById("dashboard")
+            .classList.remove("visible");
+
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "LOGOUT ERROR:",
+            error
+        );
+
+    }
+
+}
+
+
+/*
+====================================================
+DASHBOARD
+====================================================
+*/
+
+function goToDashboard() {
+
+    const dashboard =
+        document.getElementById(
+            "dashboard"
+        );
+
+
+    dashboard.classList.add(
+        "visible"
+    );
+
+
+    dashboard.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+
+}
 
 
 /*
@@ -2013,21 +2272,25 @@ let prices = [];
 
 
 /*
-----------------------------------------------------
+====================================================
 LOAD COUNTRIES
-----------------------------------------------------
+====================================================
 */
 
 async function loadCountries() {
 
     const countrySelect =
-        document.getElementById("country");
+        document.getElementById(
+            "country"
+        );
 
 
     try {
 
         const response =
-            await fetch("/api/countries");
+            await fetch(
+                "/api/countries"
+            );
 
 
         if (!response.ok) {
@@ -2067,7 +2330,9 @@ async function loadCountries() {
             function(country) {
 
                 const option =
-                    document.createElement("option");
+                    document.createElement(
+                        "option"
+                    );
 
 
                 option.value =
@@ -2093,14 +2358,18 @@ async function loadCountries() {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "COUNTRIES ERROR:",
+            error
+        );
 
 
         countrySelect.innerHTML =
             '<option value="">Unable to load countries</option>';
 
 
-        document.getElementById("notice")
+        document
+            .getElementById("notice")
             .textContent =
             "Could not load countries. Please refresh the page.";
 
@@ -2110,9 +2379,9 @@ async function loadCountries() {
 
 
 /*
-----------------------------------------------------
+====================================================
 SERVICE PICKER
-----------------------------------------------------
+====================================================
 */
 
 function pick(name, element) {
@@ -2135,12 +2404,14 @@ function pick(name, element) {
     );
 
 
-    document.getElementById("platform")
+    document
+        .getElementById("platform")
         .value =
         name;
 
 
-    document.getElementById("numbers")
+    document
+        .getElementById("numbers")
         .scrollIntoView({
 
             behavior: "smooth",
@@ -2153,38 +2424,47 @@ function pick(name, element) {
 
 
 /*
-----------------------------------------------------
-SEARCH LIVE NUMBERS
-----------------------------------------------------
+====================================================
+SEARCH NUMBERS
+====================================================
 */
 
 async function searchNumbers() {
 
     const countryId =
-        document.getElementById("country")
+        document
+            .getElementById("country")
             .value;
 
 
     const type =
-        document.getElementById("type")
+        document
+            .getElementById("type")
             .value;
 
 
     const platform =
-        document.getElementById("platform")
+        document
+            .getElementById("platform")
             .value;
 
 
     const notice =
-        document.getElementById("notice");
+        document.getElementById(
+            "notice"
+        );
 
 
     const results =
-        document.getElementById("results");
+        document.getElementById(
+            "results"
+        );
 
 
     const button =
-        document.getElementById("searchButton");
+        document.getElementById(
+            "searchButton"
+        );
 
 
     if (!countryId) {
@@ -2197,9 +2477,7 @@ async function searchNumbers() {
     }
 
 
-    button.disabled =
-        true;
-
+    button.disabled = true;
 
     button.textContent =
         "Searching...";
@@ -2218,7 +2496,9 @@ async function searchNumbers() {
         const response =
             await fetch(
                 "/api/prices?service=" +
-                encodeURIComponent(platform)
+                encodeURIComponent(
+                    platform
+                )
             );
 
 
@@ -2299,7 +2579,10 @@ async function searchNumbers() {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "NUMBER SEARCH ERROR:",
+            error
+        );
 
 
         results.innerHTML =
@@ -2316,9 +2599,7 @@ async function searchNumbers() {
     }
 
 
-    button.disabled =
-        false;
-
+    button.disabled = false;
 
     button.textContent =
         "Search Compatible Numbers";
@@ -2327,9 +2608,9 @@ async function searchNumbers() {
 
 
 /*
-----------------------------------------------------
-DISPLAY LIVE RESULTS
-----------------------------------------------------
+====================================================
+DISPLAY RESULTS
+====================================================
 */
 
 function renderResults(
@@ -2338,7 +2619,9 @@ function renderResults(
 ) {
 
     const results =
-        document.getElementById("results");
+        document.getElementById(
+            "results"
+        );
 
 
     if (!items.length) {
@@ -2445,8 +2728,7 @@ function renderResults(
 
                     <button
                         class="get"
-                        onclick='openCheckout(${JSON.stringify(item)})'
-                    >
+                        onclick='openCheckout(${JSON.stringify(item)})'>
                         Get Number
                     </button>
 
@@ -2466,9 +2748,9 @@ function renderResults(
 
 
 /*
-----------------------------------------------------
-CHECKOUT MODAL
-----------------------------------------------------
+====================================================
+CHECKOUT
+====================================================
 */
 
 function openCheckout(item) {
@@ -2533,9 +2815,9 @@ function openCheckout(item) {
 
 
 /*
-----------------------------------------------------
+====================================================
 CLOSE CHECKOUT
-----------------------------------------------------
+====================================================
 */
 
 function closeModal() {
@@ -2550,9 +2832,9 @@ function closeModal() {
 
 
 /*
-----------------------------------------------------
+====================================================
 FORMAT MONEY
-----------------------------------------------------
+====================================================
 */
 
 function formatMoney(value) {
@@ -2574,9 +2856,7 @@ function formatMoney(value) {
         "en-NG",
         {
             minimumFractionDigits: 2,
-
             maximumFractionDigits: 2
-
         }
     );
 
@@ -2584,9 +2864,9 @@ function formatMoney(value) {
 
 
 /*
-----------------------------------------------------
+====================================================
 SECURITY
-----------------------------------------------------
+====================================================
 */
 
 function escapeHTML(value) {
@@ -2665,13 +2945,38 @@ document
 
 /*
 ====================================================
-START APPLICATION
+AUTH FORM EVENT
 ====================================================
 */
 
-checkAuth();
+document
+    .getElementById("authForm")
+    .addEventListener(
+        "submit",
+        handleEmailAuth
+    );
 
-loadCountries();
+
+/*
+====================================================
+START APPLICATION
+====================================================
+
+We deliberately run authentication first so that
+the navigation is updated before the user sees
+the page.
+====================================================
+*/
+
+(async function startApplication() {
+
+    await handleAuthCallback();
+
+    await checkAuth();
+
+    loadCountries();
+
+})();
 
 </script>
 
