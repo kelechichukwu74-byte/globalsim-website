@@ -3,3838 +3,2480 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>GlobalSIM — Global Virtual Numbers</title>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>GlobalSIM</title>
 
 <style>
 * {
     box-sizing: border-box;
 }
 
-html {
-    scroll-behavior: smooth;
-}
-
 body {
     margin: 0;
-    background: #020b18;
-    color: #eef6ff;
-    font-family: Arial, sans-serif;
-}
-
-a {
-    text-decoration: none;
-    color: inherit;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f7fb;
+    color: #172033;
 }
 
 button,
-select,
-input {
-    font-family: inherit;
+input,
+select {
+    font: inherit;
 }
 
-.nav {
-    min-height: 74px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 5%;
-    background: #06111f;
-    border-bottom: 1px solid #14263b;
+button {
+    cursor: pointer;
+    border: none;
+}
+
+.header {
     position: sticky;
     top: 0;
-    z-index: 20;
-}
-
-.brand {
+    z-index: 100;
+    background: #ffffff;
+    border-bottom: 1px solid #e4e8ef;
+    padding: 14px 20px;
     display: flex;
-    gap: 10px;
+    justify-content: space-between;
     align-items: center;
 }
 
-.mark {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    background: #087cf5;
+.logo {
+    color: #1269e8;
+    font-size: 23px;
     font-weight: 900;
 }
 
-.brand b {
-    font-size: 22px;
-}
-
-.brand b span {
-    color: #168cff;
-}
-
-.brand small {
-    display: block;
-    color: #71869c;
-    font-size: 9px;
-}
-
-.navlinks {
+.nav {
     display: flex;
-    gap: 20px;
-    color: #aebed0;
-    font-size: 13px;
+    gap: 6px;
+    flex-wrap: wrap;
 }
 
-.navlinks a:hover {
-    color: #2a9cff;
-}
-
-.actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.actions button,
-.currency {
-    padding: 10px 14px;
-    border-radius: 8px;
-    border: 1px solid #29405a;
-    background: #0a192b;
-    color: #dce8f4;
-    cursor: pointer;
-}
-
-.auth-button.primary {
-    background: #087cf5;
-    border-color: #087cf5;
-}
-
-#guestActions {
-    display: flex;
-    gap: 8px;
-}
-
-.user-area {
-    display: none;
-    align-items: center;
-    gap: 8px;
-}
-
-.user-area.visible {
-    display: flex;
-}
-
-.user-email {
-    color: #8fa5ba;
-    font-size: 11px;
-    max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.logout {
-    background: #09192a;
-    color: #fff;
-    border: 1px solid #29405a;
+.nav button {
+    background: transparent;
+    color: #647084;
     padding: 9px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-.hero {
-    padding: 75px 5%;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 45px;
-    align-items: center;
-    background: radial-gradient(
-        circle at 80% 35%,
-        #0b4a7b33,
-        transparent 38%
-    );
-}
-
-.eyebrow,
-.kicker {
-    color: #25a0ff;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 2px;
-}
-
-.hero h1 {
-    font-size: 55px;
-    line-height: 1.04;
-    margin: 15px 0;
-}
-
-.hero h1 span {
-    color: #168cff;
-}
-
-.hero p {
-    color: #91a6ba;
-    font-size: 17px;
-    line-height: 1.7;
-    max-width: 580px;
-}
-
-.buttons {
-    display: flex;
-    gap: 12px;
-    margin: 27px 0;
-}
-
-.btn {
-    padding: 13px 19px;
     border-radius: 9px;
-    font-weight: 800;
-    border: 1px solid #29435f;
-    display: inline-block;
 }
 
-.primary {
-    background: #087cf5;
-    border-color: #087cf5;
+.nav button:hover,
+.nav button.active {
+    background: #eaf3ff;
+    color: #1269e8;
 }
 
-.secondary {
-    background: #09192a;
+.container {
+    width: 100%;
+    max-width: 1150px;
+    margin: auto;
+    padding: 25px 16px 60px;
 }
 
-.hero-card {
-    border: 1px solid #23405d;
-    background: #07192c;
-    border-radius: 18px;
-    padding: 26px;
-    box-shadow: 0 30px 80px #0008;
+.page {
+    display: none;
 }
 
-.hero-card h3 {
-    margin: 0 0 18px;
-}
-
-.filters {
-    display: grid;
-    grid-template-columns: 1.1fr 1fr;
-    gap: 10px;
-}
-
-.filters label {
-    font-size: 10px;
-    color: #8094a9;
+.page.active {
     display: block;
-    margin-bottom: 6px;
 }
 
-.filters select,
-.filters input {
-    width: 100%;
-    padding: 13px;
-    border-radius: 8px;
-    border: 1px solid #29445f;
-    background: #041120;
-    color: #e6f1fb;
-    outline: none;
+.title {
+    margin-bottom: 20px;
 }
 
-.wide {
-    grid-column: 1 / -1;
+.title h1 {
+    margin: 0 0 7px;
+    font-size: 30px;
 }
 
-.search {
-    width: 100%;
-    margin-top: 14px;
-    padding: 13px;
-    border: 0;
-    border-radius: 8px;
-    background: #087cf5;
-    color: white;
-    font-weight: 800;
-    cursor: pointer;
-}
-
-.search:disabled {
-    opacity: .6;
-    cursor: wait;
-}
-
-.note {
-    font-size: 11px;
-    color: #71879e;
-    margin-top: 12px;
-}
-
-.section {
-    padding: 70px 5%;
-    text-align: center;
-}
-
-.section h2 {
-    font-size: 36px;
-    margin: 8px 0;
-}
-
-.lead {
-    color: #8499ad;
+.title p {
+    margin: 0;
+    color: #68758a;
 }
 
 /* DASHBOARD */
 
-.dashboard-section {
-    padding: 45px 5% 20px;
-}
-
-.dashboard-card {
-    max-width: 1100px;
-    margin: auto;
-    background: linear-gradient(
-        135deg,
-        #087cf5,
-        #0754ad
-    );
+.dashboard {
+    background: linear-gradient(135deg, #1677ff, #0758c9);
+    color: white;
     border-radius: 18px;
-    padding: 30px;
-    box-shadow: 0 20px 60px #0008;
-}
-
-.dashboard-top {
+    padding: 24px;
     display: flex;
     justify-content: space-between;
-    gap: 20px;
     align-items: center;
+    min-height: 145px;
+    box-shadow: 0 12px 35px rgba(18,105,232,.18);
 }
 
-.dashboard-title {
-    margin: 0;
-    font-size: 25px;
+.dashboard-label {
+    font-size: 13px;
+    opacity: .85;
 }
 
-.dashboard-subtitle {
-    color: #d3e8ff;
-    font-size: 12px;
-    margin-top: 6px;
-}
-
-.dashboard-balance {
-    background: #ffffff18;
-    border: 1px solid #ffffff25;
-    padding: 17px 22px;
-    border-radius: 12px;
-    min-width: 180px;
-}
-
-.dashboard-balance small {
-    display: block;
-    color: #c8e3ff;
-    font-size: 10px;
-}
-
-.dashboard-balance b {
-    display: block;
-    margin-top: 5px;
-    font-size: 25px;
-}
-
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-top: 22px;
-}
-
-.dashboard-stat {
-    padding: 16px;
-    border-radius: 10px;
-    background: #ffffff12;
-    border: 1px solid #ffffff1c;
-}
-
-.dashboard-stat small {
-    display: block;
-    color: #c6e0fb;
-}
-
-.dashboard-stat b {
-    display: block;
-    margin-top: 5px;
-    font-size: 19px;
-}
-
-/* MY NUMBERS */
-
-.my-numbers {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 25px 5% 65px;
-}
-
-.section-heading {
-    margin-bottom: 20px;
-}
-
-.section-heading h2 {
-    margin: 0;
-    font-size: 28px;
-}
-
-.section-heading p {
-    color: #71879e;
-    font-size: 12px;
-}
-
-.number-card {
-    background: #061527;
-    border: 1px solid #1b3854;
-    border-radius: 14px;
-    padding: 20px;
-    margin-bottom: 12px;
-    text-align: left;
-}
-
-.number-head {
-    display: flex;
-    justify-content: space-between;
-    gap: 15px;
-    align-items: center;
-}
-
-.number-main {
-    font-size: 20px;
+.balance {
+    font-size: 34px;
     font-weight: 900;
+    margin-top: 5px;
 }
 
-.number-meta {
-    color: #7e94a9;
-    font-size: 11px;
-    margin-top: 7px;
+.connection {
+    background: rgba(255,255,255,.16);
+    border-radius: 50px;
+    padding: 8px 12px;
+    font-size: 12px;
 }
 
-.number-status {
-    padding: 6px 9px;
-    border-radius: 6px;
-    background: #0d3328;
-    color: #62dfaa;
-    font-size: 10px;
-    font-weight: 800;
+.card {
+    background: white;
+    border: 1px solid #e1e7ef;
+    border-radius: 16px;
+    padding: 19px;
+    margin-top: 18px;
 }
 
-.number-actions {
+.card h2 {
+    margin: 0 0 5px;
+}
+
+.subtext {
+    color: #6c788b;
+    font-size: 13px;
+    margin-bottom: 15px;
+}
+
+/* BUTTONS */
+
+.primary {
+    background: #126ff0;
+    color: white;
+    padding: 11px 15px;
+    border-radius: 9px;
+    font-weight: 700;
+}
+
+.primary:hover {
+    background: #0758c9;
+}
+
+.secondary {
+    background: #eaf3ff;
+    color: #1269e8;
+    padding: 11px 15px;
+    border-radius: 9px;
+    font-weight: 700;
+}
+
+.danger {
+    background: #fff0f0;
+    color: #d93636;
+    padding: 10px 14px;
+    border-radius: 9px;
+    font-weight: 700;
+}
+
+.success {
+    background: #eaf9f1;
+    color: #098a57;
+    padding: 10px 14px;
+    border-radius: 9px;
+    font-weight: 700;
+}
+
+/* COUNTRY SEARCH */
+
+.toolbar {
     display: flex;
+    gap: 10px;
     flex-wrap: wrap;
-    gap: 8px;
+}
+
+.input {
+    border: 1px solid #dce2ea;
+    border-radius: 10px;
+    padding: 12px;
+    outline: none;
+    background: white;
+}
+
+.input:focus {
+    border-color: #126ff0;
+}
+
+.search {
+    flex: 1;
+    min-width: 220px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+    gap: 14px;
     margin-top: 16px;
 }
 
-.action-button {
-    border: 1px solid #29445f;
-    background: #09192a;
-    color: #fff;
-    padding: 9px 12px;
-    border-radius: 7px;
-    cursor: pointer;
-    font-size: 11px;
+.item {
+    background: white;
+    border: 1px solid #e1e7ef;
+    border-radius: 14px;
+    padding: 16px;
 }
 
-.action-button.blue {
-    background: #087cf5;
-    border-color: #087cf5;
+.item h3 {
+    margin: 0 0 7px;
+    font-size: 17px;
 }
 
-.action-button.red {
-    background: #3a1017;
-    border-color: #6c2530;
-}
-
-.messages {
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #193149;
-}
-
-.messages-title {
-    font-weight: 800;
-    font-size: 13px;
-}
-
-.message {
-    margin-top: 9px;
-    padding: 13px;
-    border-radius: 9px;
-    background: #041120;
-    border: 1px solid #193149;
-}
-
-.message small {
-    color: #6e8499;
-}
-
-.message-text {
-    margin-top: 6px;
-    font-size: 13px;
-    color: #d9e9f7;
-}
-
-.code-box {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-top: 10px;
-    padding: 10px;
-    border-radius: 8px;
-    background: #0a2238;
-}
-
-.code {
-    font-size: 20px;
-    font-weight: 900;
-    letter-spacing: 3px;
-    color: #50b4ff;
-}
-
-.empty-box {
-    padding: 28px;
-    border: 1px dashed #25435f;
-    border-radius: 12px;
-    color: #71879e;
-    text-align: center;
-    background: #061527;
-}
-
-/* BUY NUMBERS */
-
-.buy-section {
-    background: #030e1b;
-}
-
-.services {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-    max-width: 1050px;
-    margin: 35px auto;
-}
-
-.service {
-    padding: 22px;
-    text-align: left;
-    background: #061527;
-    border: 1px solid #1a334d;
-    border-radius: 13px;
-    cursor: pointer;
-    transition: .2s;
-}
-
-.service:hover,
-.service.selected {
-    border-color: #168cff;
-    box-shadow: 0 0 25px #168cff12;
-    transform: translateY(-2px);
-}
-
-.service .icon {
-    font-size: 25px;
-}
-
-.service b {
-    display: block;
-    margin: 10px 0 4px;
-}
-
-.service span {
-    color: #7f94aa;
+.item .small {
+    color: #718096;
     font-size: 12px;
-}
-
-.results {
-    max-width: 1050px;
-    margin: 25px auto 0;
-    text-align: left;
-}
-
-.result {
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
-    align-items: center;
-    padding: 18px;
-    background: #061527;
-    border: 1px solid #1a334d;
-    border-radius: 12px;
-    margin: 10px 0;
-}
-
-.result .number {
-    font-weight: 800;
-}
-
-.badges {
-    display: flex;
-    gap: 5px;
-    flex-wrap: wrap;
-    margin-top: 7px;
-}
-
-.badge {
-    font-size: 10px;
-    padding: 4px 7px;
-    border-radius: 5px;
-    background: #0d2a44;
-    color: #69bdff;
-}
-
-.result small {
-    display: block;
-    color: #71879c;
-    margin-top: 5px;
 }
 
 .price {
-    font-weight: 800;
-    color: #fff;
+    font-size: 21px;
+    font-weight: 900;
+    margin: 12px 0;
 }
 
-.price span {
-    display: block;
-    color: #6f849a;
-    font-size: 10px;
-    font-weight: 400;
+/* NUMBER */
+
+.number-box {
+    border: 2px solid #dcecff;
+    background: #f7fbff;
+    border-radius: 15px;
+    padding: 19px;
 }
 
-.get {
-    padding: 10px 15px;
-    border: 0;
-    border-radius: 8px;
-    background: #087cf5;
-    color: #fff;
-    font-weight: 800;
-    cursor: pointer;
-    margin-top: 8px;
+.number {
+    font-size: 28px;
+    font-weight: 900;
+    margin: 8px 0;
+    word-break: break-all;
 }
 
-.loading,
+.code {
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: 5px;
+    margin: 8px 0;
+}
+
+.notice {
+    background: #fff8e4;
+    color: #735600;
+    padding: 13px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-top: 12px;
+}
+
+.error {
+    background: #fff0f0;
+    color: #a32121;
+    padding: 13px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-top: 12px;
+}
+
 .empty {
     text-align: center;
     padding: 30px;
-    color: #71879c;
-    background: #061527;
-    border: 1px solid #1a334d;
-    border-radius: 12px;
+    color: #748096;
 }
 
-/* HISTORY */
+/* TABLE */
 
-.history-section {
-    padding: 75px 5%;
-    background: #020b18;
+.table-container {
+    overflow-x: auto;
 }
 
-.history-container {
-    max-width: 1100px;
-    margin: auto;
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
 }
 
-.history-card {
-    background: #061527;
-    border: 1px solid #1a334d;
-    border-radius: 13px;
-    padding: 18px;
-    margin: 10px 0;
+th,
+td {
     text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid #e4e8ef;
+    font-size: 13px;
 }
 
-.history-row {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr 1fr;
-    gap: 12px;
-}
-
-.history-item small {
-    display: block;
-    color: #6f849a;
-    font-size: 9px;
-    margin-bottom: 5px;
-}
-
-.history-item b {
-    font-size: 12px;
-}
-
-.status-active {
-    color: #57dba3;
-}
-
-.status-cancelled {
-    color: #ff7b7b;
-}
-
-.status-expired {
-    color: #ffbf67;
+th {
+    color: #69758a;
 }
 
 /* WALLET */
 
-.wallet-section {
-    padding: 70px 5%;
-    background: #030e1b;
-}
-
-.wallet {
-    max-width: 1100px;
-    margin: auto;
-    padding: 35px;
-    border: 1px solid #1b3854;
-    border-radius: 17px;
-    background: #07192a;
-}
-
-.wallet-top {
-    display: flex;
-    justify-content: space-between;
-    gap: 25px;
-    align-items: center;
-}
-
-.wallet p {
-    color: #8499ad;
-    max-width: 580px;
-}
-
-.wallets {
-    display: flex;
-    gap: 10px;
-}
-
-.wallet-box {
-    padding: 18px;
-    border: 1px solid #27435e;
-    border-radius: 10px;
-    min-width: 150px;
-}
-
-.wallet-box small {
-    color: #71869c;
-}
-
-.wallet-box b {
-    display: block;
-    font-size: 24px;
-    margin-top: 7px;
-}
-
-.plans {
+.wallet-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 18px;
-    max-width: 820px;
-    margin: 35px auto;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 13px;
 }
 
-.plan {
-    padding: 28px;
-    text-align: left;
-    border: 1px solid #1a334d;
-    background: #061527;
-    border-radius: 14px;
+.payment-method {
+    border: 1px solid #e1e7ef;
+    border-radius: 13px;
+    padding: 15px;
 }
 
-.plan.featured {
-    border-color: #168cff;
-}
-
-.plan h3 {
-    font-size: 23px;
-}
-
-.plan p,
-.plan li {
-    color: #8297ab;
-    font-size: 13px;
-}
-
-.plan ul {
-    padding-left: 20px;
-}
-
-.amount {
-    font-size: 38px;
-    font-weight: 900;
-}
-
-/* AUTH */
-
-.modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: #000b;
-    z-index: 50;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.modal.open {
-    display: flex;
-}
-
-.modalbox {
-    max-width: 480px;
-    width: 100%;
-    padding: 25px;
-    border-radius: 15px;
-    background: #07192b;
-    border: 1px solid #29445f;
-}
-
-.modalbox h3 {
+.payment-method h3 {
     margin-top: 0;
-}
-
-.modalbox p {
-    color: #8499ad;
-    font-size: 13px;
-    line-height: 1.6;
-}
-
-.close {
-    float: right;
-    background: none;
-    border: 0;
-    color: #9eb1c4;
-    font-size: 22px;
-    cursor: pointer;
-}
-
-.auth-form {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.auth-form label {
-    color: #8ea4b9;
-    font-size: 11px;
-}
-
-.auth-form input {
-    width: 100%;
-    padding: 13px;
-    border-radius: 8px;
-    border: 1px solid #29445f;
-    background: #041120;
-    color: #fff;
-    outline: none;
-}
-
-.auth-btn,
-.google-btn {
-    padding: 13px;
-    border-radius: 8px;
-    font-weight: 800;
-    cursor: pointer;
-}
-
-.auth-btn {
-    border: 0;
-    background: #087cf5;
-    color: white;
-}
-
-.google-btn {
-    width: 100%;
-    border: 1px solid #29445f;
-    background: #0a192b;
-    color: white;
-}
-
-.auth-divider {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 15px 0;
-    color: #667d93;
-    font-size: 11px;
-}
-
-.auth-divider::before,
-.auth-divider::after {
-    content: "";
-    height: 1px;
-    background: #1c334b;
-    flex: 1;
-}
-
-.auth-switch {
-    text-align: center;
-    color: #8297ab;
-    font-size: 12px;
-    margin-top: 15px;
-}
-
-.auth-switch button {
-    border: 0;
-    background: none;
-    color: #299dff;
-    cursor: pointer;
-}
-
-.auth-message {
-    padding: 10px;
-    border-radius: 8px;
-    background: #0b2238;
-    color: #8fc8ff;
-    font-size: 12px;
-    line-height: 1.5;
-    display: none;
-    margin-bottom: 12px;
-}
-
-.dashboard-button {
-    padding: 9px 12px;
-    border-radius: 8px;
-    background: #087cf5;
-    color: #fff;
-    font-weight: 800;
-    font-size: 12px;
-}
-
-footer {
-    padding: 35px 5%;
-    border-top: 1px solid #14263b;
-    color: #70869c;
-    font-size: 11px;
 }
 
 /* MOBILE */
 
-@media(max-width:900px) {
+@media (max-width: 700px) {
 
-    .navlinks {
-        display: none;
-    }
-
-    .hero {
-        grid-template-columns: 1fr;
-    }
-
-    .services {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .dashboard-top,
-    .wallet-top {
+    .header {
         flex-direction: column;
         align-items: flex-start;
-    }
-
-    .wallets {
-        width: 100%;
-        flex-direction: column;
-    }
-
-    .plans {
-        grid-template-columns: 1fr;
-    }
-
-    .history-row {
-        grid-template-columns: 1fr 1fr;
-    }
-}
-
-@media(max-width:600px) {
-
-    .nav {
-        flex-wrap: wrap;
         gap: 10px;
     }
 
-    .hero h1 {
-        font-size: 41px;
-    }
-
-    .filters {
-        grid-template-columns: 1fr;
-    }
-
-    .services {
-        grid-template-columns: 1fr;
-    }
-
-    .result {
-        align-items: flex-start;
+    .dashboard {
         flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
     }
 
-    .dashboard-grid {
-        grid-template-columns: 1fr;
+    .title h1 {
+        font-size: 25px;
     }
 
-    .history-row {
-        grid-template-columns: 1fr;
-    }
-
-    .actions {
+    .nav {
         width: 100%;
-        justify-content: flex-end;
+        overflow-x: auto;
     }
 
-    .user-email {
-        display: none;
-    }
-
-    .number-head {
-        align-items: flex-start;
-        flex-direction: column;
-    }
 }
 </style>
 </head>
 
 <body>
 
-<header class="nav">
+<header class="header">
 
-<a class="brand" href="#">
-    <span class="mark">◎</span>
-
-    <span>
-        <b>Global<span>SIM</span></b>
-        <small>Your Number. Your Control. Anywhere.</small>
-    </span>
-</a>
-
-<nav class="navlinks">
-    <a href="#dashboard">Dashboard</a>
-    <a href="#myNumbers">My Numbers</a>
-    <a href="#buy">Buy Numbers</a>
-    <a href="#history">History</a>
-    <a href="#wallet">Wallet</a>
-</nav>
-
-<div class="actions">
-
-    <button class="currency">
-        USD ▾
-    </button>
-
-    <div id="guestActions">
-
-        <button
-            class="auth-button"
-            onclick="openAuth('login')">
-            Log In
-        </button>
-
-        <button
-            class="auth-button primary"
-            onclick="openAuth('signup')">
-            Sign Up
-        </button>
-
+    <div class="logo">
+        GlobalSIM
     </div>
 
-    <div id="userArea" class="user-area">
+    <nav class="nav">
 
-        <span
-            id="userEmail"
-            class="user-email">
-        </span>
-
-        <button
-            class="logout"
-            onclick="logoutUser()">
-            Log Out
+        <button class="active" onclick="openPage('dashboard', this)">
+            Dashboard
         </button>
 
-    </div>
+        <button onclick="openPage('numbers', this)">
+            Get Number
+        </button>
 
-</div>
+        <button onclick="openPage('history', this)">
+            History
+        </button>
+
+        <button onclick="openPage('wallet', this)">
+            Wallet
+        </button>
+
+    </nav>
 
 </header>
 
 
-<!-- DASHBOARD -->
-
-<section
-    class="dashboard-section"
-    id="dashboard">
-
-<div class="dashboard-card">
-
-<div class="dashboard-top">
-
-<div>
-
-<div class="kicker">
-GLOBALSIM DASHBOARD
-</div>
-
-<h2 class="dashboard-title">
-Welcome to your account
-</h2>
-
-<div
-    id="dashboardEmail"
-    class="dashboard-subtitle">
-Please sign in to view your account.
-</div>
-
-</div>
-
-<div class="dashboard-balance">
-
-<small>
-AVAILABLE BALANCE
-</small>
-
-<b id="balance">
-₦10,000.00
-</b>
-
-</div>
-
-</div>
+<div class="container">
 
 
-<div class="dashboard-grid">
+<!-- ================= DASHBOARD ================= -->
 
-<div class="dashboard-stat">
+<section id="dashboard" class="page active">
 
-<small>
-Account Status
-</small>
+    <div class="title">
 
-<b id="accountStatus">
-Demo Account
-</b>
+        <h1>Dashboard</h1>
 
-</div>
+        <p>
+            Manage your purchased numbers and account balance.
+        </p>
 
-<div class="dashboard-stat">
+    </div>
 
-<small>
-Active Numbers
-</small>
 
-<b id="activeCount">
-0
-</b>
+    <div class="dashboard">
 
-</div>
+        <div>
 
-<div class="dashboard-stat">
+            <div class="dashboard-label">
+                Available Balance
+            </div>
 
-<small>
-History Records
-</small>
+            <div class="balance" id="dashboardBalance">
+                Loading...
+            </div>
 
-<b id="historyCount">
-0
-</b>
+        </div>
 
-</div>
 
-</div>
+        <div>
 
-</div>
+            <span class="connection" id="connectionStatus">
+                Connecting...
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- PURCHASED NUMBER -->
+
+    <div class="card">
+
+        <h2>
+            Purchased Number
+        </h2>
+
+        <div class="subtext">
+
+            Your newly purchased number will appear here.
+
+        </div>
+
+
+        <div id="currentNumber">
+
+            <div class="empty">
+
+                No number purchased yet.
+
+            </div>
+
+        </div>
+
+    </div>
 
 </section>
 
 
-<!-- MY NUMBERS -->
 
-<section
-    class="my-numbers"
-    id="myNumbers">
+<!-- ================= GET NUMBER ================= -->
 
-<div class="section-heading">
+<section id="numbers" class="page">
 
-<div class="kicker">
-YOUR NUMBERS
-</div>
+    <div class="title">
 
-<h2>
-My Numbers
-</h2>
+        <h1>
+            Get a Number
+        </h1>
 
-<p>
-Your currently active numbers and received verification messages appear here.
-</p>
+        <p>
+            Search for a country and choose an available service.
+        </p>
 
-</div>
+    </div>
 
 
-<div id="myNumbersList">
+    <div class="card">
 
-<div class="empty-box">
-No active numbers yet. Purchase a number below to see it here.
-</div>
+        <div class="toolbar">
 
-</div>
+            <input
+                class="input search"
+                id="countrySearch"
+                type="text"
+                placeholder="Search country..."
+            >
+
+            <button
+                class="secondary"
+                onclick="loadCountries()"
+            >
+                Reload
+            </button>
+
+        </div>
+
+
+        <div
+            class="grid"
+            id="countries"
+        >
+
+            <div class="empty">
+                Loading countries...
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- SERVICES -->
+
+    <div
+        class="card"
+        id="servicesSection"
+        style="display:none"
+    >
+
+        <h2 id="selectedCountry">
+            Services
+        </h2>
+
+        <div class="subtext">
+            Available services and prices.
+        </div>
+
+
+        <div
+            class="grid"
+            id="services"
+        ></div>
+
+    </div>
 
 </section>
 
 
-<!-- BUY NUMBERS -->
 
-<section
-    class="section buy-section"
-    id="buy">
+<!-- ================= HISTORY ================= -->
 
-<div class="kicker">
-BUY A NUMBER
-</div>
+<section id="history" class="page">
 
-<h2>
-Find your number
-</h2>
+    <div class="title">
 
-<p class="lead">
-Choose a country, service and number type.
-</p>
+        <h1>
+            Purchase History
+        </h1>
 
+        <p>
+            View your purchased numbers, OTP messages and statuses.
+        </p>
 
-<div class="hero-card">
+    </div>
 
-<div class="filters">
 
-<div>
+    <div class="card">
 
-<label>
-COUNTRY SEARCH
-</label>
+        <div class="toolbar">
 
-<input
-    id="countrySearch"
-    type="text"
-    placeholder="Search country... "
-    oninput="filterCountries()">
+            <input
+                class="input search"
+                id="historySearch"
+                placeholder="Search history..."
+            >
 
-</div>
+            <button
+                class="secondary"
+                onclick="loadHistory()"
+            >
+                Refresh
+            </button>
 
+        </div>
 
-<div>
 
-<label>
-COUNTRY
-</label>
+        <div
+            class="table-container"
+            id="historyContainer"
+        >
 
-<select id="country">
+            <div class="empty">
+                Loading history...
+            </div>
 
-<option value="">
-Loading countries...
-</option>
+        </div>
 
-</select>
-
-</div>
-
-
-<div>
-
-<label>
-NUMBER TYPE
-</label>
-
-<select id="type">
-
-<option value="short">
-Rental
-</option>
-
-<option value="long">
-Lifetime
-</option>
-
-</select>
-
-</div>
-
-
-<div>
-
-<label>
-PLATFORM / SERVICE
-</label>
-
-<select id="platform">
-
-<option value="whatsapp">
-WhatsApp
-</option>
-
-<option value="telegram">
-Telegram
-</option>
-
-<option value="tiktok">
-TikTok
-</option>
-
-<option value="instagram">
-Instagram
-</option>
-
-<option value="google">
-Google / Gmail
-</option>
-
-<option value="facebook">
-Facebook
-</option>
-
-<option value="x">
-X
-</option>
-
-<option value="general_sms">
-General SMS
-</option>
-
-<option value="sms_voice">
-SMS + Voice
-</option>
-
-</select>
-
-</div>
-
-</div>
-
-
-<button
-    class="search"
-    id="searchButton"
-    onclick="searchNumbers()">
-
-Search Compatible Numbers
-
-</button>
-
-<div
-    id="notice"
-    class="note">
-</div>
-
-</div>
-
-
-<div class="services">
-
-<div
-    class="service selected"
-    onclick="pick('whatsapp',this)">
-
-<div class="icon">◉</div>
-
-<b>WhatsApp</b>
-
-<span>
-Supported numbers only
-</span>
-
-</div>
-
-
-<div
-    class="service"
-    onclick="pick('telegram',this)">
-
-<div class="icon">➤</div>
-
-<b>Telegram</b>
-
-<span>
-Supported numbers only
-</span>
-
-</div>
-
-
-<div
-    class="service"
-    onclick="pick('tiktok',this)">
-
-<div class="icon">♪</div>
-
-<b>TikTok</b>
-
-<span>
-Supported numbers only
-</span>
-
-</div>
-
-
-<div
-    class="service"
-    onclick="pick('instagram',this)">
-
-<div class="icon">◎</div>
-
-<b>Instagram</b>
-
-<span>
-Supported numbers only
-</span>
-
-</div>
-
-
-<div
-    class="service"
-    onclick="pick('google',this)">
-
-<div class="icon">G</div>
-
-<b>Google / Gmail</b>
-
-<span>
-Availability varies
-</span>
-
-</div>
-
-
-<div
-    class="service"
-    onclick="pick('facebook',this)">
-
-<div class="icon">f</div>
-
-<b>Facebook</b>
-
-<span>
-Supported numbers only
-</span>
-
-</div>
-
-
-<div
-    class="service"
-    onclick="pick('x',this)">
-
-<div class="icon">𝕏</div>
-
-<b>X</b>
-
-<span>
-Supported numbers only
-</span>
-
-</div>
-
-
-<div
-    class="service"
-    onclick="pick('sms_voice',this)">
-
-<div class="icon">☎</div>
-
-<b>SMS + Voice</b>
-
-<span>
-Provider support required
-</span>
-
-</div>
-
-</div>
-
-
-<div
-    class="results"
-    id="results">
-
-<div class="loading">
-Choose a country and service, then search for live availability.
-</div>
-
-</div>
+    </div>
 
 </section>
 
 
-<!-- HISTORY -->
 
-<section
-    class="history-section"
-    id="history">
+<!-- ================= WALLET ================= -->
 
-<div class="history-container">
+<section id="wallet" class="page">
 
-<div class="section-heading">
+    <div class="title">
 
-<div class="kicker">
-ACCOUNT ACTIVITY
-</div>
+        <h1>
+            Wallet
+        </h1>
 
-<h2>
-Purchase History
-</h2>
+        <p>
+            Fund your wallet and use the balance to purchase numbers.
+        </p>
 
-<p>
-Every number purchase, cancellation and status change is recorded here.
-</p>
-
-</div>
+    </div>
 
 
-<div id="historyList">
+    <div class="dashboard">
 
-<div class="empty-box">
-No purchase history yet.
-</div>
+        <div>
 
-</div>
+            <div class="dashboard-label">
+                Provider Balance
+            </div>
 
-</div>
+            <div
+                class="balance"
+                id="walletBalance"
+            >
+                Loading...
+            </div>
 
-</section>
+        </div>
 
-
-<!-- WALLET -->
-
-<section
-    class="wallet-section"
-    id="wallet">
-
-<div class="wallet">
-
-<div class="wallet-top">
-
-<div>
-
-<div class="kicker">
-WALLET
-</div>
-
-<h2>
-Fund your GlobalSIM wallet
-</h2>
-
-<p>
-Your wallet is used when purchasing numbers. Demo credit is currently enabled for testing. Real payment processing can be connected to your payment provider through the backend.
-</p>
-
-</div>
+    </div>
 
 
-<div class="wallets">
+    <div class="card">
 
-<div class="wallet-box">
+        <h2>
+            Payment Methods
+        </h2>
 
-<small>
-NGN BALANCE
-</small>
+        <div class="subtext">
+            Available payment methods from the provider.
+        </div>
 
-<b id="walletNGN">
-₦10,000.00
-</b>
 
-</div>
+        <div
+            class="wallet-grid"
+            id="paymentMethods"
+        >
 
-<div class="wallet-box">
+            <div class="empty">
+                Loading payment methods...
+            </div>
 
-<small>
-USD BALANCE
-</small>
+        </div>
 
-<b>
-$0.00
-</b>
+    </div>
 
-</div>
 
-</div>
+    <div class="card">
 
-</div>
+        <h2>
+            Deposit History
+        </h2>
 
-<button
-    class="search"
-    onclick="showFundingMessage()">
 
-Fund Wallet
+        <div
+            class="table-container"
+            id="depositHistory"
+        >
 
-</button>
+            <div class="empty">
+                Loading deposits...
+            </div>
 
-</div>
+        </div>
+
+    </div>
 
 </section>
 
-
-<!-- PRICING -->
-
-<section
-    class="section"
-    id="pricing">
-
-<div class="kicker">
-NUMBER PLANS
 </div>
 
-<h2>
-Rental or Lifetime
-</h2>
-
-<p class="lead">
-Pricing depends on the selected country, provider and number type.
-</p>
-
-
-<div class="plans">
-
-<div class="plan">
-
-<div class="kicker">
-RENTAL
-</div>
-
-<h3>
-Flexible access
-</h3>
-
-<div class="amount">
-Live
-</div>
-
-<p>
-Rental prices are loaded from the connected number provider.
-</p>
-
-<ul>
-
-<li>
-Provider-based pricing
-</li>
-
-<li>
-Rental period shown before purchase
-</li>
-
-<li>
-Supported SMS features
-</li>
-
-</ul>
-
-</div>
-
-
-<div class="plan featured">
-
-<div class="kicker">
-LIFETIME
-</div>
-
-<h3>
-Long-term ownership
-</h3>
-
-<div class="amount">
-Live
-</div>
-
-<p>
-Lifetime availability and pricing depend on the provider.
-</p>
-
-<ul>
-
-<li>
-No scheduled rental expiry
-</li>
-
-<li>
-Provider terms apply
-</li>
-
-<li>
-Availability shown before purchase
-</li>
-
-</ul>
-
-</div>
-
-</div>
-
-</section>
-
-
-<footer>
-
-© 2026 GlobalSIM · Virtual-number availability and platform compatibility depend on providers and applicable platform policies.
-
-</footer>
-
-
-<!-- AUTH MODAL -->
-
-<div
-    class="modal"
-    id="authModal">
-
-<div class="modalbox">
-
-<button
-    class="close"
-    onclick="closeAuth()">
-×
-</button>
-
-<h3 id="authTitle">
-Log in to GlobalSIM
-</h3>
-
-
-<div
-    id="authMessage"
-    class="auth-message">
-</div>
-
-
-<form
-    id="authForm"
-    class="auth-form">
-
-<label>
-EMAIL ADDRESS
-</label>
-
-<input
-    id="authEmail"
-    type="email"
-    placeholder="you@example.com"
-    required>
-
-
-<label>
-PASSWORD
-</label>
-
-<input
-    id="authPassword"
-    type="password"
-    placeholder="Your password"
-    minlength="6"
-    required>
-
-
-<button
-    id="authSubmit"
-    class="auth-btn"
-    type="submit">
-
-Sign In
-
-</button>
-
-</form>
-
-
-<div class="auth-divider">
-OR
-</div>
-
-
-<button
-    class="google-btn"
-    onclick="signInWithGoogle()">
-
-Continue with Google
-
-</button>
-
-
-<div class="auth-switch">
-
-<span id="authSwitchText">
-Don't have an account?
-</span>
-
-<button
-    onclick="switchAuthMode()"
-    id="authSwitchButton">
-
-Sign Up
-
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-
-<!-- GENERAL MODAL -->
-
-<div
-    class="modal"
-    id="modal">
-
-<div class="modalbox">
-
-<button
-    class="close"
-    onclick="closeModal()">
-×
-</button>
-
-<h3 id="modalTitle">
-GlobalSIM
-</h3>
-
-<p id="modalText">
-</p>
-
-<button
-    class="search"
-    onclick="closeModal()">
-Close
-</button>
-
-</div>
-
-</div>
 
 
 <script>
 
 /*
-====================================================
-SUPABASE
-====================================================
+==========================================================
+GLOBALSIM
+SMS VIRTUAL API FRONTEND
+==========================================================
+
+IMPORTANT:
+
+The API key is NOT placed here.
+
+The API key stays on the Vercel backend.
+
+Frontend calls:
+
+/api/sms/countries
+/api/sms/prices
+/api/sms/balance
+/api/sms/order
+/api/sms/status
+/api/sms/cancel
+/api/sms/complete
+/api/sms/resend
+/api/sms/history
+/api/sms/deposit-methods
+/api/sms/deposit-request
+/api/sms/deposit-history
+
+==========================================================
 */
 
-const SUPABASE_URL =
-    "https://yhtfdojvmlzlsncsxaug.supabase.co";
-
-const SUPABASE_PUBLISHABLE_KEY =
-    "sb_publishable_DpcHNrR_B3ZHQyIfWyLJjw_I9axcQ3h";
-
-const supabaseClient =
-    window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_PUBLISHABLE_KEY
-    );
-
-
-/*
-====================================================
-APP STATE
-====================================================
-*/
-
-let authMode = "login";
-
-let currentUser = null;
 
 let countries = [];
 
-let prices = [];
+let currentNumber =
+    JSON.parse(
+        localStorage.getItem("globalsim_current_number") || "null"
+    );
 
-let activeNumbers = [];
-
-let purchaseHistory = [];
-
-let demoBalance = 10000;
+let pollingTimer = null;
 
 
-/*
-====================================================
-LOCAL STORAGE
-====================================================
-*/
 
-function storageKey(name) {
+/* ================= BASIC API ================= */
 
-    if (!currentUser) {
-        return null;
+async function apiRequest(url, options = {}) {
+
+    const response = await fetch(url, {
+
+        ...options,
+
+        headers: {
+
+            "Content-Type": "application/json",
+
+            ...(options.headers || {})
+
+        }
+
+    });
+
+
+    const data =
+        await response
+            .json()
+            .catch(() => ({}));
+
+
+    if (!response.ok) {
+
+        throw new Error(
+            data.error ||
+            data.message ||
+            "Server request failed"
+        );
+
     }
 
-    return "globalsim_" +
-        name +
-        "_" +
-        currentUser.id;
+
+    return data;
 
 }
 
 
-function loadLocalData() {
 
-    if (!currentUser) {
-        return;
-    }
+/* ================= PAGE NAVIGATION ================= */
 
-    const numbers =
-        localStorage.getItem(
-            storageKey("numbers")
-        );
-
-    const history =
-        localStorage.getItem(
-            storageKey("history")
-        );
-
-    const balance =
-        localStorage.getItem(
-            storageKey("balance")
-        );
-
-
-    activeNumbers =
-        numbers
-            ? JSON.parse(numbers)
-            : [];
-
-
-    purchaseHistory =
-        history
-            ? JSON.parse(history)
-            : [];
-
-
-    demoBalance =
-        balance !== null
-            ? Number(balance)
-            : 10000;
-
-
-    updateBalanceUI();
-
-    renderMyNumbers();
-
-    renderHistory();
-
-}
-
-
-function saveLocalData() {
-
-    if (!currentUser) {
-        return;
-    }
-
-    localStorage.setItem(
-        storageKey("numbers"),
-        JSON.stringify(activeNumbers)
-    );
-
-    localStorage.setItem(
-        storageKey("history"),
-        JSON.stringify(purchaseHistory)
-    );
-
-    localStorage.setItem(
-        storageKey("balance"),
-        String(demoBalance)
-    );
-
-}
-
-
-/*
-====================================================
-AUTH UI
-====================================================
-*/
-
-function openAuth(mode) {
-
-    authMode = mode;
-
-    updateAuthModal();
+function openPage(pageId, button) {
 
     document
-        .getElementById("authModal")
-        .classList.add("open");
+        .querySelectorAll(".page")
+        .forEach(page => {
 
-}
+            page.classList.remove("active");
 
+        });
 
-function closeAuth() {
 
     document
-        .getElementById("authModal")
-        .classList.remove("open");
+        .getElementById(pageId)
+        .classList.add("active");
+
 
     document
-        .getElementById("authMessage")
-        .style.display = "none";
+        .querySelectorAll(".nav button")
+        .forEach(btn => {
 
-}
+            btn.classList.remove("active");
 
-
-function switchAuthMode() {
-
-    authMode =
-        authMode === "login"
-            ? "signup"
-            : "login";
-
-    updateAuthModal();
-
-}
+        });
 
 
-function updateAuthModal() {
+    if (button) {
 
-    const title =
-        document.getElementById("authTitle");
-
-    const submit =
-        document.getElementById("authSubmit");
-
-    const switchText =
-        document.getElementById("authSwitchText");
-
-    const switchButton =
-        document.getElementById("authSwitchButton");
-
-
-    if (authMode === "signup") {
-
-        title.textContent =
-            "Create your GlobalSIM account";
-
-        submit.textContent =
-            "Create Account";
-
-        switchText.textContent =
-            "Already have an account?";
-
-        switchButton.textContent =
-            "Log In";
-
-    } else {
-
-        title.textContent =
-            "Log in to GlobalSIM";
-
-        submit.textContent =
-            "Sign In";
-
-        switchText.textContent =
-            "Don't have an account?";
-
-        switchButton.textContent =
-            "Sign Up";
+        button.classList.add("active");
 
     }
 
-}
 
+    if (pageId === "dashboard") {
 
-function showAuthMessage(message) {
+        loadBalance();
 
-    const box =
-        document.getElementById(
-            "authMessage"
-        );
-
-    box.textContent =
-        message;
-
-    box.style.display =
-        "block";
-
-}
-
-
-/*
-====================================================
-EMAIL AUTH
-====================================================
-*/
-
-async function handleEmailAuth(event) {
-
-    event.preventDefault();
-
-
-    const email =
-        document.getElementById("authEmail")
-            .value
-            .trim();
-
-
-    const password =
-        document.getElementById("authPassword")
-            .value;
-
-
-    const button =
-        document.getElementById("authSubmit");
-
-
-    button.disabled = true;
-
-
-    button.textContent =
-        authMode === "signup"
-            ? "Creating account..."
-            : "Signing in...";
-
-
-    try {
-
-        if (authMode === "signup") {
-
-            const {
-                data,
-                error
-            } =
-                await supabaseClient.auth.signUp({
-
-                    email: email,
-
-                    password: password,
-
-                    options: {
-
-                        emailRedirectTo:
-                            window.location.origin
-
-                    }
-
-                });
-
-
-            if (error) {
-                throw error;
-            }
-
-
-            if (data.session) {
-
-                showAuthMessage(
-                    "Account created successfully."
-                );
-
-                currentUser =
-                    data.session.user;
-
-                loadLocalData();
-
-                updateAuthUI(
-                    currentUser
-                );
-
-                setTimeout(
-                    closeAuth,
-                    700
-                );
-
-            } else {
-
-                showAuthMessage(
-                    "Account created. Please check your email and confirm your account."
-                );
-
-            }
-
-
-        } else {
-
-            const {
-                data,
-                error
-            } =
-                await supabaseClient.auth
-                    .signInWithPassword({
-
-                        email: email,
-
-                        password: password
-
-                    });
-
-
-            if (error) {
-                throw error;
-            }
-
-
-            currentUser =
-                data.user;
-
-
-            loadLocalData();
-
-            updateAuthUI(
-                currentUser
-            );
-
-
-            showAuthMessage(
-                "Login successful."
-            );
-
-
-            setTimeout(
-                closeAuth,
-                600
-            );
-
-        }
-
-
-    } catch (error) {
-
-        console.error(error);
-
-        showAuthMessage(
-            error.message ||
-            "Authentication failed."
-        );
+        renderCurrentNumber();
 
     }
 
 
-    button.disabled = false;
+    if (pageId === "numbers") {
 
-    button.textContent =
-        authMode === "signup"
-            ? "Create Account"
-            : "Sign In";
-
-}
-
-
-/*
-====================================================
-GOOGLE
-====================================================
-*/
-
-async function signInWithGoogle() {
-
-    try {
-
-        showAuthMessage(
-            "Connecting to Google..."
-        );
-
-
-        const {
-            error
-        } =
-            await supabaseClient.auth
-                .signInWithOAuth({
-
-                    provider: "google",
-
-                    options: {
-
-                        redirectTo:
-                            window.location.origin
-
-                    }
-
-                });
-
-
-        if (error) {
-            throw error;
-        }
-
-
-    } catch (error) {
-
-        console.error(error);
-
-        showAuthMessage(
-            error.message ||
-            "Google sign-in could not be started."
-        );
+        loadCountries();
 
     }
 
-}
 
+    if (pageId === "history") {
 
-/*
-====================================================
-AUTH UI
-====================================================
-*/
-
-function updateAuthUI(user) {
-
-    const guestActions =
-        document.getElementById(
-            "guestActions"
-        );
-
-    const userArea =
-        document.getElementById(
-            "userArea"
-        );
-
-    const userEmail =
-        document.getElementById(
-            "userEmail"
-        );
-
-    const dashboardEmail =
-        document.getElementById(
-            "dashboardEmail"
-        );
-
-    const accountStatus =
-        document.getElementById(
-            "accountStatus"
-        );
-
-
-    if (user) {
-
-        currentUser = user;
-
-
-        guestActions.style.display =
-            "none";
-
-
-        userArea.classList.add(
-            "visible"
-        );
-
-
-        userEmail.textContent =
-            user.email || "Account";
-
-
-        dashboardEmail.textContent =
-            user.email ||
-            "Signed-in account";
-
-
-        accountStatus.textContent =
-            "Active";
-
-
-        loadLocalData();
-
-    } else {
-
-        currentUser = null;
-
-
-        guestActions.style.display =
-            "flex";
-
-
-        userArea.classList.remove(
-            "visible"
-        );
-
-
-        userEmail.textContent =
-            "";
-
-
-        dashboardEmail.textContent =
-            "Please sign in to view your account.";
-
-
-        accountStatus.textContent =
-            "Demo Account";
-
-
-        activeNumbers = [];
-
-        purchaseHistory = [];
-
-        demoBalance = 10000;
-
-        renderMyNumbers();
-
-        renderHistory();
-
-        updateBalanceUI();
-
-    }
-
-}
-
-
-async function checkAuth() {
-
-    try {
-
-        const {
-            data
-        } =
-            await supabaseClient.auth
-                .getSession();
-
-
-        updateAuthUI(
-            data.session
-                ? data.session.user
-                : null
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Auth check failed:",
-            error
-        );
-
-    }
-
-}
-
-
-supabaseClient.auth.onAuthStateChange(
-    function(event, session) {
-
-        setTimeout(
-            function() {
-
-                updateAuthUI(
-                    session
-                        ? session.user
-                        : null
-                );
-
-            },
-            0
-        );
-
-    }
-);
-
-
-/*
-====================================================
-LOGOUT
-====================================================
-*/
-
-async function logoutUser() {
-
-    const {
-        error
-    } =
-        await supabaseClient.auth.signOut();
-
-
-    if (error) {
-
-        console.error(error);
-
-        return;
+        loadHistory();
 
     }
 
 
-    updateAuthUI(null);
+    if (pageId === "wallet") {
 
-}
-
-
-/*
-====================================================
-BALANCE
-====================================================
-*/
-
-function updateBalanceUI() {
-
-    const formatted =
-        formatMoney(
-            demoBalance
-        );
-
-
-    document.getElementById(
-        "balance"
-    ).textContent =
-        "₦" + formatted;
-
-
-    document.getElementById(
-        "walletNGN"
-    ).textContent =
-        "₦" + formatted;
-
-}
-
-
-/*
-====================================================
-COUNTRIES
-====================================================
-*/
-
-async function loadCountries() {
-
-    const countrySelect =
-        document.getElementById(
-            "country"
-        );
-
-
-    try {
-
-        const response =
-            await fetch(
-                "/api/countries"
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                "Countries API failed"
-            );
-
-        }
-
-
-        const result =
-            await response.json();
-
-
-        if (
-            !result.success ||
-            !Array.isArray(result.data)
-        ) {
-
-            throw new Error(
-                "Invalid countries response"
-            );
-
-        }
-
-
-        countries =
-            result.data;
-
-
-        renderCountryOptions(
-            countries
-        );
-
-
-    } catch (error) {
-
-        console.error(error);
-
-
-        countrySelect.innerHTML =
-            '<option value="">Unable to load countries</option>';
-
-    }
-
-}
-
-
-function renderCountryOptions(list) {
-
-    const countrySelect =
-        document.getElementById(
-            "country"
-        );
-
-
-    countrySelect.innerHTML =
-        '<option value="">Select a country</option>';
-
-
-    list.forEach(
-        function(country) {
-
-            const option =
-                document.createElement(
-                    "option"
-                );
-
-
-            option.value =
-                country.id;
-
-
-            option.textContent =
-                (country.flag || "") +
-                " " +
-                country.name +
-                " (" +
-                country.iso_code +
-                ")";
-
-
-            countrySelect.appendChild(
-                option
-            );
-
-        }
-    );
-
-}
-
-
-function filterCountries() {
-
-    const query =
-        document.getElementById(
-            "countrySearch"
-        )
-        .value
-        .toLowerCase()
-        .trim();
-
-
-    if (!query) {
-
-        renderCountryOptions(
-            countries
-        );
-
-        return;
+        loadWallet();
 
     }
 
 
-    const filtered =
-        countries.filter(
-            function(country) {
+    window.scrollTo({
 
-                return (
-                    String(
-                        country.name || ""
-                    )
-                    .toLowerCase()
-                    .includes(query)
-                    ||
-                    String(
-                        country.iso_code || ""
-                    )
-                    .toLowerCase()
-                    .includes(query)
-                );
+        top: 0,
 
-            }
-        );
-
-
-    renderCountryOptions(
-        filtered
-    );
-
-}
-
-
-/*
-====================================================
-SERVICE PICKER
-====================================================
-*/
-
-function pick(
-    name,
-    element
-) {
-
-    document
-        .querySelectorAll(
-            ".service"
-        )
-        .forEach(
-            function(item) {
-
-                item.classList.remove(
-                    "selected"
-                );
-
-            }
-        );
-
-
-    element.classList.add(
-        "selected"
-    );
-
-
-    document.getElementById(
-        "platform"
-    ).value =
-        name;
-
-
-    document.getElementById(
-        "buy"
-    ).scrollIntoView({
-
-        behavior: "smooth",
-
-        block: "start"
+        behavior: "smooth"
 
     });
 
 }
 
 
-/*
-====================================================
-SEARCH NUMBERS
-====================================================
-*/
 
-async function searchNumbers() {
+/* ================= MONEY ================= */
 
-    const countryId =
+function money(value) {
+
+    const number =
+        Number(value || 0);
+
+
+    return "₦" +
+        number.toLocaleString(
+            "en-NG",
+            {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }
+        );
+
+}
+
+
+
+/* ================= ESCAPE ================= */
+
+function escapeHTML(value) {
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+
+/* ================= BALANCE ================= */
+
+async function loadBalance() {
+
+    try {
+
+        const result =
+            await apiRequest(
+                "/api/sms/balance"
+            );
+
+
+        const balance =
+            result.data?.balance ??
+            result.balance ??
+            0;
+
+
+        document
+            .getElementById("dashboardBalance")
+            .textContent =
+            money(balance);
+
+
+        document
+            .getElementById("walletBalance")
+            .textContent =
+            money(balance);
+
+
+        document
+            .getElementById("connectionStatus")
+            .textContent =
+            "SMS Virtual Connected";
+
+
+    } catch (error) {
+
+        document
+            .getElementById("dashboardBalance")
+            .textContent =
+            "Unavailable";
+
+
+        document
+            .getElementById("walletBalance")
+            .textContent =
+            "Unavailable";
+
+
+        document
+            .getElementById("connectionStatus")
+            .textContent =
+            "Connection Error";
+
+
+        console.error(error);
+
+    }
+
+}
+
+
+
+/* ================= COUNTRIES ================= */
+
+async function loadCountries() {
+
+    const container =
         document.getElementById(
-            "country"
-        ).value;
-
-
-    const type =
-        document.getElementById(
-            "type"
-        ).value;
-
-
-    const platform =
-        document.getElementById(
-            "platform"
-        ).value;
-
-
-    const notice =
-        document.getElementById(
-            "notice"
+            "countries"
         );
 
 
-    const results =
+    container.innerHTML =
+        `<div class="empty">
+            Loading countries...
+        </div>`;
+
+
+    try {
+
+        const result =
+            await apiRequest(
+                "/api/sms/countries?page=1&pageSize=206"
+            );
+
+
+        countries =
+            result.data || [];
+
+
+        renderCountries();
+
+
+    } catch (error) {
+
+        container.innerHTML =
+            `<div class="error">
+                ${escapeHTML(error.message)}
+            </div>`;
+
+    }
+
+}
+
+
+
+/* ================= RENDER COUNTRIES ================= */
+
+function renderCountries() {
+
+    const search =
+        document
+            .getElementById("countrySearch")
+            .value
+            .trim()
+            .toLowerCase();
+
+
+    const filtered =
+        countries.filter(country => {
+
+            const name =
+                String(
+                    country.name || ""
+                ).toLowerCase();
+
+
+            const code =
+                String(
+                    country.code || ""
+                ).toLowerCase();
+
+
+            return (
+                name.includes(search) ||
+                code.includes(search)
+            );
+
+        });
+
+
+    const container =
         document.getElementById(
-            "results"
+            "countries"
         );
 
 
-    const button =
-        document.getElementById(
-            "searchButton"
-        );
+    if (!filtered.length) {
 
-
-    if (!countryId) {
-
-        notice.textContent =
-            "Please select a country first.";
+        container.innerHTML =
+            `<div class="empty">
+                No country found.
+            </div>`;
 
         return;
 
     }
 
 
-    button.disabled = true;
+    container.innerHTML =
+        filtered
+            .map(country => {
 
-    button.textContent =
-        "Searching...";
+                return `
+
+                <div class="item">
+
+                    <h3>
+                        ${escapeHTML(country.name)}
+                    </h3>
+
+                    <div class="small">
+                        ${escapeHTML(country.code || "")}
+                    </div>
+
+                    <button
+                        class="primary"
+                        style="width:100%;margin-top:13px"
+                        onclick="selectCountry(
+                            '${escapeHTML(country.id)}',
+                            '${escapeHTML(country.name)}'
+                        )"
+                    >
+                        View Services
+                    </button>
+
+                </div>
+
+                `;
+
+            })
+            .join("");
+
+}
 
 
-    notice.textContent =
-        "Checking live number availability...";
+
+/* ================= COUNTRY SEARCH ================= */
+
+document
+    .getElementById("countrySearch")
+    .addEventListener(
+        "input",
+        renderCountries
+    );
 
 
-    results.innerHTML =
-        '<div class="loading">Loading live numbers...</div>';
+
+/* ================= SELECT COUNTRY ================= */
+
+async function selectCountry(
+    countryId,
+    countryName
+) {
+
+    const section =
+        document.getElementById(
+            "servicesSection"
+        );
+
+
+    section.style.display =
+        "block";
+
+
+    document
+        .getElementById("selectedCountry")
+        .textContent =
+        countryName;
+
+
+    const services =
+        document.getElementById(
+            "services"
+        );
+
+
+    services.innerHTML =
+        `<div class="empty">
+            Loading services...
+        </div>`;
 
 
     try {
 
-        const response =
-            await fetch(
-                "/api/prices?service=" +
+        const result =
+            await apiRequest(
+                "/api/sms/prices?countryId=" +
                 encodeURIComponent(
-                    platform
+                    countryId
                 )
             );
 
 
-        if (!response.ok) {
+        const data =
+            result.data || [];
 
-            throw new Error(
-                "Prices API failed with status " +
-                response.status
+
+        if (!data.length) {
+
+            services.innerHTML =
+                `<div class="empty">
+                    No services available for this country.
+                </div>`;
+
+            return;
+
+        }
+
+
+        let html = "";
+
+
+        data.forEach(service => {
+
+            const prices =
+                service.prices || [];
+
+
+            prices.forEach(price => {
+
+                const amount =
+                    price.promoPrice ??
+                    price.sellPrice ??
+                    price.price ??
+                    0;
+
+
+                html += `
+
+                <div class="item">
+
+                    <h3>
+                        ${escapeHTML(
+                            service.name
+                        )}
+                    </h3>
+
+                    <div class="small">
+                        Stock:
+                        ${Number(
+                            price.stock ??
+                            service.stock ??
+                            0
+                        ).toLocaleString()}
+                    </div>
+
+                    <div class="price">
+                        ${money(amount)}
+                    </div>
+
+                    <button
+                        class="primary"
+                        style="width:100%"
+                        onclick="purchaseNumber(
+                            '${escapeHTML(price.id)}',
+                            '${escapeHTML(service.name)}',
+                            '${escapeHTML(countryName)}',
+                            ${Number(amount)}
+                        )"
+                    >
+                        Get Number
+                    </button>
+
+                </div>
+
+                `;
+
+            });
+
+        });
+
+
+        services.innerHTML =
+            html ||
+            `<div class="empty">
+                No available prices.
+            </div>`;
+
+
+        section.scrollIntoView({
+            behavior: "smooth"
+        });
+
+
+    } catch (error) {
+
+        services.innerHTML =
+            `<div class="error">
+                ${escapeHTML(error.message)}
+            </div>`;
+
+    }
+
+}
+
+
+
+/* ================= PURCHASE NUMBER ================= */
+
+async function purchaseNumber(
+    priceId,
+    serviceName,
+    countryName,
+    price
+) {
+
+    const confirmation =
+        confirm(
+            "Purchase one " +
+            serviceName +
+            " number for " +
+            money(price) +
+            "?"
+        );
+
+
+    if (!confirmation) {
+
+        return;
+
+    }
+
+
+    try {
+
+        const result =
+            await apiRequest(
+                "/api/sms/order",
+                {
+
+                    method: "POST",
+
+                    body: JSON.stringify({
+
+                        serviceCountryPriceId:
+                            priceId,
+
+                        quantity:
+                            1,
+
+                        autoSearchServer:
+                            false,
+
+                        idempotencyKey:
+                            crypto.randomUUID()
+
+                    })
+
+                }
             );
+
+
+        const order =
+            result.data ||
+            result;
+
+
+        const detail =
+            order.orderDetail?.[0] ||
+            order.orderDetails?.[0] ||
+            order;
+
+
+        currentNumber = {
+
+            id:
+                detail.id,
+
+            phoneNumber:
+                detail.phoneNumber ||
+                "",
+
+            service:
+                serviceName,
+
+            country:
+                countryName,
+
+            price:
+                detail.price ??
+                order.totalPrice ??
+                price,
+
+            status:
+                detail.status ??
+                order.status ??
+                0,
+
+            createdAt:
+                order.createdAt ||
+                new Date().toISOString()
+
+        };
+
+
+        localStorage.setItem(
+            "globalsim_current_number",
+            JSON.stringify(
+                currentNumber
+            )
+        );
+
+
+        /*
+        IMPORTANT:
+
+        After purchasing,
+        automatically go back
+        to the dashboard.
+        */
+
+        openPage(
+            "dashboard",
+            document.querySelector(
+                '.nav button:first-child'
+            )
+        );
+
+
+        renderCurrentNumber();
+
+
+        startPolling();
+
+
+    } catch (error) {
+
+        alert(
+            "Unable to purchase number:\n\n" +
+            error.message
+        );
+
+    }
+
+}
+
+
+
+/* ================= DISPLAY NUMBER ================= */
+
+function renderCurrentNumber() {
+
+    const container =
+        document.getElementById(
+            "currentNumber"
+        );
+
+
+    if (!currentNumber) {
+
+        container.innerHTML =
+            `<div class="empty">
+                No number purchased yet.
+            </div>`;
+
+        return;
+
+    }
+
+
+    container.innerHTML = `
+
+        <div class="number-box">
+
+            <div class="small">
+
+                ${escapeHTML(
+                    currentNumber.country
+                )}
+
+                ·
+
+                ${escapeHTML(
+                    currentNumber.service
+                )}
+
+            </div>
+
+
+            <div class="number">
+
+                ${escapeHTML(
+                    currentNumber.phoneNumber ||
+                    "Waiting for number..."
+                )}
+
+            </div>
+
+
+            <div class="small">
+
+                Status:
+                ${escapeHTML(
+                    getStatusName(
+                        currentNumber.status
+                    )
+                )}
+
+            </div>
+
+
+            <div class="small"
+                 style="margin-top:5px">
+
+                Price:
+                ${money(
+                    currentNumber.price
+                )}
+
+            </div>
+
+
+            <div
+                id="otpArea"
+                style="margin-top:15px"
+            >
+
+                <div class="notice">
+
+                    Request the verification
+                    SMS from the application
+                    where you are registering
+                    the number.
+
+                    <br><br>
+
+                    The OTP will appear here
+                    automatically when SMS
+                    Virtual receives it.
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="toolbar"
+                style="margin-top:15px"
+            >
+
+                <button
+                    class="secondary"
+                    onclick="copyNumber()"
+                >
+                    Copy Number
+                </button>
+
+
+                <button
+                    class="secondary"
+                    onclick="resendOTP()"
+                >
+                    Resend
+                </button>
+
+
+                <button
+                    class="success"
+                    onclick="completeNumber()"
+                >
+                    Complete
+                </button>
+
+
+                <button
+                    class="danger"
+                    onclick="cancelNumber()"
+                >
+                    Cancel
+                </button>
+
+            </div>
+
+        </div>
+
+    `;
+
+}
+
+
+
+/* ================= COPY NUMBER ================= */
+
+function copyNumber() {
+
+    if (
+        !currentNumber ||
+        !currentNumber.phoneNumber
+    ) {
+
+        return;
+
+    }
+
+
+    navigator.clipboard.writeText(
+        currentNumber.phoneNumber
+    );
+
+
+    alert(
+        "Number copied."
+    );
+
+}
+
+
+
+/* ================= STATUS NAMES ================= */
+
+function getStatusName(status) {
+
+    const statuses = {
+
+        0: "Pending",
+
+        1: "Ready",
+
+        2: "Resend",
+
+        3: "Success",
+
+        4: "Completed",
+
+        5: "Cancelled",
+
+        6: "Expired",
+
+        7: "Refunded",
+
+        8: "Cancelled / Waiting"
+
+    };
+
+
+    return (
+        statuses[
+            Number(status)
+        ] ||
+        String(status)
+    );
+
+}
+
+
+
+/* ================= POLLING ================= */
+
+function startPolling() {
+
+    clearInterval(
+        pollingTimer
+    );
+
+
+    if (
+        !currentNumber ||
+        !currentNumber.id
+    ) {
+
+        return;
+
+    }
+
+
+    checkNumberStatus();
+
+
+    pollingTimer =
+        setInterval(
+            checkNumberStatus,
+            5000
+        );
+
+}
+
+
+
+/* ================= CHECK STATUS ================= */
+
+async function checkNumberStatus() {
+
+    if (
+        !currentNumber ||
+        !currentNumber.id
+    ) {
+
+        return;
+
+    }
+
+
+    try {
+
+        const result =
+            await apiRequest(
+                "/api/sms/status?id=" +
+                encodeURIComponent(
+                    currentNumber.id
+                )
+            );
+
+
+        const data =
+            result.data ||
+            result;
+
+
+        currentNumber.status =
+            data.status ??
+            currentNumber.status;
+
+
+        currentNumber.phoneNumber =
+            data.phoneNumber ||
+            currentNumber.phoneNumber;
+
+
+        localStorage.setItem(
+            "globalsim_current_number",
+            JSON.stringify(
+                currentNumber
+            )
+        );
+
+
+        renderCurrentNumber();
+
+
+        const otpList =
+            data.orderDetailOtp ||
+            [];
+
+
+        const latestOTP =
+            otpList.length
+                ? otpList[
+                    otpList.length - 1
+                  ]
+                : null;
+
+
+        if (
+            latestOTP &&
+            latestOTP.otpCode
+        ) {
+
+            showOTP(
+                latestOTP.otpCode
+            );
+
+
+            clearInterval(
+                pollingTimer
+            );
+
+        }
+
+
+        if (
+            [4,5,6,7]
+                .includes(
+                    Number(
+                        data.status
+                    )
+                )
+        ) {
+
+            clearInterval(
+                pollingTimer
+            );
+
+        }
+
+
+    } catch (error) {
+
+        console.log(
+            "Status check:",
+            error.message
+        );
+
+    }
+
+}
+
+
+
+/* ================= SHOW OTP ================= */
+
+function showOTP(code) {
+
+    const area =
+        document.getElementById(
+            "otpArea"
+        );
+
+
+    if (!area) {
+
+        return;
+
+    }
+
+
+    area.innerHTML = `
+
+        <div class="notice">
+
+            <div>
+                Verification Code
+            </div>
+
+            <div class="code">
+                ${escapeHTML(code)}
+            </div>
+
+            <button
+                class="primary"
+                onclick="copyOTP('${escapeHTML(code)}')"
+            >
+                Copy Code
+            </button>
+
+        </div>
+
+    `;
+
+}
+
+
+
+/* ================= COPY OTP ================= */
+
+function copyOTP(code) {
+
+    navigator.clipboard.writeText(
+        code
+    );
+
+
+    alert(
+        "Verification code copied."
+    );
+
+}
+
+
+
+/* ================= RESEND ================= */
+
+async function resendOTP() {
+
+    if (
+        !currentNumber ||
+        !currentNumber.id
+    ) {
+
+        return;
+
+    }
+
+
+    try {
+
+        await apiRequest(
+            "/api/sms/resend",
+            {
+
+                method: "POST",
+
+                body: JSON.stringify({
+
+                    id:
+                        currentNumber.id
+
+                })
+
+            }
+        );
+
+
+        alert(
+            "Resend requested."
+        );
+
+
+        startPolling();
+
+
+    } catch (error) {
+
+        alert(
+            error.message
+        );
+
+    }
+
+}
+
+
+
+/* ================= COMPLETE ================= */
+
+async function completeNumber() {
+
+    if (
+        !currentNumber ||
+        !currentNumber.id
+    ) {
+
+        return;
+
+    }
+
+
+    try {
+
+        await apiRequest(
+            "/api/sms/complete",
+            {
+
+                method: "POST",
+
+                body: JSON.stringify({
+
+                    id:
+                        currentNumber.id
+
+                })
+
+            }
+        );
+
+
+        currentNumber.status =
+            4;
+
+
+        localStorage.setItem(
+            "globalsim_current_number",
+            JSON.stringify(
+                currentNumber
+            )
+        );
+
+
+        renderCurrentNumber();
+
+
+        alert(
+            "Number completed."
+        );
+
+
+    } catch (error) {
+
+        alert(
+            error.message
+        );
+
+    }
+
+}
+
+
+
+/* ================= CANCEL ================= */
+
+async function cancelNumber() {
+
+    if (
+        !currentNumber ||
+        !currentNumber.id
+    ) {
+
+        return;
+
+    }
+
+
+    const confirmation =
+        confirm(
+            "Cancel this activation?"
+        );
+
+
+    if (!confirmation) {
+
+        return;
+
+    }
+
+
+    try {
+
+        await apiRequest(
+            "/api/sms/cancel",
+            {
+
+                method: "POST",
+
+                body: JSON.stringify({
+
+                    id:
+                        currentNumber.id
+
+                })
+
+            }
+        );
+
+
+        clearInterval(
+            pollingTimer
+        );
+
+
+        currentNumber = null;
+
+
+        localStorage.removeItem(
+            "globalsim_current_number"
+        );
+
+
+        renderCurrentNumber();
+
+
+        await loadBalance();
+
+
+        alert(
+            "Activation cancelled."
+        );
+
+
+    } catch (error) {
+
+        alert(
+            "Cancellation failed:\n\n" +
+            error.message
+        );
+
+    }
+
+}
+
+
+
+/* ================= HISTORY ================= */
+
+async function loadHistory() {
+
+    const container =
+        document.getElementById(
+            "historyContainer"
+        );
+
+
+    container.innerHTML =
+        `<div class="empty">
+            Loading history...
+        </div>`;
+
+
+    try {
+
+        const search =
+            document
+                .getElementById(
+                    "historySearch"
+                )
+                .value
+                .trim();
+
+
+        let url =
+            "/api/sms/history?page=1&pageSize=100";
+
+
+        if (search) {
+
+            url +=
+                "&search=" +
+                encodeURIComponent(
+                    search
+                );
 
         }
 
 
         const result =
-            await response.json();
-
-
-        if (
-            !result.success ||
-            !Array.isArray(result.data)
-        ) {
-
-            throw new Error(
-                "Invalid prices response"
+            await apiRequest(
+                url
             );
+
+
+        const rows =
+            result.data ||
+            [];
+
+
+        if (!rows.length) {
+
+            container.innerHTML =
+                `<div class="empty">
+                    No purchase history found.
+                </div>`;
+
+            return;
 
         }
 
 
-        prices =
-            result.data;
+        container.innerHTML = `
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Date</th>
+
+                        <th>Number</th>
+
+                        <th>Country</th>
+
+                        <th>Service</th>
+
+                        <th>Price</th>
+
+                        <th>Status</th>
+
+                        <th>Code</th>
+
+                    </tr>
+
+                </thead>
 
 
-        const matching =
-            prices.filter(
-                function(item) {
+                <tbody>
 
-                    const sameCountry =
-                        String(
-                            item.country_id
-                        ) ===
-                        String(
-                            countryId
-                        );
+                    ${rows.map(row => {
+
+                        const otpList =
+                            row.orderDetailOtp ||
+                            [];
 
 
-                    const sameType =
-                        !type ||
-                        !item.rental_type ||
-                        item.rental_type === type;
+                        const otp =
+                            otpList.length
+                                ? otpList[
+                                    otpList.length - 1
+                                  ].otpCode
+                                : "—";
 
 
-                    return (
-                        sameCountry &&
-                        sameType
-                    );
+                        return `
 
-                }
-            );
+                        <tr>
 
+                            <td>
+                                ${escapeHTML(
+                                    row.createdAt ||
+                                    "—"
+                                )}
+                            </td>
 
-        renderResults(
-            matching,
-            platform
-        );
+                            <td>
+                                ${escapeHTML(
+                                    row.phoneNumber ||
+                                    "—"
+                                )}
+                            </td>
 
+                            <td>
+                                ${escapeHTML(
+                                    row.country?.name ||
+                                    row.serviceCountry?.country?.name ||
+                                    "—"
+                                )}
+                            </td>
 
-        notice.textContent =
-            matching.length +
-            " available option" +
-            (
-                matching.length === 1
-                    ? ""
-                    : "s"
-            ) +
-            " found.";
+                            <td>
+                                ${escapeHTML(
+                                    row.service?.name ||
+                                    row.serviceCountry?.service?.name ||
+                                    "—"
+                                )}
+                            </td>
+
+                            <td>
+                                ${money(
+                                    row.servicePrice ||
+                                    row.price
+                                )}
+                            </td>
+
+                            <td>
+                                ${escapeHTML(
+                                    getStatusName(
+                                        row.status
+                                    )
+                                )}
+                            </td>
+
+                            <td>
+                                ${escapeHTML(
+                                    otp
+                                )}
+                            </td>
+
+                        </tr>
+
+                        `;
+
+                    }).join("")}
+
+                </tbody>
+
+            </table>
+
+        `;
 
 
     } catch (error) {
 
-        console.error(error);
-
-
-        results.innerHTML =
-            '<div class="empty">' +
-            'Unable to load live numbers right now.' +
-            '<br><br>' +
-            'Please try again in a moment.' +
-            '</div>';
-
-
-        notice.textContent =
-            "There was a problem connecting to the number provider.";
-
-    }
-
-
-    button.disabled = false;
-
-    button.textContent =
-        "Search Compatible Numbers";
-
-}
-
-
-/*
-====================================================
-RENDER NUMBER RESULTS
-====================================================
-*/
-
-function renderResults(
-    items,
-    platform
-) {
-
-    const results =
-        document.getElementById(
-            "results"
-        );
-
-
-    if (!items.length) {
-
-        results.innerHTML =
-            '<div class="empty">' +
-            'No numbers are currently available for this country and service.' +
-            '</div>';
-
-        return;
-
-    }
-
-
-    results.innerHTML = "";
-
-
-    items.forEach(
-        function(item) {
-
-            const result =
-                document.createElement(
-                    "div"
-                );
-
-
-            result.className =
-                "result";
-
-
-            const countryName =
-                item.country_name ||
-                "Unknown country";
-
-
-            const flag =
-                item.flag ||
-                "";
-
-
-            const provider =
-                item.provider_name ||
-                "Provider";
-
-
-            const price =
-                item.final_price !== undefined
-                    ? item.final_price
-                    : 0;
-
-
-            const stockText =
-                item.stock !== null &&
-                item.stock !== undefined
-                    ? "Stock: " +
-                      item.stock
-                    : "Availability verified by provider";
-
-
-            result.innerHTML = `
-
-                <div>
-
-                    <div class="number">
-                        ${escapeHTML(flag)}
-                        ${escapeHTML(countryName)}
-                    </div>
-
-                    <div class="badges">
-
-                        <span class="badge">
-                            ${escapeHTML(platform)}
-                        </span>
-
-                        <span class="badge">
-                            ${escapeHTML(provider)}
-                        </span>
-
-                        <span class="badge">
-                            ${escapeHTML(
-                                item.rental_type ||
-                                "short"
-                            )}
-                        </span>
-
-                    </div>
-
-                    <small>
-                        ${escapeHTML(stockText)}
-                    </small>
-
-                </div>
-
-
-                <div>
-
-                    <div class="price">
-
-                        ₦${formatMoney(price)}
-
-                        <span>
-                            provider price
-                        </span>
-
-                    </div>
-
-                    <button
-                        class="get"
-                        onclick='purchaseNumber(${JSON.stringify(item)})'>
-
-                        Get Number
-
-                    </button>
-
-                </div>
-
-            `;
-
-
-            results.appendChild(
-                result
-            );
-
-        }
-    );
-
-}
-
-
-/*
-====================================================
-PURCHASE NUMBER
-====================================================
-*/
-
-function purchaseNumber(item) {
-
-    if (!currentUser) {
-
-        openAuth("login");
-
-        showAuthMessage(
-            "Please sign in before purchasing a number."
-        );
-
-        return;
-
-    }
-
-
-    const price =
-        Number(
-            item.final_price || 0
-        );
-
-
-    if (
-        Number.isNaN(price) ||
-        price < 0
-    ) {
-
-        showModal(
-            "Purchase Error",
-            "The provider returned an invalid number price."
-        );
-
-        return;
-
-    }
-
-
-    if (
-        price > demoBalance
-    ) {
-
-        showModal(
-            "Insufficient Balance",
-            "Your demo balance is not enough to purchase this number."
-        );
-
-        return;
-
-    }
-
-
-    const now =
-        new Date();
-
-
-    const numberValue =
-        item.number ||
-        item.phone_number ||
-        item.phone ||
-        "Pending provider assignment";
-
-
-    const purchaseId =
-        "GS-" +
-        Date.now();
-
-
-    const record = {
-
-        id:
-            purchaseId,
-
-        number:
-            numberValue,
-
-        country:
-            item.country_name ||
-            "Unknown country",
-
-        flag:
-            item.flag ||
-            "",
-
-        service:
-            document.getElementById(
-                "platform"
-            ).value,
-
-        provider:
-            item.provider_name ||
-            "Provider",
-
-        rentalType:
-            item.rental_type ||
-            "short",
-
-        price:
-            price,
-
-        purchasedAt:
-            now.toISOString(),
-
-        status:
-            "Active",
-
-        messages:
-            []
-
-    };
-
-
-    demoBalance -= price;
-
-
-    activeNumbers.unshift(
-        record
-    );
-
-
-    purchaseHistory.unshift({
-
-        ...record,
-
-        action:
-            "Purchased",
-
-        cancelledAt:
-            null
-
-    });
-
-
-    saveLocalData();
-
-
-    updateBalanceUI();
-
-    renderMyNumbers();
-
-    renderHistory();
-
-
-    document.getElementById(
-        "myNumbers"
-    ).scrollIntoView({
-
-        behavior: "smooth",
-
-        block: "start"
-
-    });
-
-
-    showTemporaryNotice(
-        "Number purchased successfully. Your number is now under My Numbers."
-    );
-
-}
-
-
-/*
-====================================================
-MY NUMBERS
-====================================================
-*/
-
-function renderMyNumbers() {
-
-    const container =
-        document.getElementById(
-            "myNumbersList"
-        );
-
-
-    document.getElementById(
-        "activeCount"
-    ).textContent =
-        activeNumbers.length;
-
-
-    if (!activeNumbers.length) {
-
         container.innerHTML =
-            '<div class="empty-box">' +
-            'No active numbers yet. Purchase a number below to see it here.' +
-            '</div>';
-
-        return;
+            `<div class="error">
+                ${escapeHTML(
+                    error.message
+                )}
+            </div>`;
 
     }
-
-
-    container.innerHTML = "";
-
-
-    activeNumbers.forEach(
-        function(number) {
-
-            const card =
-                document.createElement(
-                    "div"
-                );
-
-
-            card.className =
-                "number-card";
-
-
-            const rentalLabel =
-                number.rentalType === "long"
-                    ? "Lifetime"
-                    : "Rental";
-
-
-            card.innerHTML = `
-
-                <div class="number-head">
-
-                    <div>
-
-                        <div class="number-main">
-                            ${escapeHTML(
-                                number.flag
-                            )}
-                            ${escapeHTML(
-                                number.number
-                            )}
-                        </div>
-
-                        <div class="number-meta">
-
-                            ${escapeHTML(
-                                number.country
-                            )}
-
-                            ·
-
-                            ${escapeHTML(
-                                number.service
-                            )}
-
-                            ·
-
-                            ${rentalLabel}
-
-                        </div>
-
-                    </div>
-
-                    <div class="number-status">
-                        ACTIVE
-                    </div>
-
-                </div>
-
-
-                <div class="number-actions">
-
-                    <button
-                        class="action-button blue"
-                        onclick="copyText('${escapeAttribute(number.number)}')">
-
-                        Copy Number
-
-                    </button>
-
-
-                    <button
-                        class="action-button red"
-                        onclick="cancelNumber('${escapeAttribute(number.id)}')">
-
-                        Cancel Number
-
-                    </button>
-
-                </div>
-
-
-                <div class="messages">
-
-                    <div class="messages-title">
-                        Messages
-                    </div>
-
-                    <div id="messages-${escapeAttribute(number.id)}">
-
-                        <div class="message">
-
-                            <small>
-                                No messages received yet.
-                            </small>
-
-                            <div class="message-text">
-                                Request the verification code from the application you are using. When your provider sends an SMS to this number, it can appear here.
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            `;
-
-
-            container.appendChild(
-                card
-            );
-
-
-            renderMessages(
-                number
-            );
-
-        }
-    );
 
 }
 
 
-/*
-====================================================
-MESSAGES
-====================================================
-*/
 
-function renderMessages(number) {
+/* ================= WALLET ================= */
 
-    const container =
+async function loadWallet() {
+
+    await loadBalance();
+
+
+    const methods =
         document.getElementById(
-            "messages-" +
-            number.id
+            "paymentMethods"
         );
 
 
-    if (
-        !container ||
-        !number.messages ||
-        !number.messages.length
-    ) {
-
-        return;
-
-    }
-
-
-    container.innerHTML = "";
-
-
-    number.messages.forEach(
-        function(message) {
-
-            const messageBox =
-                document.createElement(
-                    "div"
-                );
-
-
-            messageBox.className =
-                "message";
-
-
-            const code =
-                message.code ||
-                extractCode(
-                    message.text
-                );
-
-
-            messageBox.innerHTML = `
-
-                <small>
-                    ${escapeHTML(
-                        message.receivedAt ||
-                        ""
-                    )}
-                </small>
-
-                <div class="message-text">
-                    ${escapeHTML(
-                        message.text ||
-                        ""
-                    )}
-                </div>
-
-                ${
-                    code
-                        ? `
-                            <div class="code-box">
-
-                                <span class="code">
-                                    ${escapeHTML(code)}
-                                </span>
-
-                                <button
-                                    class="action-button blue"
-                                    onclick="copyText('${escapeAttribute(code)}')">
-
-                                    Copy Code
-
-                                </button>
-
-                            </div>
-                          `
-                        : ""
-                }
-
-            `;
-
-
-            container.appendChild(
-                messageBox
-            );
-
-        }
-    );
-
-}
-
-
-/*
-====================================================
-EXTRACT OTP
-====================================================
-*/
-
-function extractCode(text) {
-
-    if (!text) {
-        return null;
-    }
-
-
-    const match =
-        String(text).match(
-            /\b\d{4,8}\b/
-        );
-
-
-    return match
-        ? match[0]
-        : null;
-
-}
-
-
-/*
-====================================================
-CANCEL NUMBER
-====================================================
-*/
-
-function cancelNumber(id) {
-
-    const index =
-        activeNumbers.findIndex(
-            function(number) {
-
-                return number.id === id;
-
-            }
-        );
-
-
-    if (index === -1) {
-        return;
-    }
-
-
-    const number =
-        activeNumbers[index];
-
-
-    const confirmed =
-        confirm(
-            "Cancel this number? The demo purchase balance will be returned."
-        );
-
-
-    if (!confirmed) {
-        return;
-    }
-
-
-    demoBalance +=
-        Number(
-            number.price || 0
-        );
-
-
-    activeNumbers.splice(
-        index,
-        1
-    );
-
-
-    purchaseHistory.unshift({
-
-        ...number,
-
-        action:
-            "Cancelled",
-
-        status:
-            "Cancelled",
-
-        cancelledAt:
-            new Date().toISOString()
-
-    });
-
-
-    saveLocalData();
-
-
-    updateBalanceUI();
-
-    renderMyNumbers();
-
-    renderHistory();
-
-
-    showTemporaryNotice(
-        "Number cancelled. The demo balance has been returned."
-    );
-
-}
-
-
-/*
-====================================================
-HISTORY
-====================================================
-*/
-
-function renderHistory() {
-
-    const container =
+    const deposits =
         document.getElementById(
-            "historyList"
+            "depositHistory"
         );
 
 
-    document.getElementById(
-        "historyCount"
-    ).textContent =
-        purchaseHistory.length;
+    methods.innerHTML =
+        `<div class="empty">
+            Loading payment methods...
+        </div>`;
 
 
-    if (!purchaseHistory.length) {
+    deposits.innerHTML =
+        `<div class="empty">
+            Loading deposits...
+        </div>`;
 
-        container.innerHTML =
-            '<div class="empty-box">' +
-            'No purchase history yet.' +
-            '</div>';
-
-        return;
-
-    }
-
-
-    container.innerHTML = "";
-
-
-    purchaseHistory.forEach(
-        function(item) {
-
-            const card =
-                document.createElement(
-                    "div"
-                );
-
-
-            card.className =
-                "history-card";
-
-
-            const purchasedDate =
-                formatDate(
-                    item.purchasedAt
-                );
-
-
-            const cancelledDate =
-                item.cancelledAt
-                    ? formatDate(
-                        item.cancelledAt
-                    )
-                    : "—";
-
-
-            let statusClass =
-                "status-active";
-
-
-            if (
-                item.status ===
-                "Cancelled"
-            ) {
-
-                statusClass =
-                    "status-cancelled";
-
-            }
-
-
-            if (
-                item.status ===
-                "Expired"
-            ) {
-
-                statusClass =
-                    "status-expired";
-
-            }
-
-
-            card.innerHTML = `
-
-                <div class="history-row">
-
-                    <div class="history-item">
-
-                        <small>
-                            NUMBER
-                        </small>
-
-                        <b>
-                            ${escapeHTML(
-                                item.flag || ""
-                            )}
-                            ${escapeHTML(
-                                item.number
-                            )}
-                        </b>
-
-                    </div>
-
-
-                    <div class="history-item">
-
-                        <small>
-                            SERVICE
-                        </small>
-
-                        <b>
-                            ${escapeHTML(
-                                item.service
-                            )}
-                        </b>
-
-                    </div>
-
-
-                    <div class="history-item">
-
-                        <small>
-                            PURCHASED
-                        </small>
-
-                        <b>
-                            ${escapeHTML(
-                                purchasedDate
-                            )}
-                        </b>
-
-                    </div>
-
-
-                    <div class="history-item">
-
-                        <small>
-                            STATUS
-                        </small>
-
-                        <b class="${statusClass}">
-                            ${escapeHTML(
-                                item.status
-                            )}
-                        </b>
-
-                    </div>
-
-                </div>
-
-
-                <div
-                    class="history-row"
-                    style="margin-top:15px;">
-
-                    <div class="history-item">
-
-                        <small>
-                            COUNTRY
-                        </small>
-
-                        <b>
-                            ${escapeHTML(
-                                item.country
-                            )}
-                        </b>
-
-                    </div>
-
-
-                    <div class="history-item">
-
-                        <small>
-                            TYPE
-                        </small>
-
-                        <b>
-                            ${
-                                item.rentalType === "long"
-                                    ? "Lifetime"
-                                    : "Rental"
-                            }
-                        </b>
-
-                    </div>
-
-
-                    <div class="history-item">
-
-                        <small>
-                            PRICE
-                        </small>
-
-                        <b>
-                            ₦${formatMoney(
-                                item.price
-                            )}
-                        </b>
-
-                    </div>
-
-
-                    <div class="history-item">
-
-                        <small>
-                            CANCELLED
-                        </small>
-
-                        <b>
-                            ${escapeHTML(
-                                cancelledDate
-                            )}
-                        </b>
-
-                    </div>
-
-                </div>
-
-            `;
-
-
-            container.appendChild(
-                card
-            );
-
-        }
-    );
-
-}
-
-
-/*
-====================================================
-DATE FORMAT
-====================================================
-*/
-
-function formatDate(value) {
-
-    if (!value) {
-        return "—";
-    }
-
-
-    const date =
-        new Date(value);
-
-
-    return date.toLocaleString(
-        "en-NG",
-        {
-            dateStyle: "medium",
-            timeStyle: "short"
-        }
-    );
-
-}
-
-
-/*
-====================================================
-COPY
-====================================================
-*/
-
-async function copyText(text) {
 
     try {
 
-        await navigator.clipboard.writeText(
-            text
-        );
+        const [
+            methodResult,
+            historyResult
+        ] =
+        await Promise.all([
+
+            apiRequest(
+                "/api/sms/deposit-methods"
+            ),
+
+            apiRequest(
+                "/api/sms/deposit-history"
+            )
+
+        ]);
 
 
-        showTemporaryNotice(
-            "Copied successfully."
-        );
+        const methodList =
+            methodResult.data ||
+            [];
+
+
+        if (!methodList.length) {
+
+            methods.innerHTML =
+                `<div class="empty">
+                    No payment methods available.
+                </div>`;
+
+        } else {
+
+            methods.innerHTML =
+                methodList
+                    .map(method => {
+
+                        return `
+
+                        <div class="payment-method">
+
+                            <h3>
+                                ${escapeHTML(
+                                    method.name
+                                )}
+                            </h3>
+
+                            <p class="small">
+                                ${escapeHTML(
+                                    method.note ||
+                                    ""
+                                )}
+                            </p>
+
+                            <button
+                                class="primary"
+                                onclick="createDeposit(
+                                    '${escapeHTML(method.id)}'
+                                )"
+                            >
+                                Fund Wallet
+                            </button>
+
+                        </div>
+
+                        `;
+
+                    })
+                    .join("");
+
+        }
+
+
+        const history =
+            historyResult.data ||
+            [];
+
+
+        if (!history.length) {
+
+            deposits.innerHTML =
+                `<div class="empty">
+                    No deposits found.
+                </div>`;
+
+        } else {
+
+            deposits.innerHTML = `
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Date</th>
+
+                            <th>Amount</th>
+
+                            <th>Status</th>
+
+                            <th>Method</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        ${history.map(item => {
+
+                            return `
+
+                            <tr>
+
+                                <td>
+                                    ${escapeHTML(
+                                        item.createdAt ||
+                                        "—"
+                                    )}
+                                </td>
+
+                                <td>
+                                    ${money(
+                                        item.amount
+                                    )}
+                                </td>
+
+                                <td>
+                                    ${escapeHTML(
+                                        item.status ??
+                                        "—"
+                                    )}
+                                </td>
+
+                                <td>
+                                    ${escapeHTML(
+                                        item.depositMethod?.name ||
+                                        "—"
+                                    )}
+                                </td>
+
+                            </tr>
+
+                            `;
+
+                        }).join("")}
+
+                    </tbody>
+
+                </table>
+
+            `;
+
+        }
 
 
     } catch (error) {
 
-        console.error(error);
+        methods.innerHTML =
+            `<div class="error">
+                ${escapeHTML(
+                    error.message
+                )}
+            </div>`;
 
-        showTemporaryNotice(
-            "Unable to copy automatically."
+    }
+
+}
+
+
+
+/* ================= CREATE DEPOSIT ================= */
+
+async function createDeposit(
+    depositMethodId
+) {
+
+    const amount =
+        prompt(
+            "Enter the amount you want to deposit:"
+        );
+
+
+    if (!amount) {
+
+        return;
+
+    }
+
+
+    const numericAmount =
+        Number(amount);
+
+
+    if (
+        !numericAmount ||
+        numericAmount <= 0
+    ) {
+
+        alert(
+            "Enter a valid amount."
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        const result =
+            await apiRequest(
+                "/api/sms/deposit-request",
+                {
+
+                    method: "POST",
+
+                    body: JSON.stringify({
+
+                        depositMethodId:
+                            depositMethodId,
+
+                        amount:
+                            numericAmount,
+
+                        idempotencyKey:
+                            crypto.randomUUID()
+
+                    })
+
+                }
+            );
+
+
+        const data =
+            result.data ||
+            result;
+
+
+        alert(
+
+            "Deposit request created.\n\n" +
+
+            (
+                data.paymentData ||
+                "Follow the payment instructions supplied by the provider."
+            )
+
+        );
+
+
+        loadWallet();
+
+
+    } catch (error) {
+
+        alert(
+            "Deposit failed:\n\n" +
+            error.message
         );
 
     }
@@ -3842,220 +2484,19 @@ async function copyText(text) {
 }
 
 
-/*
-====================================================
-FUNDING
-====================================================
-*/
 
-function showFundingMessage() {
+/* ================= START ================= */
 
-    showModal(
-        "Wallet Funding",
-        "The wallet interface is ready. Real card, bank or payment-provider funding should be connected through your secure backend before accepting real customer money."
-    );
+loadBalance();
 
-}
+renderCurrentNumber();
 
 
-/*
-====================================================
-MODAL
-====================================================
-*/
+if (currentNumber) {
 
-function showModal(
-    title,
-    text
-) {
-
-    document.getElementById(
-        "modalTitle"
-    ).textContent =
-        title;
-
-
-    document.getElementById(
-        "modalText"
-    ).textContent =
-        text;
-
-
-    document.getElementById(
-        "modal"
-    ).classList.add(
-        "open"
-    );
+    startPolling();
 
 }
-
-
-function closeModal() {
-
-    document.getElementById(
-        "modal"
-    ).classList.remove(
-        "open"
-    );
-
-}
-
-
-/*
-====================================================
-TEMPORARY NOTICE
-====================================================
-*/
-
-function showTemporaryNotice(
-    text
-) {
-
-    const notice =
-        document.getElementById(
-            "notice"
-        );
-
-
-    notice.textContent =
-        text;
-
-
-    setTimeout(
-        function() {
-
-            notice.textContent =
-                "";
-
-        },
-        5000
-    );
-
-}
-
-
-/*
-====================================================
-SECURITY HELPERS
-====================================================
-*/
-
-function escapeHTML(value) {
-
-    return String(
-        value ?? ""
-    )
-
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-
-        .replace(
-            /</g,
-            "&lt;"
-        )
-
-        .replace(
-            />/g,
-            "&gt;"
-        )
-
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-
-}
-
-
-function escapeAttribute(value) {
-
-    return String(
-        value ?? ""
-    )
-        .replace(
-            /\\/g,
-            "\\\\"
-        )
-        .replace(
-            /'/g,
-            "\\'"
-        );
-
-}
-
-
-/*
-====================================================
-MODAL EVENTS
-====================================================
-*/
-
-document
-    .getElementById("modal")
-    .addEventListener(
-        "click",
-        function(event) {
-
-            if (
-                event.target === this
-            ) {
-
-                closeModal();
-
-            }
-
-        }
-    );
-
-
-document
-    .getElementById("authModal")
-    .addEventListener(
-        "click",
-        function(event) {
-
-            if (
-                event.target === this
-            ) {
-
-                closeAuth();
-
-            }
-
-        }
-    );
-
-
-document
-    .getElementById("authForm")
-    .addEventListener(
-        "submit",
-        handleEmailAuth
-    );
-
-
-/*
-====================================================
-START
-====================================================
-*/
-
-checkAuth();
-
-loadCountries();
-
-renderMyNumbers();
-
-renderHistory();
-
-updateBalanceUI();
 
 </script>
 
