@@ -9,721 +9,688 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-* {
-    box-sizing: border-box;
+*{box-sizing:border-box}
+
+html{scroll-behavior:smooth}
+
+body{
+    margin:0;
+    background:#020b18;
+    color:#eef6ff;
+    font-family:Arial,sans-serif;
 }
 
-html {
-    scroll-behavior: smooth;
+button,input,select{font-family:inherit}
+
+a{text-decoration:none;color:inherit}
+
+.nav{
+    min-height:74px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 5%;
+    background:#06111f;
+    border-bottom:1px solid #14263b;
+    position:sticky;
+    top:0;
+    z-index:100;
 }
 
-body {
-    margin: 0;
-    background: #020b18;
-    color: #eef6ff;
-    font-family: Arial, sans-serif;
+.brand{
+    display:flex;
+    gap:10px;
+    align-items:center;
 }
 
-a {
-    text-decoration: none;
-    color: inherit;
+.mark{
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    background:#087cf5;
+    font-weight:900;
 }
 
-button,
-select,
-input {
-    font-family: inherit;
+.brand b{font-size:22px}
+
+.brand b span{color:#168cff}
+
+.brand small{
+    display:block;
+    color:#71869c;
+    font-size:9px;
 }
 
-.nav {
-    min-height: 74px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 5%;
-    background: #06111f;
-    border-bottom: 1px solid #14263b;
-    position: sticky;
-    top: 0;
-    z-index: 20;
+.navlinks{
+    display:flex;
+    gap:24px;
+    color:#aebed0;
+    font-size:14px;
 }
 
-.brand {
-    display: flex;
-    gap: 10px;
-    align-items: center;
+.actions{
+    display:flex;
+    gap:8px;
+    align-items:center;
 }
 
-.mark {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    background: #087cf5;
-    font-weight: 900;
-}
-
-.brand b {
-    font-size: 22px;
-}
-
-.brand b span {
-    color: #168cff;
-}
-
-.brand small {
-    display: block;
-    color: #71869c;
-    font-size: 9px;
-}
-
-.navlinks {
-    display: flex;
-    gap: 24px;
-    color: #aebed0;
-    font-size: 14px;
-}
-
-.navlinks a:hover {
-    color: #2a9cff;
-}
-
-.actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.currency,
 .auth-button,
-.logout {
-    padding: 10px 14px;
-    border-radius: 8px;
-    border: 1px solid #29405a;
-    background: #0a192b;
-    color: #dce8f4;
-    cursor: pointer;
+.currency,
+.logout{
+    padding:10px 14px;
+    border-radius:8px;
+    border:1px solid #29405a;
+    background:#0a192b;
+    color:#dce8f4;
+    cursor:pointer;
 }
 
 .auth-button.primary,
-.primary {
-    background: #087cf5;
-    border-color: #087cf5;
+.dashboard-button{
+    background:#087cf5;
+    border-color:#087cf5;
+    color:#fff;
 }
 
-.user-area {
-    display: none;
-    align-items: center;
-    gap: 8px;
+.user-area{
+    display:none;
+    align-items:center;
+    gap:8px;
 }
 
-.user-area.visible {
-    display: flex;
+.user-area.visible{display:flex}
+
+.user-email{
+    color:#8fa5ba;
+    font-size:11px;
+    max-width:150px;
+    overflow:hidden;
+    text-overflow:ellipsis;
 }
 
-.user-email {
-    color: #8fa5ba;
-    font-size: 11px;
-    max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.dashboard-button{
+    padding:9px 12px;
+    border-radius:8px;
+    font-size:12px;
+    font-weight:800;
 }
 
-.dashboard-button {
-    padding: 10px 14px;
-    border-radius: 8px;
-    background: #087cf5;
-    color: #fff;
-    font-weight: 800;
-    cursor: pointer;
+.hero{
+    padding:70px 5%;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:45px;
+    align-items:center;
+    background:radial-gradient(circle at 80% 35%,#0b4a7b33,transparent 38%);
 }
 
-/* DASHBOARD */
-
-.dashboard {
-    display: none;
-    margin: 30px 5%;
-    padding: 25px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #087cf5, #0757ad);
-    box-shadow: 0 15px 45px #0007;
+.eyebrow,.kicker{
+    color:#25a0ff;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:2px;
 }
 
-.dashboard.visible {
-    display: block;
+.hero h1{
+    font-size:55px;
+    line-height:1.04;
+    margin:15px 0;
 }
 
-.dashboard-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 20px;
+.hero h1 span{color:#168cff}
+
+.hero p{
+    color:#91a6ba;
+    font-size:17px;
+    line-height:1.7;
+    max-width:580px;
 }
 
-.dashboard h2 {
-    margin: 0 0 5px;
+.buttons{
+    display:flex;
+    gap:12px;
+    margin:27px 0;
 }
 
-.dashboard p {
-    margin: 0;
-    color: #d6eaff;
-    font-size: 13px;
+.btn{
+    padding:13px 19px;
+    border-radius:9px;
+    font-weight:800;
+    border:1px solid #29435f;
 }
 
-.wallet-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-top: 20px;
+.primary{
+    background:#087cf5;
+    border-color:#087cf5;
+    color:#fff;
 }
 
-.wallet-card {
-    padding: 18px;
-    border-radius: 12px;
-    background: #ffffff18;
-    border: 1px solid #ffffff30;
+.secondary{
+    background:#09192a;
+    color:#fff;
 }
 
-.wallet-card small {
-    color: #d7eaff;
+.hero-card{
+    border:1px solid #23405d;
+    background:#07192c;
+    border-radius:18px;
+    padding:26px;
+    box-shadow:0 30px 80px #0008;
 }
 
-.wallet-card strong {
-    display: block;
-    font-size: 27px;
-    margin-top: 8px;
+.hero-card h3{margin-top:0}
+
+.filters{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
 }
 
-/* PURCHASED NUMBERS */
-
-.purchased-section {
-    display: none;
-    margin: 20px 5% 50px;
-}
-
-.purchased-section.visible {
-    display: block;
-}
-
-.purchased-section h2 {
-    margin-bottom: 15px;
-}
-
-.purchased-number {
-    background: #061527;
-    border: 1px solid #1a334d;
-    border-radius: 12px;
-    padding: 18px;
-    margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
-    align-items: center;
-}
-
-.purchased-number strong {
-    font-size: 18px;
-}
-
-.purchased-number small {
-    color: #7f94aa;
-    display: block;
-    margin-top: 6px;
-}
-
-.cancel-btn {
-    padding: 9px 13px;
-    border-radius: 7px;
-    border: 1px solid #54333a;
-    background: #32151b;
-    color: #ff9ca8;
-    cursor: pointer;
-}
-
-/* HERO */
-
-.hero {
-    padding: 70px 5%;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 45px;
-    align-items: center;
-    background: radial-gradient(
-        circle at 80% 35%,
-        #0b4a7b33,
-        transparent 38%
-    );
-}
-
-.eyebrow,
-.kicker {
-    color: #25a0ff;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 2px;
-}
-
-.hero h1 {
-    font-size: 55px;
-    line-height: 1.04;
-    margin: 15px 0;
-}
-
-.hero h1 span {
-    color: #168cff;
-}
-
-.hero p {
-    color: #91a6ba;
-    font-size: 17px;
-    line-height: 1.7;
-    max-width: 580px;
-}
-
-.buttons {
-    display: flex;
-    gap: 12px;
-    margin: 27px 0;
-}
-
-.btn {
-    padding: 13px 19px;
-    border-radius: 9px;
-    font-weight: 800;
-    border: 1px solid #29435f;
-}
-
-.secondary {
-    background: #09192a;
-}
-
-.hero-card {
-    border: 1px solid #23405d;
-    background: #07192c;
-    border-radius: 18px;
-    padding: 26px;
-    box-shadow: 0 30px 80px #0008;
-}
-
-.hero-card h3 {
-    margin: 0 0 18px;
-}
-
-.filters {
-    display: grid;
-    grid-template-columns: 1.1fr 1fr;
-    gap: 10px;
-}
-
-.filters label {
-    font-size: 10px;
-    color: #8094a9;
-    display: block;
-    margin-bottom: 6px;
+.filters label{
+    font-size:10px;
+    color:#8094a9;
+    display:block;
+    margin-bottom:6px;
 }
 
 .filters select,
-.country-search {
-    width: 100%;
-    padding: 13px;
-    border-radius: 8px;
-    border: 1px solid #29445f;
-    background: #041120;
-    color: #e6f1fb;
-    outline: none;
+.country-search{
+    width:100%;
+    padding:13px;
+    border-radius:8px;
+    border:1px solid #29445f;
+    background:#041120;
+    color:#e6f1fb;
+    outline:none;
 }
 
-.country-search {
-    margin-bottom: 8px;
+.country-search{
+    margin-top:8px;
 }
 
-.wide {
-    grid-column: 1 / -1;
+.wide{grid-column:1/-1}
+
+.search{
+    width:100%;
+    margin-top:14px;
+    padding:13px;
+    border:0;
+    border-radius:8px;
+    background:#087cf5;
+    color:white;
+    font-weight:800;
+    cursor:pointer;
 }
 
-.search {
-    width: 100%;
-    margin-top: 14px;
-    padding: 13px;
-    border: 0;
-    border-radius: 8px;
-    background: #087cf5;
-    color: white;
-    font-weight: 800;
-    cursor: pointer;
+.search:disabled{
+    opacity:.6;
+    cursor:wait;
 }
 
-.search:disabled {
-    opacity: .6;
-    cursor: wait;
+.note{
+    font-size:11px;
+    color:#71879e;
+    margin-top:12px;
 }
 
-.note {
-    font-size: 11px;
-    color: #71879e;
-    margin-top: 12px;
+.section{
+    padding:70px 5%;
+    text-align:center;
 }
 
-/* SECTIONS */
-
-.section {
-    padding: 70px 5%;
-    text-align: center;
+.section h2{
+    font-size:38px;
+    margin:8px 0;
 }
 
-.section h2 {
-    font-size: 38px;
-    margin: 8px 0;
+.lead{color:#8499ad}
+
+.services{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+    max-width:1050px;
+    margin:35px auto;
 }
 
-.lead {
-    color: #8499ad;
-}
-
-.services {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-    max-width: 1050px;
-    margin: 35px auto;
-}
-
-.service {
-    padding: 22px;
-    text-align: left;
-    background: #061527;
-    border: 1px solid #1a334d;
-    border-radius: 13px;
-    cursor: pointer;
-    transition: .2s;
+.service{
+    padding:22px;
+    text-align:left;
+    background:#061527;
+    border:1px solid #1a334d;
+    border-radius:13px;
+    cursor:pointer;
+    transition:.2s;
 }
 
 .service:hover,
-.service.selected {
-    border-color: #168cff;
-    box-shadow: 0 0 25px #168cff12;
-    transform: translateY(-2px);
+.service.selected{
+    border-color:#168cff;
+    box-shadow:0 0 25px #168cff12;
+    transform:translateY(-2px);
 }
 
-.service .icon {
-    font-size: 25px;
+.service .icon{font-size:25px}
+
+.service b{
+    display:block;
+    margin:10px 0 4px;
 }
 
-.service b {
-    display: block;
-    margin: 10px 0 4px;
+.service span{
+    color:#7f94aa;
+    font-size:12px;
 }
 
-.service span {
-    color: #7f94aa;
-    font-size: 12px;
+.results{
+    max-width:1050px;
+    margin:25px auto;
+    text-align:left;
 }
 
-.results {
-    max-width: 1050px;
-    margin: 25px auto 0;
-    text-align: left;
+.result{
+    display:flex;
+    justify-content:space-between;
+    gap:20px;
+    align-items:center;
+    padding:18px;
+    background:#061527;
+    border:1px solid #1a334d;
+    border-radius:12px;
+    margin:10px 0;
 }
 
-.result {
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
-    align-items: center;
-    padding: 18px;
-    background: #061527;
-    border: 1px solid #1a334d;
-    border-radius: 12px;
-    margin: 10px 0;
+.number{font-weight:800}
+
+.badges{
+    display:flex;
+    gap:5px;
+    flex-wrap:wrap;
+    margin-top:7px;
 }
 
-.result .number {
-    font-weight: 800;
+.badge{
+    font-size:10px;
+    padding:4px 7px;
+    border-radius:5px;
+    background:#0d2a44;
+    color:#69bdff;
 }
 
-.badges {
-    display: flex;
-    gap: 5px;
-    flex-wrap: wrap;
-    margin-top: 7px;
+.result small{
+    display:block;
+    color:#71879c;
+    margin-top:5px;
 }
 
-.badge {
-    font-size: 10px;
-    padding: 4px 7px;
-    border-radius: 5px;
-    background: #0d2a44;
-    color: #69bdff;
+.price{
+    font-weight:800;
+    color:#fff;
 }
 
-.result small {
-    display: block;
-    color: #71879c;
-    margin-top: 5px;
+.price span{
+    display:block;
+    color:#6f849a;
+    font-size:10px;
+    font-weight:400;
 }
 
-.price {
-    font-weight: 800;
-    color: #fff;
+.get{
+    padding:10px 15px;
+    border:0;
+    border-radius:8px;
+    background:#087cf5;
+    color:#fff;
+    font-weight:800;
+    cursor:pointer;
+    margin-top:8px;
 }
 
-.price span {
-    display: block;
-    color: #6f849a;
-    font-size: 10px;
-    font-weight: 400;
+.loading,.empty{
+    text-align:center;
+    padding:30px;
+    color:#71879c;
+    background:#061527;
+    border:1px solid #1a334d;
+    border-radius:12px;
 }
 
-.get {
-    padding: 10px 15px;
-    border: 0;
-    border-radius: 8px;
-    background: #087cf5;
-    color: #fff;
-    font-weight: 800;
-    cursor: pointer;
-    margin-top: 8px;
+.pricing{background:#030e1b}
+
+.plans{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:18px;
+    max-width:820px;
+    margin:35px auto;
 }
 
-/* PRICING */
-
-.pricing {
-    background: #030e1b;
+.plan{
+    padding:28px;
+    text-align:left;
+    border:1px solid #1a334d;
+    background:#061527;
+    border-radius:14px;
 }
 
-.plans {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 18px;
-    max-width: 820px;
-    margin: 35px auto;
+.plan.featured{border-color:#168cff}
+
+.plan p,.plan li{
+    color:#8297ab;
+    font-size:13px;
 }
 
-.plan {
-    padding: 28px;
-    text-align: left;
-    border: 1px solid #1a334d;
-    background: #061527;
-    border-radius: 14px;
+.amount{
+    font-size:38px;
+    font-weight:900;
 }
 
-.plan.featured {
-    border-color: #168cff;
+.wallet{
+    margin:0 5% 50px;
+    padding:35px;
+    border:1px solid #1b3854;
+    border-radius:17px;
+    background:#07192a;
 }
 
-.plan h3 {
-    font-size: 23px;
+.wallet-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:20px;
 }
 
-.plan p,
-.plan li {
-    color: #8297ab;
-    font-size: 13px;
+.wallet p{
+    color:#8499ad;
+    max-width:580px;
 }
 
-.plan ul {
-    padding-left: 20px;
+.wallet-card{
+    margin-top:20px;
+    background:linear-gradient(135deg,#087cf5,#0754a5);
+    border-radius:18px;
+    padding:28px;
+    max-width:500px;
+    box-shadow:0 20px 50px #0007;
 }
 
-.amount {
-    font-size: 38px;
-    font-weight: 900;
+.wallet-card small{
+    color:#d9ecff;
 }
 
-/* MODAL */
-
-.modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: #000b;
-    z-index: 50;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+.wallet-balance{
+    font-size:42px;
+    font-weight:900;
+    margin:8px 0 18px;
 }
 
-.modal.open {
-    display: flex;
+.demo-label{
+    display:inline-block;
+    background:#ffffff22;
+    border:1px solid #ffffff33;
+    padding:6px 10px;
+    border-radius:20px;
+    font-size:10px;
 }
 
-.modalbox {
-    max-width: 480px;
-    width: 100%;
-    padding: 25px;
-    border-radius: 15px;
-    background: #07192b;
-    border: 1px solid #29445f;
+.wallet-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
 }
 
-.modalbox h3 {
-    margin-top: 0;
+.wallet-actions button{
+    padding:11px 16px;
+    border-radius:8px;
+    border:1px solid #ffffff55;
+    background:#ffffff15;
+    color:#fff;
+    cursor:pointer;
 }
 
-.close {
-    float: right;
-    background: none;
-    border: 0;
-    color: #9eb1c4;
-    font-size: 22px;
-    cursor: pointer;
+.dashboard{
+    display:none;
+    margin:25px 5% 45px;
+    background:#087cf5;
+    border-radius:18px;
+    padding:28px;
+    box-shadow:0 20px 55px #0008;
 }
 
-.auth-form {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+.dashboard.visible{display:block}
+
+.dashboard-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:20px;
 }
 
-.auth-form label {
-    color: #8ea4b9;
-    font-size: 11px;
+.dashboard h2{
+    margin:0 0 5px;
 }
 
-.auth-form input {
-    width: 100%;
-    padding: 13px;
-    border-radius: 8px;
-    border: 1px solid #29445f;
-    background: #041120;
-    color: #fff;
-    outline: none;
+.dashboard-sub{
+    color:#d7ebff;
+    font-size:13px;
 }
 
-.auth-btn,
-.google-btn {
-    padding: 13px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 800;
+.balance-box{
+    background:#ffffff18;
+    border:1px solid #ffffff30;
+    border-radius:12px;
+    padding:16px 20px;
+    min-width:190px;
 }
 
-.auth-btn {
-    border: 0;
-    background: #087cf5;
-    color: white;
+.balance-box small{
+    display:block;
+    color:#d8ecff;
 }
 
-.google-btn {
-    width: 100%;
-    border: 1px solid #29445f;
-    background: #0a192b;
-    color: white;
+.balance-box b{
+    font-size:27px;
 }
 
-.auth-divider {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 15px 0;
-    color: #667d93;
-    font-size: 11px;
+.purchased{
+    margin-top:25px;
+    background:#ffffff12;
+    border:1px solid #ffffff25;
+    border-radius:14px;
+    padding:18px;
 }
 
-.auth-divider::before,
-.auth-divider::after {
-    content: "";
-    height: 1px;
-    background: #1c334b;
-    flex: 1;
+.purchased h3{margin-top:0}
+
+.purchased-number{
+    background:#021a33;
+    border-radius:10px;
+    padding:15px;
+    margin-top:10px;
 }
 
-.auth-switch {
-    text-align: center;
-    color: #8297ab;
-    font-size: 12px;
-    margin-top: 15px;
+.purchased-number strong{
+    display:block;
+    font-size:19px;
 }
 
-.auth-switch button {
-    border: 0;
-    background: none;
-    color: #299dff;
-    cursor: pointer;
+.cancel-btn{
+    margin-top:10px;
+    padding:9px 13px;
+    border:0;
+    border-radius:7px;
+    background:#e74c3c;
+    color:#fff;
+    font-weight:800;
+    cursor:pointer;
 }
 
-.auth-message {
-    padding: 10px;
-    border-radius: 8px;
-    background: #0b2238;
-    color: #8fc8ff;
-    font-size: 12px;
-    line-height: 1.5;
-    display: none;
+.history{
+    margin-top:20px;
 }
 
-footer {
-    padding: 35px 5%;
-    border-top: 1px solid #14263b;
-    color: #70869c;
-    font-size: 11px;
+.history-item{
+    background:#ffffff10;
+    border:1px solid #ffffff20;
+    padding:12px;
+    border-radius:8px;
+    margin-top:8px;
+    font-size:12px;
 }
 
-/* MOBILE */
-
-@media(max-width:900px) {
-
-    .navlinks {
-        display: none;
-    }
-
-    .hero {
-        grid-template-columns: 1fr;
-    }
-
-    .services {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .plans {
-        grid-template-columns: 1fr;
-    }
+.history-item span{
+    display:block;
+    color:#d6eaff;
+    margin-top:4px;
 }
 
-@media(max-width:600px) {
+.auth-message{
+    padding:10px;
+    border-radius:8px;
+    background:#0b2238;
+    color:#8fc8ff;
+    font-size:12px;
+    line-height:1.5;
+    display:none;
+    margin-bottom:12px;
+}
 
-    .nav {
-        flex-wrap: wrap;
-        gap: 10px;
-    }
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:#000b;
+    z-index:200;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+}
 
-    .hero h1 {
-        font-size: 41px;
-    }
+.modal.open{display:flex}
 
-    .filters {
-        grid-template-columns: 1fr;
-    }
+.modalbox{
+    max-width:480px;
+    width:100%;
+    padding:25px;
+    border-radius:15px;
+    background:#07192b;
+    border:1px solid #29445f;
+}
 
-    .services {
-        grid-template-columns: 1fr;
-    }
+.modalbox h3{margin-top:0}
 
-    .wallet-grid {
-        grid-template-columns: 1fr;
-    }
+.modalbox p{
+    color:#8499ad;
+    font-size:13px;
+    line-height:1.6;
+}
 
-    .result,
-    .purchased-number {
-        align-items: flex-start;
-        flex-direction: column;
-    }
+.close{
+    float:right;
+    background:none;
+    border:0;
+    color:#9eb1c4;
+    font-size:22px;
+    cursor:pointer;
+}
 
-    .dashboard-top {
-        align-items: flex-start;
-        flex-direction: column;
-    }
+.auth-form{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
 
-    .actions {
-        width: 100%;
-        justify-content: flex-end;
-    }
+.auth-form label{
+    color:#8ea4b9;
+    font-size:11px;
+}
 
-    .user-email {
-        display: none;
-    }
+.auth-form input{
+    width:100%;
+    padding:13px;
+    border-radius:8px;
+    border:1px solid #29445f;
+    background:#041120;
+    color:#fff;
+    outline:none;
+}
+
+.auth-btn,.google-btn{
+    padding:13px;
+    border-radius:8px;
+    font-weight:800;
+    cursor:pointer;
+}
+
+.auth-btn{
+    border:0;
+    background:#087cf5;
+    color:white;
+}
+
+.google-btn{
+    width:100%;
+    border:1px solid #29445f;
+    background:#0a192b;
+    color:#fff;
+}
+
+.auth-divider{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:15px 0;
+    color:#667d93;
+    font-size:11px;
+}
+
+.auth-divider:before,
+.auth-divider:after{
+    content:"";
+    height:1px;
+    background:#1c334b;
+    flex:1;
+}
+
+.auth-switch{
+    text-align:center;
+    color:#8297ab;
+    font-size:12px;
+    margin-top:15px;
+}
+
+.auth-switch button{
+    border:0;
+    background:none;
+    color:#299dff;
+    cursor:pointer;
+}
+
+footer{
+    padding:35px 5%;
+    border-top:1px solid #14263b;
+    color:#70869c;
+    font-size:11px;
+}
+
+@media(max-width:900px){
+    .navlinks{display:none}
+    .hero{grid-template-columns:1fr}
+    .services{grid-template-columns:1fr 1fr}
+    .plans{grid-template-columns:1fr}
+}
+
+@media(max-width:600px){
+    .nav{flex-wrap:wrap}
+    .hero h1{font-size:41px}
+    .filters{grid-template-columns:1fr}
+    .services{grid-template-columns:1fr}
+    .result{flex-direction:column;align-items:flex-start}
+    .dashboard-top,.wallet-header{flex-direction:column;align-items:flex-start}
+    .balance-box{width:100%}
+    .user-email{display:none}
 }
 </style>
 </head>
@@ -733,39 +700,34 @@ footer {
 <header class="nav">
 
 <a class="brand" href="#">
-    <span class="mark">◎</span>
-
-    <span>
-        <b>Global<span>SIM</span></b>
-        <small>Your Number. Your Control. Anywhere.</small>
-    </span>
+<span class="mark">◎</span>
+<span>
+<b>Global<span>SIM</span></b>
+<small>Your Number. Your Control. Anywhere.</small>
+</span>
 </a>
 
 <nav class="navlinks">
-    <a href="#numbers">Numbers</a>
-    <a href="#services">Services</a>
-    <a href="#pricing">Pricing</a>
-    <a href="#how">How It Works</a>
+<a href="#numbers">Numbers</a>
+<a href="#services">Services</a>
+<a href="#pricing">Pricing</a>
+<a href="#wallet">Wallet</a>
 </nav>
 
 <div class="actions">
 
-<button class="currency">
-USD ▾
-</button>
+<button class="currency">USD ▾</button>
 
 <div id="guestActions">
 
-<button
-    class="auth-button"
-    onclick="openAuth('login')">
-    Log In
+<button class="auth-button"
+onclick="openAuth('login')">
+Log In
 </button>
 
-<button
-    class="auth-button primary"
-    onclick="openAuth('signup')">
-    Sign Up
+<button class="auth-button primary"
+onclick="openAuth('signup')">
+Sign Up
 </button>
 
 </div>
@@ -795,43 +757,37 @@ Log Out
 <div class="dashboard-top">
 
 <div>
-<div class="kicker">ACCOUNT DASHBOARD</div>
-
-<h2>Welcome to GlobalSIM</h2>
-
-<p id="dashboardEmail">
-Your account is ready.
-</p>
+<div class="kicker">YOUR GLOBALSIM ACCOUNT</div>
+<h2>Dashboard</h2>
+<div id="dashboardEmail" class="dashboard-sub"></div>
 </div>
 
-<button
-    class="auth-button"
-    onclick="rechargeWallet()">
-Recharge Wallet
-</button>
+<div class="balance-box">
+<small>DEMO TEST BALANCE</small>
+<b id="dashboardBalance">₦10,000.00</b>
+</div>
 
 </div>
 
+<div class="purchased">
 
-<div class="wallet-grid">
+<h3>Your Number</h3>
 
-<div class="wallet-card">
-
-<small>USD BALANCE</small>
-
-<strong id="usdBalance">
-$0.00
-</strong>
-
+<div id="purchasedNumberArea">
+<div class="dashboard-sub">
+No number purchased yet.
+</div>
 </div>
 
-<div class="wallet-card">
+<div class="history">
 
-<small>NGN BALANCE</small>
+<h3>Transaction History</h3>
 
-<strong id="ngnBalance">
-₦0
-</strong>
+<div id="historyArea">
+<div class="dashboard-sub">
+No transactions yet.
+</div>
+</div>
 
 </div>
 
@@ -839,37 +795,20 @@ $0.00
 
 </section>
 
-
-<!-- PURCHASED NUMBERS -->
-
-<section
-    id="purchasedSection"
-    class="purchased-section">
-
-<h2>Your Numbers</h2>
-
-<div id="purchasedNumbers"></div>
-
-</section>
-
-
-<!-- HERO -->
 
 <section class="hero">
 
 <div>
 
-<div class="eyebrow">
-GLOBAL VIRTUAL NUMBERS
-</div>
+<div class="eyebrow">GLOBAL VIRTUAL NUMBERS</div>
 
 <h1>
 One place for <span>global numbers.</span>
 </h1>
 
 <p>
-Choose a supported country, select the platform or communication service you need,
-and browse compatible number options.
+Choose a supported country, select the platform or communication service
+you need, and browse compatible number options.
 </p>
 
 <div class="buttons">
@@ -885,7 +824,7 @@ View Pricing
 </div>
 
 <p class="note">
-Live availability is loaded from the GlobalSIM provider API.
+Live availability is loaded from your connected number-provider API.
 </p>
 
 </div>
@@ -893,9 +832,7 @@ Live availability is loaded from the GlobalSIM provider API.
 
 <div class="hero-card" id="numbers">
 
-<h3>
-Find your number
-</h3>
+<h3>Find your number</h3>
 
 <div class="filters">
 
@@ -903,20 +840,16 @@ Find your number
 
 <label>COUNTRY</label>
 
-<input
-    id="countrySearch"
-    class="country-search"
-    type="search"
-    placeholder="Search country..."
-    oninput="filterCountries()">
-
 <select id="country">
-
-<option value="">
-Loading countries...
-</option>
-
+<option value="">Loading countries...</option>
 </select>
+
+<input
+id="countrySearch"
+class="country-search"
+type="text"
+placeholder="Search country..."
+oninput="filterCountries()">
 
 </div>
 
@@ -942,47 +875,19 @@ Lifetime
 
 <div class="wide">
 
-<label>
-PLATFORM / SERVICE
-</label>
+<label>PLATFORM / SERVICE</label>
 
 <select id="platform">
 
-<option value="whatsapp">
-WhatsApp
-</option>
-
-<option value="telegram">
-Telegram
-</option>
-
-<option value="tiktok">
-TikTok
-</option>
-
-<option value="instagram">
-Instagram
-</option>
-
-<option value="google">
-Google / Gmail
-</option>
-
-<option value="facebook">
-Facebook
-</option>
-
-<option value="x">
-X
-</option>
-
-<option value="general_sms">
-General SMS
-</option>
-
-<option value="sms_voice">
-SMS + Voice
-</option>
+<option value="whatsapp">WhatsApp</option>
+<option value="telegram">Telegram</option>
+<option value="tiktok">TikTok</option>
+<option value="instagram">Instagram</option>
+<option value="google">Google / Gmail</option>
+<option value="facebook">Facebook</option>
+<option value="x">X</option>
+<option value="general_sms">General SMS</option>
+<option value="sms_voice">SMS + Voice</option>
 
 </select>
 
@@ -990,14 +895,10 @@ SMS + Voice
 
 </div>
 
-
-<button
-    class="search"
-    id="searchButton"
-    onclick="searchNumbers()">
-
+<button id="searchButton"
+class="search"
+onclick="searchNumbers()">
 Search Compatible Numbers
-
 </button>
 
 <div id="notice" class="note"></div>
@@ -1009,13 +910,9 @@ Search Compatible Numbers
 
 <section class="section" id="services">
 
-<div class="kicker">
-CHOOSE A SERVICE
-</div>
+<div class="kicker">CHOOSE A SERVICE</div>
 
-<h2>
-What do you need the number for?
-</h2>
+<h2>What do you need the number for?</h2>
 
 <p class="lead">
 Select a platform to filter the number inventory.
@@ -1023,64 +920,55 @@ Select a platform to filter the number inventory.
 
 <div class="services">
 
-<div class="service selected"
-onclick="pick('whatsapp',this)">
+<div class="service selected" onclick="pick('whatsapp',this)">
 <div class="icon">◉</div>
 <b>WhatsApp</b>
 <span>Supported numbers only</span>
 </div>
 
-<div class="service"
-onclick="pick('telegram',this)">
+<div class="service" onclick="pick('telegram',this)">
 <div class="icon">➤</div>
 <b>Telegram</b>
 <span>Supported numbers only</span>
 </div>
 
-<div class="service"
-onclick="pick('tiktok',this)">
+<div class="service" onclick="pick('tiktok',this)">
 <div class="icon">♪</div>
 <b>TikTok</b>
 <span>Supported numbers only</span>
 </div>
 
-<div class="service"
-onclick="pick('instagram',this)">
+<div class="service" onclick="pick('instagram',this)">
 <div class="icon">◎</div>
 <b>Instagram</b>
 <span>Supported numbers only</span>
 </div>
 
-<div class="service"
-onclick="pick('google',this)">
+<div class="service" onclick="pick('google',this)">
 <div class="icon">G</div>
 <b>Google / Gmail</b>
 <span>Availability varies</span>
 </div>
 
-<div class="service"
-onclick="pick('facebook',this)">
+<div class="service" onclick="pick('facebook',this)">
 <div class="icon">f</div>
 <b>Facebook</b>
 <span>Supported numbers only</span>
 </div>
 
-<div class="service"
-onclick="pick('x',this)">
+<div class="service" onclick="pick('x',this)">
 <div class="icon">𝕏</div>
 <b>X</b>
 <span>Supported numbers only</span>
 </div>
 
-<div class="service"
-onclick="pick('general_sms',this)">
+<div class="service" onclick="pick('general_sms',this)">
 <div class="icon">✉</div>
 <b>General SMS</b>
 <span>SMS-capable numbers</span>
 </div>
 
 </div>
-
 
 <div class="results" id="results">
 
@@ -1093,40 +981,28 @@ Choose a country and service, then search for availability.
 </section>
 
 
-<section
-    class="section pricing"
-    id="pricing">
+<section class="section pricing" id="pricing">
 
-<div class="kicker">
-NUMBER PLANS
-</div>
+<div class="kicker">NUMBER PLANS</div>
 
-<h2>
-Rental or Lifetime
-</h2>
+<h2>Rental or Lifetime</h2>
 
 <p class="lead">
-Pricing depends on the selected country, provider and number type.
+Pricing depends on the selected country and provider.
 </p>
 
 <div class="plans">
 
 <div class="plan">
 
-<div class="kicker">
-RENTAL
-</div>
+<div class="kicker">RENTAL</div>
 
-<h3>
-Flexible access
-</h3>
+<h3>Flexible access</h3>
 
-<div class="amount">
-Live
-</div>
+<div class="amount">Live</div>
 
 <p>
-Rental prices are loaded from the connected number provider.
+Rental prices are loaded from the connected provider.
 </p>
 
 <ul>
@@ -1140,20 +1016,14 @@ Rental prices are loaded from the connected number provider.
 
 <div class="plan featured">
 
-<div class="kicker">
-LIFETIME
-</div>
+<div class="kicker">LIFETIME</div>
 
-<h3>
-Long-term ownership
-</h3>
+<h3>Long-term ownership</h3>
 
-<div class="amount">
-Live
-</div>
+<div class="amount">Live</div>
 
 <p>
-Lifetime availability and pricing depend on the provider.
+Lifetime availability depends on the provider.
 </p>
 
 <ul>
@@ -1169,44 +1039,49 @@ Lifetime availability and pricing depend on the provider.
 </section>
 
 
-<section class="section" id="how">
+<!-- WALLET -->
 
-<div class="kicker">
-HOW IT WORKS
-</div>
+<section class="wallet" id="wallet">
 
-<h2>
-From country to number
-</h2>
+<div class="wallet-header">
 
-<p class="lead">
-Choose a service, review availability, then continue to checkout.
+<div>
+
+<div class="kicker">WALLET</div>
+
+<h2>Your GlobalSIM Wallet</h2>
+
+<p>
+This demo wallet is for testing the purchase and refund system.
+Real payments can be connected later.
 </p>
 
-<div class="services">
-
-<div class="service">
-<div class="icon">1</div>
-<b>Choose country</b>
-<span>Select the country you want.</span>
 </div>
 
-<div class="service">
-<div class="icon">2</div>
-<b>Choose platform</b>
-<span>Filter by WhatsApp, Telegram, TikTok and more.</span>
 </div>
 
-<div class="service">
-<div class="icon">3</div>
-<b>Choose number type</b>
-<span>Rental or lifetime where available.</span>
+<div class="wallet-card">
+
+<span class="demo-label">
+DEMO / TEST MODE
+</span>
+
+<small>Available test balance</small>
+
+<div class="wallet-balance" id="walletBalance">
+₦10,000.00
 </div>
 
-<div class="service">
-<div class="icon">4</div>
-<b>Manage your number</b>
-<span>View your number from your dashboard.</span>
+<div class="wallet-actions">
+
+<button onclick="resetDemoWallet()">
+Reset Demo Balance
+</button>
+
+<button onclick="showFundingNotice()">
+Fund Wallet
+</button>
+
 </div>
 
 </div>
@@ -1215,9 +1090,7 @@ Choose a service, review availability, then continue to checkout.
 
 
 <footer>
-
-© 2026 GlobalSIM · Virtual-number availability and platform compatibility depend on providers and applicable platform policies.
-
+© 2026 GlobalSIM · Demo wallet is for testing only. Number availability and compatibility depend on providers and applicable platform policies.
 </footer>
 
 
@@ -1235,49 +1108,38 @@ Log in to GlobalSIM
 
 <div id="authMessage" class="auth-message"></div>
 
-<form
-    id="authForm"
-    class="auth-form"
-    onsubmit="handleEmailAuth(event)">
+<form id="authForm" class="auth-form">
 
 <label>EMAIL ADDRESS</label>
 
 <input
-    id="authEmail"
-    type="email"
-    placeholder="you@example.com"
-    required>
+id="authEmail"
+type="email"
+placeholder="you@example.com"
+required>
 
 <label>PASSWORD</label>
 
 <input
-    id="authPassword"
-    type="password"
-    placeholder="Your password"
-    minlength="6"
-    required>
+id="authPassword"
+type="password"
+placeholder="Your password"
+minlength="6"
+required>
 
-<button
-    id="authSubmit"
-    class="auth-btn"
-    type="submit">
-
+<button id="authSubmit"
+class="auth-btn"
+type="submit">
 Sign In
-
 </button>
 
 </form>
 
-<div class="auth-divider">
-OR
-</div>
+<div class="auth-divider">OR</div>
 
-<button
-    class="google-btn"
-    onclick="signInWithGoogle()">
-
+<button class="google-btn"
+onclick="signInWithGoogle()">
 Continue with Google
-
 </button>
 
 <div class="auth-switch">
@@ -1286,53 +1148,32 @@ Continue with Google
 Don't have an account?
 </span>
 
-<button
-    onclick="switchAuthMode()"
-    id="authSwitchButton">
-
+<button onclick="switchAuthMode()" id="authSwitchButton">
 Sign Up
-
 </button>
 
 </div>
 
 </div>
-
 </div>
 
 
-<!-- CHECKOUT MODAL -->
+<!-- GENERAL MODAL -->
 
 <div class="modal" id="modal">
 
 <div class="modalbox">
 
-<button class="close" onclick="closeModal()">
-×
-</button>
+<button class="close" onclick="closeModal()">×</button>
 
 <h3 id="modalTitle">
-GlobalSIM checkout
+GlobalSIM
 </h3>
 
 <p id="modalText"></p>
 
-<button
-    id="purchaseButton"
-    class="search"
-    onclick="confirmPurchase()">
-
-Confirm Purchase
-
-</button>
-
-<button
-    class="search"
-    style="background:#26384d;"
-    onclick="closeModal()">
-
-Cancel
-
+<button class="search" onclick="closeModal()">
+Close
 </button>
 
 </div>
@@ -1342,9 +1183,9 @@ Cancel
 
 <script>
 
-/* ==================================================
-   SUPABASE
-================================================== */
+/* =====================================================
+SUPABASE
+===================================================== */
 
 const SUPABASE_URL =
 "https://yhtfdojvmlzlsncsxaug.supabase.co";
@@ -1357,234 +1198,217 @@ window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_PUBLISHABLE_KEY,
     {
-        auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true
+        auth:{
+            persistSession:true,
+            autoRefreshToken:true,
+            detectSessionInUrl:true
         }
     }
 );
 
 
-/* ==================================================
-   VARIABLES
-================================================== */
+/* =====================================================
+GLOBAL VARIABLES
+===================================================== */
 
-let authMode = "login";
-
-let countries = [];
-
-let prices = [];
-
-let selectedItem = null;
-
-let purchasedNumbers =
-JSON.parse(
-    localStorage.getItem("globalsim_numbers") || "[]"
-);
-
-let wallet =
-JSON.parse(
-    localStorage.getItem("globalsim_wallet") ||
-    '{"usd":0,"ngn":0}'
-);
+let authMode="login";
+let currentUser=null;
+let countries=[];
+let filteredCountries=[];
+let demoBalance=10000;
+let purchasedNumber=null;
+let transactions=[];
 
 
-/* ==================================================
-   AUTH MODAL
-================================================== */
+/* =====================================================
+AUTH MODAL
+===================================================== */
 
-function openAuth(mode) {
+function openAuth(mode){
 
-    authMode = mode;
+    authMode=mode;
 
     updateAuthModal();
 
     document
-        .getElementById("authModal")
-        .classList.add("open");
+    .getElementById("authModal")
+    .classList.add("open");
+
 }
 
 
-function closeAuth() {
+function closeAuth(){
 
     document
-        .getElementById("authModal")
-        .classList.remove("open");
+    .getElementById("authModal")
+    .classList.remove("open");
 
-    document
-        .getElementById("authMessage")
-        .style.display = "none";
 }
 
 
-function switchAuthMode() {
+function switchAuthMode(){
 
     authMode =
-        authMode === "login"
-        ? "signup"
-        : "login";
+        authMode==="login"
+        ?"signup"
+        :"login";
 
     updateAuthModal();
+
 }
 
 
-function updateAuthModal() {
+function updateAuthModal(){
 
-    const title =
-        document.getElementById("authTitle");
+    const title=
+    document.getElementById("authTitle");
 
-    const submit =
-        document.getElementById("authSubmit");
+    const submit=
+    document.getElementById("authSubmit");
 
-    const switchText =
-        document.getElementById("authSwitchText");
+    const switchText=
+    document.getElementById("authSwitchText");
 
-    const switchButton =
-        document.getElementById("authSwitchButton");
+    const switchButton=
+    document.getElementById("authSwitchButton");
 
-    if (authMode === "signup") {
+    if(authMode==="signup"){
 
-        title.textContent =
+        title.textContent=
         "Create your GlobalSIM account";
 
-        submit.textContent =
+        submit.textContent=
         "Create Account";
 
-        switchText.textContent =
+        switchText.textContent=
         "Already have an account?";
 
-        switchButton.textContent =
+        switchButton.textContent=
         "Log In";
 
-    } else {
+    }else{
 
-        title.textContent =
+        title.textContent=
         "Log in to GlobalSIM";
 
-        submit.textContent =
+        submit.textContent=
         "Sign In";
 
-        switchText.textContent =
+        switchText.textContent=
         "Don't have an account?";
 
-        switchButton.textContent =
+        switchButton.textContent=
         "Sign Up";
+
     }
+
 }
 
 
-function showAuthMessage(message) {
+function showAuthMessage(message){
 
-    const box =
-        document.getElementById("authMessage");
+    const box=
+    document.getElementById("authMessage");
 
-    box.textContent =
-        message;
+    box.textContent=message;
 
-    box.style.display =
-        "block";
+    box.style.display="block";
+
 }
 
 
-/* ==================================================
-   EMAIL AUTH
-================================================== */
+/* =====================================================
+EMAIL AUTH
+===================================================== */
 
-async function handleEmailAuth(event) {
+document
+.getElementById("authForm")
+.addEventListener("submit",handleEmailAuth);
+
+
+async function handleEmailAuth(event){
 
     event.preventDefault();
 
-    const email =
-        document
-        .getElementById("authEmail")
-        .value
-        .trim();
+    const email=
+    document.getElementById("authEmail")
+    .value
+    .trim();
 
-    const password =
-        document
-        .getElementById("authPassword")
-        .value;
+    const password=
+    document.getElementById("authPassword")
+    .value;
 
-    const button =
-        document
-        .getElementById("authSubmit");
+    const button=
+    document.getElementById("authSubmit");
 
-    button.disabled = true;
+    button.disabled=true;
 
-    button.textContent =
-        authMode === "signup"
-        ? "Creating account..."
-        : "Signing in...";
+    try{
 
-    try {
+        if(authMode==="signup"){
 
-        if (authMode === "signup") {
-
-            const { data, error } =
+            const {data,error}=
             await supabaseClient.auth.signUp({
 
-                email: email,
+                email:email,
 
-                password: password,
+                password:password,
 
-                options: {
+                options:{
                     emailRedirectTo:
                     window.location.origin
                 }
 
             });
 
-            if (error)
-                throw error;
+            if(error)throw error;
 
-            if (data.session) {
-
-                await finishLogin(
-                    data.session.user
-                );
+            if(data.session){
 
                 showAuthMessage(
-                    "Account created successfully."
+                "Account created successfully."
                 );
 
-                setTimeout(
-                    closeAuth,
-                    800
-                );
-
-            } else {
+            }else{
 
                 showAuthMessage(
-                    "Account created. Check your email to confirm your account."
+                "Account created. Please check your email to confirm your account."
                 );
+
             }
 
-        } else {
+        }else{
 
-            const { data, error } =
-            await supabaseClient.auth
-            .signInWithPassword({
+            const {data,error}=
+            await supabaseClient.auth.signInWithPassword({
 
-                email: email,
+                email:email,
 
-                password: password
+                password:password
 
             });
 
-            if (error)
-                throw error;
+            if(error)throw error;
 
-            await finishLogin(
-                data.user
-            );
+            if(data.session){
 
-            closeAuth();
+                closeAuth();
+
+                await finishLogin(
+                    data.session
+                );
+
+            }
+
         }
 
-    } catch(error) {
+    }catch(error){
 
-        console.error(error);
+        console.error(
+            "EMAIL AUTH ERROR:",
+            error
+        );
 
         showAuthMessage(
             error.message ||
@@ -1593,704 +1417,840 @@ async function handleEmailAuth(event) {
 
     }
 
-    button.disabled = false;
+    button.disabled=false;
 
-    button.textContent =
-        authMode === "signup"
-        ? "Create Account"
-        : "Sign In";
+    button.textContent=
+        authMode==="signup"
+        ?"Create Account"
+        :"Sign In";
+
 }
 
 
-/* ==================================================
-   GOOGLE AUTH
-================================================== */
+/* =====================================================
+GOOGLE AUTH
+===================================================== */
 
-async function signInWithGoogle() {
+async function signInWithGoogle(){
 
-    try {
+    try{
 
-        const redirectUrl =
-            window.location.origin;
+        showAuthMessage(
+        "Connecting to Google..."
+        );
 
-        const { error } =
-        await supabaseClient.auth
-        .signInWithOAuth({
+        const {error}=
+        await supabaseClient.auth.signInWithOAuth({
 
-            provider: "google",
+            provider:"google",
 
-            options: {
+            options:{
 
                 redirectTo:
-                    redirectUrl,
+                window.location.origin,
 
-                queryParams: {
-                    access_type: "offline",
-                    prompt: "select_account"
+                queryParams:{
+                    access_type:"offline",
+                    prompt:"select_account"
                 }
 
             }
 
         });
 
-        if (error)
-            throw error;
+        if(error)throw error;
 
-    } catch(error) {
+    }catch(error){
 
-        console.error(error);
+        console.error(
+            "GOOGLE AUTH ERROR:",
+            error
+        );
 
         showAuthMessage(
             error.message ||
             "Google sign-in could not be started."
         );
+
     }
+
 }
 
 
-/* ==================================================
-   FINISH LOGIN
-================================================== */
+/* =====================================================
+FINISH LOGIN
+===================================================== */
 
-async function finishLogin(user) {
+async function finishLogin(session){
 
-    if (!user)
+    if(!session || !session.user){
         return;
+    }
 
-    updateAuthUI(user);
+    currentUser=session.user;
 
-    updateDashboard(user);
+    loadUserDemoData();
 
-    renderPurchasedNumbers();
+    updateAuthUI(
+        session.user
+    );
 
-    window.location.hash =
-        "dashboard";
+    updateDashboard();
 
-    setTimeout(function() {
+    closeAuth();
 
-        document
-        .getElementById("dashboard")
-        .scrollIntoView({
-            behavior: "smooth",
-            block: "start"
+    setTimeout(function(){
+
+        const dashboard=
+        document.getElementById("dashboard");
+
+        dashboard.classList.add("visible");
+
+        dashboard.scrollIntoView({
+            behavior:"smooth",
+            block:"start"
         });
 
-    }, 300);
+    },200);
+
 }
 
 
-/* ==================================================
-   AUTH UI
-================================================== */
+/* =====================================================
+AUTH STATE LISTENER
+===================================================== */
 
-function updateAuthUI(user) {
+supabaseClient.auth.onAuthStateChange(
+    async function(event,session){
 
-    const guest =
-        document.getElementById(
-            "guestActions"
+        console.log(
+            "AUTH EVENT:",
+            event
         );
 
-    const userArea =
-        document.getElementById(
-            "userArea"
+        if(session && session.user){
+
+            currentUser=session.user;
+
+            loadUserDemoData();
+
+            updateAuthUI(
+                session.user
+            );
+
+            updateDashboard();
+
+            document
+            .getElementById("dashboard")
+            .classList.add("visible");
+
+        }else{
+
+            currentUser=null;
+
+            updateAuthUI(null);
+
+            document
+            .getElementById("dashboard")
+            .classList.remove("visible");
+
+        }
+
+    }
+);
+
+
+/* =====================================================
+INITIAL AUTH CHECK
+===================================================== */
+
+async function checkAuth(){
+
+    try{
+
+        const {data,error}=
+        await supabaseClient.auth.getSession();
+
+        if(error){
+            console.error(error);
+            return;
+        }
+
+        if(data.session){
+
+            await finishLogin(
+                data.session
+            );
+
+        }else{
+
+            updateAuthUI(null);
+
+        }
+
+    }catch(error){
+
+        console.error(
+            "SESSION CHECK ERROR:",
+            error
         );
 
-    const userEmail =
-        document.getElementById(
-            "userEmail"
-        );
+    }
 
-    const dashboard =
-        document.getElementById(
-            "dashboard"
-        );
-
-    const purchased =
-        document.getElementById(
-            "purchasedSection"
-        );
+}
 
 
-    if (user) {
+/* =====================================================
+NAVIGATION UI
+===================================================== */
 
-        guest.style.display =
-            "none";
+function updateAuthUI(user){
+
+    const guest=
+    document.getElementById("guestActions");
+
+    const userArea=
+    document.getElementById("userArea");
+
+    const userEmail=
+    document.getElementById("userEmail");
+
+    if(user){
+
+        guest.style.display="none";
 
         userArea.classList.add(
             "visible"
         );
 
-        userEmail.textContent =
-            user.email || "Account";
+        userEmail.textContent=
+        user.email ||
+        "Google Account";
 
-        dashboard.classList.add(
-            "visible"
-        );
+    }else{
 
-        purchased.classList.add(
-            "visible"
-        );
-
-        updateDashboard(user);
-
-        renderPurchasedNumbers();
-
-    } else {
-
-        guest.style.display =
-            "flex";
+        guest.style.display="flex";
 
         userArea.classList.remove(
             "visible"
         );
 
-        dashboard.classList.remove(
-            "visible"
-        );
+        userEmail.textContent="";
 
-        purchased.classList.remove(
-            "visible"
-        );
-
-        userEmail.textContent =
-            "";
     }
+
 }
 
 
-/* ==================================================
-   DASHBOARD
-================================================== */
+/* =====================================================
+LOGOUT
+===================================================== */
 
-function updateDashboard(user) {
+async function logoutUser(){
 
-    document.getElementById(
-        "dashboardEmail"
-    ).textContent =
-        user.email || "Account";
+    try{
 
-    document.getElementById(
-        "usdBalance"
-    ).textContent =
-        "$" +
-        Number(wallet.usd || 0)
-        .toFixed(2);
+        const {error}=
+        await supabaseClient.auth.signOut();
 
-    document.getElementById(
-        "ngnBalance"
-    ).textContent =
-        "₦" +
-        Number(wallet.ngn || 0)
-        .toLocaleString("en-NG");
-}
+        if(error)throw error;
 
+        currentUser=null;
 
-/* ==================================================
-   SESSION CHECK
-================================================== */
+        updateAuthUI(null);
 
-async function checkAuth() {
+        document
+        .getElementById("dashboard")
+        .classList.remove("visible");
 
-    try {
+        window.scrollTo({
+            top:0,
+            behavior:"smooth"
+        });
 
-        const { data } =
-        await supabaseClient.auth
-        .getSession();
-
-        if (data.session) {
-
-            await finishLogin(
-                data.session.user
-            );
-
-        } else {
-
-            updateAuthUI(null);
-        }
-
-    } catch(error) {
+    }catch(error){
 
         console.error(
-            "Session error:",
+            "LOGOUT ERROR:",
             error
         );
 
-        updateAuthUI(null);
     }
+
 }
 
 
-/* ==================================================
-   AUTH STATE LISTENER
-================================================== */
+/* =====================================================
+DEMO WALLET
+===================================================== */
 
-supabaseClient.auth
-.onAuthStateChange(
-async function(event, session) {
+function storageKey(){
 
-    console.log(
-        "AUTH EVENT:",
-        event
-    );
-
-    if (session) {
-
-        await finishLogin(
-            session.user
-        );
-
-    } else {
-
-        updateAuthUI(null);
+    if(!currentUser){
+        return null;
     }
 
-});
+    return "globalsim_demo_" +
+        currentUser.id;
 
-
-/* ==================================================
-   LOGOUT
-================================================== */
-
-async function logoutUser() {
-
-    await supabaseClient.auth.signOut();
-
-    localStorage.removeItem(
-        "globalsim_numbers"
-    );
-
-    purchasedNumbers = [];
-
-    updateAuthUI(null);
-
-    window.location.hash = "";
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
 }
 
 
-/* ==================================================
-   COUNTRIES
-================================================== */
+function loadUserDemoData(){
 
-async function loadCountries() {
+    if(!currentUser)return;
 
-    const select =
-        document.getElementById(
-            "country"
-        );
+    const key=storageKey();
 
-    try {
+    const saved=
+    localStorage.getItem(key);
 
-        const response =
-        await fetch(
-            "/api/countries"
-        );
+    if(saved){
 
-        if (!response.ok)
+        try{
+
+            const data=
+            JSON.parse(saved);
+
+            demoBalance=
+            Number(data.balance);
+
+            if(
+                !Number.isFinite(demoBalance)
+            ){
+                demoBalance=10000;
+            }
+
+            purchasedNumber=
+            data.purchasedNumber ||
+            null;
+
+            transactions=
+            Array.isArray(data.transactions)
+            ?data.transactions
+            :[];
+
+        }catch{
+
+            demoBalance=10000;
+            purchasedNumber=null;
+            transactions=[];
+
+        }
+
+    }else{
+
+        demoBalance=10000;
+        purchasedNumber=null;
+        transactions=[];
+
+    }
+
+    updateDashboard();
+
+}
+
+
+function saveUserDemoData(){
+
+    if(!currentUser)return;
+
+    localStorage.setItem(
+        storageKey(),
+        JSON.stringify({
+
+            balance:demoBalance,
+
+            purchasedNumber:
+            purchasedNumber,
+
+            transactions:
+            transactions
+
+        })
+    );
+
+}
+
+
+/* =====================================================
+UPDATE DASHBOARD
+===================================================== */
+
+function updateDashboard(){
+
+    const balance=
+    document.getElementById(
+        "dashboardBalance"
+    );
+
+    const walletBalance=
+    document.getElementById(
+        "walletBalance"
+    );
+
+    balance.textContent=
+    formatMoney(demoBalance);
+
+    walletBalance.textContent=
+    formatMoney(demoBalance);
+
+    const email=
+    document.getElementById(
+        "dashboardEmail"
+    );
+
+    if(currentUser){
+
+        email.textContent=
+        currentUser.email ||
+        "Google Account";
+
+    }
+
+    renderPurchasedNumber();
+
+    renderHistory();
+
+}
+
+
+/* =====================================================
+FORMAT MONEY
+===================================================== */
+
+function formatMoney(value){
+
+    return Number(value || 0)
+    .toLocaleString(
+        "en-NG",
+        {
+            minimumFractionDigits:2,
+            maximumFractionDigits:2
+        }
+    );
+
+}
+
+
+/* =====================================================
+RESET DEMO WALLET
+===================================================== */
+
+function resetDemoWallet(){
+
+    if(!currentUser){
+
+        openAuth("login");
+
+        return;
+
+    }
+
+    if(
+        !confirm(
+            "Reset your demo balance to ₦10,000?"
+        )
+    ){
+        return;
+    }
+
+    demoBalance=10000;
+
+    saveUserDemoData();
+
+    updateDashboard();
+
+}
+
+
+/* =====================================================
+FUND WALLET
+===================================================== */
+
+function showFundingNotice(){
+
+    showModal(
+        "Real wallet funding",
+        "The real payment gateway is not connected yet. The current wallet is a demo wallet for testing. When you are ready, we can connect a real payment provider such as Paystack or Flutterwave."
+    );
+
+}
+
+
+/* =====================================================
+COUNTRIES
+===================================================== */
+
+async function loadCountries(){
+
+    const select=
+    document.getElementById("country");
+
+    try{
+
+        const response=
+        await fetch("/api/countries");
+
+        if(!response.ok){
             throw new Error(
                 "Countries API failed"
             );
+        }
 
-        const result =
+        const result=
         await response.json();
 
-        if (
+        if(
             !result.success ||
             !Array.isArray(result.data)
-        ) {
-
+        ){
             throw new Error(
                 "Invalid countries response"
             );
         }
 
-        countries =
-            result.data;
+        countries=result.data;
 
-        renderCountries(
-            countries
-        );
+        filteredCountries=[
+            ...countries
+        ];
 
-    } catch(error) {
+        renderCountries();
+
+    }catch(error){
 
         console.error(error);
 
-        select.innerHTML =
+        select.innerHTML=
         '<option value="">Unable to load countries</option>';
 
-        document.getElementById(
-            "notice"
-        ).textContent =
-        "Could not load countries. Please refresh.";
+        document.getElementById("notice")
+        .textContent=
+        "Could not load countries. Please refresh the page.";
+
     }
+
 }
 
 
-function renderCountries(list) {
+function renderCountries(){
 
-    const select =
-        document.getElementById(
-            "country"
-        );
+    const select=
+    document.getElementById("country");
 
-    select.innerHTML =
+    select.innerHTML=
     '<option value="">Select a country</option>';
 
-    list.forEach(function(country) {
+    filteredCountries.forEach(
+        function(country){
 
-        const option =
-            document.createElement(
-                "option"
-            );
+            const option=
+            document.createElement("option");
 
-        option.value =
+            option.value=
             country.id;
 
-        option.textContent =
-            (country.flag || "") +
-            " " +
-            country.name +
-            " (" +
-            country.iso_code +
+            option.textContent=
+            (country.flag || "")+
+            " "+
+            country.name+
+            " ("+
+            country.iso_code+
             ")";
 
-        select.appendChild(
-            option
-        );
-    });
+            select.appendChild(option);
+
+        }
+    );
+
 }
 
 
-function filterCountries() {
+function filterCountries(){
 
-    const search =
-        document
-        .getElementById(
-            "countrySearch"
-        )
-        .value
-        .toLowerCase()
-        .trim();
+    const search=
+    document.getElementById(
+        "countrySearch"
+    )
+    .value
+    .toLowerCase()
+    .trim();
 
-    if (!search) {
+    if(!search){
 
-        renderCountries(
-            countries
-        );
+        filteredCountries=[
+            ...countries
+        ];
 
-        return;
-    }
+    }else{
 
-    const filtered =
+        filteredCountries=
         countries.filter(
-            function(country) {
+            function(country){
 
-                return (
+                return(
                     String(
                         country.name || ""
                     )
                     .toLowerCase()
                     .includes(search)
+
                     ||
+
                     String(
                         country.iso_code || ""
                     )
                     .toLowerCase()
                     .includes(search)
+
                 );
+
             }
         );
 
-    renderCountries(
-        filtered
-    );
+    }
+
+    renderCountries();
+
 }
 
 
-/* ==================================================
-   SERVICE PICKER
-================================================== */
+/* =====================================================
+SERVICE PICKER
+===================================================== */
 
-function pick(
-    name,
-    element
-) {
+function pick(name,element){
 
     document
-    .querySelectorAll(
-        ".service"
-    )
-    .forEach(function(item) {
+    .querySelectorAll(".service")
+    .forEach(
+        function(item){
 
-        item.classList.remove(
-            "selected"
-        );
+            item.classList.remove(
+                "selected"
+            );
 
-    });
-
-    element.classList.add(
-        "selected"
+        }
     );
+
+    element.classList.add("selected");
 
     document.getElementById(
         "platform"
-    ).value =
-        name;
+    ).value=name;
 
     document.getElementById(
         "numbers"
     ).scrollIntoView({
-        behavior: "smooth",
-        block: "center"
+        behavior:"smooth",
+        block:"center"
     });
+
 }
 
 
-/* ==================================================
-   SEARCH NUMBERS
-================================================== */
+/* =====================================================
+SEARCH NUMBERS
+===================================================== */
 
-async function searchNumbers() {
+async function searchNumbers(){
 
-    const countryId =
-        document.getElementById(
-            "country"
-        ).value;
+    const countryId=
+    document.getElementById(
+        "country"
+    ).value;
 
-    const type =
-        document.getElementById(
-            "type"
-        ).value;
+    const type=
+    document.getElementById(
+        "type"
+    ).value;
 
-    const platform =
-        document.getElementById(
-            "platform"
-        ).value;
+    const platform=
+    document.getElementById(
+        "platform"
+    ).value;
 
-    const notice =
-        document.getElementById(
-            "notice"
-        );
+    const notice=
+    document.getElementById(
+        "notice"
+    );
 
-    const results =
-        document.getElementById(
-            "results"
-        );
+    const results=
+    document.getElementById(
+        "results"
+    );
 
-    const button =
-        document.getElementById(
-            "searchButton"
-        );
+    const button=
+    document.getElementById(
+        "searchButton"
+    );
 
-    if (!countryId) {
+    if(!countryId){
 
-        notice.textContent =
-            "Please select a country first.";
+        notice.textContent=
+        "Please select a country first.";
 
         return;
+
     }
 
-    button.disabled = true;
+    button.disabled=true;
 
-    button.textContent =
-        "Searching...";
+    button.textContent=
+    "Searching...";
 
-    results.innerHTML =
+    results.innerHTML=
     '<div class="loading">Loading live numbers...</div>';
 
-    try {
+    try{
 
-        const response =
+        const response=
         await fetch(
-            "/api/prices?service=" +
-            encodeURIComponent(
-                platform
-            )
+            "/api/prices?service="+
+            encodeURIComponent(platform)
         );
 
-        if (!response.ok)
+        if(!response.ok){
+
             throw new Error(
                 "Prices API failed"
             );
 
-        const result =
+        }
+
+        const result=
         await response.json();
 
-        if (
+        if(
             !result.success ||
             !Array.isArray(result.data)
-        ) {
+        ){
 
             throw new Error(
                 "Invalid prices response"
             );
+
         }
 
-        prices =
-            result.data;
+        const matching=
+        result.data.filter(
+            function(item){
 
-        let matching =
-            prices.filter(
-                function(item) {
+                const sameCountry=
+                String(item.country_id) ===
+                String(countryId);
 
-                    const sameCountry =
-                        String(
-                            item.country_id
-                        ) ===
-                        String(
-                            countryId
-                        );
+                const sameType=
+                !type ||
+                !item.rental_type ||
+                item.rental_type===type;
 
-                    const sameType =
-                        !type ||
-                        !item.rental_type ||
-                        item.rental_type ===
-                        type;
+                return(
+                    sameCountry &&
+                    sameType
+                );
 
-                    return (
-                        sameCountry &&
-                        sameType
-                    );
-                }
-            );
-
-        /*
-        REMOVE DUPLICATE COUNTRY/PLATFORM
-        CARDS WITH THE SAME PRICE AND TYPE
-        */
-
-        const unique =
-            new Map();
-
-        matching.forEach(
-            function(item) {
-
-                const key =
-                    [
-                        item.country_id,
-                        item.rental_type,
-                        platform,
-                        item.final_price
-                    ].join("|");
-
-                if (!unique.has(key)) {
-
-                    unique.set(
-                        key,
-                        item
-                    );
-                }
             }
         );
-
-        matching =
-            Array.from(
-                unique.values()
-            );
 
         renderResults(
             matching,
             platform
         );
 
-        notice.textContent =
-            matching.length +
-            " available option" +
-            (
-                matching.length === 1
-                ? ""
-                : "s"
-            ) +
-            " found.";
+        notice.textContent=
+        matching.length+
+        " available option"+
+        (
+            matching.length===1
+            ?""
+            :"s"
+        )+
+        " found.";
 
-    } catch(error) {
+    }catch(error){
 
         console.error(error);
 
-        results.innerHTML =
-        '<div class="empty">' +
-        'Unable to load live numbers right now.' +
-        '<br><br>' +
-        'Please try again.' +
+        results.innerHTML=
+        '<div class="empty">'+
+        'Unable to load live numbers right now.'+
+        '<br><br>'+
+        'Please try again in a moment.'+
         '</div>';
 
-        notice.textContent =
-        "There was a problem connecting to the number provider.";
     }
 
-    button.disabled = false;
+    button.disabled=false;
 
-    button.textContent =
-        "Search Compatible Numbers";
+    button.textContent=
+    "Search Compatible Numbers";
+
 }
 
 
-/* ==================================================
-   RESULTS
-================================================== */
+/* =====================================================
+RENDER RESULTS
+===================================================== */
 
-function renderResults(
-    items,
-    platform
-) {
+function renderResults(items,platform){
 
-    const results =
-        document.getElementById(
-            "results"
-        );
+    const results=
+    document.getElementById(
+        "results"
+    );
 
-    if (!items.length) {
+    if(!items.length){
 
-        results.innerHTML =
-        '<div class="empty">' +
-        'No numbers are currently available for this country and service.' +
+        results.innerHTML=
+        '<div class="empty">'+
+        'No numbers are currently available for this country and service.'+
         '</div>';
 
         return;
+
     }
 
-    results.innerHTML = "";
+    results.innerHTML="";
 
     items.forEach(
-        function(item) {
+        function(item,index){
 
-            const result =
-                document.createElement(
-                    "div"
-                );
+            const result=
+            document.createElement(
+                "div"
+            );
 
-            result.className =
-                "result";
+            result.className="result";
 
-            const countryName =
-                item.country_name ||
-                "Unknown country";
+            const countryName=
+            item.country_name ||
+            "Unknown country";
 
-            const flag =
-                item.flag || "";
+            const flag=
+            item.flag || "";
 
-            const provider =
-                item.provider_name ||
-                "Provider";
+            const provider=
+            item.provider_name ||
+            "Provider";
 
-            const price =
-                item.final_price !==
-                undefined
-                ? item.final_price
-                : 0;
+            const price=
+            item.final_price !== undefined
+            ?Number(item.final_price)
+            :0;
 
-            const stockText =
-                item.stock !== null &&
-                item.stock !== undefined
-                ? "Stock: " +
-                  item.stock
-                : "Availability verified by provider";
+            const stock=
+            item.stock !== null &&
+            item.stock !== undefined
+            ?item.stock
+            :"Available";
 
-            result.innerHTML = `
+            /*
+            Only one visible purchase card per provider/country/service.
+            */
+
+            result.innerHTML=`
 
                 <div>
 
@@ -2321,7 +2281,7 @@ function renderResults(
                     </div>
 
                     <small>
-                        ${escapeHTML(stockText)}
+                        Stock: ${escapeHTML(String(stock))}
                     </small>
 
                 </div>
@@ -2339,489 +2299,457 @@ function renderResults(
                     </div>
 
                     <button
-                        class="get"
-                        onclick='openCheckout(${JSON.stringify(item)})'>
+                    class="get"
+                    onclick='purchaseDemoNumber(${JSON.stringify(item)})'>
 
                         Get Number
 
                     </button>
 
                 </div>
+
             `;
 
-            results.appendChild(
-                result
-            );
+            results.appendChild(result);
+
         }
     );
+
 }
 
 
-/* ==================================================
-   CHECKOUT
-================================================== */
+/* =====================================================
+DEMO PURCHASE
+===================================================== */
 
-function openCheckout(item) {
+function purchaseDemoNumber(item){
 
-    selectedItem =
-        item;
+    if(!currentUser){
 
-    const modal =
-        document.getElementById(
-            "modal"
+        showModal(
+            "Login required",
+            "Please log in or sign up before purchasing a number."
         );
 
-    const title =
-        document.getElementById(
-            "modalTitle"
-        );
-
-    const text =
-        document.getElementById(
-            "modalText"
-        );
-
-    const price =
-        Number(
-            item.final_price || 0
-        );
-
-    title.textContent =
-        "GlobalSIM — Purchase Number";
-
-    text.innerHTML =
-
-        "Country: <b>" +
-        escapeHTML(
-            item.country_name || ""
-        ) +
-        "</b><br><br>" +
-
-        "Service: <b>" +
-        escapeHTML(
-            document.getElementById(
-                "platform"
-            ).value
-        ) +
-        "</b><br><br>" +
-
-        "Price: <b>₦" +
-        formatMoney(price) +
-        "</b><br><br>" +
-
-        "This is currently a test purchase. No real payment will be taken.";
-
-    modal.classList.add(
-        "open"
-    );
-}
-
-
-/* ==================================================
-   CONFIRM PURCHASE
-================================================== */
-
-async function confirmPurchase() {
-
-    if (!selectedItem)
-        return;
-
-    const {
-        data
-    } =
-    await supabaseClient.auth
-    .getSession();
-
-    if (!data.session) {
-
-        closeModal();
-
-        openAuth(
-            "login"
-        );
-
-        showAuthMessage(
-            "Please log in before purchasing a number."
+        setTimeout(
+            function(){
+                closeModal();
+                openAuth("login");
+            },
+            900
         );
 
         return;
+
     }
 
-    const price =
-        Number(
-            selectedItem.final_price || 0
-        );
+    if(purchasedNumber){
 
-    if (
-        Number(wallet.ngn || 0)
-        < price
-    ) {
-
-        closeModal();
-
-        alert(
-            "Insufficient NGN balance. Please recharge your wallet first."
+        showModal(
+            "Number already active",
+            "You already have an active test number. Cancel it first before purchasing another one."
         );
 
         return;
+
     }
 
-    /*
-    TEST PURCHASE
-    */
+    const price=
+    Number(item.final_price || 0);
 
-    wallet.ngn -= price;
+    if(price<=0){
 
-    const purchased = {
+        showModal(
+            "Invalid price",
+            "This number does not have a valid provider price."
+        );
+
+        return;
+
+    }
+
+    if(demoBalance<price){
+
+        showModal(
+            "Insufficient demo balance",
+            "Your demo balance is ₦"+
+            formatMoney(demoBalance)+
+            ". The test number costs ₦"+
+            formatMoney(price)+"."
+        );
+
+        return;
+
+    }
+
+    demoBalance-=price;
+
+    purchasedNumber={
 
         id:
-            Date.now(),
+        item.id ||
+        Date.now(),
 
         country:
-            selectedItem.country_name ||
-            "Unknown",
+        item.country_name ||
+        "Unknown",
 
         flag:
-            selectedItem.flag ||
-            "",
+        item.flag ||
+        "",
 
         service:
-            document.getElementById(
-                "platform"
-            ).value,
+        document.getElementById(
+            "platform"
+        ).value,
 
-        type:
-            selectedItem.rental_type ||
-            "short",
+        provider:
+        item.provider_name ||
+        "Provider",
 
-        price:
-            price,
+        price:price,
 
         number:
-            "TEST-" +
-            Math.floor(
-                100000 +
-                Math.random() *
-                900000
-            ),
+        item.number ||
+        item.phone_number ||
+        "TEST NUMBER",
 
         purchasedAt:
-            new Date().toISOString()
+        new Date().toLocaleString()
 
     };
 
-    purchasedNumbers.push(
-        purchased
-    );
+    transactions.unshift({
 
-    saveWallet();
+        type:"Purchase",
 
-    saveNumbers();
+        amount:-price,
 
-    updateDashboard(
-        data.session.user
-    );
+        description:
+        purchasedNumber.flag+
+        " "+
+        purchasedNumber.country+
+        " "+
+        purchasedNumber.service,
 
-    renderPurchasedNumbers();
+        date:
+        purchasedNumber.purchasedAt
 
-    closeModal();
-
-    alert(
-        "Test number purchased successfully."
-    );
-
-    document
-    .getElementById(
-        "purchasedSection"
-    )
-    .scrollIntoView({
-        behavior: "smooth"
     });
+
+    saveUserDemoData();
+
+    updateDashboard();
+
+    showModal(
+        "Test number purchased",
+        "The demo balance has been reduced by ₦"+
+        formatMoney(price)+
+        ". The test number is now shown in your dashboard."
+    );
+
+    setTimeout(
+        function(){
+
+            closeModal();
+
+            document
+            .getElementById("dashboard")
+            .scrollIntoView({
+                behavior:"smooth",
+                block:"start"
+            });
+
+        },
+        1000
+    );
+
 }
 
 
-/* ==================================================
-   CANCEL / REFUND
-================================================== */
+/* =====================================================
+CANCEL + REFUND
+===================================================== */
 
-function cancelNumber(id) {
+function cancelNumber(){
 
-    const index =
-        purchasedNumbers.findIndex(
-            function(item) {
-                return item.id === id;
-            }
-        );
-
-    if (index === -1)
-        return;
-
-    const item =
-        purchasedNumbers[index];
-
-    const refund =
-        Number(
-            item.price || 0
-        );
-
-    const confirmed =
-        confirm(
-            "Cancel this number and return ₦" +
-            formatMoney(refund) +
-            " to your wallet?"
-        );
-
-    if (!confirmed)
-        return;
-
-    wallet.ngn +=
-        refund;
-
-    purchasedNumbers.splice(
-        index,
-        1
-    );
-
-    saveWallet();
-
-    saveNumbers();
-
-    renderPurchasedNumbers();
-
-    supabaseClient.auth
-    .getUser()
-    .then(function(result) {
-
-        if (result.data.user) {
-
-            updateDashboard(
-                result.data.user
-            );
-        }
-    });
-
-    alert(
-        "Number cancelled. Your balance has been refunded."
-    );
-}
-
-
-/* ==================================================
-   PURCHASED NUMBERS DISPLAY
-================================================== */
-
-function renderPurchasedNumbers() {
-
-    const container =
-        document.getElementById(
-            "purchasedNumbers"
-        );
-
-    if (!purchasedNumbers.length) {
-
-        container.innerHTML =
-        '<div class="empty">' +
-        'You have not purchased any numbers yet.' +
-        '</div>';
-
+    if(!purchasedNumber){
         return;
     }
 
-    container.innerHTML =
-        "";
-
-    purchasedNumbers.forEach(
-        function(item) {
-
-            const card =
-                document.createElement(
-                    "div"
-                );
-
-            card.className =
-                "purchased-number";
-
-            card.innerHTML = `
-
-                <div>
-
-                    <strong>
-                        ${escapeHTML(
-                            item.flag || ""
-                        )}
-                        ${escapeHTML(
-                            item.country
-                        )}
-                    </strong>
-
-                    <small>
-                        ${escapeHTML(
-                            item.service
-                        )}
-                        ·
-                        ${escapeHTML(
-                            item.type
-                        )}
-                    </small>
-
-                    <small>
-                        Number:
-                        <b>
-                            ${escapeHTML(
-                                item.number
-                            )}
-                        </b>
-                    </small>
-
-                    <small>
-                        Paid:
-                        ₦${formatMoney(
-                            item.price
-                        )}
-                    </small>
-
-                </div>
-
-                <button
-                    class="cancel-btn"
-                    onclick="cancelNumber(${item.id})">
-
-                    Cancel & Refund
-
-                </button>
-
-            `;
-
-            container.appendChild(
-                card
-            );
-        }
+    const refund=
+    Number(
+        purchasedNumber.price || 0
     );
-}
 
-
-/* ==================================================
-   WALLET
-================================================== */
-
-function saveWallet() {
-
-    localStorage.setItem(
-        "globalsim_wallet",
-        JSON.stringify(wallet)
-    );
-}
-
-
-function saveNumbers() {
-
-    localStorage.setItem(
-        "globalsim_numbers",
-        JSON.stringify(
-            purchasedNumbers
+    if(
+        !confirm(
+            "Cancel this test number and refund ₦"+
+            formatMoney(refund)+
+            " to your demo balance?"
         )
+    ){
+        return;
+    }
+
+    demoBalance+=refund;
+
+    transactions.unshift({
+
+        type:"Refund",
+
+        amount:refund,
+
+        description:
+        "Cancelled "+
+        purchasedNumber.flag+
+        " "+
+        purchasedNumber.country+
+        " "+
+        purchasedNumber.service,
+
+        date:
+        new Date().toLocaleString()
+
+    });
+
+    purchasedNumber=null;
+
+    saveUserDemoData();
+
+    updateDashboard();
+
+    showModal(
+        "Number cancelled",
+        "The test number was cancelled and ₦"+
+        formatMoney(refund)+
+        " was returned to your demo balance."
     );
+
 }
 
 
-function rechargeWallet() {
+/* =====================================================
+DISPLAY PURCHASED NUMBER
+===================================================== */
 
-    alert(
-        "Payment/recharge integration will be connected next. For testing, wallet balance can be set by your backend/payment system."
+function renderPurchasedNumber(){
+
+    const area=
+    document.getElementById(
+        "purchasedNumberArea"
     );
+
+    if(!purchasedNumber){
+
+        area.innerHTML=
+        '<div class="dashboard-sub">'+
+        'No number purchased yet.'+
+        '</div>';
+
+        return;
+
+    }
+
+    area.innerHTML=`
+
+        <div class="purchased-number">
+
+            <strong>
+                ${escapeHTML(
+                    purchasedNumber.flag
+                )}
+                ${escapeHTML(
+                    purchasedNumber.country
+                )}
+            </strong>
+
+            <span>
+                ${escapeHTML(
+                    purchasedNumber.service
+                )}
+            </span>
+
+            <br>
+
+            <span>
+                Provider:
+                ${escapeHTML(
+                    purchasedNumber.provider
+                )}
+            </span>
+
+            <br>
+
+            <span>
+                Price:
+                ₦${formatMoney(
+                    purchasedNumber.price
+                )}
+            </span>
+
+            <br><br>
+
+            <strong>
+                ${escapeHTML(
+                    purchasedNumber.number
+                )}
+            </strong>
+
+            <button
+            class="cancel-btn"
+            onclick="cancelNumber()">
+
+                Cancel Number & Refund
+
+            </button>
+
+        </div>
+
+    `;
+
 }
 
 
-/* ==================================================
-   FORMAT MONEY
-================================================== */
+/* =====================================================
+HISTORY
+===================================================== */
 
-function formatMoney(value) {
+function renderHistory(){
 
-    const number =
-        Number(value);
+    const area=
+    document.getElementById(
+        "historyArea"
+    );
 
-    if (
-        Number.isNaN(number)
-    )
-        return "0.00";
+    if(!transactions.length){
 
-    return number.toLocaleString(
-        "en-NG",
-        {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
+        area.innerHTML=
+        '<div class="dashboard-sub">'+
+        'No transactions yet.'+
+        '</div>';
+
+        return;
+
+    }
+
+    area.innerHTML="";
+
+    transactions.slice(0,10)
+    .forEach(
+        function(transaction){
+
+            const item=
+            document.createElement(
+                "div"
+            );
+
+            item.className=
+            "history-item";
+
+            const sign=
+            transaction.amount>=0
+            ?"+"
+            :"";
+
+            item.innerHTML=
+            "<b>"+
+            escapeHTML(
+                transaction.type
+            )+
+            "</b>"+
+            "<span>"+
+            escapeHTML(
+                transaction.description
+            )+
+            "</span>"+
+            "<span>"+
+            sign+
+            "₦"+
+            formatMoney(
+                Math.abs(
+                    transaction.amount
+                )
+            )+
+            " · "+
+            escapeHTML(
+                transaction.date
+            )+
+            "</span>";
+
+            area.appendChild(item);
+
         }
     );
+
 }
 
 
-/* ==================================================
-   SECURITY
-================================================== */
+/* =====================================================
+GENERAL MODAL
+===================================================== */
 
-function escapeHTML(value) {
+function showModal(title,text){
+
+    document.getElementById(
+        "modalTitle"
+    ).textContent=title;
+
+    document.getElementById(
+        "modalText"
+    ).innerHTML=text;
+
+    document.getElementById(
+        "modal"
+    ).classList.add("open");
+
+}
+
+
+function closeModal(){
+
+    document.getElementById(
+        "modal"
+    ).classList.remove("open");
+
+}
+
+
+/* =====================================================
+ESCAPE HTML
+===================================================== */
+
+function escapeHTML(value){
 
     return String(value)
 
-        .replace(
-            /&/g,
-            "&amp;"
-        )
+    .replace(/&/g,"&amp;")
 
-        .replace(
-            /</g,
-            "&lt;"
-        )
+    .replace(/</g,"&lt;")
 
-        .replace(
-            />/g,
-            "&gt;"
-        )
+    .replace(/>/g,"&gt;")
 
-        .replace(
-            /"/g,
-            "&quot;"
-        )
+    .replace(/"/g,"&quot;")
 
-        .replace(
-            /'/g,
-            "&#039;"
-        );
+    .replace(/'/g,"&#039;");
+
 }
 
 
-/* ==================================================
-   MODALS
-================================================== */
-
-function closeModal() {
-
-    document
-    .getElementById(
-        "modal"
-    )
-    .classList.remove(
-        "open"
-    );
-
-    selectedItem =
-        null;
-}
-
+/* =====================================================
+MODAL CLICK
+===================================================== */
 
 document
 .getElementById("modal")
 .addEventListener(
     "click",
-    function(event) {
+    function(event){
 
-        if (
-            event.target === this
-        ) {
-
+        if(event.target===this){
             closeModal();
         }
+
     }
 );
 
@@ -2830,27 +2758,23 @@ document
 .getElementById("authModal")
 .addEventListener(
     "click",
-    function(event) {
+    function(event){
 
-        if (
-            event.target === this
-        ) {
-
+        if(event.target===this){
             closeAuth();
         }
+
     }
 );
 
 
-/* ==================================================
-   START
-================================================== */
+/* =====================================================
+START
+===================================================== */
 
 checkAuth();
 
 loadCountries();
-
-renderPurchasedNumbers();
 
 </script>
 
