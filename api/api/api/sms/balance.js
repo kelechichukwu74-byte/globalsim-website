@@ -1,4 +1,4 @@
-import { smsVirtualRequest } from "./_lib.js";
+import { buyNumberRequest } from "./_lib.js";
 
 export default async function handler(req, res) {
   try {
@@ -9,25 +9,26 @@ export default async function handler(req, res) {
       });
     }
 
-    const data =
-      await smsVirtualRequest(
-        "/api/v1/balance"
-      );
+    const data = await buyNumberRequest(
+      "/account",
+      {
+        action: "getBalance"
+      }
+    );
 
-    return res.status(200).json(data);
+    return res.status(200).json({
+      success: true,
+      balance: data?.data?.balance ?? "0"
+    });
 
   } catch (error) {
-
-    console.error(
-      "Balance API error:",
-      error
-    );
+    console.error("BuyNumber balance error:", error);
 
     return res.status(500).json({
       success: false,
       error:
         error.message ||
-        "Unable to load balance"
+        "Unable to load BuyNumber balance"
     });
   }
 }
