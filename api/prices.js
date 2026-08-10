@@ -1,4 +1,4 @@
-import { smsVirtualRequest } from "./_lib.js";
+import { buyNumberRequest } from "./_lib.js";
 
 export default async function handler(req, res) {
   try {
@@ -9,29 +9,34 @@ export default async function handler(req, res) {
       });
     }
 
-    const countryId =
-      req.query?.countryId;
+    const { service, all_prices } = req.query;
 
-    if (!countryId) {
+    if (!service) {
       return res.status(400).json({
         success: false,
-        error: "countryId is required"
+        error: "Service is required"
       });
     }
 
-    const data =
-      await smsVirtualRequest(
-        `/v1/public/services/list?countryId=${encodeURIComponent(countryId)}`
-      );
+    const data = await buyNumberRequest(
+      "/activation-numbers",
+      {
+        action: "getTopCountriesByService",
+        service,
+        all_prices:
+          all_prices === "true"
+            ? "true"
+            : "false"
+      }
+    );
 
-    return res.status(200).json(data);
+    return res.status(200).json({
+      success: true,
+      prices: data?.data || []
+    });
 
   } catch (error) {
-
-    console.error(
-      "Prices API error:",
-      error
-    );
+    console.error("BuyNumber prices error:", error);
 
     return res.status(500).json({
       success: false,
