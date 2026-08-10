@@ -1,21 +1,43 @@
+import { smsVirtualRequest } from "./_lib.js";
+
 export default async function handler(req, res) {
   try {
-    const { country_id } = req.query;
-
-    let url = "https://rentnumber.net/api/v1/services/whatsapp/prices";
-
-    if (country_id) {
-      url += "?country_id=" + encodeURIComponent(country_id);
+    if (req.method !== "GET") {
+      return res.status(405).json({
+        success: false,
+        error: "Method not allowed"
+      });
     }
 
-    const response = await fetch(url);
-    const data = await response.json();
+    const countryId =
+      req.query?.countryId;
 
-    res.status(200).json(data);
+    if (!countryId) {
+      return res.status(400).json({
+        success: false,
+        error: "countryId is required"
+      });
+    }
+
+    const data =
+      await smsVirtualRequest(
+        `/v1/public/services/list?countryId=${encodeURIComponent(countryId)}`
+      );
+
+    return res.status(200).json(data);
+
   } catch (error) {
-    res.status(500).json({
+
+    console.error(
+      "Prices API error:",
+      error
+    );
+
+    return res.status(500).json({
       success: false,
-      error: "Unable to load WhatsApp prices"
+      error:
+        error.message ||
+        "Unable to load prices"
     });
   }
 }
