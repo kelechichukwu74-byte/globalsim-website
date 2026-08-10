@@ -35,10 +35,6 @@ input {
     font-family: inherit;
 }
 
-button {
-    cursor: pointer;
-}
-
 .nav {
     min-height: 74px;
     display: flex;
@@ -49,7 +45,7 @@ button {
     border-bottom: 1px solid #14263b;
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 20;
 }
 
 .brand {
@@ -99,25 +95,21 @@ button {
     align-items: center;
 }
 
-.actions a,
 .currency,
-.auth-button {
+.auth-button,
+.logout {
     padding: 10px 14px;
     border-radius: 8px;
     border: 1px solid #29405a;
     background: #0a192b;
     color: #dce8f4;
+    cursor: pointer;
 }
 
-.actions .signup,
-.auth-button.primary {
+.auth-button.primary,
+.primary {
     background: #087cf5;
     border-color: #087cf5;
-}
-
-#guestActions {
-    display: flex;
-    gap: 8px;
 }
 
 .user-area {
@@ -133,103 +125,124 @@ button {
 .user-email {
     color: #8fa5ba;
     font-size: 11px;
-    max-width: 170px;
+    max-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.logout {
-    background: #09192a;
-    color: #fff;
-    border: 1px solid #29405a;
-    padding: 9px 12px;
-    border-radius: 8px;
-}
-
 .dashboard-button {
-    padding: 9px 12px;
+    padding: 10px 14px;
     border-radius: 8px;
     background: #087cf5;
     color: #fff;
     font-weight: 800;
-    font-size: 12px;
+    cursor: pointer;
 }
 
-/* ==============================
-   DASHBOARD
-============================== */
+/* DASHBOARD */
 
-#dashboard {
+.dashboard {
     display: none;
+    margin: 30px 5%;
+    padding: 25px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #087cf5, #0757ad);
+    box-shadow: 0 15px 45px #0007;
 }
 
-#dashboard.visible {
+.dashboard.visible {
     display: block;
 }
 
-.dashboard {
-    padding: 28px 5%;
-    background: #030e1b;
-    border-bottom: 1px solid #17314a;
-}
-
-.dashboard-header {
+.dashboard-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 20px;
-    margin-bottom: 20px;
 }
 
-.dashboard-header h2 {
+.dashboard h2 {
     margin: 0 0 5px;
-    font-size: 26px;
 }
 
-.dashboard-header p {
+.dashboard p {
     margin: 0;
-    color: #7f95aa;
+    color: #d6eaff;
     font-size: 13px;
 }
 
-.dashboard-grid {
+.wallet-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 20px;
 }
 
-.dashboard-card {
-    background: #07192b;
-    border: 1px solid #1b3854;
-    border-radius: 13px;
-    padding: 20px;
+.wallet-card {
+    padding: 18px;
+    border-radius: 12px;
+    background: #ffffff18;
+    border: 1px solid #ffffff30;
 }
 
-.dashboard-card small {
-    color: #71869c;
-    font-size: 10px;
+.wallet-card small {
+    color: #d7eaff;
+}
+
+.wallet-card strong {
     display: block;
-    margin-bottom: 8px;
-}
-
-.dashboard-card strong {
     font-size: 27px;
+    margin-top: 8px;
 }
 
-.dashboard-card .blue {
-    color: #299dff;
+/* PURCHASED NUMBERS */
+
+.purchased-section {
+    display: none;
+    margin: 20px 5% 50px;
 }
 
-.dashboard-card p {
-    color: #8095a9;
-    font-size: 11px;
-    margin-bottom: 0;
+.purchased-section.visible {
+    display: block;
 }
 
-/* ==============================
-   HERO
-============================== */
+.purchased-section h2 {
+    margin-bottom: 15px;
+}
+
+.purchased-number {
+    background: #061527;
+    border: 1px solid #1a334d;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: center;
+}
+
+.purchased-number strong {
+    font-size: 18px;
+}
+
+.purchased-number small {
+    color: #7f94aa;
+    display: block;
+    margin-top: 6px;
+}
+
+.cancel-btn {
+    padding: 9px 13px;
+    border-radius: 7px;
+    border: 1px solid #54333a;
+    background: #32151b;
+    color: #ff9ca8;
+    cursor: pointer;
+}
+
+/* HERO */
 
 .hero {
     padding: 70px 5%;
@@ -282,11 +295,6 @@ button {
     border: 1px solid #29435f;
 }
 
-.primary {
-    background: #087cf5;
-    border-color: #087cf5;
-}
-
 .secondary {
     background: #09192a;
 }
@@ -305,7 +313,7 @@ button {
 
 .filters {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1.1fr 1fr;
     gap: 10px;
 }
 
@@ -328,12 +336,7 @@ button {
 }
 
 .country-search {
-    margin-bottom: 10px;
-}
-
-.country-search:focus,
-.filters select:focus {
-    border-color: #168cff;
+    margin-bottom: 8px;
 }
 
 .wide {
@@ -349,6 +352,7 @@ button {
     background: #087cf5;
     color: white;
     font-weight: 800;
+    cursor: pointer;
 }
 
 .search:disabled {
@@ -362,12 +366,10 @@ button {
     margin-top: 12px;
 }
 
-/* ==============================
-   SECTIONS
-============================== */
+/* SECTIONS */
 
 .section {
-    padding: 80px 5%;
+    padding: 70px 5%;
     text-align: center;
 }
 
@@ -394,6 +396,7 @@ button {
     background: #061527;
     border: 1px solid #1a334d;
     border-radius: 13px;
+    cursor: pointer;
     transition: .2s;
 }
 
@@ -418,10 +421,6 @@ button {
     font-size: 12px;
 }
 
-/* ==============================
-   RESULTS
-============================== */
-
 .results {
     max-width: 1050px;
     margin: 25px auto 0;
@@ -441,11 +440,6 @@ button {
 }
 
 .result .number {
-    font-weight: 800;
-}
-
-.result-title {
-    font-size: 17px;
     font-weight: 800;
 }
 
@@ -473,7 +467,6 @@ button {
 .price {
     font-weight: 800;
     color: #fff;
-    text-align: right;
 }
 
 .price span {
@@ -490,22 +483,11 @@ button {
     background: #087cf5;
     color: #fff;
     font-weight: 800;
+    cursor: pointer;
     margin-top: 8px;
 }
 
-.loading,
-.empty {
-    text-align: center;
-    padding: 30px;
-    color: #71879c;
-    background: #061527;
-    border: 1px solid #1a334d;
-    border-radius: 12px;
-}
-
-/* ==============================
-   PRICING
-============================== */
+/* PRICING */
 
 .pricing {
     background: #030e1b;
@@ -550,99 +532,14 @@ button {
     font-weight: 900;
 }
 
-/* ==============================
-   WALLET
-============================== */
-
-.wallet {
-    margin: 0 5% 70px;
-    padding: 40px;
-    border: 1px solid #1b3854;
-    border-radius: 17px;
-    background: #07192a;
-    display: flex;
-    justify-content: space-between;
-    gap: 30px;
-    align-items: center;
-}
-
-.wallet p {
-    color: #8499ad;
-    max-width: 580px;
-}
-
-.wallets {
-    display: flex;
-    gap: 10px;
-}
-
-.wallets div {
-    padding: 18px;
-    border: 1px solid #27435e;
-    border-radius: 10px;
-    min-width: 150px;
-}
-
-.wallets small {
-    color: #71869c;
-}
-
-.wallets b {
-    display: block;
-    font-size: 24px;
-    margin-top: 7px;
-}
-
-/* ==============================
-   STATS
-============================== */
-
-.stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    margin: 0 5% 70px;
-    border: 1px solid #183149;
-    border-radius: 13px;
-}
-
-.stats div {
-    text-align: center;
-    padding: 25px;
-    border-right: 1px solid #183149;
-}
-
-.stats div:last-child {
-    border: 0;
-}
-
-.stats b {
-    display: block;
-    color: #299dff;
-    font-size: 28px;
-}
-
-.stats span {
-    color: #7c91a6;
-    font-size: 11px;
-}
-
-footer {
-    padding: 35px 5%;
-    border-top: 1px solid #14263b;
-    color: #70869c;
-    font-size: 11px;
-}
-
-/* ==============================
-   MODALS
-============================== */
+/* MODAL */
 
 .modal {
     display: none;
     position: fixed;
     inset: 0;
     background: #000b;
-    z-index: 200;
+    z-index: 50;
     align-items: center;
     justify-content: center;
     padding: 20px;
@@ -665,18 +562,13 @@ footer {
     margin-top: 0;
 }
 
-.modalbox p {
-    color: #8499ad;
-    font-size: 13px;
-    line-height: 1.6;
-}
-
 .close {
     float: right;
     background: none;
     border: 0;
     color: #9eb1c4;
     font-size: 22px;
+    cursor: pointer;
 }
 
 .auth-form {
@@ -700,27 +592,25 @@ footer {
     outline: none;
 }
 
-.auth-form input:focus {
-    border-color: #168cff;
+.auth-btn,
+.google-btn {
+    padding: 13px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 800;
 }
 
 .auth-btn {
-    padding: 13px;
     border: 0;
-    border-radius: 8px;
     background: #087cf5;
     color: white;
-    font-weight: 800;
 }
 
 .google-btn {
     width: 100%;
-    padding: 13px;
-    border-radius: 8px;
     border: 1px solid #29445f;
     background: #0a192b;
     color: white;
-    font-weight: 800;
 }
 
 .auth-divider {
@@ -751,6 +641,7 @@ footer {
     border: 0;
     background: none;
     color: #299dff;
+    cursor: pointer;
 }
 
 .auth-message {
@@ -762,6 +653,15 @@ footer {
     line-height: 1.5;
     display: none;
 }
+
+footer {
+    padding: 35px 5%;
+    border-top: 1px solid #14263b;
+    color: #70869c;
+    font-size: 11px;
+}
+
+/* MOBILE */
 
 @media(max-width:900px) {
 
@@ -775,19 +675,6 @@ footer {
 
     .services {
         grid-template-columns: 1fr 1fr;
-    }
-
-    .wallet {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .stats {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .dashboard-grid {
-        grid-template-columns: 1fr;
     }
 
     .plans {
@@ -814,43 +701,34 @@ footer {
         grid-template-columns: 1fr;
     }
 
-    .result {
+    .wallet-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .result,
+    .purchased-number {
         align-items: flex-start;
         flex-direction: column;
     }
 
-    .price {
-        text-align: left;
-    }
-
-    .wallets {
-        width: 100%;
+    .dashboard-top {
+        align-items: flex-start;
         flex-direction: column;
     }
 
-    .stats {
-        margin-left: 5%;
-        margin-right: 5%;
-    }
-
-    #guestActions {
+    .actions {
         width: 100%;
         justify-content: flex-end;
     }
 
-    .dashboard-header {
-        flex-direction: column;
-        align-items: flex-start;
+    .user-email {
+        display: none;
     }
 }
 </style>
 </head>
 
 <body>
-
-<!-- ==============================
-     NAVIGATION
-============================== -->
 
 <header class="nav">
 
@@ -872,131 +750,110 @@ footer {
 
 <div class="actions">
 
-    <button class="currency">
-        USD ▾
-    </button>
+<button class="currency">
+USD ▾
+</button>
 
-    <!-- LOGGED OUT -->
-    <div id="guestActions">
+<div id="guestActions">
 
-        <button
-            class="auth-button"
-            onclick="openAuth('login')">
-            Log In
-        </button>
+<button
+    class="auth-button"
+    onclick="openAuth('login')">
+    Log In
+</button>
 
-        <button
-            class="auth-button primary"
-            onclick="openAuth('signup')">
-            Sign Up
-        </button>
-
-    </div>
-
-    <!-- LOGGED IN -->
-    <div id="userArea" class="user-area">
-
-        <span id="userEmail" class="user-email"></span>
-
-        <a
-            href="#dashboard"
-            class="dashboard-button">
-            Dashboard
-        </a>
-
-        <button
-            class="logout"
-            onclick="logoutUser()">
-            Log Out
-        </button>
-
-    </div>
+<button
+    class="auth-button primary"
+    onclick="openAuth('signup')">
+    Sign Up
+</button>
 
 </div>
 
+<div id="userArea" class="user-area">
+
+<span id="userEmail" class="user-email"></span>
+
+<a href="#dashboard" class="dashboard-button">
+Dashboard
+</a>
+
+<button class="logout" onclick="logoutUser()">
+Log Out
+</button>
+
+</div>
+
+</div>
 </header>
 
 
-<!-- ==============================
-     DASHBOARD
-============================== -->
+<!-- DASHBOARD -->
 
 <section id="dashboard" class="dashboard">
 
-    <div class="dashboard-header">
+<div class="dashboard-top">
 
-        <div>
-            <div class="kicker">YOUR GLOBALSIM ACCOUNT</div>
+<div>
+<div class="kicker">ACCOUNT DASHBOARD</div>
 
-            <h2>
-                Welcome back, <span id="dashboardName">User</span>
-            </h2>
+<h2>Welcome to GlobalSIM</h2>
 
-            <p id="dashboardEmail">
-                Your account information
-            </p>
-        </div>
+<p id="dashboardEmail">
+Your account is ready.
+</p>
+</div>
 
-        <button
-            class="auth-button primary"
-            onclick="scrollToNumbers()">
-            Get a Number
-        </button>
+<button
+    class="auth-button"
+    onclick="rechargeWallet()">
+Recharge Wallet
+</button>
 
-    </div>
+</div>
 
-    <div class="dashboard-grid">
 
-        <div class="dashboard-card">
+<div class="wallet-grid">
 
-            <small>USD BALANCE</small>
+<div class="wallet-card">
 
-            <strong class="blue">
-                $<span id="dashboardUsd">0.00</span>
-            </strong>
+<small>USD BALANCE</small>
 
-            <p>
-                Available wallet balance
-            </p>
+<strong id="usdBalance">
+$0.00
+</strong>
 
-        </div>
+</div>
 
-        <div class="dashboard-card">
+<div class="wallet-card">
 
-            <small>NGN BALANCE</small>
+<small>NGN BALANCE</small>
 
-            <strong>
-                ₦<span id="dashboardNgn">0.00</span>
-            </strong>
+<strong id="ngnBalance">
+₦0
+</strong>
 
-            <p>
-                Available naira balance
-            </p>
+</div>
 
-        </div>
-
-        <div class="dashboard-card">
-
-            <small>ACTIVE NUMBERS</small>
-
-            <strong class="blue">
-                <span id="activeNumbers">0</span>
-            </strong>
-
-            <p>
-                Numbers currently assigned to you
-            </p>
-
-        </div>
-
-    </div>
+</div>
 
 </section>
 
 
-<!-- ==============================
-     HERO
-============================== -->
+<!-- PURCHASED NUMBERS -->
+
+<section
+    id="purchasedSection"
+    class="purchased-section">
+
+<h2>Your Numbers</h2>
+
+<div id="purchasedNumbers"></div>
+
+</section>
+
+
+<!-- HERO -->
 
 <section class="hero">
 
@@ -1042,22 +899,16 @@ Find your number
 
 <div class="filters">
 
-<div class="wide">
+<div>
 
-<label>SEARCH COUNTRY</label>
+<label>COUNTRY</label>
 
 <input
     id="countrySearch"
     class="country-search"
     type="search"
-    placeholder="Type country name, e.g. United States"
+    placeholder="Search country..."
     oninput="filterCountries()">
-
-</div>
-
-<div>
-
-<label>COUNTRY</label>
 
 <select id="country">
 
@@ -1156,10 +1007,6 @@ Search Compatible Numbers
 </section>
 
 
-<!-- ==============================
-     SERVICES
-============================== -->
-
 <section class="section" id="services">
 
 <div class="kicker">
@@ -1171,63 +1018,62 @@ What do you need the number for?
 </h2>
 
 <p class="lead">
-Select a platform to filter the number inventory by supported use.
+Select a platform to filter the number inventory.
 </p>
-
 
 <div class="services">
 
 <div class="service selected"
-     onclick="pick('whatsapp',this)">
+onclick="pick('whatsapp',this)">
 <div class="icon">◉</div>
 <b>WhatsApp</b>
 <span>Supported numbers only</span>
 </div>
 
 <div class="service"
-     onclick="pick('telegram',this)">
+onclick="pick('telegram',this)">
 <div class="icon">➤</div>
 <b>Telegram</b>
 <span>Supported numbers only</span>
 </div>
 
 <div class="service"
-     onclick="pick('tiktok',this)">
+onclick="pick('tiktok',this)">
 <div class="icon">♪</div>
 <b>TikTok</b>
 <span>Supported numbers only</span>
 </div>
 
 <div class="service"
-     onclick="pick('instagram',this)">
+onclick="pick('instagram',this)">
 <div class="icon">◎</div>
 <b>Instagram</b>
 <span>Supported numbers only</span>
 </div>
 
 <div class="service"
-     onclick="pick('google',this)">
+onclick="pick('google',this)">
 <div class="icon">G</div>
 <b>Google / Gmail</b>
 <span>Availability varies</span>
 </div>
 
 <div class="service"
-     onclick="pick('facebook',this)">
+onclick="pick('facebook',this)">
 <div class="icon">f</div>
 <b>Facebook</b>
 <span>Supported numbers only</span>
 </div>
 
 <div class="service"
-     onclick="pick('x',this)">
+onclick="pick('x',this)">
 <div class="icon">𝕏</div>
 <b>X</b>
 <span>Supported numbers only</span>
 </div>
 
 <div class="service"
-     onclick="pick('general_sms',this)">
+onclick="pick('general_sms',this)">
 <div class="icon">✉</div>
 <b>General SMS</b>
 <span>SMS-capable numbers</span>
@@ -1239,7 +1085,7 @@ Select a platform to filter the number inventory by supported use.
 <div class="results" id="results">
 
 <div class="loading">
-Choose a country and service, then search for live availability.
+Choose a country and service, then search for availability.
 </div>
 
 </div>
@@ -1247,11 +1093,9 @@ Choose a country and service, then search for live availability.
 </section>
 
 
-<!-- ==============================
-     PRICING
-============================== -->
-
-<section class="section pricing" id="pricing">
+<section
+    class="section pricing"
+    id="pricing">
 
 <div class="kicker">
 NUMBER PLANS
@@ -1264,7 +1108,6 @@ Rental or Lifetime
 <p class="lead">
 Pricing depends on the selected country, provider and number type.
 </p>
-
 
 <div class="plans">
 
@@ -1326,95 +1169,6 @@ Lifetime availability and pricing depend on the provider.
 </section>
 
 
-<!-- ==============================
-     WALLET
-============================== -->
-
-<section class="wallet">
-
-<div>
-
-<div class="kicker">
-PAY YOUR WAY
-</div>
-
-<h2>
-USD + NGN Wallets
-</h2>
-
-<p>
-Your GlobalSIM dashboard will show your wallet balances.
-Payment processing and account management can be connected to the dashboard.
-</p>
-
-</div>
-
-
-<div class="wallets">
-
-<div>
-
-<small>
-USD BALANCE
-</small>
-
-<b>
-$<span id="walletUsd">0.00</span>
-</b>
-
-</div>
-
-
-<div>
-
-<small>
-NGN BALANCE
-</small>
-
-<b>
-₦<span id="walletNgn">0.00</span>
-</b>
-
-</div>
-
-</div>
-
-</section>
-
-
-<!-- ==============================
-     STATS
-============================== -->
-
-<section class="stats">
-
-<div>
-<b>173+</b>
-<span>Countries available in database</span>
-</div>
-
-<div>
-<b>24/7</b>
-<span>Dashboard access</span>
-</div>
-
-<div>
-<b>2</b>
-<span>Wallet currencies</span>
-</div>
-
-<div>
-<b>1</b>
-<span>GlobalSIM account</span>
-</div>
-
-</section>
-
-
-<!-- ==============================
-     HOW IT WORKS
-============================== -->
-
 <section class="section" id="how">
 
 <div class="kicker">
@@ -1426,9 +1180,8 @@ From country to number
 </h2>
 
 <p class="lead">
-Choose a supported service, review availability, then continue to checkout.
+Choose a service, review availability, then continue to checkout.
 </p>
-
 
 <div class="services">
 
@@ -1453,7 +1206,7 @@ Choose a supported service, review availability, then continue to checkout.
 <div class="service">
 <div class="icon">4</div>
 <b>Manage your number</b>
-<span>View your number and supported messages from your dashboard.</span>
+<span>View your number from your dashboard.</span>
 </div>
 
 </div>
@@ -1468,9 +1221,7 @@ Choose a supported service, review availability, then continue to checkout.
 </footer>
 
 
-<!-- ==============================
-     AUTH MODAL
-============================== -->
+<!-- AUTH MODAL -->
 
 <div class="modal" id="authModal">
 
@@ -1484,14 +1235,12 @@ Log in to GlobalSIM
 
 <div id="authMessage" class="auth-message"></div>
 
+<form
+    id="authForm"
+    class="auth-form"
+    onsubmit="handleEmailAuth(event)">
 
-<form id="authForm"
-      class="auth-form"
-      onsubmit="handleEmailAuth(event)">
-
-<label>
-EMAIL ADDRESS
-</label>
+<label>EMAIL ADDRESS</label>
 
 <input
     id="authEmail"
@@ -1499,10 +1248,7 @@ EMAIL ADDRESS
     placeholder="you@example.com"
     required>
 
-
-<label>
-PASSWORD
-</label>
+<label>PASSWORD</label>
 
 <input
     id="authPassword"
@@ -1510,7 +1256,6 @@ PASSWORD
     placeholder="Your password"
     minlength="6"
     required>
-
 
 <button
     id="authSubmit"
@@ -1523,21 +1268,17 @@ Sign In
 
 </form>
 
-
 <div class="auth-divider">
 OR
 </div>
 
-
 <button
     class="google-btn"
-    type="button"
     onclick="signInWithGoogle()">
 
 Continue with Google
 
 </button>
-
 
 <div class="auth-switch">
 
@@ -1546,7 +1287,6 @@ Don't have an account?
 </span>
 
 <button
-    type="button"
     onclick="switchAuthMode()"
     id="authSwitchButton">
 
@@ -1561,28 +1301,38 @@ Sign Up
 </div>
 
 
-<!-- ==============================
-     CHECKOUT MODAL
-============================== -->
+<!-- CHECKOUT MODAL -->
 
 <div class="modal" id="modal">
 
 <div class="modalbox">
 
-<button class="close" onclick="closeModal()">×</button>
+<button class="close" onclick="closeModal()">
+×
+</button>
 
 <h3 id="modalTitle">
 GlobalSIM checkout
 </h3>
 
-<p id="modalText">
-Select an available number to continue.
-</p>
+<p id="modalText"></p>
+
+<button
+    id="purchaseButton"
+    class="search"
+    onclick="confirmPurchase()">
+
+Confirm Purchase
+
+</button>
 
 <button
     class="search"
+    style="background:#26384d;"
     onclick="closeModal()">
-Close
+
+Cancel
+
 </button>
 
 </div>
@@ -1597,36 +1347,47 @@ Close
 ================================================== */
 
 const SUPABASE_URL =
-    "https://yhtfdojvmlzlsncsxaug.supabase.co";
+"https://yhtfdojvmlzlsncsxaug.supabase.co";
 
 const SUPABASE_PUBLISHABLE_KEY =
-    "sb_publishable_DpcHNrR_B3ZHQyIfWyLJjw_I9axcQ3h";
+"sb_publishable_DpcHNrR_B3ZHQyIfWyLJjw_I9axcQ3h";
 
 const supabaseClient =
-    window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_PUBLISHABLE_KEY,
-        {
-            auth: {
-                persistSession: true,
-                autoRefreshToken: true,
-                detectSessionInUrl: true
-            }
+window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY,
+    {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true
         }
-    );
+    }
+);
 
 
 /* ==================================================
-   AUTH VARIABLES
+   VARIABLES
 ================================================== */
 
 let authMode = "login";
 
-let currentUser = null;
-
 let countries = [];
 
 let prices = [];
+
+let selectedItem = null;
+
+let purchasedNumbers =
+JSON.parse(
+    localStorage.getItem("globalsim_numbers") || "[]"
+);
+
+let wallet =
+JSON.parse(
+    localStorage.getItem("globalsim_wallet") ||
+    '{"usd":0,"ngn":0}'
+);
 
 
 /* ==================================================
@@ -1642,7 +1403,6 @@ function openAuth(mode) {
     document
         .getElementById("authModal")
         .classList.add("open");
-
 }
 
 
@@ -1652,6 +1412,9 @@ function closeAuth() {
         .getElementById("authModal")
         .classList.remove("open");
 
+    document
+        .getElementById("authMessage")
+        .style.display = "none";
 }
 
 
@@ -1659,11 +1422,10 @@ function switchAuthMode() {
 
     authMode =
         authMode === "login"
-            ? "signup"
-            : "login";
+        ? "signup"
+        : "login";
 
     updateAuthModal();
-
 }
 
 
@@ -1681,37 +1443,34 @@ function updateAuthModal() {
     const switchButton =
         document.getElementById("authSwitchButton");
 
-
     if (authMode === "signup") {
 
         title.textContent =
-            "Create your GlobalSIM account";
+        "Create your GlobalSIM account";
 
         submit.textContent =
-            "Create Account";
+        "Create Account";
 
         switchText.textContent =
-            "Already have an account?";
+        "Already have an account?";
 
         switchButton.textContent =
-            "Log In";
+        "Log In";
 
     } else {
 
         title.textContent =
-            "Log in to GlobalSIM";
+        "Log in to GlobalSIM";
 
         submit.textContent =
-            "Sign In";
+        "Sign In";
 
         switchText.textContent =
-            "Don't have an account?";
+        "Don't have an account?";
 
         switchButton.textContent =
-            "Sign Up";
-
+        "Sign Up";
     }
-
 }
 
 
@@ -1725,7 +1484,6 @@ function showAuthMessage(message) {
 
     box.style.display =
         "block";
-
 }
 
 
@@ -1739,321 +1497,185 @@ async function handleEmailAuth(event) {
 
     const email =
         document
-            .getElementById("authEmail")
-            .value
-            .trim();
+        .getElementById("authEmail")
+        .value
+        .trim();
 
     const password =
         document
-            .getElementById("authPassword")
-            .value;
+        .getElementById("authPassword")
+        .value;
 
     const button =
-        document.getElementById("authSubmit");
-
-
-    if (!email || !password) {
-
-        showAuthMessage(
-            "Please enter your email and password."
-        );
-
-        return;
-
-    }
-
+        document
+        .getElementById("authSubmit");
 
     button.disabled = true;
 
-
     button.textContent =
         authMode === "signup"
-            ? "Creating account..."
-            : "Signing in...";
-
+        ? "Creating account..."
+        : "Signing in...";
 
     try {
 
         if (authMode === "signup") {
 
-            const {
-                data,
-                error
-            } =
-                await supabaseClient.auth.signUp({
+            const { data, error } =
+            await supabaseClient.auth.signUp({
 
-                    email: email,
+                email: email,
 
-                    password: password,
+                password: password,
 
-                    options: {
+                options: {
+                    emailRedirectTo:
+                    window.location.origin
+                }
 
-                        emailRedirectTo:
-                            window.location.origin
+            });
 
-                    }
-
-                });
-
-
-            if (error) {
+            if (error)
                 throw error;
-            }
-
 
             if (data.session) {
 
-                await handleSuccessfulLogin(
-                    data.session
+                await finishLogin(
+                    data.session.user
+                );
+
+                showAuthMessage(
+                    "Account created successfully."
+                );
+
+                setTimeout(
+                    closeAuth,
+                    800
                 );
 
             } else {
 
                 showAuthMessage(
-                    "Account created. Please check your email and confirm your account before signing in."
+                    "Account created. Check your email to confirm your account."
                 );
-
             }
-
 
         } else {
 
-            const {
-                data,
-                error
-            } =
-                await supabaseClient.auth.signInWithPassword({
+            const { data, error } =
+            await supabaseClient.auth
+            .signInWithPassword({
 
-                    email: email,
+                email: email,
 
-                    password: password
+                password: password
 
-                });
+            });
 
-
-            if (error) {
+            if (error)
                 throw error;
-            }
 
-
-            await handleSuccessfulLogin(
-                data.session
+            await finishLogin(
+                data.user
             );
 
+            closeAuth();
         }
 
+    } catch(error) {
 
-    } catch (error) {
-
-        console.error(
-            "Email authentication error:",
-            error
-        );
+        console.error(error);
 
         showAuthMessage(
             error.message ||
-            "Authentication failed. Please try again."
+            "Authentication failed."
         );
 
     }
 
-
     button.disabled = false;
-
 
     button.textContent =
         authMode === "signup"
-            ? "Create Account"
-            : "Sign In";
-
+        ? "Create Account"
+        : "Sign In";
 }
 
 
 /* ==================================================
-   GOOGLE LOGIN
+   GOOGLE AUTH
 ================================================== */
 
 async function signInWithGoogle() {
 
     try {
 
-        showAuthMessage(
-            "Connecting to Google..."
-        );
+        const redirectUrl =
+            window.location.origin;
 
+        const { error } =
+        await supabaseClient.auth
+        .signInWithOAuth({
 
-        const {
-            data,
-            error
-        } =
-            await supabaseClient.auth.signInWithOAuth({
+            provider: "google",
 
-                provider: "google",
+            options: {
 
-                options: {
+                redirectTo:
+                    redirectUrl,
 
-                    redirectTo:
-                        window.location.origin,
-
-                    queryParams: {
-
-                        access_type: "offline",
-
-                        prompt: "select_account"
-
-                    }
-
+                queryParams: {
+                    access_type: "offline",
+                    prompt: "select_account"
                 }
 
-            });
+            }
 
+        });
 
-        if (error) {
+        if (error)
             throw error;
-        }
 
+    } catch(error) {
 
-    } catch (error) {
-
-        console.error(
-            "Google authentication error:",
-            error
-        );
+        console.error(error);
 
         showAuthMessage(
             error.message ||
             "Google sign-in could not be started."
         );
-
     }
-
 }
 
 
 /* ==================================================
-   AUTH SESSION
+   FINISH LOGIN
 ================================================== */
 
-async function initializeAuthentication() {
+async function finishLogin(user) {
 
-    try {
-
-        /*
-         * Supabase normally handles the OAuth URL automatically.
-         * This also checks the current session after returning
-         * from Google.
-         */
-
-        const {
-            data,
-            error
-        } =
-            await supabaseClient.auth.getSession();
-
-
-        if (error) {
-            throw error;
-        }
-
-
-        if (data && data.session) {
-
-            await handleSuccessfulLogin(
-                data.session,
-                false
-            );
-
-        } else {
-
-            updateAuthUI(null);
-
-        }
-
-
-    } catch (error) {
-
-        console.error(
-            "Session initialization error:",
-            error
-        );
-
-        updateAuthUI(null);
-
-    }
-
-}
-
-
-/* ==================================================
-   SUCCESSFUL LOGIN
-================================================== */
-
-async function handleSuccessfulLogin(
-    session,
-    showMessage = true
-) {
-
-    if (!session || !session.user) {
-
-        updateAuthUI(null);
-
+    if (!user)
         return;
 
-    }
+    updateAuthUI(user);
 
+    updateDashboard(user);
 
-    currentUser =
-        session.user;
+    renderPurchasedNumbers();
 
+    window.location.hash =
+        "dashboard";
 
-    updateAuthUI(
-        currentUser
-    );
+    setTimeout(function() {
 
+        document
+        .getElementById("dashboard")
+        .scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
 
-    updateDashboard(
-        currentUser
-    );
-
-
-    closeAuth();
-
-
-    if (showMessage) {
-
-        console.log(
-            "GlobalSIM login successful:",
-            currentUser.email
-        );
-
-    }
-
-
-    /*
-     * Send the user directly to the dashboard.
-     */
-
-    setTimeout(
-        function() {
-
-            const dashboard =
-                document.getElementById(
-                    "dashboard"
-                );
-
-            if (dashboard) {
-
-                dashboard.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start"
-                });
-
-            }
-
-        },
-        250
-    );
-
+    }, 300);
 }
 
 
@@ -2063,7 +1685,7 @@ async function handleSuccessfulLogin(
 
 function updateAuthUI(user) {
 
-    const guestActions =
+    const guest =
         document.getElementById(
             "guestActions"
         );
@@ -2083,86 +1705,56 @@ function updateAuthUI(user) {
             "dashboard"
         );
 
+    const purchased =
+        document.getElementById(
+            "purchasedSection"
+        );
+
 
     if (user) {
 
-        currentUser =
-            user;
-
-
-        /*
-         * HIDE LOGIN / SIGN UP
-         */
-
-        guestActions.style.display =
+        guest.style.display =
             "none";
-
-
-        /*
-         * SHOW LOGGED-IN AREA
-         */
 
         userArea.classList.add(
             "visible"
         );
 
-
         userEmail.textContent =
-            user.email ||
-            "Account";
-
-
-        /*
-         * SHOW DASHBOARD
-         */
+            user.email || "Account";
 
         dashboard.classList.add(
             "visible"
         );
 
-
-        updateDashboard(
-            user
+        purchased.classList.add(
+            "visible"
         );
 
+        updateDashboard(user);
+
+        renderPurchasedNumbers();
 
     } else {
 
-        currentUser =
-            null;
-
-
-        /*
-         * SHOW LOGIN / SIGN UP
-         */
-
-        guestActions.style.display =
+        guest.style.display =
             "flex";
-
-
-        /*
-         * HIDE USER AREA
-         */
 
         userArea.classList.remove(
             "visible"
         );
 
-
-        userEmail.textContent =
-            "";
-
-
-        /*
-         * HIDE DASHBOARD
-         */
-
         dashboard.classList.remove(
             "visible"
         );
 
-    }
+        purchased.classList.remove(
+            "visible"
+        );
 
+        userEmail.textContent =
+            "";
+    }
 }
 
 
@@ -2172,81 +1764,87 @@ function updateAuthUI(user) {
 
 function updateDashboard(user) {
 
-    if (!user) {
-        return;
-    }
-
-
-    const email =
-        user.email ||
-        "User";
-
-
     document.getElementById(
         "dashboardEmail"
     ).textContent =
-        email;
-
-
-    document.getElementById(
-        "userEmail"
-    ).textContent =
-        email;
-
-
-    /*
-     * Use the first part of the email
-     * as the dashboard greeting.
-     */
-
-    const name =
-        email.includes("@")
-            ? email.split("@")[0]
-            : "User";
-
+        user.email || "Account";
 
     document.getElementById(
-        "dashboardName"
+        "usdBalance"
     ).textContent =
-        name;
-
-
-    /*
-     * Initial wallet values.
-     * These can later be connected to
-     * your Supabase wallet table.
-     */
+        "$" +
+        Number(wallet.usd || 0)
+        .toFixed(2);
 
     document.getElementById(
-        "dashboardUsd"
+        "ngnBalance"
     ).textContent =
-        "0.00";
-
-
-    document.getElementById(
-        "dashboardNgn"
-    ).textContent =
-        "0.00";
-
-
-    document.getElementById(
-        "walletUsd"
-    ).textContent =
-        "0.00";
-
-
-    document.getElementById(
-        "walletNgn"
-    ).textContent =
-        "0.00";
-
-
-    document.getElementById(
-        "activeNumbers"
-    ).textContent =
-        "0";
-
+        "₦" +
+        Number(wallet.ngn || 0)
+        .toLocaleString("en-NG");
 }
+
+
+/* ==================================================
+   SESSION CHECK
+================================================== */
+
+async function checkAuth() {
+
+    try {
+
+        const { data } =
+        await supabaseClient.auth
+        .getSession();
+
+        if (data.session) {
+
+            await finishLogin(
+                data.session.user
+            );
+
+        } else {
+
+            updateAuthUI(null);
+        }
+
+    } catch(error) {
+
+        console.error(
+            "Session error:",
+            error
+        );
+
+        updateAuthUI(null);
+    }
+}
+
+
+/* ==================================================
+   AUTH STATE LISTENER
+================================================== */
+
+supabaseClient.auth
+.onAuthStateChange(
+async function(event, session) {
+
+    console.log(
+        "AUTH EVENT:",
+        event
+    );
+
+    if (session) {
+
+        await finishLogin(
+            session.user
+        );
+
+    } else {
+
+        updateAuthUI(null);
+    }
+
+});
 
 
 /* ==================================================
@@ -2255,185 +1853,50 @@ function updateDashboard(user) {
 
 async function logoutUser() {
 
-    try {
+    await supabaseClient.auth.signOut();
 
-        const {
-            error
-        } =
-            await supabaseClient.auth.signOut();
+    localStorage.removeItem(
+        "globalsim_numbers"
+    );
 
+    purchasedNumbers = [];
 
-        if (error) {
-            throw error;
-        }
+    updateAuthUI(null);
 
+    window.location.hash = "";
 
-        updateAuthUI(
-            null
-        );
-
-
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
-
-
-    } catch (error) {
-
-        console.error(
-            "Logout error:",
-            error
-        );
-
-    }
-
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
 }
 
 
 /* ==================================================
-   COUNTRY SEARCH
+   COUNTRIES
 ================================================== */
 
-function filterCountries() {
-
-    const search =
-        document
-            .getElementById("countrySearch")
-            .value
-            .trim()
-            .toLowerCase();
-
+async function loadCountries() {
 
     const select =
         document.getElementById(
             "country"
         );
 
-
-    const currentValue =
-        select.value;
-
-
-    select.innerHTML =
-        "";
-
-
-    const filtered =
-        countries.filter(
-            function(country) {
-
-                const name =
-                    String(
-                        country.name || ""
-                    ).toLowerCase();
-
-                const iso =
-                    String(
-                        country.iso_code || ""
-                    ).toLowerCase();
-
-                return (
-                    name.includes(search) ||
-                    iso.includes(search)
-                );
-
-            }
-        );
-
-
-    const first =
-        document.createElement(
-            "option"
-        );
-
-    first.value = "";
-
-    first.textContent =
-        filtered.length
-            ? "Select a country"
-            : "No matching country";
-
-    select.appendChild(
-        first
-    );
-
-
-    filtered.forEach(
-        function(country) {
-
-            const option =
-                document.createElement(
-                    "option"
-                );
-
-
-            option.value =
-                country.id;
-
-
-            option.textContent =
-                (country.flag || "") +
-                " " +
-                country.name +
-                " (" +
-                country.iso_code +
-                ")";
-
-
-            if (
-                String(country.id) ===
-                String(currentValue)
-            ) {
-
-                option.selected =
-                    true;
-
-            }
-
-
-            select.appendChild(
-                option
-            );
-
-        }
-    );
-
-}
-
-
-/* ==================================================
-   LOAD COUNTRIES
-================================================== */
-
-async function loadCountries() {
-
-    const countrySelect =
-        document.getElementById(
-            "country"
-        );
-
-
     try {
 
         const response =
-            await fetch(
-                "/api/countries"
-            );
+        await fetch(
+            "/api/countries"
+        );
 
-
-        if (!response.ok) {
-
+        if (!response.ok)
             throw new Error(
                 "Countries API failed"
             );
 
-        }
-
-
         const result =
-            await response.json();
-
+        await response.json();
 
         if (
             !result.success ||
@@ -2443,36 +1906,108 @@ async function loadCountries() {
             throw new Error(
                 "Invalid countries response"
             );
-
         }
-
 
         countries =
             result.data;
 
-
-        filterCountries();
-
-
-    } catch (error) {
-
-        console.error(
-            "Countries error:",
-            error
+        renderCountries(
+            countries
         );
 
+    } catch(error) {
 
-        countrySelect.innerHTML =
-            '<option value="">Unable to load countries</option>';
+        console.error(error);
 
+        select.innerHTML =
+        '<option value="">Unable to load countries</option>';
 
         document.getElementById(
             "notice"
         ).textContent =
-            "Could not load countries. Please refresh the page.";
+        "Could not load countries. Please refresh.";
+    }
+}
 
+
+function renderCountries(list) {
+
+    const select =
+        document.getElementById(
+            "country"
+        );
+
+    select.innerHTML =
+    '<option value="">Select a country</option>';
+
+    list.forEach(function(country) {
+
+        const option =
+            document.createElement(
+                "option"
+            );
+
+        option.value =
+            country.id;
+
+        option.textContent =
+            (country.flag || "") +
+            " " +
+            country.name +
+            " (" +
+            country.iso_code +
+            ")";
+
+        select.appendChild(
+            option
+        );
+    });
+}
+
+
+function filterCountries() {
+
+    const search =
+        document
+        .getElementById(
+            "countrySearch"
+        )
+        .value
+        .toLowerCase()
+        .trim();
+
+    if (!search) {
+
+        renderCountries(
+            countries
+        );
+
+        return;
     }
 
+    const filtered =
+        countries.filter(
+            function(country) {
+
+                return (
+                    String(
+                        country.name || ""
+                    )
+                    .toLowerCase()
+                    .includes(search)
+                    ||
+                    String(
+                        country.iso_code || ""
+                    )
+                    .toLowerCase()
+                    .includes(search)
+                );
+            }
+        );
+
+    renderCountries(
+        filtered
+    );
 }
 
 
@@ -2486,37 +2021,25 @@ function pick(
 ) {
 
     document
-        .querySelectorAll(
-            ".service"
-        )
-        .forEach(
-            function(item) {
+    .querySelectorAll(
+        ".service"
+    )
+    .forEach(function(item) {
 
-                item.classList.remove(
-                    "selected"
-                );
-
-            }
+        item.classList.remove(
+            "selected"
         );
 
+    });
 
     element.classList.add(
         "selected"
     );
 
-
     document.getElementById(
         "platform"
     ).value =
         name;
-
-
-    scrollToNumbers();
-
-}
-
-
-function scrollToNumbers() {
 
     document.getElementById(
         "numbers"
@@ -2524,7 +2047,6 @@ function scrollToNumbers() {
         behavior: "smooth",
         block: "center"
     });
-
 }
 
 
@@ -2539,36 +2061,30 @@ async function searchNumbers() {
             "country"
         ).value;
 
-
     const type =
         document.getElementById(
             "type"
         ).value;
-
 
     const platform =
         document.getElementById(
             "platform"
         ).value;
 
-
     const notice =
         document.getElementById(
             "notice"
         );
-
 
     const results =
         document.getElementById(
             "results"
         );
 
-
     const button =
         document.getElementById(
             "searchButton"
         );
-
 
     if (!countryId) {
 
@@ -2576,50 +2092,33 @@ async function searchNumbers() {
             "Please select a country first.";
 
         return;
-
     }
 
-
-    button.disabled =
-        true;
-
+    button.disabled = true;
 
     button.textContent =
         "Searching...";
 
-
-    notice.textContent =
-        "Checking live number availability...";
-
-
     results.innerHTML =
-        '<div class="loading">Loading live numbers...</div>';
-
+    '<div class="loading">Loading live numbers...</div>';
 
     try {
 
         const response =
-            await fetch(
-                "/api/prices?service=" +
-                encodeURIComponent(
-                    platform
-                )
-            );
+        await fetch(
+            "/api/prices?service=" +
+            encodeURIComponent(
+                platform
+            )
+        );
 
-
-        if (!response.ok) {
-
+        if (!response.ok)
             throw new Error(
-                "Prices API failed with status " +
-                response.status
+                "Prices API failed"
             );
-
-        }
-
 
         const result =
-            await response.json();
-
+        await response.json();
 
         if (
             !result.success ||
@@ -2629,15 +2128,12 @@ async function searchNumbers() {
             throw new Error(
                 "Invalid prices response"
             );
-
         }
-
 
         prices =
             result.data;
 
-
-        const matching =
+        let matching =
             prices.filter(
                 function(item) {
 
@@ -2649,197 +2145,92 @@ async function searchNumbers() {
                             countryId
                         );
 
-
                     const sameType =
                         !type ||
                         !item.rental_type ||
                         item.rental_type ===
-                            type;
-
+                        type;
 
                     return (
                         sameCountry &&
                         sameType
                     );
-
                 }
             );
 
-
         /*
-         * IMPORTANT:
-         * Remove duplicate cards.
-         *
-         * If the provider returns several
-         * identical US WhatsApp entries,
-         * the customer sees ONE card.
-         */
+        REMOVE DUPLICATE COUNTRY/PLATFORM
+        CARDS WITH THE SAME PRICE AND TYPE
+        */
 
-        const grouped =
-            groupNumberResults(
-                matching,
-                platform
+        const unique =
+            new Map();
+
+        matching.forEach(
+            function(item) {
+
+                const key =
+                    [
+                        item.country_id,
+                        item.rental_type,
+                        platform,
+                        item.final_price
+                    ].join("|");
+
+                if (!unique.has(key)) {
+
+                    unique.set(
+                        key,
+                        item
+                    );
+                }
+            }
+        );
+
+        matching =
+            Array.from(
+                unique.values()
             );
 
-
         renderResults(
-            grouped,
+            matching,
             platform
         );
 
-
         notice.textContent =
-            grouped.length +
+            matching.length +
             " available option" +
             (
-                grouped.length === 1
-                    ? ""
-                    : "s"
+                matching.length === 1
+                ? ""
+                : "s"
             ) +
             " found.";
 
+    } catch(error) {
 
-    } catch (error) {
-
-        console.error(
-            "Number search error:",
-            error
-        );
-
+        console.error(error);
 
         results.innerHTML =
-            '<div class="empty">' +
-            'Unable to load live numbers right now.' +
-            '<br><br>' +
-            'Please try again in a moment.' +
-            '</div>';
-
+        '<div class="empty">' +
+        'Unable to load live numbers right now.' +
+        '<br><br>' +
+        'Please try again.' +
+        '</div>';
 
         notice.textContent =
-            "There was a problem connecting to the number provider.";
-
+        "There was a problem connecting to the number provider.";
     }
 
-
-    button.disabled =
-        false;
-
+    button.disabled = false;
 
     button.textContent =
         "Search Compatible Numbers";
-
 }
 
 
 /* ==================================================
-   GROUP DUPLICATE NUMBER RESULTS
-================================================== */
-
-function groupNumberResults(
-    items,
-    platform
-) {
-
-    const groups =
-        new Map();
-
-
-    items.forEach(
-        function(item) {
-
-            const key =
-                [
-                    item.country_id,
-                    item.rental_type || "short",
-                    platform,
-                    item.provider_name || "Provider"
-                ].join("|");
-
-
-            if (!groups.has(key)) {
-
-                groups.set(
-                    key,
-                    {
-                        ...item,
-                        groupedStock: 0
-                    }
-                );
-
-            }
-
-
-            const group =
-                groups.get(key);
-
-
-            const stock =
-                Number(
-                    item.stock
-                );
-
-
-            if (
-                Number.isFinite(stock) &&
-                stock > 0
-            ) {
-
-                group.groupedStock +=
-                    stock;
-
-            } else {
-
-                group.groupedStock +=
-                    1;
-
-            }
-
-
-            /*
-             * Keep the cheapest price
-             * returned for this group.
-             */
-
-            const currentPrice =
-                Number(
-                    group.final_price
-                );
-
-
-            const newPrice =
-                Number(
-                    item.final_price
-                );
-
-
-            if (
-                Number.isFinite(newPrice) &&
-                (
-                    !Number.isFinite(
-                        currentPrice
-                    ) ||
-                    newPrice < currentPrice
-                )
-            ) {
-
-                group.final_price =
-                    item.final_price;
-
-            }
-
-        }
-    );
-
-
-    return Array.from(
-        groups.values()
-    );
-
-}
-
-
-/* ==================================================
-   DISPLAY RESULTS
+   RESULTS
 ================================================== */
 
 function renderResults(
@@ -2852,22 +2243,17 @@ function renderResults(
             "results"
         );
 
-
     if (!items.length) {
 
         results.innerHTML =
-            '<div class="empty">' +
-            'No numbers are currently available for this country and service.' +
-            '</div>';
+        '<div class="empty">' +
+        'No numbers are currently available for this country and service.' +
+        '</div>';
 
         return;
-
     }
 
-
-    results.innerHTML =
-        "";
-
+    results.innerHTML = "";
 
     items.forEach(
         function(item) {
@@ -2877,44 +2263,38 @@ function renderResults(
                     "div"
                 );
 
-
             result.className =
                 "result";
-
 
             const countryName =
                 item.country_name ||
                 "Unknown country";
 
-
             const flag =
-                item.flag ||
-                "";
-
+                item.flag || "";
 
             const provider =
                 item.provider_name ||
                 "Provider";
 
-
             const price =
                 item.final_price !==
                 undefined
-                    ? item.final_price
-                    : "0.00";
+                ? item.final_price
+                : 0;
 
-
-            const stock =
-                item.groupedStock ||
-                item.stock ||
-                1;
-
+            const stockText =
+                item.stock !== null &&
+                item.stock !== undefined
+                ? "Stock: " +
+                  item.stock
+                : "Availability verified by provider";
 
             result.innerHTML = `
 
                 <div>
 
-                    <div class="result-title">
+                    <div class="number">
 
                         ${escapeHTML(flag)}
                         ${escapeHTML(countryName)}
@@ -2941,11 +2321,10 @@ function renderResults(
                     </div>
 
                     <small>
-                        ${stock} number${stock === 1 ? "" : "s"} available
+                        ${escapeHTML(stockText)}
                     </small>
 
                 </div>
-
 
                 <div>
 
@@ -2954,31 +2333,27 @@ function renderResults(
                         ₦${formatMoney(price)}
 
                         <span>
-                            from provider
+                            provider price
                         </span>
 
                     </div>
 
                     <button
                         class="get"
-                        onclick='openCheckout(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
+                        onclick='openCheckout(${JSON.stringify(item)})'>
 
                         Get Number
 
                     </button>
 
                 </div>
-
             `;
-
 
             results.appendChild(
                 result
             );
-
         }
     );
-
 }
 
 
@@ -2988,46 +2363,34 @@ function renderResults(
 
 function openCheckout(item) {
 
+    selectedItem =
+        item;
+
     const modal =
         document.getElementById(
             "modal"
         );
-
 
     const title =
         document.getElementById(
             "modalTitle"
         );
 
-
     const text =
         document.getElementById(
             "modalText"
         );
 
-
-    if (!currentUser) {
-
-        closeModal();
-
-        openAuth(
-            "login"
+    const price =
+        Number(
+            item.final_price || 0
         );
-
-        showAuthMessage(
-            "Please sign in to your GlobalSIM account before getting a number."
-        );
-
-        return;
-
-    }
-
 
     title.textContent =
-        "GlobalSIM — Number Selection";
-
+        "GlobalSIM — Purchase Number";
 
     text.innerHTML =
+
         "Country: <b>" +
         escapeHTML(
             item.country_name || ""
@@ -3036,66 +2399,341 @@ function openCheckout(item) {
 
         "Service: <b>" +
         escapeHTML(
-            item.service ||
-            "Selected service"
-        ) +
-        "</b><br><br>" +
-
-        "Provider: <b>" +
-        escapeHTML(
-            item.provider_name || ""
+            document.getElementById(
+                "platform"
+            ).value
         ) +
         "</b><br><br>" +
 
         "Price: <b>₦" +
-        formatMoney(
-            item.final_price || 0
-        ) +
+        formatMoney(price) +
         "</b><br><br>" +
 
-        "Available stock: <b>" +
-        escapeHTML(
-            String(
-                item.groupedStock ||
-                item.stock ||
-                1
-            )
-        ) +
-        "</b><br><br>" +
-
-        "Number ID: <b>" +
-        escapeHTML(
-            String(
-                item.id || ""
-            )
-        ) +
-        "</b><br><br>" +
-
-        "Your account is ready. Payment and provider checkout will be connected to your wallet in the next stage.";
-
+        "This is currently a test purchase. No real payment will be taken.";
 
     modal.classList.add(
         "open"
     );
-
-}
-
-
-function closeModal() {
-
-    document
-        .getElementById(
-            "modal"
-        )
-        .classList.remove(
-            "open"
-        );
-
 }
 
 
 /* ==================================================
-   MONEY
+   CONFIRM PURCHASE
+================================================== */
+
+async function confirmPurchase() {
+
+    if (!selectedItem)
+        return;
+
+    const {
+        data
+    } =
+    await supabaseClient.auth
+    .getSession();
+
+    if (!data.session) {
+
+        closeModal();
+
+        openAuth(
+            "login"
+        );
+
+        showAuthMessage(
+            "Please log in before purchasing a number."
+        );
+
+        return;
+    }
+
+    const price =
+        Number(
+            selectedItem.final_price || 0
+        );
+
+    if (
+        Number(wallet.ngn || 0)
+        < price
+    ) {
+
+        closeModal();
+
+        alert(
+            "Insufficient NGN balance. Please recharge your wallet first."
+        );
+
+        return;
+    }
+
+    /*
+    TEST PURCHASE
+    */
+
+    wallet.ngn -= price;
+
+    const purchased = {
+
+        id:
+            Date.now(),
+
+        country:
+            selectedItem.country_name ||
+            "Unknown",
+
+        flag:
+            selectedItem.flag ||
+            "",
+
+        service:
+            document.getElementById(
+                "platform"
+            ).value,
+
+        type:
+            selectedItem.rental_type ||
+            "short",
+
+        price:
+            price,
+
+        number:
+            "TEST-" +
+            Math.floor(
+                100000 +
+                Math.random() *
+                900000
+            ),
+
+        purchasedAt:
+            new Date().toISOString()
+
+    };
+
+    purchasedNumbers.push(
+        purchased
+    );
+
+    saveWallet();
+
+    saveNumbers();
+
+    updateDashboard(
+        data.session.user
+    );
+
+    renderPurchasedNumbers();
+
+    closeModal();
+
+    alert(
+        "Test number purchased successfully."
+    );
+
+    document
+    .getElementById(
+        "purchasedSection"
+    )
+    .scrollIntoView({
+        behavior: "smooth"
+    });
+}
+
+
+/* ==================================================
+   CANCEL / REFUND
+================================================== */
+
+function cancelNumber(id) {
+
+    const index =
+        purchasedNumbers.findIndex(
+            function(item) {
+                return item.id === id;
+            }
+        );
+
+    if (index === -1)
+        return;
+
+    const item =
+        purchasedNumbers[index];
+
+    const refund =
+        Number(
+            item.price || 0
+        );
+
+    const confirmed =
+        confirm(
+            "Cancel this number and return ₦" +
+            formatMoney(refund) +
+            " to your wallet?"
+        );
+
+    if (!confirmed)
+        return;
+
+    wallet.ngn +=
+        refund;
+
+    purchasedNumbers.splice(
+        index,
+        1
+    );
+
+    saveWallet();
+
+    saveNumbers();
+
+    renderPurchasedNumbers();
+
+    supabaseClient.auth
+    .getUser()
+    .then(function(result) {
+
+        if (result.data.user) {
+
+            updateDashboard(
+                result.data.user
+            );
+        }
+    });
+
+    alert(
+        "Number cancelled. Your balance has been refunded."
+    );
+}
+
+
+/* ==================================================
+   PURCHASED NUMBERS DISPLAY
+================================================== */
+
+function renderPurchasedNumbers() {
+
+    const container =
+        document.getElementById(
+            "purchasedNumbers"
+        );
+
+    if (!purchasedNumbers.length) {
+
+        container.innerHTML =
+        '<div class="empty">' +
+        'You have not purchased any numbers yet.' +
+        '</div>';
+
+        return;
+    }
+
+    container.innerHTML =
+        "";
+
+    purchasedNumbers.forEach(
+        function(item) {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+            card.className =
+                "purchased-number";
+
+            card.innerHTML = `
+
+                <div>
+
+                    <strong>
+                        ${escapeHTML(
+                            item.flag || ""
+                        )}
+                        ${escapeHTML(
+                            item.country
+                        )}
+                    </strong>
+
+                    <small>
+                        ${escapeHTML(
+                            item.service
+                        )}
+                        ·
+                        ${escapeHTML(
+                            item.type
+                        )}
+                    </small>
+
+                    <small>
+                        Number:
+                        <b>
+                            ${escapeHTML(
+                                item.number
+                            )}
+                        </b>
+                    </small>
+
+                    <small>
+                        Paid:
+                        ₦${formatMoney(
+                            item.price
+                        )}
+                    </small>
+
+                </div>
+
+                <button
+                    class="cancel-btn"
+                    onclick="cancelNumber(${item.id})">
+
+                    Cancel & Refund
+
+                </button>
+
+            `;
+
+            container.appendChild(
+                card
+            );
+        }
+    );
+}
+
+
+/* ==================================================
+   WALLET
+================================================== */
+
+function saveWallet() {
+
+    localStorage.setItem(
+        "globalsim_wallet",
+        JSON.stringify(wallet)
+    );
+}
+
+
+function saveNumbers() {
+
+    localStorage.setItem(
+        "globalsim_numbers",
+        JSON.stringify(
+            purchasedNumbers
+        )
+    );
+}
+
+
+function rechargeWallet() {
+
+    alert(
+        "Payment/recharge integration will be connected next. For testing, wallet balance can be set by your backend/payment system."
+    );
+}
+
+
+/* ==================================================
+   FORMAT MONEY
 ================================================== */
 
 function formatMoney(value) {
@@ -3103,15 +2741,10 @@ function formatMoney(value) {
     const number =
         Number(value);
 
-
     if (
         Number.isNaN(number)
-    ) {
-
+    )
         return "0.00";
-
-    }
-
 
     return number.toLocaleString(
         "en-NG",
@@ -3120,7 +2753,6 @@ function formatMoney(value) {
             maximumFractionDigits: 2
         }
     );
-
 }
 
 
@@ -3156,121 +2788,69 @@ function escapeHTML(value) {
             /'/g,
             "&#039;"
         );
-
 }
 
 
 /* ==================================================
-   MODAL EVENTS
+   MODALS
 ================================================== */
 
-document
-    .getElementById("modal")
-    .addEventListener(
-        "click",
-        function(event) {
+function closeModal() {
 
-            if (
-                event.target === this
-            ) {
-
-                closeModal();
-
-            }
-
-        }
+    document
+    .getElementById(
+        "modal"
+    )
+    .classList.remove(
+        "open"
     );
+
+    selectedItem =
+        null;
+}
 
 
 document
-    .getElementById("authModal")
-    .addEventListener(
-        "click",
-        function(event) {
+.getElementById("modal")
+.addEventListener(
+    "click",
+    function(event) {
 
-            if (
-                event.target === this
-            ) {
+        if (
+            event.target === this
+        ) {
 
-                closeAuth();
-
-            }
-
+            closeModal();
         }
-    );
+    }
+);
 
 
-/* ==================================================
-   SUPABASE AUTH STATE LISTENER
-================================================== */
+document
+.getElementById("authModal")
+.addEventListener(
+    "click",
+    function(event) {
 
-supabaseClient.auth.onAuthStateChange(
-    async function(event, session) {
+        if (
+            event.target === this
+        ) {
 
-        console.log(
-            "Supabase auth event:",
-            event
-        );
-
-
-        if (session) {
-
-            updateAuthUI(
-                session.user
-            );
-
-            updateDashboard(
-                session.user
-            );
-
-
-            /*
-             * If this is the result of Google
-             * authentication, close everything
-             * and show the dashboard.
-             */
-
-            if (
-                event === "SIGNED_IN" ||
-                event === "INITIAL_SESSION"
-            ) {
-
-                closeAuth();
-
-            }
-
-        } else {
-
-            updateAuthUI(
-                null
-            );
-
+            closeAuth();
         }
-
     }
 );
 
 
 /* ==================================================
-   START APPLICATION
+   START
 ================================================== */
 
-(async function startApplication() {
+checkAuth();
 
-    /*
-     * First establish the Supabase session.
-     */
+loadCountries();
 
-    await initializeAuthentication();
-
-
-    /*
-     * Then load the number countries.
-     */
-
-    await loadCountries();
-
-})();
+renderPurchasedNumbers();
 
 </script>
 
