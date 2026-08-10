@@ -11,7 +11,7 @@ export default async function handler(req, res) {
 
     const data =
       await smsVirtualRequest(
-        "/v1/user/balance"
+        "/api/v1/balance"
       );
 
     return res.status(200).json(data);
