@@ -1,4 +1,4 @@
-import { smsVirtualRequest } from "./_lib.js";
+import { buyNumberRequest } from "./_lib.js";
 
 export default async function handler(req, res) {
   try {
@@ -9,25 +9,20 @@ export default async function handler(req, res) {
       });
     }
 
-    const page =
-      req.query?.page || "1";
+    const data = await buyNumberRequest(
+      "/activation-numbers",
+      {
+        action: "getCountries"
+      }
+    );
 
-    const pageSize =
-      req.query?.pageSize || "206";
-
-    const data =
-      await smsVirtualRequest(
-        `/v1/public/country/list?page=${encodeURIComponent(page)}&pageSize=${encodeURIComponent(pageSize)}`
-      );
-
-    return res.status(200).json(data);
+    return res.status(200).json({
+      success: true,
+      countries: data?.data || []
+    });
 
   } catch (error) {
-
-    console.error(
-      "Countries API error:",
-      error
-    );
+    console.error("BuyNumber countries error:", error);
 
     return res.status(500).json({
       success: false,
