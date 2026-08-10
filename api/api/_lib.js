@@ -1,35 +1,29 @@
-const BASE_URL = "https://api.sms-virtual.net";
+const BASE_URL = "https://api.buynumber.io/v1";
 
-export async function smsVirtualRequest(
+export async function buyNumberRequest(
   path,
-  options = {}
+  params = {}
 ) {
-  const apiKey = process.env.SMSVIRTUAL_API_KEY;
+  const apiKey = process.env.BUYNUMBER_API_KEY;
 
   if (!apiKey) {
     throw new Error(
-      "SMSVIRTUAL_API_KEY is not configured in Vercel."
+      "BUYNUMBER_API_KEY is not configured in Vercel."
     );
   }
 
+  const searchParams = new URLSearchParams({
+    api_key: apiKey,
+    ...params
+  });
+
   const response = await fetch(
-    `${BASE_URL}${path}`,
+    `${BASE_URL}${path}?${searchParams.toString()}`,
     {
-      method: options.method || "GET",
-
+      method: "GET",
       headers: {
-        "x-api-key": apiKey,
-
-        "Content-Type":
-          "application/json",
-
-        ...(options.headers || {})
-      },
-
-      body:
-        options.body !== undefined
-          ? JSON.stringify(options.body)
-          : undefined
+        "Accept": "application/json"
+      }
     }
   );
 
@@ -38,31 +32,26 @@ export async function smsVirtualRequest(
   let data;
 
   try {
-    data = text
-      ? JSON.parse(text)
-      : {};
+    data = text ? JSON.parse(text) : {};
   } catch {
-    data = {
-      success: false,
-      error: text || "Invalid provider response"
-    };
+    throw new Error(
+      text || "Invalid BuyNumber response"
+    );
   }
 
   if (!response.ok) {
     throw new Error(
       data.error ||
       data.message ||
-      `SMS Virtual returned HTTP ${response.status}`
+      `BuyNumber returned HTTP ${response.status}`
     );
   }
 
-  if (
-    data.success === false
-  ) {
+  if (data.result !== "success") {
     throw new Error(
       data.error ||
       data.message ||
-      "SMS Virtual request failed"
+      "BuyNumber request failed"
     );
   }
 
