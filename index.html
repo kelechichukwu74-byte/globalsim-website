@@ -115,7 +115,6 @@ input {
 #guestActions {
     display: flex;
     gap: 8px;
-    align-items: center;
 }
 
 .user-area {
@@ -152,8 +151,8 @@ input {
     color: #fff;
     font-weight: 800;
     font-size: 12px;
-    border: 0;
     cursor: pointer;
+    border: 0;
 }
 
 .hero {
@@ -210,6 +209,7 @@ input {
 .primary {
     background: #087cf5;
     border-color: #087cf5;
+    color: #fff;
 }
 
 .secondary {
@@ -396,10 +396,6 @@ input {
     margin-top: 8px;
 }
 
-.get:hover {
-    background: #168cff;
-}
-
 .loading,
 .empty {
     text-align: center;
@@ -527,48 +523,46 @@ input {
     background: #030e1b;
 }
 
-.dashboard.visible {
+.dashboard.open {
     display: block;
 }
 
 .dashboard-box {
     max-width: 1050px;
     margin: auto;
-    background: #061527;
-    border: 1px solid #1a334d;
-    border-radius: 16px;
-    padding: 30px;
 }
 
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    margin-top: 25px;
+    gap: 18px;
+    margin-top: 30px;
 }
 
 .dashboard-card {
-    padding: 22px;
+    background: #061527;
     border: 1px solid #1a334d;
-    background: #07192a;
-    border-radius: 12px;
+    border-radius: 14px;
+    padding: 25px;
 }
 
 .dashboard-card small {
     color: #71869c;
 }
 
-.dashboard-card b {
-    display: block;
-    font-size: 25px;
-    margin-top: 8px;
+.dashboard-card h3 {
+    margin: 10px 0;
+    font-size: 28px;
 }
 
-footer {
-    padding: 35px 5%;
-    border-top: 1px solid #14263b;
-    color: #70869c;
-    font-size: 11px;
+.dashboard-card p {
+    color: #8297ab;
+    font-size: 13px;
+}
+
+.dashboard-email {
+    color: #299dff;
+    font-weight: bold;
 }
 
 .modal {
@@ -635,28 +629,24 @@ footer {
     outline: none;
 }
 
-.auth-form input:focus {
-    border-color: #168cff;
-}
-
-.auth-btn {
-    padding: 13px;
-    border: 0;
-    border-radius: 8px;
-    background: #087cf5;
-    color: white;
-    font-weight: 800;
-    cursor: pointer;
-}
-
+.auth-btn,
 .google-btn {
     padding: 13px;
     border-radius: 8px;
+    cursor: pointer;
+    font-weight: 800;
+}
+
+.auth-btn {
+    border: 0;
+    background: #087cf5;
+    color: white;
+}
+
+.google-btn {
     border: 1px solid #29445f;
     background: #0a192b;
     color: white;
-    font-weight: 800;
-    cursor: pointer;
     width: 100%;
 }
 
@@ -702,6 +692,13 @@ footer {
     margin-bottom: 12px;
 }
 
+footer {
+    padding: 35px 5%;
+    border-top: 1px solid #14263b;
+    color: #70869c;
+    font-size: 11px;
+}
+
 @media(max-width:900px) {
 
     .navlinks {
@@ -721,12 +718,9 @@ footer {
         align-items: flex-start;
     }
 
-    .stats {
-        grid-template-columns: 1fr 1fr;
-    }
-
+    .stats,
     .dashboard-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
     }
 
     .plans {
@@ -763,9 +757,9 @@ footer {
         flex-direction: column;
     }
 
-    .stats {
-        margin-left: 5%;
-        margin-right: 5%;
+    .stats,
+    .dashboard-grid {
+        grid-template-columns: 1fr;
     }
 
     .actions {
@@ -798,7 +792,6 @@ footer {
     <a href="#services">Services</a>
     <a href="#pricing">Pricing</a>
     <a href="#dashboard">Dashboard</a>
-    <a href="#how">How It Works</a>
 </nav>
 
 <div class="actions">
@@ -807,7 +800,7 @@ footer {
         USD ▾
     </button>
 
-    <!-- SHOWN ONLY WHEN USER IS NOT LOGGED IN -->
+    <!-- GUEST BUTTONS -->
     <div id="guestActions">
 
         <button
@@ -824,19 +817,14 @@ footer {
 
     </div>
 
-    <!-- SHOWN ONLY WHEN USER IS LOGGED IN -->
-    <div
-        id="userArea"
-        class="user-area">
+    <!-- LOGGED IN AREA -->
+    <div id="userArea" class="user-area">
 
-        <span
-            id="userEmail"
-            class="user-email">
-        </span>
+        <span id="userEmail" class="user-email"></span>
 
         <button
             class="dashboard-button"
-            onclick="goToDashboard()">
+            onclick="showDashboard()">
             Dashboard
         </button>
 
@@ -852,6 +840,8 @@ footer {
 
 </header>
 
+
+<!-- HERO -->
 
 <section class="hero">
 
@@ -911,7 +901,6 @@ Loading countries...
 
 </div>
 
-
 <div>
 
 <label>NUMBER TYPE</label>
@@ -930,7 +919,6 @@ Lifetime
 
 </div>
 
-
 <div class="wide">
 
 <label>
@@ -939,48 +927,21 @@ PLATFORM / SERVICE
 
 <select id="platform">
 
-<option value="whatsapp">
-WhatsApp
-</option>
-
-<option value="telegram">
-Telegram
-</option>
-
-<option value="tiktok">
-TikTok
-</option>
-
-<option value="instagram">
-Instagram
-</option>
-
-<option value="google">
-Google / Gmail
-</option>
-
-<option value="facebook">
-Facebook
-</option>
-
-<option value="x">
-X
-</option>
-
-<option value="general_sms">
-General SMS
-</option>
-
-<option value="sms_voice">
-SMS + Voice
-</option>
+<option value="whatsapp">WhatsApp</option>
+<option value="telegram">Telegram</option>
+<option value="tiktok">TikTok</option>
+<option value="instagram">Instagram</option>
+<option value="google">Google / Gmail</option>
+<option value="facebook">Facebook</option>
+<option value="x">X</option>
+<option value="general_sms">General SMS</option>
+<option value="sms_voice">SMS + Voice</option>
 
 </select>
 
 </div>
 
 </div>
-
 
 <button
     class="search"
@@ -991,19 +952,16 @@ Search Compatible Numbers
 
 </button>
 
-<div
-    id="notice"
-    class="note">
-</div>
+<div id="notice" class="note"></div>
 
 </div>
 
 </section>
 
 
-<section
-    class="section"
-    id="services">
+<!-- SERVICES -->
+
+<section class="section" id="services">
 
 <div class="kicker">
 CHOOSE A SERVICE
@@ -1017,60 +975,51 @@ What do you need the number for?
 Select a platform to filter the number inventory by supported use.
 </p>
 
-
 <div class="services">
 
-<div class="service selected"
-    onclick="pick('whatsapp',this)">
+<div class="service selected" onclick="pick('whatsapp',this)">
 <div class="icon">◉</div>
 <b>WhatsApp</b>
 <span>Supported numbers only</span>
 </div>
 
-<div class="service"
-    onclick="pick('telegram',this)">
+<div class="service" onclick="pick('telegram',this)">
 <div class="icon">➤</div>
 <b>Telegram</b>
 <span>Supported numbers only</span>
 </div>
 
-<div class="service"
-    onclick="pick('tiktok',this)">
+<div class="service" onclick="pick('tiktok',this)">
 <div class="icon">♪</div>
 <b>TikTok</b>
 <span>Supported numbers only</span>
 </div>
 
-<div class="service"
-    onclick="pick('instagram',this)">
+<div class="service" onclick="pick('instagram',this)">
 <div class="icon">◎</div>
 <b>Instagram</b>
 <span>Supported numbers only</span>
 </div>
 
-<div class="service"
-    onclick="pick('google',this)">
+<div class="service" onclick="pick('google',this)">
 <div class="icon">G</div>
 <b>Google / Gmail</b>
 <span>Availability varies</span>
 </div>
 
-<div class="service"
-    onclick="pick('facebook',this)">
+<div class="service" onclick="pick('facebook',this)">
 <div class="icon">f</div>
 <b>Facebook</b>
 <span>Supported numbers only</span>
 </div>
 
-<div class="service"
-    onclick="pick('x',this)">
+<div class="service" onclick="pick('x',this)">
 <div class="icon">𝕏</div>
 <b>X</b>
 <span>Supported numbers only</span>
 </div>
 
-<div class="service"
-    onclick="pick('general_sms',this)">
+<div class="service" onclick="pick('general_sms',this)">
 <div class="icon">✉</div>
 <b>General SMS</b>
 <span>SMS-capable numbers</span>
@@ -1078,10 +1027,7 @@ Select a platform to filter the number inventory by supported use.
 
 </div>
 
-
-<div
-    class="results"
-    id="results">
+<div class="results" id="results">
 
 <div class="loading">
 Choose a country and service, then search for live availability.
@@ -1092,9 +1038,9 @@ Choose a country and service, then search for live availability.
 </section>
 
 
-<section
-    class="section pricing"
-    id="pricing">
+<!-- PRICING -->
+
+<section class="section pricing" id="pricing">
 
 <div class="kicker">
 NUMBER PLANS
@@ -1107,7 +1053,6 @@ Rental or Lifetime
 <p class="lead">
 Pricing depends on the selected country, provider and number type.
 </p>
-
 
 <div class="plans">
 
@@ -1169,78 +1114,7 @@ Lifetime availability and pricing depend on the provider.
 </section>
 
 
-<section
-    class="dashboard"
-    id="dashboard">
-
-<div class="dashboard-box">
-
-<div class="kicker">
-YOUR ACCOUNT
-</div>
-
-<h2>
-GlobalSIM Dashboard
-</h2>
-
-<p class="lead">
-Welcome to your GlobalSIM account.
-</p>
-
-<p>
-Logged in as:
-<strong id="dashboardEmail">
-Not logged in
-</strong>
-</p>
-
-
-<div class="dashboard-grid">
-
-<div class="dashboard-card">
-
-<small>
-USD BALANCE
-</small>
-
-<b>
-$0.00
-</b>
-
-</div>
-
-
-<div class="dashboard-card">
-
-<small>
-NGN BALANCE
-</small>
-
-<b>
-₦0.00
-</b>
-
-</div>
-
-
-<div class="dashboard-card">
-
-<small>
-ACTIVE NUMBERS
-</small>
-
-<b>
-0
-</b>
-
-</div>
-
-</div>
-
-</div>
-
-</section>
-
+<!-- WALLET -->
 
 <section class="wallet">
 
@@ -1261,38 +1135,24 @@ Payment processing and account management will be connected to the dashboard.
 
 </div>
 
-
 <div class="wallets">
 
 <div>
-
-<small>
-USD BALANCE
-</small>
-
-<b>
-$0.00
-</b>
-
+<small>USD BALANCE</small>
+<b>$0.00</b>
 </div>
 
-
 <div>
-
-<small>
-NGN BALANCE
-</small>
-
-<b>
-₦0
-</b>
-
+<small>NGN BALANCE</small>
+<b>₦0</b>
 </div>
 
 </div>
 
 </section>
 
+
+<!-- STATS -->
 
 <section class="stats">
 
@@ -1319,9 +1179,139 @@ NGN BALANCE
 </section>
 
 
-<section
-    class="section"
-    id="how">
+<!-- DASHBOARD -->
+
+<section class="dashboard" id="dashboard">
+
+<div class="dashboard-box">
+
+<div class="kicker">
+GLOBALSIM ACCOUNT
+</div>
+
+<h2>
+Welcome to your Dashboard
+</h2>
+
+<p class="lead">
+Your GlobalSIM account information.
+</p>
+
+<div class="dashboard-grid">
+
+<div class="dashboard-card">
+
+<small>
+ACCOUNT EMAIL
+</small>
+
+<h3
+    id="dashboardEmail"
+    class="dashboard-email">
+Not signed in
+</h3>
+
+<p>
+This is the email connected to your GlobalSIM account.
+</p>
+
+</div>
+
+
+<div class="dashboard-card">
+
+<small>
+USD BALANCE
+</small>
+
+<h3>
+$0.00
+</h3>
+
+<p>
+Your available dollar balance.
+</p>
+
+</div>
+
+
+<div class="dashboard-card">
+
+<small>
+NGN BALANCE
+</small>
+
+<h3>
+₦0
+</h3>
+
+<p>
+Your available naira balance.
+</p>
+
+</div>
+
+
+<div class="dashboard-card">
+
+<small>
+MY NUMBERS
+</small>
+
+<h3>
+0
+</h3>
+
+<p>
+Numbers assigned to your account will appear here.
+</p>
+
+</div>
+
+
+<div class="dashboard-card">
+
+<small>
+ORDERS
+</small>
+
+<h3>
+0
+</h3>
+
+<p>
+Your number purchases and orders will appear here.
+</p>
+
+</div>
+
+
+<div class="dashboard-card">
+
+<small>
+ACCOUNT STATUS
+</small>
+
+<h3>
+Active
+</h3>
+
+<p>
+Your GlobalSIM account is active.
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- HOW IT WORKS -->
+
+<section class="section" id="how">
 
 <div class="kicker">
 HOW IT WORKS
@@ -1334,7 +1324,6 @@ From country to number
 <p class="lead">
 Choose a supported service, review availability, then continue to checkout.
 </p>
-
 
 <div class="services">
 
@@ -1376,15 +1365,11 @@ Choose a supported service, review availability, then continue to checkout.
 
 <!-- AUTH MODAL -->
 
-<div
-    class="modal"
-    id="authModal">
+<div class="modal" id="authModal">
 
 <div class="modalbox">
 
-<button
-    class="close"
-    onclick="closeAuth()">
+<button class="close" onclick="closeAuth()">
 ×
 </button>
 
@@ -1392,16 +1377,12 @@ Choose a supported service, review availability, then continue to checkout.
 Log in to GlobalSIM
 </h3>
 
-
-<div
-    id="authMessage"
-    class="auth-message">
-</div>
-
+<div id="authMessage" class="auth-message"></div>
 
 <form
     id="authForm"
-    class="auth-form">
+    class="auth-form"
+    onsubmit="handleEmailAuth(event)">
 
 <label>
 EMAIL ADDRESS
@@ -1412,7 +1393,6 @@ EMAIL ADDRESS
     type="email"
     placeholder="you@example.com"
     required>
-
 
 <label>
 PASSWORD
@@ -1425,7 +1405,6 @@ PASSWORD
     minlength="6"
     required>
 
-
 <button
     id="authSubmit"
     class="auth-btn"
@@ -1437,11 +1416,9 @@ Sign In
 
 </form>
 
-
 <div class="auth-divider">
 OR
 </div>
-
 
 <button
     class="google-btn"
@@ -1451,7 +1428,6 @@ Continue with Google
 
 </button>
 
-
 <div class="auth-switch">
 
 <span id="authSwitchText">
@@ -1459,6 +1435,7 @@ Don't have an account?
 </span>
 
 <button
+    type="button"
     onclick="switchAuthMode()"
     id="authSwitchButton">
 
@@ -1473,17 +1450,13 @@ Sign Up
 </div>
 
 
-<!-- CHECKOUT MODAL -->
+<!-- CHECKOUT -->
 
-<div
-    class="modal"
-    id="modal">
+<div class="modal" id="modal">
 
 <div class="modalbox">
 
-<button
-    class="close"
-    onclick="closeModal()">
+<button class="close" onclick="closeModal()">
 ×
 </button>
 
@@ -1498,7 +1471,9 @@ Select an available number to continue.
 <button
     class="search"
     onclick="closeModal()">
+
 Close
+
 </button>
 
 </div>
@@ -1508,18 +1483,15 @@ Close
 
 <script>
 
-/*
-====================================================
-SUPABASE CONFIGURATION
-====================================================
-*/
+/* =====================================================
+   SUPABASE
+===================================================== */
 
 const SUPABASE_URL =
     "https://yhtfdojvmlzlsncsxaug.supabase.co";
 
 const SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_DpcHNrR_B3ZHQyIfWyLJjw_I9axcQ3h";
-
 
 const supabaseClient =
     window.supabase.createClient(
@@ -1529,26 +1501,23 @@ const supabaseClient =
             auth: {
                 persistSession: true,
                 autoRefreshToken: true,
-                detectSessionInUrl: true
+                detectSessionInUrl: true,
+                flowType: "pkce"
             }
         }
     );
 
 
-/*
-====================================================
-AUTH VARIABLES
-====================================================
-*/
+/* =====================================================
+   AUTH VARIABLES
+===================================================== */
 
 let authMode = "login";
 
 
-/*
-====================================================
-OPEN AUTH
-====================================================
-*/
+/* =====================================================
+   OPEN AUTH
+===================================================== */
 
 function openAuth(mode) {
 
@@ -1556,19 +1525,16 @@ function openAuth(mode) {
 
     updateAuthModal();
 
-    const modal =
-        document.getElementById("authModal");
-
-    modal.classList.add("open");
+    document
+        .getElementById("authModal")
+        .classList.add("open");
 
 }
 
 
-/*
-====================================================
-CLOSE AUTH
-====================================================
-*/
+/* =====================================================
+   CLOSE AUTH
+===================================================== */
 
 function closeAuth() {
 
@@ -1583,11 +1549,9 @@ function closeAuth() {
 }
 
 
-/*
-====================================================
-SWITCH LOGIN / SIGNUP
-====================================================
-*/
+/* =====================================================
+   SWITCH LOGIN / SIGNUP
+===================================================== */
 
 function switchAuthMode() {
 
@@ -1601,11 +1565,9 @@ function switchAuthMode() {
 }
 
 
-/*
-====================================================
-UPDATE AUTH MODAL
-====================================================
-*/
+/* =====================================================
+   AUTH MODAL TEXT
+===================================================== */
 
 function updateAuthModal() {
 
@@ -1655,11 +1617,9 @@ function updateAuthModal() {
 }
 
 
-/*
-====================================================
-AUTH MESSAGE
-====================================================
-*/
+/* =====================================================
+   AUTH MESSAGE
+===================================================== */
 
 function showAuthMessage(message) {
 
@@ -1675,43 +1635,149 @@ function showAuthMessage(message) {
 }
 
 
-/*
-====================================================
-EMAIL AUTHENTICATION
-====================================================
-*/
+/* =====================================================
+   UPDATE NAVIGATION
+   THIS IS THE IMPORTANT FIX
+===================================================== */
 
-async function handleEmailAuth(event) {
+function updateAuthUI(user) {
 
-    event.preventDefault();
+    const guestActions =
+        document.getElementById("guestActions");
 
-    const email =
-        document
-            .getElementById("authEmail")
-            .value
-            .trim();
+    const userArea =
+        document.getElementById("userArea");
 
-    const password =
-        document
-            .getElementById("authPassword")
-            .value;
+    const userEmail =
+        document.getElementById("userEmail");
 
-    const button =
-        document.getElementById("authSubmit");
+    const dashboardEmail =
+        document.getElementById("dashboardEmail");
 
 
-    if (!email || !password) {
+    if (user) {
 
-        showAuthMessage(
-            "Please enter your email and password."
+        /*
+         * USER IS LOGGED IN
+         */
+
+        guestActions.style.display =
+            "none";
+
+        userArea.classList.add(
+            "visible"
         );
+
+        userEmail.textContent =
+            user.email ||
+            "Account";
+
+        if (dashboardEmail) {
+
+            dashboardEmail.textContent =
+                user.email ||
+                "Account";
+
+        }
+
+    } else {
+
+        /*
+         * USER IS NOT LOGGED IN
+         */
+
+        guestActions.style.display =
+            "flex";
+
+        userArea.classList.remove(
+            "visible"
+        );
+
+        userEmail.textContent =
+            "";
+
+        if (dashboardEmail) {
+
+            dashboardEmail.textContent =
+                "Not signed in";
+
+        }
+
+    }
+
+}
+
+
+/* =====================================================
+   SHOW DASHBOARD
+===================================================== */
+
+async function showDashboard() {
+
+    const {
+        data,
+        error
+    } =
+        await supabaseClient.auth.getSession();
+
+
+    if (error || !data.session) {
+
+        openAuth("login");
 
         return;
 
     }
 
 
-    button.disabled = true;
+    updateAuthUI(
+        data.session.user
+    );
+
+
+    const dashboard =
+        document.getElementById(
+            "dashboard"
+        );
+
+
+    dashboard.classList.add(
+        "open"
+    );
+
+
+    dashboard.scrollIntoView({
+        behavior: "smooth"
+    });
+
+}
+
+
+/* =====================================================
+   EMAIL AUTH
+===================================================== */
+
+async function handleEmailAuth(event) {
+
+    event.preventDefault();
+
+
+    const email =
+        document.getElementById("authEmail")
+            .value
+            .trim();
+
+    const password =
+        document.getElementById("authPassword")
+            .value;
+
+    const button =
+        document.getElementById("authSubmit");
+
+
+    button.disabled =
+        true;
+
 
     button.textContent =
         authMode === "signup"
@@ -1744,14 +1810,17 @@ async function handleEmailAuth(event) {
 
 
             if (error) {
+
                 throw error;
+
             }
 
 
             /*
-            If email confirmation is disabled,
-            Supabase gives us a session immediately.
-            */
+             * If email confirmation is enabled,
+             * Supabase will not immediately give
+             * us a session.
+             */
 
             if (data.session) {
 
@@ -1761,7 +1830,7 @@ async function handleEmailAuth(event) {
 
                 closeAuth();
 
-                goToDashboard();
+                showDashboard();
 
             } else {
 
@@ -1788,7 +1857,9 @@ async function handleEmailAuth(event) {
 
 
             if (error) {
+
                 throw error;
+
             }
 
 
@@ -1804,7 +1875,7 @@ async function handleEmailAuth(event) {
 
                 closeAuth();
 
-                goToDashboard();
+                showDashboard();
 
             } else {
 
@@ -1820,19 +1891,21 @@ async function handleEmailAuth(event) {
     } catch (error) {
 
         console.error(
-            "EMAIL AUTH ERROR:",
+            "AUTH ERROR:",
             error
         );
 
         showAuthMessage(
             error.message ||
-            "Authentication failed. Please try again."
+            "Authentication failed."
         );
 
     }
 
 
-    button.disabled = false;
+    button.disabled =
+        false;
+
 
     button.textContent =
         authMode === "signup"
@@ -1842,27 +1915,15 @@ async function handleEmailAuth(event) {
 }
 
 
-/*
-====================================================
-GOOGLE AUTHENTICATION
-====================================================
-*/
+/* =====================================================
+   GOOGLE LOGIN
+===================================================== */
 
 async function signInWithGoogle() {
 
     try {
 
-        showAuthMessage(
-            "Connecting to Google..."
-        );
-
-
-        const redirectUrl =
-            window.location.origin;
-
-
         const {
-            data,
             error
         } =
             await supabaseClient.auth.signInWithOAuth({
@@ -1872,15 +1933,7 @@ async function signInWithGoogle() {
                 options: {
 
                     redirectTo:
-                        redirectUrl,
-
-                    queryParams: {
-
-                        access_type: "offline",
-
-                        prompt: "select_account"
-
-                    }
+                        window.location.origin
 
                 }
 
@@ -1888,14 +1941,10 @@ async function signInWithGoogle() {
 
 
         if (error) {
+
             throw error;
+
         }
-
-
-        console.log(
-            "Google OAuth started:",
-            data
-        );
 
 
     } catch (error) {
@@ -1915,107 +1964,19 @@ async function signInWithGoogle() {
 }
 
 
-/*
-====================================================
-AUTH UI
-====================================================
-*/
+/* =====================================================
+   PROCESS GOOGLE / SUPABASE CALLBACK
+   IMPORTANT
+===================================================== */
 
-function updateAuthUI(user) {
-
-    const guestActions =
-        document.getElementById(
-            "guestActions"
-        );
-
-    const userArea =
-        document.getElementById(
-            "userArea"
-        );
-
-    const userEmail =
-        document.getElementById(
-            "userEmail"
-        );
-
-    const dashboardEmail =
-        document.getElementById(
-            "dashboardEmail"
-        );
-
-
-    if (user) {
-
-        /*
-        HIDE LOGIN + SIGNUP
-        */
-
-        guestActions.style.display =
-            "none";
-
-
-        /*
-        SHOW USER AREA
-        */
-
-        userArea.classList.add(
-            "visible"
-        );
-
-
-        const email =
-            user.email ||
-            "Account";
-
-
-        userEmail.textContent =
-            email;
-
-
-        dashboardEmail.textContent =
-            email;
-
-
-    } else {
-
-        /*
-        SHOW LOGIN + SIGNUP
-        */
-
-        guestActions.style.display =
-            "flex";
-
-
-        /*
-        HIDE USER AREA
-        */
-
-        userArea.classList.remove(
-            "visible"
-        );
-
-
-        userEmail.textContent =
-            "";
-
-
-        dashboardEmail.textContent =
-            "Not logged in";
-
-    }
-
-}
-
-
-/*
-====================================================
-CHECK CURRENT SESSION
-====================================================
-*/
-
-async function checkAuth() {
+async function processAuthCallback() {
 
     try {
+
+        /*
+         * Supabase reads the authentication
+         * information from the URL.
+         */
 
         const {
             data,
@@ -2031,56 +1992,84 @@ async function checkAuth() {
                 error
             );
 
-            updateAuthUI(null);
-
             return;
 
         }
 
 
-        const session =
-            data.session;
-
-
         if (
-            session &&
-            session.user
+            data &&
+            data.session &&
+            data.session.user
         ) {
 
-            updateAuthUI(
-                session.user
+            console.log(
+                "Authenticated user:",
+                data.session.user.email
             );
 
-        } else {
 
-            updateAuthUI(null);
+            updateAuthUI(
+                data.session.user
+            );
+
+
+            /*
+             * Remove OAuth callback parameters
+             * from the browser address bar.
+             */
+
+            if (
+                window.location.search ||
+                window.location.hash
+            ) {
+
+                window.history.replaceState(
+                    {},
+                    document.title,
+                    window.location.pathname
+                );
+
+            }
+
+            /*
+             * Automatically display dashboard.
+             */
+
+            setTimeout(
+                function() {
+
+                    const dashboard =
+                        document.getElementById(
+                            "dashboard"
+                        );
+
+                    dashboard.classList.add(
+                        "open"
+                    );
+
+                },
+                300
+            );
 
         }
-
 
     } catch (error) {
 
         console.error(
-            "AUTH CHECK ERROR:",
+            "CALLBACK ERROR:",
             error
         );
-
-        updateAuthUI(null);
 
     }
 
 }
 
 
-/*
-====================================================
-AUTH STATE LISTENER
-====================================================
-
-This is the important part that keeps the
-navigation updated after Google/email login.
-====================================================
-*/
+/* =====================================================
+   AUTH STATE LISTENER
+   IMPORTANT FIX
+===================================================== */
 
 supabaseClient.auth.onAuthStateChange(
     function(event, session) {
@@ -2102,7 +2091,9 @@ supabaseClient.auth.onAuthStateChange(
 
         } else {
 
-            updateAuthUI(null);
+            updateAuthUI(
+                null
+            );
 
         }
 
@@ -2110,18 +2101,11 @@ supabaseClient.auth.onAuthStateChange(
 );
 
 
-/*
-====================================================
-HANDLE GOOGLE CALLBACK
-====================================================
+/* =====================================================
+   INITIAL AUTH CHECK
+===================================================== */
 
-When Google sends the user back to the website,
-Supabase detects the session automatically.
-We then refresh the navigation.
-====================================================
-*/
-
-async function handleAuthCallback() {
+async function checkAuth() {
 
     try {
 
@@ -2135,9 +2119,11 @@ async function handleAuthCallback() {
         if (error) {
 
             console.error(
-                "CALLBACK SESSION ERROR:",
+                "INITIAL SESSION ERROR:",
                 error
             );
+
+            updateAuthUI(null);
 
             return;
 
@@ -2145,6 +2131,7 @@ async function handleAuthCallback() {
 
 
         if (
+            data &&
             data.session &&
             data.session.user
         ) {
@@ -2153,44 +2140,33 @@ async function handleAuthCallback() {
                 data.session.user
             );
 
+            document
+                .getElementById("dashboard")
+                .classList.add("open");
 
-            /*
-            Remove OAuth parameters from
-            the browser address bar.
-            */
+        } else {
 
-            if (
-                window.location.search ||
-                window.location.hash
-            ) {
-
-                window.history.replaceState(
-                    {},
-                    document.title,
-                    window.location.pathname
-                );
-
-            }
+            updateAuthUI(null);
 
         }
 
     } catch (error) {
 
         console.error(
-            "CALLBACK ERROR:",
+            "CHECK AUTH ERROR:",
             error
         );
+
+        updateAuthUI(null);
 
     }
 
 }
 
 
-/*
-====================================================
-LOGOUT
-====================================================
-*/
+/* =====================================================
+   LOGOUT
+===================================================== */
 
 async function logoutUser() {
 
@@ -2203,7 +2179,9 @@ async function logoutUser() {
 
 
         if (error) {
+
             throw error;
+
         }
 
 
@@ -2212,7 +2190,7 @@ async function logoutUser() {
 
         document
             .getElementById("dashboard")
-            .classList.remove("visible");
+            .classList.remove("open");
 
 
         window.scrollTo({
@@ -2233,64 +2211,24 @@ async function logoutUser() {
 }
 
 
-/*
-====================================================
-DASHBOARD
-====================================================
-*/
-
-function goToDashboard() {
-
-    const dashboard =
-        document.getElementById(
-            "dashboard"
-        );
-
-
-    dashboard.classList.add(
-        "visible"
-    );
-
-
-    dashboard.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-    });
-
-}
-
-
-/*
-====================================================
-LIVE NUMBER API
-====================================================
-*/
+/* =====================================================
+   NUMBER API
+===================================================== */
 
 let countries = [];
-
 let prices = [];
 
-
-/*
-====================================================
-LOAD COUNTRIES
-====================================================
-*/
 
 async function loadCountries() {
 
     const countrySelect =
-        document.getElementById(
-            "country"
-        );
+        document.getElementById("country");
 
 
     try {
 
         const response =
-            await fetch(
-                "/api/countries"
-            );
+            await fetch("/api/countries");
 
 
         if (!response.ok) {
@@ -2359,7 +2297,6 @@ async function loadCountries() {
     } catch (error) {
 
         console.error(
-            "COUNTRIES ERROR:",
             error
         );
 
@@ -2367,22 +2304,14 @@ async function loadCountries() {
         countrySelect.innerHTML =
             '<option value="">Unable to load countries</option>';
 
-
-        document
-            .getElementById("notice")
-            .textContent =
-            "Could not load countries. Please refresh the page.";
-
     }
 
 }
 
 
-/*
-====================================================
-SERVICE PICKER
-====================================================
-*/
+/* =====================================================
+   SERVICE PICKER
+===================================================== */
 
 function pick(name, element) {
 
@@ -2404,14 +2333,12 @@ function pick(name, element) {
     );
 
 
-    document
-        .getElementById("platform")
+    document.getElementById("platform")
         .value =
         name;
 
 
-    document
-        .getElementById("numbers")
+    document.getElementById("numbers")
         .scrollIntoView({
 
             behavior: "smooth",
@@ -2423,48 +2350,32 @@ function pick(name, element) {
 }
 
 
-/*
-====================================================
-SEARCH NUMBERS
-====================================================
-*/
+/* =====================================================
+   SEARCH NUMBERS
+===================================================== */
 
 async function searchNumbers() {
 
     const countryId =
-        document
-            .getElementById("country")
+        document.getElementById("country")
             .value;
-
 
     const type =
-        document
-            .getElementById("type")
+        document.getElementById("type")
             .value;
-
 
     const platform =
-        document
-            .getElementById("platform")
+        document.getElementById("platform")
             .value;
 
-
     const notice =
-        document.getElementById(
-            "notice"
-        );
-
+        document.getElementById("notice");
 
     const results =
-        document.getElementById(
-            "results"
-        );
-
+        document.getElementById("results");
 
     const button =
-        document.getElementById(
-            "searchButton"
-        );
+        document.getElementById("searchButton");
 
 
     if (!countryId) {
@@ -2477,15 +2388,14 @@ async function searchNumbers() {
     }
 
 
-    button.disabled = true;
+    button.disabled =
+        true;
 
     button.textContent =
         "Searching...";
 
-
     notice.textContent =
         "Checking live number availability...";
-
 
     results.innerHTML =
         '<div class="loading">Loading live numbers...</div>';
@@ -2496,17 +2406,14 @@ async function searchNumbers() {
         const response =
             await fetch(
                 "/api/prices?service=" +
-                encodeURIComponent(
-                    platform
-                )
+                encodeURIComponent(platform)
             );
 
 
         if (!response.ok) {
 
             throw new Error(
-                "Prices API failed with status " +
-                response.status
+                "Prices API failed"
             );
 
         }
@@ -2580,7 +2487,6 @@ async function searchNumbers() {
     } catch (error) {
 
         console.error(
-            "NUMBER SEARCH ERROR:",
             error
         );
 
@@ -2592,14 +2498,11 @@ async function searchNumbers() {
             'Please try again in a moment.' +
             '</div>';
 
-
-        notice.textContent =
-            "There was a problem connecting to the number provider.";
-
     }
 
 
-    button.disabled = false;
+    button.disabled =
+        false;
 
     button.textContent =
         "Search Compatible Numbers";
@@ -2607,21 +2510,14 @@ async function searchNumbers() {
 }
 
 
-/*
-====================================================
-DISPLAY RESULTS
-====================================================
-*/
+/* =====================================================
+   RENDER RESULTS
+===================================================== */
 
-function renderResults(
-    items,
-    platform
-) {
+function renderResults(items, platform) {
 
     const results =
-        document.getElementById(
-            "results"
-        );
+        document.getElementById("results");
 
 
     if (!items.length) {
@@ -2687,8 +2583,10 @@ function renderResults(
                 <div>
 
                     <div class="number">
+
                         ${escapeHTML(flag)}
                         ${escapeHTML(countryName)}
+
                     </div>
 
                     <div class="badges">
@@ -2713,7 +2611,6 @@ function renderResults(
 
                 </div>
 
-
                 <div>
 
                     <div class="price">
@@ -2729,7 +2626,9 @@ function renderResults(
                     <button
                         class="get"
                         onclick='openCheckout(${JSON.stringify(item)})'>
+
                         Get Number
+
                     </button>
 
                 </div>
@@ -2747,11 +2646,9 @@ function renderResults(
 }
 
 
-/*
-====================================================
-CHECKOUT
-====================================================
-*/
+/* =====================================================
+   CHECKOUT
+===================================================== */
 
 function openCheckout(item) {
 
@@ -2761,23 +2658,16 @@ function openCheckout(item) {
         );
 
 
-    const title =
-        document.getElementById(
-            "modalTitle"
-        );
-
-
-    const text =
-        document.getElementById(
-            "modalText"
-        );
-
-
-    title.textContent =
+    document.getElementById(
+        "modalTitle"
+    ).textContent =
         "GlobalSIM — Number Selection";
 
 
-    text.innerHTML =
+    document.getElementById(
+        "modalText"
+    ).innerHTML =
+
         "Country: <b>" +
         escapeHTML(
             item.country_name || ""
@@ -2804,7 +2694,7 @@ function openCheckout(item) {
         ) +
         "</b><br><br>" +
 
-        "Please sign in before purchasing a number. Your wallet and provider checkout will be connected in the next stage.";
+        "Please sign in before purchasing a number.";
 
 
     modal.classList.add(
@@ -2813,12 +2703,6 @@ function openCheckout(item) {
 
 }
 
-
-/*
-====================================================
-CLOSE CHECKOUT
-====================================================
-*/
 
 function closeModal() {
 
@@ -2831,11 +2715,9 @@ function closeModal() {
 }
 
 
-/*
-====================================================
-FORMAT MONEY
-====================================================
-*/
+/* =====================================================
+   FORMAT MONEY
+===================================================== */
 
 function formatMoney(value) {
 
@@ -2863,11 +2745,9 @@ function formatMoney(value) {
 }
 
 
-/*
-====================================================
-SECURITY
-====================================================
-*/
+/* =====================================================
+   ESCAPE HTML
+===================================================== */
 
 function escapeHTML(value) {
 
@@ -2901,11 +2781,9 @@ function escapeHTML(value) {
 }
 
 
-/*
-====================================================
-MODAL EVENTS
-====================================================
-*/
+/* =====================================================
+   MODAL EVENTS
+===================================================== */
 
 document
     .getElementById("modal")
@@ -2943,36 +2821,29 @@ document
     );
 
 
-/*
-====================================================
-AUTH FORM EVENT
-====================================================
-*/
-
-document
-    .getElementById("authForm")
-    .addEventListener(
-        "submit",
-        handleEmailAuth
-    );
-
-
-/*
-====================================================
-START APPLICATION
-====================================================
-
-We deliberately run authentication first so that
-the navigation is updated before the user sees
-the page.
-====================================================
-*/
+/* =====================================================
+   START APPLICATION
+===================================================== */
 
 (async function startApplication() {
 
-    await handleAuthCallback();
+    /*
+     * First check the Supabase session.
+     */
 
     await checkAuth();
+
+
+    /*
+     * Then process any OAuth callback.
+     */
+
+    await processAuthCallback();
+
+
+    /*
+     * Load the number database.
+     */
 
     loadCountries();
 
