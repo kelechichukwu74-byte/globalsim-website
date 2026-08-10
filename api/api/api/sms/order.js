@@ -1,8 +1,8 @@
-import { smsVirtualRequest } from "./_lib.js";
+import { buyNumberRequest } from "./_lib.js";
 
 export default async function handler(req, res) {
   try {
-    if (req.method !== "POST") {
+    if (req.method !== "GET") {
       return res.status(405).json({
         success: false,
         error: "Method not allowed"
@@ -10,45 +10,40 @@ export default async function handler(req, res) {
     }
 
     const {
-      serviceCountryPriceId,
-      operatorId,
-      quantity = 1,
-      autoSearchServer = false
-    } = req.body || {};
+      service,
+      country,
+      max_price
+    } = req.query;
 
-    if (!serviceCountryPriceId) {
+    if (!service || !country) {
       return res.status(400).json({
         success: false,
-        error: "serviceCountryPriceId is required"
+        error: "Service and country are required"
       });
     }
 
-    const body = {
-      serviceCountryPriceId,
-      quantity,
-      autoSearchServer
+    const params = {
+      action: "newNumber",
+      service,
+      country
     };
 
-    if (operatorId) {
-      body.operatorId = operatorId;
+    if (max_price !== undefined) {
+      params.max_price = max_price;
     }
 
-    const data = await smsVirtualRequest(
-      "/v1/orders/request-single-service",
-      {
-        method: "POST",
-        body
-      }
+    const data = await buyNumberRequest(
+      "/activation-numbers",
+      params
     );
 
-    return res.status(200).json(data);
+    return res.status(200).json({
+      success: true,
+      order: data?.data || null
+    });
 
   } catch (error) {
-
-    console.error(
-      "Order API error:",
-      error
-    );
+    console.error("BuyNumber order error:", error);
 
     return res.status(500).json({
       success: false,
