@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GlobalSIM</title>
+
+<title>GlobalSim Web</title>
 
 <style>
 * {
@@ -32,7 +33,7 @@ button {
     position: sticky;
     top: 0;
     z-index: 100;
-    background: #ffffff;
+    background: #fff;
     border-bottom: 1px solid #e4e8ef;
     padding: 14px 20px;
     display: flex;
@@ -94,8 +95,6 @@ button {
     color: #68758a;
 }
 
-/* DASHBOARD */
-
 .dashboard {
     background: linear-gradient(135deg, #1677ff, #0758c9);
     color: white;
@@ -144,8 +143,6 @@ button {
     margin-bottom: 15px;
 }
 
-/* BUTTONS */
-
 .primary {
     background: #126ff0;
     color: white;
@@ -181,8 +178,6 @@ button {
     border-radius: 9px;
     font-weight: 700;
 }
-
-/* COUNTRY SEARCH */
 
 .toolbar {
     display: flex;
@@ -226,7 +221,7 @@ button {
     font-size: 17px;
 }
 
-.item .small {
+.small {
     color: #718096;
     font-size: 12px;
 }
@@ -236,8 +231,6 @@ button {
     font-weight: 900;
     margin: 12px 0;
 }
-
-/* NUMBER */
 
 .number-box {
     border: 2px solid #dcecff;
@@ -284,8 +277,6 @@ button {
     color: #748096;
 }
 
-/* TABLE */
-
 .table-container {
     overflow-x: auto;
 }
@@ -293,7 +284,7 @@ button {
 table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 700px;
+    min-width: 650px;
 }
 
 th,
@@ -308,25 +299,15 @@ th {
     color: #69758a;
 }
 
-/* WALLET */
-
-.wallet-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 13px;
+.badge {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 20px;
+    background: #eaf3ff;
+    color: #1269e8;
+    font-size: 11px;
+    font-weight: 700;
 }
-
-.payment-method {
-    border: 1px solid #e1e7ef;
-    border-radius: 13px;
-    padding: 15px;
-}
-
-.payment-method h3 {
-    margin-top: 0;
-}
-
-/* MOBILE */
 
 @media (max-width: 700px) {
 
@@ -350,7 +331,6 @@ th {
         width: 100%;
         overflow-x: auto;
     }
-
 }
 </style>
 </head>
@@ -360,25 +340,28 @@ th {
 <header class="header">
 
     <div class="logo">
-        GlobalSIM
+        GlobalSim Web
     </div>
 
     <nav class="nav">
 
-        <button class="active" onclick="openPage('dashboard', this)">
+        <button
+            class="active"
+            onclick="openPage('dashboard', this)"
+        >
             Dashboard
         </button>
 
-        <button onclick="openPage('numbers', this)">
+        <button
+            onclick="openPage('numbers', this)"
+        >
             Get Number
         </button>
 
-        <button onclick="openPage('history', this)">
+        <button
+            onclick="openPage('history', this)"
+        >
             History
-        </button>
-
-        <button onclick="openPage('wallet', this)">
-            Wallet
         </button>
 
     </nav>
@@ -389,16 +372,19 @@ th {
 <div class="container">
 
 
-<!-- ================= DASHBOARD ================= -->
+<!-- DASHBOARD -->
 
-<section id="dashboard" class="page active">
+<section
+    id="dashboard"
+    class="page active"
+>
 
     <div class="title">
 
         <h1>Dashboard</h1>
 
         <p>
-            Manage your purchased numbers and account balance.
+            Manage your BuyNumber account and purchased numbers.
         </p>
 
     </div>
@@ -412,7 +398,10 @@ th {
                 Available Balance
             </div>
 
-            <div class="balance" id="dashboardBalance">
+            <div
+                class="balance"
+                id="dashboardBalance"
+            >
                 Loading...
             </div>
 
@@ -421,7 +410,10 @@ th {
 
         <div>
 
-            <span class="connection" id="connectionStatus">
+            <span
+                class="connection"
+                id="connectionStatus"
+            >
                 Connecting...
             </span>
 
@@ -430,8 +422,6 @@ th {
     </div>
 
 
-    <!-- PURCHASED NUMBER -->
-
     <div class="card">
 
         <h2>
@@ -439,18 +429,14 @@ th {
         </h2>
 
         <div class="subtext">
-
-            Your newly purchased number will appear here.
-
+            Your active BuyNumber activation will appear here.
         </div>
 
 
         <div id="currentNumber">
 
             <div class="empty">
-
                 No number purchased yet.
-
             </div>
 
         </div>
@@ -461,9 +447,12 @@ th {
 
 
 
-<!-- ================= GET NUMBER ================= -->
+<!-- GET NUMBER -->
 
-<section id="numbers" class="page">
+<section
+    id="numbers"
+    class="page"
+>
 
     <div class="title">
 
@@ -472,7 +461,7 @@ th {
         </h1>
 
         <p>
-            Search for a country and choose an available service.
+            Choose a country and service to purchase a verification number.
         </p>
 
     </div>
@@ -513,8 +502,6 @@ th {
     </div>
 
 
-    <!-- SERVICES -->
-
     <div
         class="card"
         id="servicesSection"
@@ -526,7 +513,7 @@ th {
         </h2>
 
         <div class="subtext">
-            Available services and prices.
+            Select a service and available number.
         </div>
 
 
@@ -541,9 +528,12 @@ th {
 
 
 
-<!-- ================= HISTORY ================= -->
+<!-- HISTORY -->
 
-<section id="history" class="page">
+<section
+    id="history"
+    class="page"
+>
 
     <div class="title">
 
@@ -552,31 +542,13 @@ th {
         </h1>
 
         <p>
-            View your purchased numbers, OTP messages and statuses.
+            Numbers purchased during this session.
         </p>
 
     </div>
 
 
     <div class="card">
-
-        <div class="toolbar">
-
-            <input
-                class="input search"
-                id="historySearch"
-                placeholder="Search history..."
-            >
-
-            <button
-                class="secondary"
-                onclick="loadHistory()"
-            >
-                Refresh
-            </button>
-
-        </div>
-
 
         <div
             class="table-container"
@@ -584,93 +556,7 @@ th {
         >
 
             <div class="empty">
-                Loading history...
-            </div>
-
-        </div>
-
-    </div>
-
-</section>
-
-
-
-<!-- ================= WALLET ================= -->
-
-<section id="wallet" class="page">
-
-    <div class="title">
-
-        <h1>
-            Wallet
-        </h1>
-
-        <p>
-            Fund your wallet and use the balance to purchase numbers.
-        </p>
-
-    </div>
-
-
-    <div class="dashboard">
-
-        <div>
-
-            <div class="dashboard-label">
-                Provider Balance
-            </div>
-
-            <div
-                class="balance"
-                id="walletBalance"
-            >
-                Loading...
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <div class="card">
-
-        <h2>
-            Payment Methods
-        </h2>
-
-        <div class="subtext">
-            Available payment methods from the provider.
-        </div>
-
-
-        <div
-            class="wallet-grid"
-            id="paymentMethods"
-        >
-
-            <div class="empty">
-                Loading payment methods...
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <div class="card">
-
-        <h2>
-            Deposit History
-        </h2>
-
-
-        <div
-            class="table-container"
-            id="depositHistory"
-        >
-
-            <div class="empty">
-                Loading deposits...
+                No purchase history yet.
             </div>
 
         </div>
@@ -687,63 +573,68 @@ th {
 
 /*
 ==========================================================
-GLOBALSIM
-SMS VIRTUAL API FRONTEND
+GLOBALSIM WEB
+BUYNUMBER FRONTEND
 ==========================================================
 
-IMPORTANT:
+API ROUTES:
 
-The API key is NOT placed here.
-
-The API key stays on the Vercel backend.
-
-Frontend calls:
-
-/api/sms/countries
-/api/sms/prices
 /api/sms/balance
+/api/sms/countries
+/api/sms/Service
+/api/sms/Price
 /api/sms/order
 /api/sms/status
 /api/sms/cancel
-/api/sms/complete
-/api/sms/resend
-/api/sms/history
-/api/sms/deposit-methods
-/api/sms/deposit-request
-/api/sms/deposit-history
 
+The BuyNumber API key is NEVER placed in this file.
+It stays inside Vercel environment variables.
 ==========================================================
 */
 
 
 let countries = [];
 
+let services = [];
+
 let currentNumber =
     JSON.parse(
-        localStorage.getItem("globalsim_current_number") || "null"
+        localStorage.getItem(
+            "globalsim_current_number"
+        ) || "null"
+    );
+
+let purchaseHistory =
+    JSON.parse(
+        localStorage.getItem(
+            "globalsim_purchase_history"
+        ) || "[]"
     );
 
 let pollingTimer = null;
 
 
+/* ================= API REQUEST ================= */
 
-/* ================= BASIC API ================= */
+async function apiRequest(
+    url,
+    options = {}
+) {
 
-async function apiRequest(url, options = {}) {
+    const response =
+        await fetch(
+            url,
+            {
+                ...options,
 
-    const response = await fetch(url, {
+                headers: {
+                    "Content-Type":
+                        "application/json",
 
-        ...options,
-
-        headers: {
-
-            "Content-Type": "application/json",
-
-            ...(options.headers || {})
-
-        }
-
-    });
+                    ...(options.headers || {})
+                }
+            }
+        );
 
 
     const data =
@@ -763,47 +654,80 @@ async function apiRequest(url, options = {}) {
     }
 
 
+    if (
+        data.success === false
+    ) {
+
+        throw new Error(
+            data.error ||
+            "API request failed"
+        );
+
+    }
+
+
     return data;
 
 }
 
 
-
 /* ================= PAGE NAVIGATION ================= */
 
-function openPage(pageId, button) {
+function openPage(
+    pageId,
+    button
+) {
 
     document
         .querySelectorAll(".page")
-        .forEach(page => {
-
-            page.classList.remove("active");
-
-        });
-
-
-    document
-        .getElementById(pageId)
-        .classList.add("active");
+        .forEach(
+            page =>
+                page.classList.remove(
+                    "active"
+                )
+        );
 
 
-    document
-        .querySelectorAll(".nav button")
-        .forEach(btn => {
-
-            btn.classList.remove("active");
-
-        });
+    const page =
+        document.getElementById(
+            pageId
+        );
 
 
-    if (button) {
+    if (page) {
 
-        button.classList.add("active");
+        page.classList.add(
+            "active"
+        );
 
     }
 
 
-    if (pageId === "dashboard") {
+    document
+        .querySelectorAll(
+            ".nav button"
+        )
+        .forEach(
+            btn =>
+                btn.classList.remove(
+                    "active"
+                )
+        );
+
+
+    if (button) {
+
+        button.classList.add(
+            "active"
+        );
+
+    }
+
+
+    if (
+        pageId ===
+        "dashboard"
+    ) {
 
         loadBalance();
 
@@ -812,50 +736,51 @@ function openPage(pageId, button) {
     }
 
 
-    if (pageId === "numbers") {
+    if (
+        pageId ===
+        "numbers"
+    ) {
 
         loadCountries();
 
     }
 
 
-    if (pageId === "history") {
+    if (
+        pageId ===
+        "history"
+    ) {
 
-        loadHistory();
-
-    }
-
-
-    if (pageId === "wallet") {
-
-        loadWallet();
+        renderHistory();
 
     }
 
 
-    window.scrollTo({
-
-        top: 0,
-
-        behavior: "smooth"
-
-    });
+    window.scrollTo(
+        {
+            top: 0,
+            behavior: "smooth"
+        }
+    );
 
 }
 
 
-
 /* ================= MONEY ================= */
 
-function money(value) {
+function money(
+    value
+) {
 
     const number =
-        Number(value || 0);
+        Number(
+            value || 0
+        );
 
 
-    return "₦" +
+    return "$" +
         number.toLocaleString(
-            "en-NG",
+            "en-US",
             {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
@@ -865,20 +790,37 @@ function money(value) {
 }
 
 
-
 /* ================= ESCAPE ================= */
 
-function escapeHTML(value) {
+function escapeHTML(
+    value
+) {
 
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    return String(
+        value ?? ""
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
 }
-
 
 
 /* ================= BALANCE ================= */
@@ -894,55 +836,55 @@ async function loadBalance() {
 
 
         const balance =
-            result.data?.balance ??
             result.balance ??
-            0;
+            result.data?.balance ??
+            "0";
 
 
         document
-            .getElementById("dashboardBalance")
+            .getElementById(
+                "dashboardBalance"
+            )
             .textContent =
-            money(balance);
+            money(
+                balance
+            );
 
 
         document
-            .getElementById("walletBalance")
+            .getElementById(
+                "connectionStatus"
+            )
             .textContent =
-            money(balance);
-
-
-        document
-            .getElementById("connectionStatus")
-            .textContent =
-            "SMS Virtual Connected";
+            "BuyNumber Connected";
 
 
     } catch (error) {
 
         document
-            .getElementById("dashboardBalance")
+            .getElementById(
+                "dashboardBalance"
+            )
             .textContent =
             "Unavailable";
 
 
         document
-            .getElementById("walletBalance")
-            .textContent =
-            "Unavailable";
-
-
-        document
-            .getElementById("connectionStatus")
+            .getElementById(
+                "connectionStatus"
+            )
             .textContent =
             "Connection Error";
 
 
-        console.error(error);
+        console.error(
+            "Balance:",
+            error
+        );
 
     }
 
 }
-
 
 
 /* ================= COUNTRIES ================= */
@@ -956,21 +898,25 @@ async function loadCountries() {
 
 
     container.innerHTML =
-        `<div class="empty">
+        `
+        <div class="empty">
             Loading countries...
-        </div>`;
+        </div>
+        `;
 
 
     try {
 
         const result =
             await apiRequest(
-                "/api/sms/countries?page=1&pageSize=206"
+                "/api/sms/countries"
             );
 
 
         countries =
-            result.data || [];
+            result.countries ||
+            result.data ||
+            [];
 
 
         renderCountries();
@@ -979,49 +925,64 @@ async function loadCountries() {
     } catch (error) {
 
         container.innerHTML =
-            `<div class="error">
-                ${escapeHTML(error.message)}
-            </div>`;
+            `
+            <div class="error">
+                ${escapeHTML(
+                    error.message
+                )}
+            </div>
+            `;
 
     }
 
 }
 
 
-
-/* ================= RENDER COUNTRIES ================= */
+/* ================= COUNTRY RENDER ================= */
 
 function renderCountries() {
 
     const search =
         document
-            .getElementById("countrySearch")
+            .getElementById(
+                "countrySearch"
+            )
             .value
             .trim()
             .toLowerCase();
 
 
     const filtered =
-        countries.filter(country => {
+        countries.filter(
+            country => {
 
-            const name =
-                String(
-                    country.name || ""
-                ).toLowerCase();
-
-
-            const code =
-                String(
-                    country.code || ""
-                ).toLowerCase();
+                const name =
+                    String(
+                        country.eng ||
+                        country.name ||
+                        ""
+                    ).toLowerCase();
 
 
-            return (
-                name.includes(search) ||
-                code.includes(search)
-            );
+                const code =
+                    String(
+                        country.id ??
+                        country.code ??
+                        ""
+                    ).toLowerCase();
 
-        });
+
+                return (
+                    name.includes(
+                        search
+                    ) ||
+                    code.includes(
+                        search
+                    )
+                );
+
+            }
+        );
 
 
     const container =
@@ -1030,12 +991,16 @@ function renderCountries() {
         );
 
 
-    if (!filtered.length) {
+    if (
+        !filtered.length
+    ) {
 
         container.innerHTML =
-            `<div class="empty">
+            `
+            <div class="empty">
                 No country found.
-            </div>`;
+            </div>
+            `;
 
         return;
 
@@ -1044,51 +1009,103 @@ function renderCountries() {
 
     container.innerHTML =
         filtered
-            .map(country => {
+            .map(
+                country => {
 
-                return `
+                    const id =
+                        country.id ??
+                        country.code;
 
-                <div class="item">
 
-                    <h3>
-                        ${escapeHTML(country.name)}
-                    </h3>
+                    const name =
+                        country.eng ||
+                        country.name ||
+                        "Unknown";
 
-                    <div class="small">
-                        ${escapeHTML(country.code || "")}
+
+                    return `
+
+                    <div class="item">
+
+                        <h3>
+                            ${escapeHTML(
+                                name
+                            )}
+                        </h3>
+
+                        <div class="small">
+                            Country ID:
+                            ${escapeHTML(
+                                id
+                            )}
+                        </div>
+
+                        <button
+                            class="primary"
+                            style="width:100%;margin-top:13px"
+                            onclick="selectCountry(
+                                '${escapeHTML(id)}',
+                                '${escapeHTML(name)}'
+                            )"
+                        >
+                            View Services
+                        </button>
+
                     </div>
 
-                    <button
-                        class="primary"
-                        style="width:100%;margin-top:13px"
-                        onclick="selectCountry(
-                            '${escapeHTML(country.id)}',
-                            '${escapeHTML(country.name)}'
-                        )"
-                    >
-                        View Services
-                    </button>
+                    `;
 
-                </div>
-
-                `;
-
-            })
+                }
+            )
             .join("");
 
 }
 
 
-
 /* ================= COUNTRY SEARCH ================= */
 
 document
-    .getElementById("countrySearch")
+    .getElementById(
+        "countrySearch"
+    )
     .addEventListener(
         "input",
         renderCountries
     );
 
+
+/* ================= SERVICES ================= */
+
+async function loadServices() {
+
+    try {
+
+        const result =
+            await apiRequest(
+                "/api/sms/Service"
+            );
+
+
+        services =
+            result.services ||
+            result.data ||
+            [];
+
+
+        return services;
+
+    } catch (error) {
+
+        console.error(
+            "Services:",
+            error
+        );
+
+        throw error;
+
+    }
+
+}
 
 
 /* ================= SELECT COUNTRY ================= */
@@ -1104,51 +1121,45 @@ async function selectCountry(
         );
 
 
-    section.style.display =
-        "block";
-
-
-    document
-        .getElementById("selectedCountry")
-        .textContent =
-        countryName;
-
-
-    const services =
+    const servicesContainer =
         document.getElementById(
             "services"
         );
 
 
-    services.innerHTML =
-        `<div class="empty">
-            Loading services...
-        </div>`;
+    section.style.display =
+        "block";
+
+
+    document
+        .getElementById(
+            "selectedCountry"
+        )
+        .textContent =
+        countryName;
+
+
+    servicesContainer.innerHTML =
+        `
+        <div class="empty">
+            Loading services and prices...
+        </div>
+        `;
 
 
     try {
 
-        const result =
-            await apiRequest(
-                "/api/sms/prices?countryId=" +
-                encodeURIComponent(
-                    countryId
-                )
+        const serviceList =
+            await loadServices();
+
+
+        if (
+            !serviceList.length
+        ) {
+
+            throw new Error(
+                "No BuyNumber services are available."
             );
-
-
-        const data =
-            result.data || [];
-
-
-        if (!data.length) {
-
-            services.innerHTML =
-                `<div class="empty">
-                    No services available for this country.
-                </div>`;
-
-            return;
 
         }
 
@@ -1156,95 +1167,198 @@ async function selectCountry(
         let html = "";
 
 
-        data.forEach(service => {
+        /*
+        BuyNumber's price endpoint
+        works by SERVICE.
 
-            const prices =
-                service.prices || [];
+        We therefore request prices
+        for each available service and
+        keep only the selected country.
+        */
+
+        for (
+            const service
+            of serviceList
+        ) {
+
+            if (
+                !service.code
+            ) {
+
+                continue;
+
+            }
 
 
-            prices.forEach(price => {
+            try {
 
-                const amount =
-                    price.promoPrice ??
-                    price.sellPrice ??
-                    price.price ??
-                    0;
+                const result =
+                    await apiRequest(
+                        "/api/sms/Price?service=" +
+                        encodeURIComponent(
+                            service.code
+                        ) +
+                        "&all_prices=false"
+                    );
 
 
-                html += `
+                const rows =
+                    result.prices ||
+                    result.data ||
+                    [];
 
-                <div class="item">
 
-                    <h3>
-                        ${escapeHTML(
-                            service.name
-                        )}
-                    </h3>
+                const countryRows =
+                    rows.filter(
+                        row =>
+                            String(
+                                row.country
+                            ) ===
+                            String(
+                                countryId
+                            )
+                    );
 
-                    <div class="small">
-                        Stock:
-                        ${Number(
-                            price.stock ??
-                            service.stock ??
+
+                for (
+                    const row
+                    of countryRows
+                ) {
+
+                    const price =
+                        Number(
+                            row.price ||
                             0
-                        ).toLocaleString()}
+                        );
+
+
+                    const stock =
+                        Number(
+                            row.count ||
+                            0
+                        );
+
+
+                    if (
+                        stock <= 0
+                    ) {
+
+                        continue;
+
+                    }
+
+
+                    html += `
+
+                    <div class="item">
+
+                        <h3>
+                            ${escapeHTML(
+                                service.name ||
+                                service.code
+                            )}
+                        </h3>
+
+                        <div class="small">
+                            Service:
+                            ${escapeHTML(
+                                service.code
+                            )}
+                        </div>
+
+                        <div class="small">
+                            Available:
+                            ${stock.toLocaleString()}
+                        </div>
+
+                        <div class="price">
+                            ${money(
+                                price
+                            )}
+                        </div>
+
+                        <button
+                            class="primary"
+                            style="width:100%"
+                            onclick="purchaseNumber(
+                                '${escapeHTML(
+                                    service.code
+                                )}',
+                                '${escapeHTML(
+                                    countryId
+                                )}',
+                                '${escapeHTML(
+                                    service.name ||
+                                    service.code
+                                )}',
+                                '${escapeHTML(
+                                    countryName
+                                )}',
+                                ${price}
+                            )"
+                        >
+                            Get Number
+                        </button>
+
                     </div>
 
-                    <div class="price">
-                        ${money(amount)}
-                    </div>
+                    `;
 
-                    <button
-                        class="primary"
-                        style="width:100%"
-                        onclick="purchaseNumber(
-                            '${escapeHTML(price.id)}',
-                            '${escapeHTML(service.name)}',
-                            '${escapeHTML(countryName)}',
-                            ${Number(amount)}
-                        )"
-                    >
-                        Get Number
-                    </button>
+                }
 
-                </div>
+            } catch (
+                serviceError
+            ) {
 
-                `;
+                console.log(
+                    "Price error for",
+                    service.code,
+                    serviceError.message
+                );
 
-            });
+            }
 
-        });
+        }
 
 
-        services.innerHTML =
+        servicesContainer.innerHTML =
             html ||
-            `<div class="empty">
-                No available prices.
-            </div>`;
+            `
+            <div class="empty">
+                No numbers are currently available
+                for this country.
+            </div>
+            `;
 
 
-        section.scrollIntoView({
-            behavior: "smooth"
-        });
+        section.scrollIntoView(
+            {
+                behavior: "smooth"
+            }
+        );
 
 
     } catch (error) {
 
-        services.innerHTML =
-            `<div class="error">
-                ${escapeHTML(error.message)}
-            </div>`;
+        servicesContainer.innerHTML =
+            `
+            <div class="error">
+                ${escapeHTML(
+                    error.message
+                )}
+            </div>
+            `;
 
     }
 
 }
 
 
-
-/* ================= PURCHASE NUMBER ================= */
+/* ================= PURCHASE ================= */
 
 async function purchaseNumber(
-    priceId,
+    service,
+    country,
     serviceName,
     countryName,
     price
@@ -1260,7 +1374,9 @@ async function purchaseNumber(
         );
 
 
-    if (!confirmation) {
+    if (
+        !confirmation
+    ) {
 
         return;
 
@@ -1269,72 +1385,71 @@ async function purchaseNumber(
 
     try {
 
+        const url =
+            "/api/sms/order" +
+            "?service=" +
+            encodeURIComponent(
+                service
+            ) +
+            "&country=" +
+            encodeURIComponent(
+                country
+            ) +
+            "&max_price=" +
+            encodeURIComponent(
+                price
+            );
+
+
         const result =
             await apiRequest(
-                "/api/sms/order",
-                {
-
-                    method: "POST",
-
-                    body: JSON.stringify({
-
-                        serviceCountryPriceId:
-                            priceId,
-
-                        quantity:
-                            1,
-
-                        autoSearchServer:
-                            false,
-
-                        idempotencyKey:
-                            crypto.randomUUID()
-
-                    })
-
-                }
+                url
             );
 
 
         const order =
+            result.order ||
             result.data ||
-            result;
-
-
-        const detail =
-            order.orderDetail?.[0] ||
-            order.orderDetails?.[0] ||
-            order;
+            {};
 
 
         currentNumber = {
 
             id:
-                detail.id,
+                order.id,
 
             phoneNumber:
-                detail.phoneNumber ||
+                order.phoneNumber ||
                 "",
 
             service:
                 serviceName,
 
+            serviceCode:
+                service,
+
             country:
                 countryName,
 
+            countryId:
+                country,
+
             price:
-                detail.price ??
-                order.totalPrice ??
-                price,
+                Number(
+                    order.price ||
+                    price
+                ),
 
             status:
-                detail.status ??
-                order.status ??
-                0,
+                "Waiting for SMS",
 
-            createdAt:
-                order.createdAt ||
-                new Date().toISOString()
+            startTime:
+                order.startTime ||
+                new Date().toISOString(),
+
+            endTime:
+                order.endTime ||
+                ""
 
         };
 
@@ -1347,26 +1462,33 @@ async function purchaseNumber(
         );
 
 
-        /*
-        IMPORTANT:
+        purchaseHistory.unshift(
+            currentNumber
+        );
 
-        After purchasing,
-        automatically go back
-        to the dashboard.
-        */
+
+        localStorage.setItem(
+            "globalsim_purchase_history",
+            JSON.stringify(
+                purchaseHistory
+            )
+        );
+
 
         openPage(
             "dashboard",
             document.querySelector(
-                '.nav button:first-child'
+                ".nav button:first-child"
             )
         );
 
 
         renderCurrentNumber();
 
-
         startPolling();
+
+
+        await loadBalance();
 
 
     } catch (error) {
@@ -1381,7 +1503,6 @@ async function purchaseNumber(
 }
 
 
-
 /* ================= DISPLAY NUMBER ================= */
 
 function renderCurrentNumber() {
@@ -1392,12 +1513,16 @@ function renderCurrentNumber() {
         );
 
 
-    if (!currentNumber) {
+    if (
+        !currentNumber
+    ) {
 
         container.innerHTML =
-            `<div class="empty">
+            `
+            <div class="empty">
                 No number purchased yet.
-            </div>`;
+            </div>
+            `;
 
         return;
 
@@ -1435,18 +1560,18 @@ function renderCurrentNumber() {
 
             <div class="small">
 
-                Status:
+                Activation ID:
                 ${escapeHTML(
-                    getStatusName(
-                        currentNumber.status
-                    )
+                    currentNumber.id
                 )}
 
             </div>
 
 
-            <div class="small"
-                 style="margin-top:5px">
+            <div
+                class="small"
+                style="margin-top:5px"
+            >
 
                 Price:
                 ${money(
@@ -1463,16 +1588,13 @@ function renderCurrentNumber() {
 
                 <div class="notice">
 
-                    Request the verification
-                    SMS from the application
-                    where you are registering
-                    the number.
+                    Waiting for verification SMS...
 
                     <br><br>
 
-                    The OTP will appear here
-                    automatically when SMS
-                    Virtual receives it.
+                    Request the verification
+                    code from the service you
+                    are registering.
 
                 </div>
 
@@ -1493,22 +1615,6 @@ function renderCurrentNumber() {
 
 
                 <button
-                    class="secondary"
-                    onclick="resendOTP()"
-                >
-                    Resend
-                </button>
-
-
-                <button
-                    class="success"
-                    onclick="completeNumber()"
-                >
-                    Complete
-                </button>
-
-
-                <button
                     class="danger"
                     onclick="cancelNumber()"
                 >
@@ -1522,7 +1628,6 @@ function renderCurrentNumber() {
     `;
 
 }
-
 
 
 /* ================= COPY NUMBER ================= */
@@ -1551,45 +1656,6 @@ function copyNumber() {
 }
 
 
-
-/* ================= STATUS NAMES ================= */
-
-function getStatusName(status) {
-
-    const statuses = {
-
-        0: "Pending",
-
-        1: "Ready",
-
-        2: "Resend",
-
-        3: "Success",
-
-        4: "Completed",
-
-        5: "Cancelled",
-
-        6: "Expired",
-
-        7: "Refunded",
-
-        8: "Cancelled / Waiting"
-
-    };
-
-
-    return (
-        statuses[
-            Number(status)
-        ] ||
-        String(status)
-    );
-
-}
-
-
-
 /* ================= POLLING ================= */
 
 function startPolling() {
@@ -1609,22 +1675,21 @@ function startPolling() {
     }
 
 
-    checkNumberStatus();
+    checkSMS();
 
 
     pollingTimer =
         setInterval(
-            checkNumberStatus,
+            checkSMS,
             5000
         );
 
 }
 
 
+/* ================= GET SMS ================= */
 
-/* ================= CHECK STATUS ================= */
-
-async function checkNumberStatus() {
+async function checkSMS() {
 
     if (
         !currentNumber ||
@@ -1648,81 +1713,81 @@ async function checkNumberStatus() {
 
 
         const data =
+            result.sms ||
             result.data ||
-            result;
+            {};
 
 
-        currentNumber.status =
-            data.status ??
-            currentNumber.status;
-
-
-        currentNumber.phoneNumber =
-            data.phoneNumber ||
-            currentNumber.phoneNumber;
-
-
-        localStorage.setItem(
-            "globalsim_current_number",
-            JSON.stringify(
-                currentNumber
-            )
-        );
-
-
-        renderCurrentNumber();
-
-
-        const otpList =
-            data.orderDetailOtp ||
+        const codes =
+            data.code ||
             [];
 
 
-        const latestOTP =
-            otpList.length
-                ? otpList[
-                    otpList.length - 1
-                  ]
-                : null;
+        const messages =
+            data.sms ||
+            [];
 
 
         if (
-            latestOTP &&
-            latestOTP.otpCode
+            codes.length
         ) {
 
             showOTP(
-                latestOTP.otpCode
+                codes[
+                    codes.length - 1
+                ]
             );
 
 
             clearInterval(
                 pollingTimer
             );
+
+
+            return;
 
         }
 
 
         if (
-            [4,5,6,7]
-                .includes(
-                    Number(
-                        data.status
-                    )
-                )
+            messages.length
         ) {
 
-            clearInterval(
-                pollingTimer
-            );
+            const latest =
+                messages[
+                    messages.length - 1
+                ];
+
+
+            const match =
+                String(
+                    latest
+                ).match(
+                    /\b\d{4,8}\b/
+                );
+
+
+            if (
+                match
+            ) {
+
+                showOTP(
+                    match[0]
+                );
+
+
+                clearInterval(
+                    pollingTimer
+                );
+
+            }
 
         }
-
 
     } catch (error) {
 
         console.log(
-            "Status check:",
+            "SMS check:",
             error.message
         );
 
@@ -1731,10 +1796,11 @@ async function checkNumberStatus() {
 }
 
 
-
 /* ================= SHOW OTP ================= */
 
-function showOTP(code) {
+function showOTP(
+    code
+) {
 
     const area =
         document.getElementById(
@@ -1742,7 +1808,9 @@ function showOTP(code) {
         );
 
 
-    if (!area) {
+    if (
+        !area
+    ) {
 
         return;
 
@@ -1758,12 +1826,16 @@ function showOTP(code) {
             </div>
 
             <div class="code">
-                ${escapeHTML(code)}
+                ${escapeHTML(
+                    code
+                )}
             </div>
 
             <button
                 class="primary"
-                onclick="copyOTP('${escapeHTML(code)}')"
+                onclick="copyOTP(
+                    '${escapeHTML(code)}'
+                )"
             >
                 Copy Code
             </button>
@@ -1775,10 +1847,11 @@ function showOTP(code) {
 }
 
 
-
 /* ================= COPY OTP ================= */
 
-function copyOTP(code) {
+function copyOTP(
+    code
+) {
 
     navigator.clipboard.writeText(
         code
@@ -1790,125 +1863,6 @@ function copyOTP(code) {
     );
 
 }
-
-
-
-/* ================= RESEND ================= */
-
-async function resendOTP() {
-
-    if (
-        !currentNumber ||
-        !currentNumber.id
-    ) {
-
-        return;
-
-    }
-
-
-    try {
-
-        await apiRequest(
-            "/api/sms/resend",
-            {
-
-                method: "POST",
-
-                body: JSON.stringify({
-
-                    id:
-                        currentNumber.id
-
-                })
-
-            }
-        );
-
-
-        alert(
-            "Resend requested."
-        );
-
-
-        startPolling();
-
-
-    } catch (error) {
-
-        alert(
-            error.message
-        );
-
-    }
-
-}
-
-
-
-/* ================= COMPLETE ================= */
-
-async function completeNumber() {
-
-    if (
-        !currentNumber ||
-        !currentNumber.id
-    ) {
-
-        return;
-
-    }
-
-
-    try {
-
-        await apiRequest(
-            "/api/sms/complete",
-            {
-
-                method: "POST",
-
-                body: JSON.stringify({
-
-                    id:
-                        currentNumber.id
-
-                })
-
-            }
-        );
-
-
-        currentNumber.status =
-            4;
-
-
-        localStorage.setItem(
-            "globalsim_current_number",
-            JSON.stringify(
-                currentNumber
-            )
-        );
-
-
-        renderCurrentNumber();
-
-
-        alert(
-            "Number completed."
-        );
-
-
-    } catch (error) {
-
-        alert(
-            error.message
-        );
-
-    }
-
-}
-
 
 
 /* ================= CANCEL ================= */
@@ -1931,7 +1885,9 @@ async function cancelNumber() {
         );
 
 
-    if (!confirmation) {
+    if (
+        !confirmation
+    ) {
 
         return;
 
@@ -1940,20 +1896,16 @@ async function cancelNumber() {
 
     try {
 
+        /*
+        Our BuyNumber Cancel endpoint
+        expects GET with id.
+        */
+
         await apiRequest(
-            "/api/sms/cancel",
-            {
-
-                method: "POST",
-
-                body: JSON.stringify({
-
-                    id:
-                        currentNumber.id
-
-                })
-
-            }
+            "/api/sms/cancel?id=" +
+            encodeURIComponent(
+                currentNumber.id
+            )
         );
 
 
@@ -1971,7 +1923,6 @@ async function cancelNumber() {
 
 
         renderCurrentNumber();
-
 
         await loadBalance();
 
@@ -1993,10 +1944,9 @@ async function cancelNumber() {
 }
 
 
-
 /* ================= HISTORY ================= */
 
-async function loadHistory() {
+function renderHistory() {
 
     const container =
         document.getElementById(
@@ -2004,485 +1954,100 @@ async function loadHistory() {
         );
 
 
-    container.innerHTML =
-        `<div class="empty">
-            Loading history...
-        </div>`;
+    if (
+        !purchaseHistory.length
+    ) {
+
+        container.innerHTML =
+            `
+            <div class="empty">
+                No purchase history yet.
+            </div>
+            `;
+
+        return;
+
+    }
 
 
-    try {
+    container.innerHTML = `
 
-        const search =
-            document
-                .getElementById(
-                    "historySearch"
-                )
-                .value
-                .trim();
+        <table>
 
+            <thead>
 
-        let url =
-            "/api/sms/history?page=1&pageSize=100";
+                <tr>
 
+                    <th>Number</th>
 
-        if (search) {
+                    <th>Country</th>
 
-            url +=
-                "&search=" +
-                encodeURIComponent(
-                    search
-                );
+                    <th>Service</th>
 
-        }
+                    <th>Price</th>
+
+                    <th>Activation ID</th>
+
+                </tr>
+
+            </thead>
 
 
-        const result =
-            await apiRequest(
-                url
-            );
+            <tbody>
 
-
-        const rows =
-            result.data ||
-            [];
-
-
-        if (!rows.length) {
-
-            container.innerHTML =
-                `<div class="empty">
-                    No purchase history found.
-                </div>`;
-
-            return;
-
-        }
-
-
-        container.innerHTML = `
-
-            <table>
-
-                <thead>
-
-                    <tr>
-
-                        <th>Date</th>
-
-                        <th>Number</th>
-
-                        <th>Country</th>
-
-                        <th>Service</th>
-
-                        <th>Price</th>
-
-                        <th>Status</th>
-
-                        <th>Code</th>
-
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                    ${rows.map(row => {
-
-                        const otpList =
-                            row.orderDetailOtp ||
-                            [];
-
-
-                        const otp =
-                            otpList.length
-                                ? otpList[
-                                    otpList.length - 1
-                                  ].otpCode
-                                : "—";
-
-
-                        return `
+                ${purchaseHistory
+                    .map(
+                        item => `
 
                         <tr>
 
                             <td>
                                 ${escapeHTML(
-                                    row.createdAt ||
+                                    item.phoneNumber ||
                                     "—"
                                 )}
                             </td>
 
                             <td>
                                 ${escapeHTML(
-                                    row.phoneNumber ||
+                                    item.country ||
                                     "—"
                                 )}
                             </td>
 
                             <td>
                                 ${escapeHTML(
-                                    row.country?.name ||
-                                    row.serviceCountry?.country?.name ||
-                                    "—"
-                                )}
-                            </td>
-
-                            <td>
-                                ${escapeHTML(
-                                    row.service?.name ||
-                                    row.serviceCountry?.service?.name ||
+                                    item.service ||
                                     "—"
                                 )}
                             </td>
 
                             <td>
                                 ${money(
-                                    row.servicePrice ||
-                                    row.price
+                                    item.price
                                 )}
                             </td>
 
                             <td>
                                 ${escapeHTML(
-                                    getStatusName(
-                                        row.status
-                                    )
-                                )}
-                            </td>
-
-                            <td>
-                                ${escapeHTML(
-                                    otp
+                                    item.id ||
+                                    "—"
                                 )}
                             </td>
 
                         </tr>
 
-                        `;
+                        `
+                    )
+                    .join("")}
 
-                    }).join("")}
+            </tbody>
 
-                </tbody>
+        </table>
 
-            </table>
-
-        `;
-
-
-    } catch (error) {
-
-        container.innerHTML =
-            `<div class="error">
-                ${escapeHTML(
-                    error.message
-                )}
-            </div>`;
-
-    }
+    `;
 
 }
-
-
-
-/* ================= WALLET ================= */
-
-async function loadWallet() {
-
-    await loadBalance();
-
-
-    const methods =
-        document.getElementById(
-            "paymentMethods"
-        );
-
-
-    const deposits =
-        document.getElementById(
-            "depositHistory"
-        );
-
-
-    methods.innerHTML =
-        `<div class="empty">
-            Loading payment methods...
-        </div>`;
-
-
-    deposits.innerHTML =
-        `<div class="empty">
-            Loading deposits...
-        </div>`;
-
-
-    try {
-
-        const [
-            methodResult,
-            historyResult
-        ] =
-        await Promise.all([
-
-            apiRequest(
-                "/api/sms/deposit-methods"
-            ),
-
-            apiRequest(
-                "/api/sms/deposit-history"
-            )
-
-        ]);
-
-
-        const methodList =
-            methodResult.data ||
-            [];
-
-
-        if (!methodList.length) {
-
-            methods.innerHTML =
-                `<div class="empty">
-                    No payment methods available.
-                </div>`;
-
-        } else {
-
-            methods.innerHTML =
-                methodList
-                    .map(method => {
-
-                        return `
-
-                        <div class="payment-method">
-
-                            <h3>
-                                ${escapeHTML(
-                                    method.name
-                                )}
-                            </h3>
-
-                            <p class="small">
-                                ${escapeHTML(
-                                    method.note ||
-                                    ""
-                                )}
-                            </p>
-
-                            <button
-                                class="primary"
-                                onclick="createDeposit(
-                                    '${escapeHTML(method.id)}'
-                                )"
-                            >
-                                Fund Wallet
-                            </button>
-
-                        </div>
-
-                        `;
-
-                    })
-                    .join("");
-
-        }
-
-
-        const history =
-            historyResult.data ||
-            [];
-
-
-        if (!history.length) {
-
-            deposits.innerHTML =
-                `<div class="empty">
-                    No deposits found.
-                </div>`;
-
-        } else {
-
-            deposits.innerHTML = `
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>Date</th>
-
-                            <th>Amount</th>
-
-                            <th>Status</th>
-
-                            <th>Method</th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        ${history.map(item => {
-
-                            return `
-
-                            <tr>
-
-                                <td>
-                                    ${escapeHTML(
-                                        item.createdAt ||
-                                        "—"
-                                    )}
-                                </td>
-
-                                <td>
-                                    ${money(
-                                        item.amount
-                                    )}
-                                </td>
-
-                                <td>
-                                    ${escapeHTML(
-                                        item.status ??
-                                        "—"
-                                    )}
-                                </td>
-
-                                <td>
-                                    ${escapeHTML(
-                                        item.depositMethod?.name ||
-                                        "—"
-                                    )}
-                                </td>
-
-                            </tr>
-
-                            `;
-
-                        }).join("")}
-
-                    </tbody>
-
-                </table>
-
-            `;
-
-        }
-
-
-    } catch (error) {
-
-        methods.innerHTML =
-            `<div class="error">
-                ${escapeHTML(
-                    error.message
-                )}
-            </div>`;
-
-    }
-
-}
-
-
-
-/* ================= CREATE DEPOSIT ================= */
-
-async function createDeposit(
-    depositMethodId
-) {
-
-    const amount =
-        prompt(
-            "Enter the amount you want to deposit:"
-        );
-
-
-    if (!amount) {
-
-        return;
-
-    }
-
-
-    const numericAmount =
-        Number(amount);
-
-
-    if (
-        !numericAmount ||
-        numericAmount <= 0
-    ) {
-
-        alert(
-            "Enter a valid amount."
-        );
-
-        return;
-
-    }
-
-
-    try {
-
-        const result =
-            await apiRequest(
-                "/api/sms/deposit-request",
-                {
-
-                    method: "POST",
-
-                    body: JSON.stringify({
-
-                        depositMethodId:
-                            depositMethodId,
-
-                        amount:
-                            numericAmount,
-
-                        idempotencyKey:
-                            crypto.randomUUID()
-
-                    })
-
-                }
-            );
-
-
-        const data =
-            result.data ||
-            result;
-
-
-        alert(
-
-            "Deposit request created.\n\n" +
-
-            (
-                data.paymentData ||
-                "Follow the payment instructions supplied by the provider."
-            )
-
-        );
-
-
-        loadWallet();
-
-
-    } catch (error) {
-
-        alert(
-            "Deposit failed:\n\n" +
-            error.message
-        );
-
-    }
-
-}
-
 
 
 /* ================= START ================= */
@@ -2491,8 +2056,9 @@ loadBalance();
 
 renderCurrentNumber();
 
-
-if (currentNumber) {
+if (
+    currentNumber
+) {
 
     startPolling();
 
