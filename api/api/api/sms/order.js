@@ -1,55 +1,83 @@
-import { buyNumberRequest } from "./_lib.js";
+import {
+  sureVerificationRequest
+} from "./_lib.js";
 
 export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      success: false,
+      error: "Method not allowed"
+    });
+  }
+
   try {
-    if (req.method !== "GET") {
-      return res.status(405).json({
-        success: false,
-        error: "Method not allowed"
-      });
-    }
-
     const {
-      service,
-      country,
-      max_price
-    } = req.query;
+      serviceCountryPriceId,
+      operatorId,
+      quantity,
+      autoSearchServer
+    } = req.body || {};
 
-    if (!service || !country) {
+    if (!serviceCountryPriceId) {
       return res.status(400).json({
         success: false,
-        error: "Service and country are required"
+        error:
+          "serviceCountryPriceId is required"
       });
     }
 
-    const params = {
-      action: "newNumber",
-      service,
-      country
+    const body = {
+      serviceCountryPriceId:
+        String(serviceCountryPriceId)
     };
 
-    if (max_price !== undefined) {
-      params.max_price = max_price;
+    if (operatorId) {
+      body.operatorId = String(operatorId);
     }
 
-    const data = await buyNumberRequest(
-      "/activation-numbers",
-      params
-    );
+    if (quantity) {
+      body.quantity = Number(quantity);
+    }
+
+    if (autoSearchServer !== undefined) {
+      body.autoSearchServer =
+        Boolean(autoSearchServer);
+    }
+
+    const data =
+      await sureVerificationRequest(
+        "/orders/request-single-service",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            "Idempotency-Key":
+              crypto.randomUUID()
+          },
+
+          body: JSON.stringify(body)
+        }
+      );
 
     return res.status(200).json({
       success: true,
-      order: data?.data || null
+      data
     });
 
   } catch (error) {
-    console.error("BuyNumber order error:", error);
+    console.error(
+      "SureVerification order error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
       error:
         error.message ||
-        "Unable to purchase number"
+        "Unable to create order."
     });
   }
 }
