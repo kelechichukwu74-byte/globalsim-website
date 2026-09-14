@@ -4,8 +4,7 @@ export async function sureVerificationRequest(
   path,
   options = {}
 ) {
-  const apiKey =
-    process.env.SUREVERIFICATION_API_KEY;
+  const apiKey = process.env.SUREVERIFICATION_API_KEY;
 
   if (!apiKey) {
     throw new Error(
@@ -19,40 +18,31 @@ export async function sureVerificationRequest(
       ...options,
 
       headers: {
-        "Accept": "application/json",
-
+        Accept: "application/json",
         "x-api-key": apiKey,
-
         ...(options.headers || {})
       }
     }
   );
 
-  const text =
-    await response.text();
+  const text = await response.text();
 
   let data = {};
 
   try {
-    data =
-      text
-        ? JSON.parse(text)
-        : {};
+    data = text ? JSON.parse(text) : {};
   } catch {
     throw new Error(
-      text ||
-      "Invalid SureVerification response."
+      text || "Invalid SureVerification response."
     );
   }
 
   if (!response.ok) {
-
     throw new Error(
       data.message ||
       data.error ||
       `SureVerification returned HTTP ${response.status}`
     );
-
   }
 
   return data;
