@@ -3,22 +3,16 @@ import {
 } from "./_lib.js";
 
 export default async function handler(req, res) {
-
   if (req.method !== "GET") {
-
     return res.status(405).json({
       success: false,
       error: "Method not allowed"
     });
-
   }
 
   try {
-
     const data =
-      await sureVerificationRequest(
-        "/balance"
-      );
+      await sureVerificationRequest("/balance");
 
     return res.status(200).json({
       success: true,
@@ -29,7 +23,6 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-
     console.error(
       "SureVerification balance error:",
       error
@@ -41,7 +34,5 @@ export default async function handler(req, res) {
         error.message ||
         "Unable to load provider balance."
     });
-
   }
-
 }
