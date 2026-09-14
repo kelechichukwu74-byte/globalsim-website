@@ -1,58 +1,58 @@
-const BASE_URL = "https://api.buynumber.io/v1";
+const BASE_URL = "https://sureverifications.com/api/v1";
 
-export async function buyNumberRequest(
+export async function sureVerificationRequest(
   path,
-  params = {}
+  options = {}
 ) {
-  const apiKey = process.env.BUYNUMBER_API_KEY;
+  const apiKey =
+    process.env.SUREVERIFICATION_API_KEY;
 
   if (!apiKey) {
     throw new Error(
-      "BUYNUMBER_API_KEY is not configured in Vercel."
+      "SUREVERIFICATION_API_KEY is not configured in Vercel."
     );
   }
 
-  const searchParams = new URLSearchParams({
-    api_key: apiKey,
-    ...params
-  });
-
   const response = await fetch(
-    `${BASE_URL}${path}?${searchParams.toString()}`,
+    `${BASE_URL}${path}`,
     {
-      method: "GET",
+      ...options,
+
       headers: {
-        "Accept": "application/json"
+        "Accept": "application/json",
+
+        "x-api-key": apiKey,
+
+        ...(options.headers || {})
       }
     }
   );
 
-  const text = await response.text();
+  const text =
+    await response.text();
 
-  let data;
+  let data = {};
 
   try {
-    data = text ? JSON.parse(text) : {};
+    data =
+      text
+        ? JSON.parse(text)
+        : {};
   } catch {
     throw new Error(
-      text || "Invalid BuyNumber response"
+      text ||
+      "Invalid SureVerification response."
     );
   }
 
   if (!response.ok) {
-    throw new Error(
-      data.error ||
-      data.message ||
-      `BuyNumber returned HTTP ${response.status}`
-    );
-  }
 
-  if (data.result !== "success") {
     throw new Error(
-      data.error ||
       data.message ||
-      "BuyNumber request failed"
+      data.error ||
+      `SureVerification returned HTTP ${response.status}`
     );
+
   }
 
   return data;
