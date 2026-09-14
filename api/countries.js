@@ -3,22 +3,16 @@ import {
 } from "./_lib.js";
 
 export default async function handler(req, res) {
-
   if (req.method !== "GET") {
-
     return res.status(405).json({
       success: false,
       error: "Method not allowed"
     });
-
   }
 
   try {
-
     const data =
-      await sureVerificationRequest(
-        "/countries"
-      );
+      await sureVerificationRequest("/countries");
 
     const countries =
       Array.isArray(data?.data)
@@ -33,7 +27,6 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-
     console.error(
       "SureVerification countries error:",
       error
@@ -45,7 +38,5 @@ export default async function handler(req, res) {
         error.message ||
         "Unable to load countries."
     });
-
   }
-
 }
