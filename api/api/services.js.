@@ -1,34 +1,54 @@
-import { buyNumberRequest } from "./_lib.js";
+import {
+  sureVerificationRequest
+} from "./_lib.js";
 
 export default async function handler(req, res) {
+  if (req.method !== "GET") {
+    return res.status(405).json({
+      success: false,
+      error: "Method not allowed"
+    });
+  }
+
   try {
-    if (req.method !== "GET") {
-      return res.status(405).json({
+    const countryId =
+      req.query?.countryId;
+
+    if (!countryId) {
+      return res.status(400).json({
         success: false,
-        error: "Method not allowed"
+        error: "countryId is required"
       });
     }
 
-    const data = await buyNumberRequest(
-      "/activation-numbers",
-      {
-        action: "getServices"
-      }
-    );
+    const data =
+      await sureVerificationRequest(
+        `/services/list?countryId=${encodeURIComponent(countryId)}`
+      );
+
+    const services =
+      Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data)
+          ? data
+          : [];
 
     return res.status(200).json({
       success: true,
-      services: data?.data || []
+      services
     });
 
   } catch (error) {
-    console.error("BuyNumber services error:", error);
+    console.error(
+      "SureVerification services error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
       error:
         error.message ||
-        "Unable to load services"
+        "Unable to load services."
     });
   }
 }
