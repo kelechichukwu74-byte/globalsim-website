@@ -2,440 +2,934 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>Global Virtual Sim Web</title>
   <meta
-    name="description"
-    content="Global Virtual Sim Web — virtual numbers and communication services worldwide."
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
   />
 
+  <title>Global Virtual Sim Web</title>
+
+  <meta
+    name="description"
+    content="Global Virtual Sim Web - Virtual numbers and SMS services worldwide."
+  />
+
+  <meta name="theme-color" content="#0f172a" />
+
   <link rel="stylesheet" href="/styles.css" />
+
+  <style>
+    /* Additional dashboard styling */
+
+    .brand-small {
+      color: #94a3b8;
+      font-size: 12px;
+      margin-top: -20px;
+      margin-bottom: 25px;
+      padding-left: 12px;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .connection {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .connection-dot {
+      width: 8px;
+      height: 8px;
+      background: #22c55e;
+      border-radius: 50%;
+    }
+
+    .user-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #2563eb;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+    }
+
+    .hero-card {
+      background: linear-gradient(
+        135deg,
+        #0f172a,
+        #1e3a8a
+      );
+      color: white;
+      border-radius: 18px;
+      padding: 30px;
+      margin-bottom: 25px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      background: rgba(59, 130, 246, 0.15);
+      right: -70px;
+      top: -100px;
+    }
+
+    .hero-card h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-card p {
+      margin: 0 0 22px;
+      color: #cbd5e1;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-btn {
+      background: white;
+      color: #1d4ed8;
+    }
+
+    .hero-btn:hover {
+      background: #eff6ff;
+    }
+
+    .stat-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: #eff6ff;
+      color: #2563eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
+      margin-bottom: 15px;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .quick-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 20px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .quick-card:hover {
+      transform: translateY(-2px);
+      border-color: #2563eb;
+    }
+
+    .quick-card h3 {
+      margin: 0 0 7px;
+      font-size: 16px;
+    }
+
+    .quick-card p {
+      margin: 0;
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .search-box {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .search-box input {
+      padding-left: 42px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 15px;
+      top: 13px;
+      color: #64748b;
+    }
+
+    .marketplace {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 20px;
+    }
+
+    .country-list {
+      max-height: 520px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 10px;
+    }
+
+    .country-item {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      padding: 13px;
+      border-radius: 9px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3px;
+      cursor: pointer;
+    }
+
+    .country-item:hover,
+    .country-item.selected {
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    .country-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .country-flag {
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .country-info strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .country-info small {
+      color: #64748b;
+      font-size: 11px;
+    }
+
+    .service-panel {
+      min-height: 520px;
+    }
+
+    .service-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 18px;
+    }
+
+    .service-header h2 {
+      margin: 0 0 5px;
+    }
+
+    .service-header p {
+      margin: 0;
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .service-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .service-card {
+      cursor: default;
+    }
+
+    .service-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .service-name {
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .stock {
+      font-size: 11px;
+      color: #16a34a;
+      background: #dcfce7;
+      padding: 5px 8px;
+      border-radius: 999px;
+    }
+
+    .service-price {
+      font-size: 23px;
+      font-weight: 800;
+      margin: 16px 0;
+    }
+
+    .service-meta {
+      color: #64748b;
+      font-size: 12px;
+      margin-bottom: 14px;
+    }
+
+    .service-card .btn {
+      width: 100%;
+    }
+
+    .wallet-hero {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 25px;
+      margin-bottom: 20px;
+    }
+
+    .wallet-balance {
+      font-size: 36px;
+      font-weight: 900;
+      color: #2563eb;
+      margin: 8px 0;
+    }
+
+    .deposit-options {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+    }
+
+    .deposit-option {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 18px;
+      background: white;
+    }
+
+    .deposit-option h3 {
+      margin: 0 0 8px;
+    }
+
+    .deposit-option p {
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .support-box {
+      max-width: 700px;
+    }
+
+    .support-item {
+      padding: 18px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+
+    .support-item strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .support-item span {
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .profile-card {
+      max-width: 650px;
+    }
+
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #2563eb;
+      color: white;
+      font-size: 30px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .order-number {
+      font-weight: 800;
+      color: #1d4ed8;
+    }
+
+    .copy-btn {
+      margin-left: 8px;
+      padding: 5px 8px;
+      border: 1px solid #cbd5e1;
+      background: white;
+      border-radius: 5px;
+      font-size: 11px;
+    }
+
+    .notice {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
+      padding: 13px 15px;
+      border-radius: 9px;
+      margin-bottom: 18px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 900px) {
+      .marketplace {
+        grid-template-columns: 1fr;
+      }
+
+      .country-list {
+        max-height: 260px;
+      }
+
+      .service-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .deposit-options,
+      .quick-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-  <!-- MOBILE OVERLAY -->
-  <div id="overlay" class="overlay" onclick="closeSidebar()"></div>
+<div class="app">
 
   <!-- SIDEBAR -->
-  <aside id="sidebar" class="sidebar">
+  <aside class="sidebar" id="sidebar">
 
-    <div class="brand">
-      <div class="brand-icon">G</div>
-
-      <div>
-        <div class="brand-name">Global Virtual</div>
-        <div class="brand-subtitle">SIM WEB</div>
-      </div>
+    <div class="logo">
+      Global<span>SIM</span>
     </div>
 
-    <nav class="sidebar-nav">
+    <div class="brand-small">
+      Global Virtual Sim Web
+    </div>
 
-      <button class="nav-item active" onclick="showPage('dashboard', this)">
-        <span>⌂</span>
-        Dashboard
+    <nav class="nav">
+
+      <button
+        class="active"
+        data-page="dashboard"
+      >
+        🏠 &nbsp; Dashboard
       </button>
 
-      <button class="nav-item" onclick="showPage('numbers', this)">
-        <span>◉</span>
-        Buy Number
+      <button data-page="buy">
+        📱 &nbsp; Buy Number
       </button>
 
-      <button class="nav-item" onclick="showPage('active', this)">
-        <span>◌</span>
-        Active Numbers
+      <button data-page="active">
+        ⚡ &nbsp; Active Numbers
       </button>
 
-      <button class="nav-item" onclick="showPage('history', this)">
-        <span>↺</span>
-        Order History
+      <button data-page="history">
+        📋 &nbsp; Order History
       </button>
 
-      <button class="nav-item" onclick="showPage('wallet', this)">
-        <span>₦</span>
-        Wallet
+      <button data-page="wallet">
+        💳 &nbsp; Wallet
       </button>
 
-      <div class="nav-heading">ACCOUNT</div>
-
-      <button class="nav-item" onclick="showPage('support', this)">
-        <span>?</span>
-        Support
+      <button data-page="support">
+        💬 &nbsp; Support
       </button>
 
-      <button class="nav-item" onclick="showPage('about', this)">
-        <span>i</span>
-        About Us
+      <button data-page="profile">
+        👤 &nbsp; Profile
       </button>
 
     </nav>
 
-    <div class="sidebar-bottom">
-      <div class="connection">
-        <span class="status-dot"></span>
-        <span>Service Online</span>
-      </div>
-
-      <div class="sidebar-footer">
-        © 2026 Global Virtual Sim Web
-      </div>
-    </div>
-
   </aside>
-
 
   <!-- MAIN -->
   <main class="main">
 
-    <!-- TOPBAR -->
+    <!-- TOP BAR -->
     <header class="topbar">
 
-      <button class="menu-button" onclick="openSidebar()">
-        ☰
-      </button>
+      <div class="topbar-left">
 
-      <div class="page-title">
-        <span id="pageTitle">Dashboard</span>
-      </div>
+        <button
+          class="menu-btn"
+          id="menuBtn"
+        >
+          ☰
+        </button>
 
-      <div class="topbar-right">
-
-        <div class="balance-small">
-          Balance:
-          <strong id="topBalance">₦0.00</strong>
+        <div class="connection">
+          <span class="connection-dot"></span>
+          System Online
         </div>
 
-        <button class="profile-button" onclick="showPage('profile')">
-          <span class="avatar">K</span>
-          <span class="profile-name">Account</span>
-        </button>
+      </div>
+
+      <div class="user-box">
+
+        <div>
+          <strong>GlobalSIM User</strong>
+        </div>
+
+        <div class="avatar">
+          G
+        </div>
 
       </div>
 
     </header>
 
-
-    <!-- CONTENT -->
-    <section class="content">
-
+    <div class="container">
 
       <!-- ================= DASHBOARD ================= -->
 
-      <div id="dashboard" class="page active-page">
+      <section
+        class="page active"
+        id="page-dashboard"
+      >
 
-        <div class="welcome">
-          <div>
-            <p class="eyebrow">GLOBAL VIRTUAL SIM WEB</p>
+        <div class="hero-card">
 
-            <h1>
-              Welcome to your
-              <span>Virtual SIM</span>
-              dashboard.
-            </h1>
+          <h1>
+            Welcome to Global Virtual Sim Web
+          </h1>
 
-            <p class="welcome-text">
-              Manage your balance, purchase available virtual numbers,
-              and monitor your orders from one place.
-            </p>
-          </div>
+          <p>
+            Get virtual numbers and manage your SMS
+            services from one simple dashboard.
+          </p>
 
-          <button
-            class="primary-button"
-            onclick="showPage('numbers')"
-          >
-            Buy a Number
-          </button>
-        </div>
+          <div class="hero-actions">
 
+            <button
+              class="btn hero-btn"
+              onclick="showPage('buy')"
+            >
+              + Buy a Number
+            </button>
 
-        <div class="stats-grid">
+            <button
+              class="btn"
+              style="
+                background:rgba(255,255,255,.12);
+                color:white;
+                border:1px solid rgba(255,255,255,.2);
+              "
+              onclick="showPage('wallet')"
+            >
+              Add Funds
+            </button>
 
-          <div class="stat-card">
-            <div class="stat-icon">₦</div>
-
-            <div>
-              <div class="stat-label">Available Balance</div>
-              <div id="dashboardBalance" class="stat-value">
-                ₦0.00
-              </div>
-            </div>
-          </div>
-
-
-          <div class="stat-card">
-            <div class="stat-icon">◉</div>
-
-            <div>
-              <div class="stat-label">Active Numbers</div>
-              <div id="activeCount" class="stat-value">
-                0
-              </div>
-            </div>
-          </div>
-
-
-          <div class="stat-card">
-            <div class="stat-icon">✓</div>
-
-            <div>
-              <div class="stat-label">Completed Orders</div>
-              <div id="completedCount" class="stat-value">
-                0
-              </div>
-            </div>
-          </div>
-
-
-          <div class="stat-card">
-            <div class="stat-icon">🌍</div>
-
-            <div>
-              <div class="stat-label">Available Countries</div>
-              <div id="countryCount" class="stat-value">
-                —
-              </div>
-            </div>
           </div>
 
         </div>
 
+        <div class="cards">
 
-        <div class="dashboard-grid">
+          <div class="card">
 
-          <div class="panel">
-
-            <div class="panel-header">
-              <div>
-                <h2>Quick Actions</h2>
-                <p>Get started with Global Virtual Sim Web.</p>
-              </div>
+            <div class="stat-icon">
+              💰
             </div>
 
-            <div class="quick-actions">
+            <div class="stat-label">
+              Available Balance
+            </div>
 
-              <button
-                class="quick-action"
-                onclick="showPage('numbers')"
-              >
-                <strong>Buy Virtual Number</strong>
-                <span>Browse countries and available services →</span>
-              </button>
-
-              <button
-                class="quick-action"
-                onclick="showPage('wallet')"
-              >
-                <strong>Fund Wallet</strong>
-                <span>Add funds before purchasing a number →</span>
-              </button>
-
-              <button
-                class="quick-action"
-                onclick="showPage('history')"
-              >
-                <strong>View Orders</strong>
-                <span>Review your recent transactions →</span>
-              </button>
-
+            <div
+              class="stat-value balance"
+              id="dashboardBalance"
+            >
+              ₦0.00
             </div>
 
           </div>
 
+          <div class="card">
 
-          <div class="panel">
-
-            <div class="panel-header">
-              <div>
-                <h2>Provider Status</h2>
-                <p>Connection to our number provider.</p>
-              </div>
+            <div class="stat-icon">
+              📱
             </div>
 
-            <div class="provider-status">
+            <div class="stat-label">
+              Active Numbers
+            </div>
 
-              <div class="provider-row">
-                <span>API Connection</span>
-                <strong id="apiStatus">
-                  Checking...
-                </strong>
-              </div>
+            <div
+              class="stat-value"
+              id="activeCount"
+            >
+              0
+            </div>
 
-              <div class="provider-row">
-                <span>Countries</span>
-                <strong id="providerCountries">
-                  Checking...
-                </strong>
-              </div>
+          </div>
 
-              <div class="provider-row">
-                <span>Account Balance</span>
-                <strong id="providerBalance">
-                  Checking...
-                </strong>
-              </div>
+          <div class="card">
 
+            <div class="stat-icon">
+              🧾
+            </div>
+
+            <div class="stat-label">
+              Total Orders
+            </div>
+
+            <div
+              class="stat-value"
+              id="orderCount"
+            >
+              0
+            </div>
+
+          </div>
+
+          <div class="card">
+
+            <div class="stat-icon">
+              🌍
+            </div>
+
+            <div class="stat-label">
+              Countries
+            </div>
+
+            <div
+              class="stat-value"
+              id="countryCount"
+            >
+              0
             </div>
 
           </div>
 
         </div>
 
-      </div>
+        <div class="section">
 
+          <div class="section-header">
 
-      <!-- ================= NUMBERS ================= -->
+            <h2>
+              Quick Actions
+            </h2>
 
-      <div id="numbers" class="page">
+          </div>
 
-        <div class="section-heading">
+          <div class="quick-grid">
 
-          <div>
-            <p class="eyebrow">MARKETPLACE</p>
-            <h1>Buy a Virtual Number</h1>
-            <p>
-              Select a country to view available communication services.
-            </p>
+            <div
+              class="quick-card"
+              onclick="showPage('buy')"
+            >
+
+              <h3>
+                📱 Get a Virtual Number
+              </h3>
+
+              <p>
+                Choose a country and service
+                and purchase an available number.
+              </p>
+
+            </div>
+
+            <div
+              class="quick-card"
+              onclick="showPage('active')"
+            >
+
+              <h3>
+                ⚡ Active Numbers
+              </h3>
+
+              <p>
+                View your currently active
+                number activations and SMS.
+              </p>
+
+            </div>
+
+            <div
+              class="quick-card"
+              onclick="showPage('wallet')"
+            >
+
+              <h3>
+                💳 Fund Your Wallet
+              </h3>
+
+              <p>
+                Add funds to your account before
+                purchasing numbers.
+              </p>
+
+            </div>
+
           </div>
 
         </div>
 
+        <div class="section">
+
+          <div class="section-header">
+
+            <h2>
+              Recent Orders
+            </h2>
+
+            <button
+              class="btn btn-secondary"
+              onclick="showPage('history')"
+            >
+              View All
+            </button>
+
+          </div>
+
+          <div class="table-wrap">
+
+            <table>
+
+              <thead>
+
+                <tr>
+                  <th>Number</th>
+                  <th>Service</th>
+                  <th>Country</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+
+              </thead>
+
+              <tbody id="recentOrders">
+
+                <tr>
+                  <td
+                    colspan="5"
+                    class="empty"
+                  >
+                    No orders yet.
+                  </td>
+                </tr>
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- ================= BUY NUMBER ================= -->
+
+      <section
+        class="page"
+        id="page-buy"
+      >
+
+        <h1 class="page-title">
+          Buy Virtual Number
+        </h1>
+
+        <p class="page-subtitle">
+          Select a country and choose the service
+          you want to use.
+        </p>
+
+        <div class="notice">
+          Prices and availability are provided
+          by our connected number provider.
+        </div>
 
         <div class="search-box">
 
-          <span>⌕</span>
+          <span class="search-icon">
+            🔎
+          </span>
 
           <input
             id="countrySearch"
-            type="search"
-            placeholder="Search country..."
-            oninput="filterCountries()"
+            type="text"
+            placeholder="Search countries..."
           />
 
         </div>
 
+        <div class="marketplace">
 
-        <div id="countriesLoading" class="loading">
-          Loading countries...
+          <div>
+
+            <div class="country-list"
+              id="countryList">
+
+              <div class="loading">
+                Loading countries...
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="card service-panel">
+
+            <div
+              class="service-header"
+            >
+
+              <div>
+
+                <h2
+                  id="selectedCountryName"
+                >
+                  Select a country
+                </h2>
+
+                <p
+                  id="selectedCountryDescription"
+                >
+                  Choose a country from the list
+                  to view available services.
+                </p>
+
+              </div>
+
+            </div>
+
+            <div
+              class="service-grid"
+              id="serviceGrid"
+            >
+
+              <div class="empty">
+                Select a country first.
+              </div>
+
+            </div>
+
+          </div>
+
         </div>
 
-        <div
-          id="countriesError"
-          class="error-box hidden"
-        ></div>
+      </section>
+
+
+      <!-- ================= ACTIVE NUMBERS ================= -->
+
+      <section
+        class="page"
+        id="page-active"
+      >
+
+        <h1 class="page-title">
+          Active Numbers
+        </h1>
+
+        <p class="page-subtitle">
+          Manage your currently active
+          number activations.
+        </p>
 
         <div
-          id="countryGrid"
-          class="country-grid"
-        ></div>
-
-      </div>
-
-
-      <!-- ================= SERVICES ================= -->
-
-      <div id="services" class="page">
-
-        <button
-          class="back-button"
-          onclick="showPage('numbers')"
+          id="activeNumbers"
+          class="section"
         >
-          ← Back to countries
-        </button>
 
-        <div class="section-heading">
-
-          <div>
-            <p class="eyebrow">AVAILABLE SERVICES</p>
-
-            <h1 id="selectedCountryName">
-              Services
-            </h1>
-
-            <p>
-              Choose an available service and price.
-            </p>
+          <div class="loading">
+            Loading active numbers...
           </div>
 
         </div>
 
-
-        <div id="servicesLoading" class="loading">
-          Loading services...
-        </div>
-
-        <div
-          id="servicesError"
-          class="error-box hidden"
-        ></div>
-
-        <div
-          id="servicesGrid"
-          class="services-grid"
-        ></div>
-
-      </div>
-
-
-      <!-- ================= ACTIVE ================= -->
-
-      <div id="active" class="page">
-
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">ORDERS</p>
-            <h1>Active Numbers</h1>
-            <p>
-              Numbers currently waiting for completion.
-            </p>
-          </div>
-        </div>
-
-        <div id="activeOrders" class="orders-list">
-          <div class="empty-state">
-            You don't have any active numbers.
-          </div>
-        </div>
-
-      </div>
+      </section>
 
 
       <!-- ================= HISTORY ================= -->
 
-      <div id="history" class="page">
+      <section
+        class="page"
+        id="page-history"
+      >
 
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">ORDERS</p>
-            <h1>Order History</h1>
-            <p>
-              View your previous virtual-number orders.
-            </p>
-          </div>
-        </div>
+        <h1 class="page-title">
+          Order History
+        </h1>
 
-        <div class="table-wrapper">
+        <p class="page-subtitle">
+          View your previous number orders.
+        </p>
+
+        <div class="table-wrap">
 
           <table>
 
             <thead>
+
               <tr>
-                <th>Service</th>
-                <th>Country</th>
+                <th>Order</th>
                 <th>Number</th>
-                <th>Amount</th>
+                <th>Service</th>
                 <th>Status</th>
                 <th>Date</th>
               </tr>
+
             </thead>
 
             <tbody id="historyTable">
 
               <tr>
-                <td colspan="6">
-                  <div class="empty-state">
-                    No orders yet.
-                  </div>
+                <td
+                  colspan="5"
+                  class="empty"
+                >
+                  Loading history...
                 </td>
               </tr>
 
@@ -445,1201 +939,1516 @@
 
         </div>
 
-      </div>
+      </section>
 
 
       <!-- ================= WALLET ================= -->
 
-      <div id="wallet" class="page">
+      <section
+        class="page"
+        id="page-wallet"
+      >
 
-        <div class="section-heading">
+        <h1 class="page-title">
+          Wallet
+        </h1>
 
-          <div>
-            <p class="eyebrow">WALLET</p>
-            <h1>Your Wallet</h1>
-            <p>
-              Manage your Global Virtual Sim Web balance.
-            </p>
+        <p class="page-subtitle">
+          Manage your GlobalSIM account balance.
+        </p>
+
+        <div class="wallet-hero">
+
+          <div class="stat-label">
+            Current Balance
           </div>
 
-        </div>
-
-
-        <div class="wallet-card">
-
-          <div>
-            <span>Available Balance</span>
-
-            <strong id="walletBalance">
-              ₦0.00
-            </strong>
+          <div
+            class="wallet-balance"
+            id="walletBalance"
+          >
+            ₦0.00
           </div>
 
           <button
-            class="primary-button"
+            class="btn btn-primary"
             onclick="showDepositMessage()"
           >
-            Fund Wallet
+            + Add Funds
           </button>
 
         </div>
 
+        <div class="section">
 
-        <div class="panel">
+          <div class="section-header">
 
-          <div class="panel-header">
-
-            <div>
-              <h2>Wallet Transactions</h2>
-              <p>
-                Your deposits and purchases will appear here.
-              </p>
-            </div>
+            <h2>
+              Funding Options
+            </h2>
 
           </div>
 
-          <div id="walletTransactions">
-            <div class="empty-state">
-              No wallet transactions yet.
-            </div>
-          </div>
+          <div class="deposit-options">
 
-        </div>
-
-      </div>
-
-
-      <!-- ================= SUPPORT ================= -->
-
-      <div id="support" class="page">
-
-        <div class="section-heading">
-
-          <div>
-            <p class="eyebrow">HELP CENTER</p>
-            <h1>Support</h1>
-            <p>
-              We're here to help.
-            </p>
-          </div>
-
-        </div>
-
-
-        <div class="support-grid">
-
-          <div class="panel support-card">
-
-            <div class="support-icon">
-              ✉
-            </div>
-
-            <h2>Email Support</h2>
-
-            <p>
-              Contact our support team by email.
-            </p>
-
-            <a
-              href="mailto:support@globalvirtualsimweb.com"
-              class="secondary-button"
-            >
-              Contact Support
-            </a>
-
-          </div>
-
-
-          <div class="panel support-card">
-
-            <div class="support-icon">
-              TG
-            </div>
-
-            <h2>Telegram</h2>
-
-            <p>
-              Our Telegram support link will be added here.
-            </p>
-
-            <button
-              class="secondary-button"
-              onclick="showTelegramMessage()"
-            >
-              Telegram Support
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-      <!-- ================= ABOUT ================= -->
-
-      <div id="about" class="page">
-
-        <div class="section-heading">
-
-          <div>
-            <p class="eyebrow">ABOUT US</p>
-
-            <h1>Global Virtual Sim Web</h1>
-
-            <p>
-              Simple, reliable access to virtual communication
-              services around the world.
-            </p>
-
-          </div>
-
-        </div>
-
-
-        <div class="panel legal-content">
-
-          <h2>Our Platform</h2>
-
-          <p>
-            Global Virtual Sim Web provides a marketplace interface
-            for virtual communication services supplied by supported
-            third-party providers.
-          </p>
-
-          <h2>Responsible Use</h2>
-
-          <p>
-            Services must only be used for lawful purposes and in
-            accordance with the terms of the relevant service
-            providers.
-          </p>
-
-        </div>
-
-      </div>
-
-
-      <!-- ================= PROFILE ================= -->
-
-      <div id="profile" class="page">
-
-        <div class="section-heading">
-
-          <div>
-            <p class="eyebrow">ACCOUNT</p>
-            <h1>Profile</h1>
-            <p>Your account information.</p>
-          </div>
-
-        </div>
-
-        <div class="panel">
-
-          <div class="profile-info">
-
-            <div class="profile-large">
-              K
-            </div>
-
-            <div>
-              <h2>Account</h2>
-              <p>Global Virtual Sim Web customer</p>
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-    </section>
-
-
-    <!-- FOOTER -->
-
-    <footer class="site-footer">
-
-      <div>
-        <strong>Global Virtual Sim Web</strong>
-        <p>
-          Worldwide virtual communication services.
-        </p>
-      </div>
-
-      <div class="footer-links">
-        <a href="#">Terms & Conditions</a>
-        <a href="#">Privacy Policy</a>
-        <a href="#">Refund Policy</a>
-        <a href="#">Acceptable Use Policy</a>
-      </div>
-
-      <div class="copyright">
-        <div>© 2026 Global Virtual Sim Web. All rights reserved.</div>
-        <div>Owned by KelChuk’s.</div>
-      </div>
-
-    </footer>
-
-  </main>
-
-
-  <!-- TOAST -->
-
-  <div id="toast" class="toast"></div>
-
-
-<script>
-
-let countries = [];
-let selectedCountry = null;
-
-
-/* ================= NAVIGATION ================= */
-
-function showPage(pageId, button = null) {
-
-  document
-    .querySelectorAll(".page")
-    .forEach(page => {
-      page.classList.remove("active-page");
-    });
-
-  const page = document.getElementById(pageId);
-
-  if (page) {
-    page.classList.add("active-page");
-  }
-
-  document
-    .querySelectorAll(".nav-item")
-    .forEach(item => {
-      item.classList.remove("active");
-    });
-
-  if (button) {
-    button.classList.add("active");
-  }
-
-  const titles = {
-    dashboard: "Dashboard",
-    numbers: "Buy Number",
-    services: "Services",
-    active: "Active Numbers",
-    history: "Order History",
-    wallet: "Wallet",
-    support: "Support",
-    about: "About Us",
-    profile: "Profile"
-  };
-
-  document.getElementById("pageTitle").textContent =
-    titles[pageId] || "Global Virtual Sim Web";
-
-  closeSidebar();
-
-  if (pageId === "numbers") {
-    loadCountries();
-  }
-
-  if (pageId === "active") {
-    loadActiveOrders();
-  }
-
-  if (pageId === "history") {
-    loadHistory();
-  }
-}
-
-
-/* ================= MOBILE SIDEBAR ================= */
-
-function openSidebar() {
-
-  document
-    .getElementById("sidebar")
-    .classList.add("open");
-
-  document
-    .getElementById("overlay")
-    .classList.add("show");
-}
-
-
-function closeSidebar() {
-
-  document
-    .getElementById("sidebar")
-    .classList.remove("open");
-
-  document
-    .getElementById("overlay")
-    .classList.remove("show");
-}
-
-
-/* ================= API ================= */
-
-async function apiRequest(url, options = {}) {
-
-  const response = await fetch(url, options);
-
-  let data;
-
-  try {
-    data = await response.json();
-  } catch {
-    throw new Error("Invalid server response.");
-  }
-
-  if (!response.ok || data.success === false) {
-
-    throw new Error(
-      data.error ||
-      data.message ||
-      "Request failed."
-    );
-  }
-
-  return data;
-}
-
-
-/* ================= BALANCE ================= */
-
-async function loadBalance() {
-
-  try {
-
-    const data =
-      await apiRequest("/api/balance");
-
-    const balance =
-      Number(data.balance || 0);
-
-    const formatted =
-      formatNaira(balance);
-
-    document.getElementById(
-      "topBalance"
-    ).textContent = formatted;
-
-    document.getElementById(
-      "dashboardBalance"
-    ).textContent = formatted;
-
-    document.getElementById(
-      "walletBalance"
-    ).textContent = formatted;
-
-    document.getElementById(
-      "providerBalance"
-    ).textContent = formatted;
-
-    document.getElementById(
-      "apiStatus"
-    ).textContent = "Connected";
-
-    document.getElementById(
-      "apiStatus"
-    ).className = "success-text";
-
-  } catch (error) {
-
-    document.getElementById(
-      "providerBalance"
-    ).textContent = "Unavailable";
-
-    document.getElementById(
-      "apiStatus"
-    ).textContent = "Unavailable";
-
-    console.error(error);
-
-  }
-
-}
-
-
-/* ================= COUNTRIES ================= */
-
-async function loadCountries() {
-
-  const loading =
-    document.getElementById("countriesLoading");
-
-  const errorBox =
-    document.getElementById("countriesError");
-
-  const grid =
-    document.getElementById("countryGrid");
-
-  loading.classList.remove("hidden");
-  errorBox.classList.add("hidden");
-
-  try {
-
-    const data =
-      await apiRequest("/api/countries");
-
-    countries =
-      Array.isArray(data.countries)
-        ? data.countries
-        : [];
-
-    renderCountries(countries);
-
-    document.getElementById(
-      "countryCount"
-    ).textContent = countries.length;
-
-    document.getElementById(
-      "providerCountries"
-    ).textContent =
-      `${countries.length} available`;
-
-  } catch (error) {
-
-    errorBox.textContent =
-      error.message;
-
-    errorBox.classList.remove("hidden");
-
-    grid.innerHTML = "";
-
-  } finally {
-
-    loading.classList.add("hidden");
-
-  }
-
-}
-
-
-function renderCountries(list) {
-
-  const grid =
-    document.getElementById("countryGrid");
-
-  if (!list.length) {
-
-    grid.innerHTML = `
-      <div class="empty-state">
-        No countries are currently available.
-      </div>
-    `;
-
-    return;
-  }
-
-
-  grid.innerHTML =
-    list.map(country => {
-
-      const name =
-        country.name ||
-        country.countryName ||
-        "Unknown Country";
-
-      const code =
-        country.code ||
-        country.isoCode ||
-        "";
-
-      const image =
-        country.imageUrl ||
-        country.flag ||
-        "";
-
-
-      return `
-        <button
-          class="country-card"
-          onclick="selectCountry(${JSON.stringify(country).replace(/"/g, '&quot;')})"
-        >
-
-          <div class="country-flag">
-
-            ${
-              image
-                ? `<img src="${escapeHtml(image)}" alt="">`
-                : `<span>🌍</span>`
-            }
-
-          </div>
-
-          <div class="country-info">
-
-            <strong>
-              ${escapeHtml(name)}
-            </strong>
-
-            <span>
-              ${escapeHtml(code)}
-            </span>
-
-          </div>
-
-          <span class="arrow">
-            →
-          </span>
-
-        </button>
-      `;
-
-    }).join("");
-
-}
-
-
-/* ================= COUNTRY SEARCH ================= */
-
-function filterCountries() {
-
-  const query =
-    document
-      .getElementById("countrySearch")
-      .value
-      .toLowerCase()
-      .trim();
-
-  const filtered =
-    countries.filter(country => {
-
-      const name =
-        String(country.name || "")
-          .toLowerCase();
-
-      const code =
-        String(country.code || "")
-          .toLowerCase();
-
-      return (
-        name.includes(query) ||
-        code.includes(query)
-      );
-
-    });
-
-  renderCountries(filtered);
-
-}
-
-
-/* ================= SELECT COUNTRY ================= */
-
-async function selectCountry(country) {
-
-  selectedCountry = country;
-
-  const countryName =
-    country.name ||
-    country.countryName ||
-    "Selected Country";
-
-  document.getElementById(
-    "selectedCountryName"
-  ).textContent = countryName;
-
-  showPage("services");
-
-  loadServices(country);
-
-}
-
-
-/* ================= SERVICES ================= */
-
-async function loadServices(country) {
-
-  const loading =
-    document.getElementById("servicesLoading");
-
-  const errorBox =
-    document.getElementById("servicesError");
-
-  const grid =
-    document.getElementById("servicesGrid");
-
-  loading.classList.remove("hidden");
-  errorBox.classList.add("hidden");
-
-  grid.innerHTML = "";
-
-  try {
-
-    const countryId =
-      country.id ||
-      country.countryId;
-
-    const data =
-      await apiRequest(
-        `/api/services?countryId=${encodeURIComponent(countryId)}`
-      );
-
-    const services =
-      Array.isArray(data.services)
-        ? data.services
-        : [];
-
-    renderServices(services);
-
-  } catch (error) {
-
-    errorBox.textContent =
-      error.message;
-
-    errorBox.classList.remove("hidden");
-
-  } finally {
-
-    loading.classList.add("hidden");
-
-  }
-
-}
-
-
-function renderServices(services) {
-
-  const grid =
-    document.getElementById("servicesGrid");
-
-  if (!services.length) {
-
-    grid.innerHTML = `
-      <div class="empty-state">
-        No services are currently available
-        for this country.
-      </div>
-    `;
-
-    return;
-
-  }
-
-
-  grid.innerHTML =
-    services.map(service => {
-
-      const prices =
-        Array.isArray(service.prices)
-          ? service.prices
-          : [];
-
-      return `
-        <div class="service-card">
-
-          <div class="service-header">
-
-            <div class="service-icon">
-              ${
-                service.imageUrl
-                  ? `<img src="${escapeHtml(service.imageUrl)}" alt="">`
-                  : "SIM"
-              }
-            </div>
-
-            <div>
-              <h3>
-                ${escapeHtml(service.name || "Service")}
-              </h3>
-
-              <span>
-                ${
-                  service.stock !== undefined
-                    ? `${service.stock} in stock`
-                    : "Availability varies"
-                }
-              </span>
-            </div>
-
-          </div>
-
-
-          <div class="price-list">
-
-            ${
-              prices.length
-
-              ? prices.map(price => {
-
-                  const amount =
-                    price.promoPrice ??
-                    price.sellPrice ??
-                    0;
-
-                  return `
-                    <div class="price-row">
-
-                      <div>
-                        <span>Available</span>
-                        <strong>
-                          ${formatNaira(amount)}
-                        </strong>
-                      </div>
-
-                      <button
-                        class="buy-button"
-                        onclick="purchaseNumber('${escapeHtml(price.id || price.serviceCountryPriceId || "")}')"
-                      >
-                        Buy
-                      </button>
-
-                    </div>
-                  `;
-
-                }).join("")
-
-              : `
-                <div class="no-price">
-                  No pricing available.
-                </div>
-              `
-            }
-
-          </div>
-
-        </div>
-      `;
-
-    }).join("");
-
-}
-
-
-/* ================= PURCHASE ================= */
-
-async function purchaseNumber(priceId) {
-
-  if (!priceId) {
-
-    showToast(
-      "This service does not have a valid price ID."
-    );
-
-    return;
-
-  }
-
-  const confirmed =
-    confirm(
-      "Do you want to purchase this virtual number?"
-    );
-
-  if (!confirmed) return;
-
-
-  try {
-
-    showToast(
-      "Creating your order..."
-    );
-
-
-    const data =
-      await apiRequest(
-        "/api/orders",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json"
-          },
-
-          body: JSON.stringify({
-            serviceCountryPriceId: priceId
-          })
-
-        }
-      );
-
-
-    showToast(
-      "Order created successfully."
-    );
-
-
-    if (data.order) {
-
-      saveLocalOrder(data.order);
-
-    }
-
-
-    showPage("active");
-
-    loadActiveOrders();
-
-    loadBalance();
-
-  } catch (error) {
-
-    showToast(
-      error.message
-    );
-
-  }
-
-}
-
-
-/* ================= ACTIVE ORDERS ================= */
-
-async function loadActiveOrders() {
-
-  const container =
-    document.getElementById("activeOrders");
-
-  try {
-
-    const data =
-      await apiRequest("/api/orders/active");
-
-    const orders =
-      Array.isArray(data.orders)
-        ? data.orders
-        : [];
-
-    document.getElementById(
-      "activeCount"
-    ).textContent = orders.length;
-
-    if (!orders.length) {
-
-      container.innerHTML = `
-        <div class="empty-state">
-          You don't have any active numbers.
-        </div>
-      `;
-
-      return;
-
-    }
-
-
-    container.innerHTML =
-      orders.map(order => {
-
-        return `
-          <div class="order-card">
-
-            <div>
-
-              <span class="order-label">
-                ${escapeHtml(order.serviceName || "Service")}
-              </span>
+            <div class="deposit-option">
 
               <h3>
-                ${escapeHtml(order.phoneNumber || "Waiting for number")}
+                🏦 Bank Transfer
               </h3>
 
               <p>
-                ${escapeHtml(order.countryName || "")}
+                Fund your wallet through a
+                supported Nigerian bank transfer.
               </p>
-
-            </div>
-
-            <div class="order-right">
-
-              <span class="status-badge">
-                ${escapeHtml(order.statusLabel || "Pending")}
-              </span>
 
               <button
-                class="secondary-button"
-                onclick="checkOrder('${escapeHtml(order.id || "")}')"
+                class="btn btn-primary"
+                onclick="showDepositMessage()"
               >
-                Check Status
+                Fund Wallet
+              </button>
+
+            </div>
+
+            <div class="deposit-option">
+
+              <h3>
+                💳 Card Payment
+              </h3>
+
+              <p>
+                Card funding will be available
+                when the payment gateway is connected.
+              </p>
+
+              <button
+                class="btn btn-secondary"
+                disabled
+              >
+                Coming Soon
+              </button>
+
+            </div>
+
+            <div class="deposit-option">
+
+              <h3>
+                📲 Other Methods
+              </h3>
+
+              <p>
+                Additional payment methods can
+                be added to the platform later.
+              </p>
+
+              <button
+                class="btn btn-secondary"
+                disabled
+              >
+                Coming Soon
               </button>
 
             </div>
 
           </div>
-        `;
 
-      }).join("");
+        </div>
 
-  } catch (error) {
-
-    container.innerHTML = `
-      <div class="error-box">
-        ${escapeHtml(error.message)}
-      </div>
-    `;
-
-  }
-
-}
+      </section>
 
 
-/* ================= ORDER STATUS ================= */
+      <!-- ================= SUPPORT ================= -->
 
-async function checkOrder(id) {
+      <section
+        class="page"
+        id="page-support"
+      >
 
-  if (!id) return;
+        <h1 class="page-title">
+          Support
+        </h1>
 
-  try {
+        <p class="page-subtitle">
+          Need help? We're here to assist you.
+        </p>
 
-    const data =
-      await apiRequest(
-        `/api/orders/status?id=${encodeURIComponent(id)}`
+        <div class="support-box">
+
+          <div class="support-item">
+
+            <strong>
+              📧 Email Support
+            </strong>
+
+            <span>
+              watchandearn.ng@gmail.com
+            </span>
+
+          </div>
+
+          <div class="support-item">
+
+            <strong>
+              💬 Support Request
+            </strong>
+
+            <span>
+              Contact support with your order ID
+              whenever you have an issue with an
+              activation.
+            </span>
+
+          </div>
+
+          <div class="support-item">
+
+            <strong>
+              ⚠️ Acceptable Use
+            </strong>
+
+            <span>
+              Services must be used lawfully and
+              in accordance with applicable provider
+              terms and our Acceptable Use Policy.
+            </span>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- ================= PROFILE ================= -->
+
+      <section
+        class="page"
+        id="page-profile"
+      >
+
+        <h1 class="page-title">
+          Profile
+        </h1>
+
+        <p class="page-subtitle">
+          Manage your account information.
+        </p>
+
+        <div class="card profile-card">
+
+          <div class="profile-avatar">
+            G
+          </div>
+
+          <div class="form-group">
+
+            <label>
+              Account Name
+            </label>
+
+            <input
+              type="text"
+              value="GlobalSIM User"
+              disabled
+            />
+
+          </div>
+
+          <div class="form-group">
+
+            <label>
+              Email
+            </label>
+
+            <input
+              type="email"
+              value="Account email"
+              disabled
+            />
+
+          </div>
+
+          <div class="notice">
+            Account authentication and customer
+            database will be connected in the
+            next stage.
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- FOOTER -->
+
+      <footer class="footer">
+
+        <div>
+          © 2026 Global Virtual Sim Web.
+          All rights reserved.
+        </div>
+
+        <div>
+          Owned by <strong>KelChuk’s.</strong>
+        </div>
+
+      </footer>
+
+    </div>
+
+  </main>
+
+</div>
+
+
+<script>
+
+  /* ==========================================
+     GLOBAL STATE
+  ========================================== */
+
+  const state = {
+    countries: [],
+    selectedCountry: null,
+    services: [],
+    balance: 0,
+    active: [],
+    history: []
+  };
+
+
+  /* ==========================================
+     API HELPER
+  ========================================== */
+
+  async function apiRequest(
+    url,
+    options = {}
+  ) {
+
+    const response =
+      await fetch(url, options);
+
+    let data = {};
+
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
+
+    if (!response.ok) {
+
+      throw new Error(
+        data.error ||
+        data.message ||
+        "Request failed."
       );
 
-    const order =
-      data.order || data.data || {};
-
-    let message =
-      `Status: ${order.statusLabel || order.status || "Unknown"}`;
-
-    if (order.phoneNumber) {
-
-      message +=
-        `\nNumber: ${order.phoneNumber}`;
-
     }
 
-    if (order.otpCode) {
-
-      message +=
-        `\nOTP: ${order.otpCode}`;
-
-    }
-
-    alert(message);
-
-    loadActiveOrders();
-
-  } catch (error) {
-
-    showToast(
-      error.message
-    );
+    return data;
 
   }
 
-}
+
+  /* ==========================================
+     PAGE NAVIGATION
+  ========================================== */
+
+  function showPage(page) {
+
+    document
+      .querySelectorAll(".page")
+      .forEach(section => {
+        section.classList.remove("active");
+      });
+
+    const target =
+      document.getElementById(
+        `page-${page}`
+      );
+
+    if (target) {
+      target.classList.add("active");
+    }
+
+    document
+      .querySelectorAll(".nav button")
+      .forEach(button => {
+
+        button.classList.toggle(
+          "active",
+          button.dataset.page === page
+        );
+
+      });
+
+    if (page === "buy") {
+      loadCountries();
+    }
+
+    if (page === "active") {
+      loadActiveNumbers();
+    }
+
+    if (page === "history") {
+      loadHistory();
+    }
+
+    if (window.innerWidth <= 750) {
+      document
+        .getElementById("sidebar")
+        .classList.remove("open");
+    }
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+
+  }
 
 
-/* ================= HISTORY ================= */
+  document
+    .querySelectorAll(".nav button")
+    .forEach(button => {
 
-async function loadHistory() {
+      button.addEventListener(
+        "click",
+        () => showPage(button.dataset.page)
+      );
 
-  const table =
-    document.getElementById("historyTable");
-
-  try {
-
-    const data =
-      await apiRequest("/api/orders/history");
-
-    const orders =
-      Array.isArray(data.orders)
-        ? data.orders
-        : [];
-
-    document.getElementById(
-      "completedCount"
-    ).textContent = orders.length;
+    });
 
 
-    if (!orders.length) {
+  /* ==========================================
+     MOBILE MENU
+  ========================================== */
 
-      table.innerHTML = `
-        <tr>
-          <td colspan="6">
-            <div class="empty-state">
-              No orders yet.
-            </div>
-          </td>
-        </tr>
-      `;
+  document
+    .getElementById("menuBtn")
+    .addEventListener(
+      "click",
+      () => {
+
+        document
+          .getElementById("sidebar")
+          .classList.toggle("open");
+
+      }
+    );
+
+
+  /* ==========================================
+     MONEY
+  ========================================== */
+
+  function money(value) {
+
+    const number =
+      Number(value || 0);
+
+    return new Intl.NumberFormat(
+      "en-NG",
+      {
+        style: "currency",
+        currency: "NGN",
+        minimumFractionDigits: 2
+      }
+    ).format(number);
+
+  }
+
+
+  /* ==========================================
+     BALANCE
+  ========================================== */
+
+  async function loadBalance() {
+
+    try {
+
+      const data =
+        await apiRequest(
+          "/api/balance"
+        );
+
+      state.balance =
+        Number(
+          data.balance || 0
+        );
+
+      document
+        .getElementById(
+          "dashboardBalance"
+        )
+        .textContent =
+        money(state.balance);
+
+      document
+        .getElementById(
+          "walletBalance"
+        )
+        .textContent =
+        money(state.balance);
+
+    } catch (error) {
+
+      console.error(error);
+
+    }
+
+  }
+
+
+  /* ==========================================
+     COUNTRIES
+  ========================================== */
+
+  async function loadCountries() {
+
+    const container =
+      document.getElementById(
+        "countryList"
+      );
+
+    if (
+      state.countries.length
+    ) {
+      renderCountries();
+      return;
+    }
+
+    container.innerHTML =
+      `<div class="loading">
+        Loading countries...
+      </div>`;
+
+    try {
+
+      const data =
+        await apiRequest(
+          "/api/countries"
+        );
+
+      state.countries =
+        Array.isArray(data.countries)
+          ? data.countries
+          : [];
+
+      document
+        .getElementById(
+          "countryCount"
+        )
+        .textContent =
+        state.countries.length;
+
+      renderCountries();
+
+    } catch (error) {
+
+      container.innerHTML =
+        `<div class="alert alert-error">
+          ${escapeHtml(error.message)}
+        </div>`;
+
+    }
+
+  }
+
+
+  function renderCountries(
+    filter = ""
+  ) {
+
+    const container =
+      document.getElementById(
+        "countryList"
+      );
+
+    const query =
+      filter.toLowerCase();
+
+    const countries =
+      state.countries.filter(
+        country => {
+
+          const name =
+            String(
+              country.name ||
+              country.countryName ||
+              country.country ||
+              ""
+            ).toLowerCase();
+
+          return name.includes(query);
+
+        }
+      );
+
+    if (!countries.length) {
+
+      container.innerHTML =
+        `<div class="empty">
+          No countries found.
+        </div>`;
 
       return;
 
     }
 
+    container.innerHTML =
+      countries.map(
+        (country, index) => {
 
-    table.innerHTML =
-      orders.map(order => {
+          const realIndex =
+            state.countries.indexOf(
+              country
+            );
 
-        return `
-          <tr>
+          const name =
+            country.name ||
+            country.countryName ||
+            country.country ||
+            "Unknown";
 
-            <td>
-              ${escapeHtml(order.serviceName || "-")}
-            </td>
+          const code =
+            country.code ||
+            country.isoCode ||
+            country.iso2 ||
+            "";
 
-            <td>
-              ${escapeHtml(order.countryName || "-")}
-            </td>
+          return `
+            <button
+              class="country-item ${
+                state.selectedCountry === country
+                  ? "selected"
+                  : ""
+              }"
+              onclick="selectCountry(${realIndex})"
+            >
 
-            <td>
-              ${escapeHtml(order.phoneNumber || "-")}
-            </td>
+              <span class="country-info">
 
-            <td>
-              ${formatNaira(order.amount || 0)}
-            </td>
+                <span class="country-flag">
+                  🌍
+                </span>
 
-            <td>
-              <span class="status-badge">
-                ${escapeHtml(order.statusLabel || "-")}
+                <span>
+                  <strong>
+                    ${escapeHtml(name)}
+                  </strong>
+
+                  <small>
+                    ${escapeHtml(code)}
+                  </small>
+                </span>
+
               </span>
-            </td>
 
-            <td>
-              ${formatDate(order.createdAt)}
-            </td>
+              <span>
+                ›
+              </span>
 
-          </tr>
-        `;
+            </button>
+          `;
 
-      }).join("");
-
-  } catch (error) {
-
-    table.innerHTML = `
-      <tr>
-        <td colspan="6">
-          <div class="error-box">
-            ${escapeHtml(error.message)}
-          </div>
-        </td>
-      </tr>
-    `;
+        }
+      ).join("");
 
   }
 
-}
 
-
-/* ================= LOCAL FALLBACK ================= */
-
-function saveLocalOrder(order) {
-
-  const existing =
-    JSON.parse(
-      localStorage.getItem("globalSimOrders") || "[]"
+  document
+    .getElementById("countrySearch")
+    .addEventListener(
+      "input",
+      event => {
+        renderCountries(
+          event.target.value
+        );
+      }
     );
 
-  existing.unshift(order);
 
-  localStorage.setItem(
-    "globalSimOrders",
-    JSON.stringify(existing.slice(0, 100))
-  );
+  /* ==========================================
+     SELECT COUNTRY
+  ========================================== */
 
-}
+  async function selectCountry(
+    index
+  ) {
 
+    const country =
+      state.countries[index];
 
-/* ================= WALLET ================= */
-
-function showDepositMessage() {
-
-  showToast(
-    "Wallet funding will be connected to the supported deposit method next."
-  );
-
-}
-
-
-/* ================= TELEGRAM ================= */
-
-function showTelegramMessage() {
-
-  showToast(
-    "Telegram support link will be connected here."
-  );
-
-}
-
-
-/* ================= HELPERS ================= */
-
-function formatNaira(amount) {
-
-  const number =
-    Number(amount || 0);
-
-  return new Intl.NumberFormat(
-    "en-NG",
-    {
-      style: "currency",
-      currency: "NGN",
-      minimumFractionDigits: 2
+    if (!country) {
+      return;
     }
-  ).format(number);
 
-}
+    state.selectedCountry =
+      country;
 
+    renderCountries(
+      document
+        .getElementById(
+          "countrySearch"
+        )
+        .value
+    );
 
-function formatDate(value) {
+    const name =
+      country.name ||
+      country.countryName ||
+      country.country ||
+      "Selected Country";
 
-  if (!value) return "-";
+    document
+      .getElementById(
+        "selectedCountryName"
+      )
+      .textContent =
+      name;
 
-  const date =
-    new Date(value);
+    document
+      .getElementById(
+        "selectedCountryDescription"
+      )
+      .textContent =
+      "Loading available services...";
 
-  if (Number.isNaN(date.getTime())) {
-    return "-";
+    document
+      .getElementById(
+        "serviceGrid"
+      )
+      .innerHTML =
+      `<div class="loading">
+        Loading services...
+      </div>`;
+
+    const countryId =
+      country.id ||
+      country.countryId ||
+      country._id;
+
+    if (!countryId) {
+
+      document
+        .getElementById(
+          "serviceGrid"
+        )
+        .innerHTML =
+        `<div class="alert alert-error">
+          This country did not return a valid
+          country ID from the provider.
+        </div>`;
+
+      return;
+    }
+
+    try {
+
+      const data =
+        await apiRequest(
+          `/api/services?countryId=${encodeURIComponent(
+            countryId
+          )}`
+        );
+
+      state.services =
+        Array.isArray(data.services)
+          ? data.services
+          : [];
+
+      renderServices();
+
+      document
+        .getElementById(
+          "selectedCountryDescription"
+        )
+        .textContent =
+        `${state.services.length} service option(s) available.`;
+
+    } catch (error) {
+
+      document
+        .getElementById(
+          "serviceGrid"
+        )
+        .innerHTML =
+        `<div class="alert alert-error">
+          ${escapeHtml(error.message)}
+        </div>`;
+
+    }
+
   }
 
-  return date.toLocaleString(
-    "en-NG"
-  );
 
-}
+  /* ==========================================
+     SERVICES
+  ========================================== */
 
+  function renderServices() {
 
-function escapeHtml(value) {
+    const container =
+      document.getElementById(
+        "serviceGrid"
+      );
 
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    if (!state.services.length) {
 
-}
+      container.innerHTML =
+        `<div class="empty">
+          No services are currently available
+          for this country.
+        </div>`;
 
+      return;
+    }
 
-function showToast(message) {
+    container.innerHTML =
+      state.services.map(
+        service => {
 
-  const toast =
-    document.getElementById("toast");
+          const name =
+            service.name ||
+            service.serviceName ||
+            service.service ||
+            "Service";
 
-  toast.textContent =
-    message;
+          const prices =
+            Array.isArray(service.prices)
+              ? service.prices
+              : [];
 
-  toast.classList.add("show");
+          if (!prices.length) {
+            return `
+              <div class="service-card">
+                <div class="service-name">
+                  ${escapeHtml(name)}
+                </div>
+                <div class="service-meta">
+                  No price currently available.
+                </div>
+              </div>
+            `;
+          }
 
-  clearTimeout(
-    window.toastTimer
-  );
+          return prices.map(
+            price => {
 
-  window.toastTimer =
-    setTimeout(() => {
+              const servicePriceId =
+                price.id ||
+                price.serviceCountryPriceId;
 
-      toast.classList.remove("show");
+              const sellPrice =
+                price.promoPrice ??
+                price.sellPrice ??
+                price.retailSellPrice ??
+                0;
 
-    }, 3500);
+              const stock =
+                price.totalStock ??
+                service.totalStock ??
+                0;
 
-}
+              return `
+                <div class="service-card">
 
+                  <div class="service-top">
 
-/* ================= START ================= */
+                    <div class="service-name">
+                      ${escapeHtml(name)}
+                    </div>
 
-document.addEventListener(
-  "DOMContentLoaded",
-  () => {
+                    <span class="stock">
+                      ${Number(stock) > 0
+                        ? `${stock} available`
+                        : "Check availability"}
+                    </span>
 
-    loadBalance();
-    loadCountries();
+                  </div>
+
+                  <div class="service-price">
+                    ${money(sellPrice)}
+                  </div>
+
+                  <div class="service-meta">
+                    Virtual number activation
+                  </div>
+
+                  <button
+                    class="btn btn-primary"
+                    onclick="purchaseNumber('${escapeHtml(
+                      servicePriceId || ""
+                    )}')"
+                    ${
+                      !servicePriceId
+                        ? "disabled"
+                        : ""
+                    }
+                  >
+                    Get Number
+                  </button>
+
+                </div>
+              `;
+
+            }
+          ).join("");
+
+        }
+      ).join("");
 
   }
-);
+
+
+  /* ==========================================
+     PURCHASE
+  ========================================== */
+
+  async function purchaseNumber(
+    serviceCountryPriceId
+  ) {
+
+    if (!serviceCountryPriceId) {
+
+      alert(
+        "This service does not currently have a valid price ID."
+      );
+
+      return;
+    }
+
+    const confirmed =
+      confirm(
+        "Do you want to purchase this virtual number?"
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+
+      const data =
+        await apiRequest(
+          "/api/order",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body: JSON.stringify({
+              serviceCountryPriceId:
+                serviceCountryPriceId,
+
+              quantity: 1,
+
+              autoSearchServer: true
+            })
+          }
+        );
+
+      const order =
+        data.data;
+
+      saveLocalOrder(
+        order
+      );
+
+      alert(
+        "Your number order has been created successfully."
+      );
+
+      showPage("active");
+
+    } catch (error) {
+
+      alert(
+        error.message ||
+        "Unable to create the order."
+      );
+
+    }
+
+  }
+
+
+  /* ==========================================
+     ACTIVE ORDERS
+  ========================================== */
+
+  async function loadActiveNumbers() {
+
+    const container =
+      document.getElementById(
+        "activeNumbers"
+      );
+
+    container.innerHTML =
+      `<div class="loading">
+        Loading active numbers...
+      </div>`;
+
+    try {
+
+      const data =
+        await apiRequest(
+          "/api/active"
+        );
+
+      const orders =
+        Array.isArray(data?.data?.data)
+          ? data.data.data
+          : Array.isArray(data?.data)
+            ? data.data
+            : [];
+
+      state.active =
+        orders;
+
+      document
+        .getElementById(
+          "activeCount"
+        )
+        .textContent =
+        orders.length;
+
+      renderActiveNumbers();
+
+    } catch (error) {
+
+      container.innerHTML =
+        `<div class="alert alert-error">
+          ${escapeHtml(error.message)}
+        </div>`;
+
+    }
+
+  }
+
+
+  function renderActiveNumbers() {
+
+    const container =
+      document.getElementById(
+        "activeNumbers"
+      );
+
+    if (!state.active.length) {
+
+      container.innerHTML =
+        `<div class="card empty">
+          You don't have any active numbers yet.
+          <br><br>
+
+          <button
+            class="btn btn-primary"
+            onclick="showPage('buy')"
+          >
+            Buy a Number
+          </button>
+        </div>`;
+
+      return;
+    }
+
+    container.innerHTML =
+      state.active.map(
+        order => {
+
+          const id =
+            order.id ||
+            order.orderId ||
+            "";
+
+          const number =
+            order.phoneNumber ||
+            order.number ||
+            order.phone ||
+            "Number pending";
+
+          return `
+            <div class="card" style="margin-bottom:15px">
+
+              <div class="section-header">
+
+                <div>
+
+                  <div class="stat-label">
+                    Order ID
+                  </div>
+
+                  <strong>
+                    ${escapeHtml(String(id))}
+                  </strong>
+
+                </div>
+
+                <span class="status pending">
+                  Active
+                </span>
+
+              </div>
+
+              <div class="number-box">
+
+                <div class="stat-label">
+                  Virtual Number
+                </div>
+
+                <div class="number">
+                  ${escapeHtml(String(number))}
+                </div>
+
+                <button
+                  class="btn btn-secondary"
+                  onclick="checkOrderStatus('${escapeHtml(
+                    String(id)
+                  )}')"
+                >
+                  Check SMS / Status
+                </button>
+
+              </div>
+
+              <div
+                id="status-${escapeHtml(
+                  String(id)
+                )}"
+                style="margin-top:15px"
+              ></div>
+
+            </div>
+          `;
+
+        }
+      ).join("");
+
+  }
+
+
+  /* ==========================================
+     CHECK STATUS
+  ========================================== */
+
+  async function checkOrderStatus(
+    id
+  ) {
+
+    const target =
+      document.getElementById(
+        `status-${id}`
+      );
+
+    if (target) {
+      target.innerHTML =
+        `<div class="loading">
+          Checking...
+        </div>`;
+    }
+
+    try {
+
+      const data =
+        await apiRequest(
+          `/api/status?id=${encodeURIComponent(id)}`
+        );
+
+      const result =
+        data.data;
+
+      const text =
+        JSON.stringify(
+          result,
+          null,
+          2
+        );
+
+      if (target) {
+
+        target.innerHTML =
+          `<div class="notice">
+            <strong>Provider status</strong>
+            <pre style="
+              white-space:pre-wrap;
+              margin-top:10px;
+              font-size:12px;
+            ">${escapeHtml(text)}</pre>
+          </div>`;
+
+      }
+
+    } catch (error) {
+
+      if (target) {
+
+        target.innerHTML =
+          `<div class="alert alert-error">
+            ${escapeHtml(error.message)}
+          </div>`;
+
+      }
+
+    }
+
+  }
+
+
+  /* ==========================================
+     HISTORY
+  ========================================== */
+
+  async function loadHistory() {
+
+    const table =
+      document.getElementById(
+        "historyTable"
+      );
+
+    table.innerHTML =
+      `<tr>
+        <td colspan="5" class="loading">
+          Loading history...
+        </td>
+      </tr>`;
+
+    try {
+
+      const data =
+        await apiRequest(
+          "/api/history"
+        );
+
+      const orders =
+        Array.isArray(data?.data?.data)
+          ? data.data.data
+          : Array.isArray(data?.data)
+            ? data.data
+            : [];
+
+      state.history =
+        orders;
+
+      document
+        .getElementById(
+          "orderCount"
+        )
+        .textContent =
+        orders.length;
+
+      renderHistory();
+
+      renderRecentOrders();
+
+    } catch (error) {
+
+      table.innerHTML =
+        `<tr>
+          <td
+            colspan="5"
+            class="empty"
+          >
+            ${escapeHtml(error.message)}
+          </td>
+        </tr>`;
+
+    }
+
+  }
+
+
+  function renderHistory() {
+
+    const table =
+      document.getElementById(
+        "historyTable"
+      );
+
+    if (!state.history.length) {
+
+      table.innerHTML =
+        `<tr>
+          <td
+            colspan="5"
+            class="empty"
+          >
+            No order history found.
+          </td>
+        </tr>`;
+
+      return;
+    }
+
+    table.innerHTML =
+      state.history.map(
+        order => {
+
+          const id =
+            order.id ||
+            order.orderId ||
+            "-";
+
+          const number =
+            order.phoneNumber ||
+            order.number ||
+            "-";
+
+          const service =
+            order.serviceName ||
+            order.service ||
+            "-";
+
+          const status =
+            order.status ||
+            "Unknown";
+
+          const date =
+            order.createdAt ||
+            order.createdDate ||
+            "-";
+
+          return `
+            <tr>
+
+              <td>
+                ${escapeHtml(
+                  String(id)
+                )}
+              </td>
+
+              <td class="order-number">
+                ${escapeHtml(
+                  String(number)
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  String(service)
+                )}
+              </td>
+
+              <td>
+                <span class="status pending">
+                  ${escapeHtml(
+                    String(status)
+                  )}
+                </span>
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  String(date)
+                )}
+              </td>
+
+            </tr>
+          `;
+
+        }
+      ).join("");
+
+  }
+
+
+  function renderRecentOrders() {
+
+    const table =
+      document.getElementById(
+        "recentOrders"
+      );
+
+    const orders =
+      state.history.slice(0, 5);
+
+    if (!orders.length) {
+
+      table.innerHTML =
+        `<tr>
+          <td
+            colspan="5"
+            class="empty"
+          >
+            No orders yet.
+          </td>
+        </tr>`;
+
+      return;
+    }
+
+    table.innerHTML =
+      orders.map(
+        order => {
+
+          const number =
+            order.phoneNumber ||
+            order.number ||
+            "-";
+
+          const service =
+            order.serviceName ||
+            order.service ||
+            "-";
+
+          const country =
+            order.countryName ||
+            order.country ||
+            "-";
+
+          const status =
+            order.status ||
+            "Unknown";
+
+          const date =
+            order.createdAt ||
+            order.createdDate ||
+            "-";
+
+          return `
+            <tr>
+
+              <td>
+                ${escapeHtml(
+                  String(number)
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  String(service)
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  String(country)
+                )}
+              </td>
+
+              <td>
+                <span class="status pending">
+                  ${escapeHtml(
+                    String(status)
+                  )}
+                </span>
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  String(date)
+                )}
+              </td>
+
+            </tr>
+          `;
+
+        }
+      ).join("");
+
+  }
+
+
+  /* ==========================================
+     LOCAL ORDER CACHE
+  ========================================== */
+
+  function saveLocalOrder(order) {
+
+    try {
+
+      const saved =
+        JSON.parse(
+          localStorage.getItem(
+            "globalsim_orders"
+          ) || "[]"
+        );
+
+      saved.unshift(order);
+
+      localStorage.setItem(
+        "globalsim_orders",
+        JSON.stringify(
+          saved.slice(0, 50)
+        )
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+    }
+
+  }
+
+
+  /* ==========================================
+     DEPOSIT
+  ========================================== */
+
+  function showDepositMessage() {
+
+    alert(
+      "The wallet funding system will be connected next. We will connect a proper Nigerian payment/deposit method before customers can fund their accounts."
+    );
+
+  }
+
+
+  /* ==========================================
+     ESCAPE HTML
+  ========================================== */
+
+  function escapeHtml(value) {
+
+    return String(value ?? "")
+      .replace(
+        /&/g,
+        "&amp;"
+      )
+      .replace(
+        /</g,
+        "&lt;"
+      )
+      .replace(
+        />/g,
+        "&gt;"
+      )
+      .replace(
+        /"/g,
+        "&quot;"
+      )
+      .replace(
+        /'/g,
+        "&#039;"
+      );
+
+  }
+
+
+  /* ==========================================
+     INITIAL LOAD
+  ========================================== */
+
+  async function initialize() {
+
+    await Promise.allSettled([
+      loadBalance(),
+      loadCountries(),
+      loadHistory()
+    ]);
+
+  }
+
+
+  initialize();
 
 </script>
 
