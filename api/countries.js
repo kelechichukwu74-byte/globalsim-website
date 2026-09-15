@@ -11,18 +11,27 @@ export default async function handler(req, res) {
   try {
     const data = await sureVerificationRequest("/countries");
 
+    // SureVerification may return countries directly
+    // or inside a data property.
+    const countries = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data?.countries)
+          ? data.countries
+          : [];
+
     return res.status(200).json({
       success: true,
-      providerResponse: data
+      countries
     });
 
   } catch (error) {
-    console.error("COUNTRIES ERROR:", error);
+    console.error("SureVerification countries error:", error);
 
     return res.status(500).json({
       success: false,
-      error: error?.message || "Unable to load countries.",
-      details: error?.stack || null
+      error: error?.message || "Unable to load countries."
     });
   }
 }
