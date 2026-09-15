@@ -1,6 +1,4 @@
-import { sureVerificationRequest } from "./_lib.js";
-
-export default async function handler(req, res) {
+export default function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({
       success: false,
@@ -8,30 +6,9 @@ export default async function handler(req, res) {
     });
   }
 
-  try {
-    const data = await sureVerificationRequest("/countries");
-
-    // SureVerification may return countries directly
-    // or inside a data property.
-    const countries = Array.isArray(data)
-      ? data
-      : Array.isArray(data?.data)
-        ? data.data
-        : Array.isArray(data?.countries)
-          ? data.countries
-          : [];
-
-    return res.status(200).json({
-      success: true,
-      countries
-    });
-
-  } catch (error) {
-    console.error("SureVerification countries error:", error);
-
-    return res.status(500).json({
-      success: false,
-      error: error?.message || "Unable to load countries."
-    });
-  }
+  return res.status(200).json({
+    success: true,
+    message: "Vercel API function is working",
+    test: "countries"
+  });
 }
