@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Global Virtual Sim Web</title>
+
   <meta
     name="description"
     content="Global Virtual Sim Web — virtual numbers, SMS and voice services worldwide."
@@ -12,7 +13,7 @@
 
   <link rel="stylesheet" href="/styles.css">
 
-  <!-- Supabase library MUST load before supabase.js -->
+  <!-- Supabase MUST load before /supabase.js -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/supabase.js"></script>
 </head>
@@ -21,150 +22,226 @@
 
 <div id="toast" class="toast"></div>
 
-<!-- ================= AUTH ================= -->
+
+<!-- =========================================================
+     AUTH PAGE
+========================================================= -->
+
 <div id="authPage" class="auth-page">
 
   <div class="auth-card">
 
     <div class="brand auth-brand">
+
       <div class="brand-mark">G</div>
+
       <div>
         <strong>Global Virtual Sim Web</strong>
         <span>Virtual numbers worldwide</span>
       </div>
+
     </div>
 
-    <!-- LOGIN -->
+
+    <!-- ================= LOGIN ================= -->
+
     <div id="loginBox">
 
       <h1>Welcome back</h1>
-      <p class="muted">Login to your Global Virtual Sim account.</p>
+
+      <p class="muted">
+        Login to your Global Virtual Sim account.
+      </p>
+
 
       <form id="loginForm">
 
         <label>Email</label>
+
         <input
           type="email"
           id="loginEmail"
           placeholder="Enter your email"
+          autocomplete="email"
           required
         >
+
 
         <label>Password</label>
 
         <div class="password-wrap">
+
           <input
             type="password"
             id="loginPassword"
             placeholder="Enter your password"
+            autocomplete="current-password"
             required
           >
+
           <button
             type="button"
             class="password-toggle"
             data-target="loginPassword"
           >👁</button>
+
         </div>
 
-        <button type="submit" class="btn btn-primary full">
+
+        <button
+          type="submit"
+          id="loginSubmit"
+          class="btn btn-primary full"
+        >
           Login
         </button>
 
       </form>
 
+
       <p class="auth-switch">
+
         Don't have an account?
-        <button type="button" id="showRegister">
+
+        <button
+          type="button"
+          id="showRegister"
+        >
           Create Account
         </button>
+
       </p>
 
     </div>
 
-    <!-- REGISTER -->
+
+    <!-- ================= REGISTER ================= -->
+
     <div id="registerBox" style="display:none">
 
       <h1>Create account</h1>
-      <p class="muted">Create your Global Virtual Sim account.</p>
+
+      <p class="muted">
+        Create your Global Virtual Sim account.
+      </p>
+
 
       <form id="registerForm">
 
         <label>Full Name</label>
+
         <input
           type="text"
           id="registerName"
           placeholder="Your full name"
+          autocomplete="name"
           required
         >
 
+
         <label>Username</label>
+
         <input
           type="text"
           id="registerUsername"
           placeholder="Choose a username"
+          autocomplete="username"
           required
         >
 
+
         <label>Email</label>
+
         <input
           type="email"
           id="registerEmail"
           placeholder="Enter your email"
+          autocomplete="email"
           required
         >
+
 
         <label>Password</label>
 
         <div class="password-wrap">
+
           <input
             type="password"
             id="registerPassword"
             placeholder="Create a password"
             minlength="6"
+            autocomplete="new-password"
             required
           >
+
           <button
             type="button"
             class="password-toggle"
             data-target="registerPassword"
           >👁</button>
+
         </div>
+
 
         <label>Confirm Password</label>
 
         <div class="password-wrap">
+
           <input
             type="password"
             id="registerConfirmPassword"
             placeholder="Confirm your password"
             minlength="6"
+            autocomplete="new-password"
             required
           >
+
           <button
             type="button"
             class="password-toggle"
             data-target="registerConfirmPassword"
           >👁</button>
+
         </div>
 
+
         <label class="checkbox-row">
-          <input type="checkbox" id="registerTerms" required>
+
+          <input
+            type="checkbox"
+            id="registerTerms"
+            required
+          >
+
           <span>
             I agree to the Terms & Conditions and Privacy Policy.
           </span>
+
         </label>
 
-        <button type="submit" class="btn btn-primary full">
+
+        <button
+          type="submit"
+          id="registerSubmit"
+          class="btn btn-primary full"
+        >
           Create Account
         </button>
 
       </form>
 
+
       <p class="auth-switch">
+
         Already have an account?
-        <button type="button" id="showLogin">
+
+        <button
+          type="button"
+          id="showLogin"
+        >
           Login
         </button>
+
       </p>
 
     </div>
@@ -174,50 +251,87 @@
 </div>
 
 
-<!-- ================= MAIN APP ================= -->
+
+<!-- =========================================================
+     MAIN APPLICATION
+========================================================= -->
 
 <div id="appPage" style="display:none">
+
+
+  <!-- ================= SIDEBAR ================= -->
 
   <aside class="sidebar">
 
     <div class="brand">
+
       <div class="brand-mark">G</div>
 
       <div>
         <strong>Global Virtual Sim</strong>
         <span>Worldwide services</span>
       </div>
+
     </div>
+
 
     <nav class="nav">
 
-      <button class="nav-item active" data-page="dashboard">
+      <button
+        class="nav-item active"
+        data-page="dashboard"
+      >
         Dashboard
       </button>
 
-      <button class="nav-item" data-page="buy">
+
+      <button
+        class="nav-item"
+        data-page="buy"
+      >
         Buy Number
       </button>
 
-      <button class="nav-item" data-page="active">
+
+      <button
+        class="nav-item"
+        data-page="active"
+      >
         Active Numbers
       </button>
 
-      <button class="nav-item" data-page="history">
+
+      <button
+        class="nav-item"
+        data-page="history"
+      >
         Order History
       </button>
 
-      <button class="nav-item" data-page="wallet">
+
+      <button
+        class="nav-item"
+        data-page="wallet"
+      >
         Wallet
       </button>
 
-      <button class="nav-item" data-page="support">
+
+      <button
+        class="nav-item"
+        data-page="support"
+      >
         Support
       </button>
 
-      <button class="nav-item" data-page="profile">
+
+      <button
+        class="nav-item"
+        data-page="profile"
+      >
         Profile
       </button>
+
 
       <button
         class="nav-item admin-only"
@@ -230,9 +344,13 @@
 
     </nav>
 
+
     <div class="sidebar-bottom">
 
-      <button id="logoutBtn" class="btn btn-secondary full">
+      <button
+        id="logoutBtn"
+        class="btn btn-secondary full"
+      >
         Logout
       </button>
 
@@ -241,65 +359,131 @@
   </aside>
 
 
+
+  <!-- ================= MAIN ================= -->
+
   <main class="main">
+
 
     <header class="topbar">
 
       <div>
-        <h2 id="pageTitle">Dashboard</h2>
-        <p id="welcomeText" class="muted">
+
+        <h2 id="pageTitle">
+          Dashboard
+        </h2>
+
+        <p
+          id="welcomeText"
+          class="muted"
+        >
           Welcome back.
         </p>
+
       </div>
 
+
       <div class="user-chip">
-        <span id="userInitial">U</span>
+
+        <span id="userInitial">
+          U
+        </span>
+
         <div>
-          <strong id="userDisplayName">User</strong>
+
+          <strong id="userDisplayName">
+            User
+          </strong>
+
           <small id="userDisplayEmail"></small>
+
         </div>
+
       </div>
 
     </header>
 
 
-    <!-- DASHBOARD -->
-    <section id="page-dashboard" class="page">
+
+    <!-- =====================================================
+         DASHBOARD
+    ====================================================== -->
+
+    <section
+      id="page-dashboard"
+      class="page"
+    >
 
       <div class="cards">
 
-        <div class="card stat-card">
-          <span>Wallet Balance</span>
-          <strong id="dashboardBalance">₦0.00</strong>
-        </div>
 
         <div class="card stat-card">
-          <span>Active Numbers</span>
-          <strong id="dashboardActive">0</strong>
+
+          <span>
+            Wallet Balance
+          </span>
+
+          <strong id="dashboardBalance">
+            ₦0.00
+          </strong>
+
         </div>
 
-        <div class="card stat-card">
-          <span>Total Orders</span>
-          <strong id="dashboardOrders">0</strong>
-        </div>
 
         <div class="card stat-card">
-          <span>Account</span>
-          <strong id="dashboardStatus">Active</strong>
+
+          <span>
+            Active Numbers
+          </span>
+
+          <strong id="dashboardActive">
+            0
+          </strong>
+
+        </div>
+
+
+        <div class="card stat-card">
+
+          <span>
+            Total Orders
+          </span>
+
+          <strong id="dashboardOrders">
+            0
+          </strong>
+
+        </div>
+
+
+        <div class="card stat-card">
+
+          <span>
+            Account
+          </span>
+
+          <strong id="dashboardStatus">
+            Active
+          </strong>
+
         </div>
 
       </div>
 
 
+
       <div class="grid two">
+
 
         <div class="card">
 
-          <h3>Buy a Virtual Number</h3>
+          <h3>
+            Buy a Virtual Number
+          </h3>
 
           <p class="muted">
-            Choose a country and service to purchase an available
-            virtual number.
+            Choose a country and service to purchase
+            an available virtual number.
           </p>
 
           <button
@@ -312,9 +496,12 @@
         </div>
 
 
+
         <div class="card">
 
-          <h3>Your Account</h3>
+          <h3>
+            Your Account
+          </h3>
 
           <p>
             <strong>Name:</strong>
@@ -338,24 +525,47 @@
     </section>
 
 
-    <!-- BUY NUMBER -->
-    <section id="page-buy" class="page" style="display:none">
+
+    <!-- =====================================================
+         BUY NUMBER
+    ====================================================== -->
+
+    <section
+      id="page-buy"
+      class="page"
+      style="display:none"
+    >
 
       <div class="card">
 
-        <h3>Buy Virtual Number</h3>
+        <h3>
+          Buy Virtual Number
+        </h3>
 
         <p class="muted">
-          Select a country to view available services and pricing.
+          Select a country to view available services
+          and pricing.
         </p>
 
-        <label>Country</label>
+
+        <label>
+          Country
+        </label>
+
 
         <select id="countrySelect">
-          <option value="">Loading countries...</option>
+
+          <option value="">
+            Select a country
+          </option>
+
         </select>
 
-        <div id="servicesContainer" style="margin-top:20px">
+
+        <div
+          id="servicesContainer"
+          style="margin-top:20px"
+        >
 
           <div class="empty-state">
             Select a country to view services.
@@ -368,16 +578,28 @@
     </section>
 
 
-    <!-- ACTIVE -->
-    <section id="page-active" class="page" style="display:none">
+
+    <!-- =====================================================
+         ACTIVE NUMBERS
+    ====================================================== -->
+
+    <section
+      id="page-active"
+      class="page"
+      style="display:none"
+    >
 
       <div class="card">
 
-        <h3>Active Numbers</h3>
+        <h3>
+          Active Numbers
+        </h3>
 
         <p class="muted">
-          Your currently active virtual numbers will appear here.
+          Your currently active virtual numbers
+          will appear here.
         </p>
+
 
         <div id="activeNumbersContainer">
 
@@ -392,16 +614,27 @@
     </section>
 
 
-    <!-- HISTORY -->
-    <section id="page-history" class="page" style="display:none">
+
+    <!-- =====================================================
+         HISTORY
+    ====================================================== -->
+
+    <section
+      id="page-history"
+      class="page"
+      style="display:none"
+    >
 
       <div class="card">
 
-        <h3>Order History</h3>
+        <h3>
+          Order History
+        </h3>
 
         <p class="muted">
           Your previous number orders will appear here.
         </p>
+
 
         <div id="historyContainer">
 
@@ -416,37 +649,73 @@
     </section>
 
 
-    <!-- WALLET -->
-    <section id="page-wallet" class="page" style="display:none">
+
+    <!-- =====================================================
+         WALLET
+    ====================================================== -->
+
+    <section
+      id="page-wallet"
+      class="page"
+      style="display:none"
+    >
 
       <div class="cards">
 
-        <div class="card stat-card">
-          <span>Available Balance</span>
-          <strong id="walletBalance">₦0.00</strong>
-        </div>
 
         <div class="card stat-card">
-          <span>Total Deposited</span>
-          <strong id="walletDeposited">₦0.00</strong>
+
+          <span>
+            Available Balance
+          </span>
+
+          <strong id="walletBalance">
+            ₦0.00
+          </strong>
+
         </div>
 
+
         <div class="card stat-card">
-          <span>Total Spent</span>
-          <strong id="walletSpent">₦0.00</strong>
+
+          <span>
+            Total Deposited
+          </span>
+
+          <strong id="walletDeposited">
+            ₦0.00
+          </strong>
+
+        </div>
+
+
+        <div class="card stat-card">
+
+          <span>
+            Total Spent
+          </span>
+
+          <strong id="walletSpent">
+            ₦0.00
+          </strong>
+
         </div>
 
       </div>
 
 
+
       <div class="card">
 
-        <h3>Wallet</h3>
+        <h3>
+          Wallet
+        </h3>
 
         <p class="muted">
-          Your customer wallet will be connected to the deposit
-          system in the next stage.
+          Your customer wallet will be connected
+          to the deposit system in the next stage.
         </p>
+
 
         <button
           class="btn btn-primary"
@@ -459,9 +728,16 @@
       </div>
 
 
-      <div class="card" style="margin-top:20px">
 
-        <h3>Transaction History</h3>
+      <div
+        class="card"
+        style="margin-top:20px"
+      >
+
+        <h3>
+          Transaction History
+        </h3>
+
 
         <div id="transactionContainer">
 
@@ -476,19 +752,32 @@
     </section>
 
 
-    <!-- SUPPORT -->
-    <section id="page-support" class="page" style="display:none">
+
+    <!-- =====================================================
+         SUPPORT
+    ====================================================== -->
+
+    <section
+      id="page-support"
+      class="page"
+      style="display:none"
+    >
 
       <div class="grid two">
 
+
         <div class="card">
 
-          <h3>Customer Support</h3>
+          <h3>
+            Customer Support
+          </h3>
 
           <p class="muted">
-            Need help with your account, wallet or virtual number?
+            Need help with your account, wallet
+            or virtual number?
             Contact our support team.
           </p>
+
 
           <a
             href="mailto:globalsimwebsite@gmail.com"
@@ -500,16 +789,22 @@
         </div>
 
 
+
         <div class="card">
 
-          <h3>Support Hours</h3>
+          <h3>
+            Support Hours
+          </h3>
 
           <p>
-            <strong>24/7 Support</strong>
+            <strong>
+              24/7 Support
+            </strong>
           </p>
 
           <p class="muted">
-            We aim to respond to customer requests as quickly as possible.
+            We aim to respond to customer requests
+            as quickly as possible.
           </p>
 
         </div>
@@ -519,31 +814,73 @@
     </section>
 
 
-    <!-- PROFILE -->
-    <section id="page-profile" class="page" style="display:none">
+
+    <!-- =====================================================
+         PROFILE
+    ====================================================== -->
+
+    <section
+      id="page-profile"
+      class="page"
+      style="display:none"
+    >
 
       <div class="card">
 
-        <h3>My Profile</h3>
+        <h3>
+          My Profile
+        </h3>
+
 
         <div class="profile-row">
-          <span>Full Name</span>
-          <strong id="profileName">—</strong>
+
+          <span>
+            Full Name
+          </span>
+
+          <strong id="profileName">
+            —
+          </strong>
+
         </div>
 
-        <div class="profile-row">
-          <span>Username</span>
-          <strong id="profileUsername">—</strong>
-        </div>
 
         <div class="profile-row">
-          <span>Email</span>
-          <strong id="profileEmail">—</strong>
+
+          <span>
+            Username
+          </span>
+
+          <strong id="profileUsername">
+            —
+          </strong>
+
         </div>
 
+
         <div class="profile-row">
-          <span>Account Role</span>
-          <strong id="profileRole">user</strong>
+
+          <span>
+            Email
+          </span>
+
+          <strong id="profileEmail">
+            —
+          </strong>
+
+        </div>
+
+
+        <div class="profile-row">
+
+          <span>
+            Account Role
+          </span>
+
+          <strong id="profileRole">
+            user
+          </strong>
+
         </div>
 
       </div>
@@ -551,16 +888,27 @@
     </section>
 
 
-    <!-- ADMIN -->
-    <section id="page-admin" class="page" style="display:none">
+
+    <!-- =====================================================
+         ADMIN
+    ====================================================== -->
+
+    <section
+      id="page-admin"
+      class="page"
+      style="display:none"
+    >
 
       <div class="card">
 
-        <h3>Admin Dashboard</h3>
+        <h3>
+          Admin Dashboard
+        </h3>
 
         <p class="muted">
-          Administrator controls will be connected to the secure
-          backend as we build the management system.
+          Administrator controls will be connected
+          to the secure backend as we build
+          the management system.
         </p>
 
       </div>
@@ -568,30 +916,67 @@
 
       <div class="cards">
 
-        <div class="card stat-card">
-          <span>Total Users</span>
-          <strong>—</strong>
-        </div>
 
         <div class="card stat-card">
-          <span>Customer Wallets</span>
-          <strong>—</strong>
+
+          <span>
+            Total Users
+          </span>
+
+          <strong>
+            —
+          </strong>
+
         </div>
 
-        <div class="card stat-card">
-          <span>Orders</span>
-          <strong>—</strong>
-        </div>
 
         <div class="card stat-card">
-          <span>Business Profit</span>
-          <strong>—</strong>
+
+          <span>
+            Customer Wallets
+          </span>
+
+          <strong>
+            —
+          </strong>
+
+        </div>
+
+
+        <div class="card stat-card">
+
+          <span>
+            Orders
+          </span>
+
+          <strong>
+            —
+          </strong>
+
+        </div>
+
+
+        <div class="card stat-card">
+
+          <span>
+            Business Profit
+          </span>
+
+          <strong>
+            —
+          </strong>
+
         </div>
 
       </div>
 
     </section>
 
+
+
+    <!-- =====================================================
+         FOOTER
+    ====================================================== -->
 
     <footer class="footer">
 
@@ -603,21 +988,33 @@
         Owned by KelChuk’s.
       </div>
 
+
       <div class="footer-links">
 
-        <button onclick="showToast('Terms & Conditions coming soon.')">
+        <button
+          onclick="showToast('Terms & Conditions coming soon.')"
+        >
           Terms & Conditions
         </button>
 
-        <button onclick="showToast('Privacy Policy coming soon.')">
+
+        <button
+          onclick="showToast('Privacy Policy coming soon.')"
+        >
           Privacy Policy
         </button>
 
-        <button onclick="showToast('Refund Policy coming soon.')">
+
+        <button
+          onclick="showToast('Refund Policy coming soon.')"
+        >
           Refund Policy
         </button>
 
-        <button onclick="showToast('Acceptable Use Policy coming soon.')">
+
+        <button
+          onclick="showToast('Acceptable Use Policy coming soon.')"
+        >
           Acceptable Use Policy
         </button>
 
@@ -630,31 +1027,30 @@
 </div>
 
 
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
+
 <script>
 "use strict";
 
-/*
-  IMPORTANT:
-  This file uses ONLY window.supabaseClient.
 
-  It does NOT use:
-  supabase.auth
-  window.supabase.auth
-  supabase.auth.auth
-
-  The client is created inside /supabase.js.
-*/
+/* =========================================================
+   GLOBAL STATE
+========================================================= */
 
 let supabaseClient = null;
 let currentUser = null;
 let currentProfile = null;
 
 
-/* =========================
-   BASIC HELPERS
-========================= */
+/* =========================================================
+   HELPERS
+========================================================= */
 
 function showToast(message, duration = 4000) {
+
   const toast = document.getElementById("toast");
 
   if (!toast) {
@@ -668,34 +1064,75 @@ function showToast(message, duration = 4000) {
   clearTimeout(window.toastTimer);
 
   window.toastTimer = setTimeout(() => {
+
     toast.classList.remove("show");
+
   }, duration);
 }
 
 
+
 function money(value) {
+
   const number = Number(value || 0);
 
   return "₦" + number.toLocaleString("en-NG", {
+
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
+
   });
 }
 
 
+
 function escapeHtml(value) {
+
   return String(value ?? "")
+
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+
 }
 
 
-/* =========================
-   SUPABASE INITIALIZATION
-========================= */
+
+/* =========================================================
+   TIMEOUT HELPER
+========================================================= */
+
+function withTimeout(promise, milliseconds = 15000) {
+
+  return Promise.race([
+
+    promise,
+
+    new Promise((_, reject) => {
+
+      setTimeout(() => {
+
+        reject(
+          new Error(
+            "The request timed out. Please check your internet connection and try again."
+          )
+        );
+
+      }, milliseconds);
+
+    })
+
+  ]);
+
+}
+
+
+
+/* =========================================================
+   SUPABASE
+========================================================= */
 
 function getSupabaseClient() {
 
@@ -704,246 +1141,364 @@ function getSupabaseClient() {
     typeof window.supabaseClient === "object" &&
     window.supabaseClient.auth
   ) {
+
     supabaseClient = window.supabaseClient;
+
     return supabaseClient;
+
   }
 
   return null;
+
 }
 
 
-function verifySupabase() {
+
+function verifySupabase(showError = true) {
 
   const client = getSupabaseClient();
 
   if (!client) {
 
     console.error(
-      "Supabase client was not found. Check supabase.js and script order."
+      "Supabase client was not found."
     );
 
-    showToast(
-      "The website could not connect to Supabase. Please check supabase.js configuration."
-    );
+    if (showError) {
+
+      showToast(
+        "Supabase is not configured correctly. Please check supabase.js."
+      );
+
+    }
 
     return false;
+
   }
 
-  console.log("Supabase client ready.");
-
   return true;
+
 }
 
 
-/* =========================
-   AUTH PAGE SWITCHING
-========================= */
+
+/* =========================================================
+   AUTH PAGE
+========================================================= */
+
+function showAuthPage() {
+
+  const authPage =
+    document.getElementById("authPage");
+
+  const appPage =
+    document.getElementById("appPage");
+
+  if (authPage) {
+    authPage.style.display = "flex";
+  }
+
+  if (appPage) {
+    appPage.style.display = "none";
+  }
+
+}
+
+
+
+function showAppPage() {
+
+  const authPage =
+    document.getElementById("authPage");
+
+  const appPage =
+    document.getElementById("appPage");
+
+  if (authPage) {
+    authPage.style.display = "none";
+  }
+
+  if (appPage) {
+    appPage.style.display = "block";
+  }
+
+}
+
+
 
 function showLogin() {
 
-  document.getElementById("loginBox").style.display = "block";
-  document.getElementById("registerBox").style.display = "none";
+  document.getElementById("loginBox").style.display =
+    "block";
+
+  document.getElementById("registerBox").style.display =
+    "none";
+
 }
+
 
 
 function showRegister() {
 
-  document.getElementById("loginBox").style.display = "none";
-  document.getElementById("registerBox").style.display = "block";
+  document.getElementById("loginBox").style.display =
+    "none";
+
+  document.getElementById("registerBox").style.display =
+    "block";
+
 }
 
 
-document.getElementById("showRegister").addEventListener(
-  "click",
-  showRegister
-);
+
+document
+  .getElementById("showRegister")
+  .addEventListener("click", showRegister);
 
 
-document.getElementById("showLogin").addEventListener(
-  "click",
-  showLogin
-);
+
+document
+  .getElementById("showLogin")
+  .addEventListener("click", showLogin);
 
 
-/* =========================
-   PASSWORD EYE BUTTON
-========================= */
 
-document.querySelectorAll(".password-toggle").forEach(button => {
+/* =========================================================
+   PASSWORD TOGGLE
+========================================================= */
 
-  button.addEventListener("click", () => {
+document
+  .querySelectorAll(".password-toggle")
+  .forEach(button => {
 
-    const targetId = button.getAttribute("data-target");
-    const input = document.getElementById(targetId);
+    button.addEventListener("click", () => {
 
-    if (!input) return;
+      const targetId =
+        button.getAttribute("data-target");
 
-    if (input.type === "password") {
+      const input =
+        document.getElementById(targetId);
 
-      input.type = "text";
-      button.textContent = "🙈";
+      if (!input) return;
 
-    } else {
+      if (input.type === "password") {
 
-      input.type = "password";
-      button.textContent = "👁";
+        input.type = "text";
+        button.textContent = "🙈";
 
-    }
+      } else {
+
+        input.type = "password";
+        button.textContent = "👁";
+
+      }
+
+    });
 
   });
 
-});
 
 
-/* =========================
+/* =========================================================
    REGISTER
-========================= */
+========================================================= */
 
-document.getElementById("registerForm").addEventListener(
-  "submit",
-  async function(event) {
+document
+  .getElementById("registerForm")
+  .addEventListener("submit", async function(event) {
 
     event.preventDefault();
 
     if (!verifySupabase()) return;
 
+
     const fullName =
-      document.getElementById("registerName").value.trim();
+      document
+        .getElementById("registerName")
+        .value
+        .trim();
+
 
     const username =
-      document.getElementById("registerUsername").value.trim();
+      document
+        .getElementById("registerUsername")
+        .value
+        .trim();
+
 
     const email =
-      document.getElementById("registerEmail").value.trim();
+      document
+        .getElementById("registerEmail")
+        .value
+        .trim()
+        .toLowerCase();
+
 
     const password =
-      document.getElementById("registerPassword").value;
+      document.getElementById(
+        "registerPassword"
+      ).value;
+
 
     const confirmPassword =
-      document.getElementById("registerConfirmPassword").value;
+      document.getElementById(
+        "registerConfirmPassword"
+      ).value;
+
 
     const terms =
-      document.getElementById("registerTerms").checked;
+      document.getElementById(
+        "registerTerms"
+      ).checked;
 
 
-    if (!fullName || !username || !email || !password) {
+    if (
+      !fullName ||
+      !username ||
+      !email ||
+      !password
+    ) {
 
-      showToast("Please complete all required fields.");
+      showToast(
+        "Please complete all required fields."
+      );
 
       return;
+
     }
 
 
     if (password.length < 6) {
 
-      showToast("Password must be at least 6 characters.");
+      showToast(
+        "Password must be at least 6 characters."
+      );
 
       return;
+
     }
 
 
     if (password !== confirmPassword) {
 
-      showToast("Passwords do not match.");
+      showToast(
+        "Passwords do not match."
+      );
 
       return;
+
     }
 
 
     if (!terms) {
 
-      showToast("Please accept the Terms & Conditions.");
+      showToast(
+        "Please accept the Terms & Conditions."
+      );
 
       return;
+
     }
 
 
     const submitButton =
-      event.target.querySelector("button[type='submit']");
+      document.getElementById(
+        "registerSubmit"
+      );
+
 
     submitButton.disabled = true;
-    submitButton.textContent = "Creating Account...";
+
+    submitButton.textContent =
+      "Creating Account...";
 
 
     try {
 
       /*
-        Email confirmation is intentionally NOT handled here.
+        IMPORTANT:
 
-        Your Supabase project has Confirm Email disabled,
-        so signUp() should return a session immediately.
+        No OTP.
+        No confirmation code.
+        No confirmation-link handling.
+
+        Supabase Confirm Email must remain OFF.
       */
 
-      const { data, error } =
-        await supabaseClient.auth.signUp({
+      const result =
+        await withTimeout(
 
-          email: email,
+          supabaseClient.auth.signUp({
 
-          password: password,
+            email: email,
 
-          options: {
-            data: {
-              full_name: fullName,
-              username: username
+            password: password,
+
+            options: {
+
+              data: {
+
+                full_name: fullName,
+                username: username
+
+              }
+
             }
-          }
 
-        });
+          }),
+
+          15000
+
+        );
+
+
+      const data = result.data;
+      const error = result.error;
 
 
       if (error) {
+
         throw error;
+
       }
 
 
       if (!data || !data.user) {
+
         throw new Error(
           "Supabase did not return a user account."
         );
+
       }
 
 
       /*
-        Create/update profile.
+        We deliberately do NOT write to the profiles
+        table here.
 
-        If the profiles table/RLS is not ready yet,
-        account creation itself can still succeed.
+        This prevents an RLS/profile policy problem
+        from making account creation appear stuck.
+
+        The profile can be created securely with a
+        database trigger / backend in the next step.
       */
 
-      try {
 
-        const { error: profileError } =
-          await supabaseClient
-            .from("profiles")
-            .upsert(
-              {
-                id: data.user.id,
-                full_name: fullName,
-                username: username,
-                email: email
-              },
-              {
-                onConflict: "id"
-              }
-            );
+      document.getElementById(
+        "loginEmail"
+      ).value = email;
 
-        if (profileError) {
 
-          console.warn(
-            "Profile creation warning:",
-            profileError
-          );
+      document.getElementById(
+        "loginPassword"
+      ).value = "";
 
-        }
 
-      } catch (profileException) {
+      document
+        .getElementById("registerForm")
+        .reset();
 
-        console.warn(
-          "Profile request failed:",
-          profileException
-        );
 
-      }
+      showLogin();
 
 
       showToast(
@@ -951,40 +1506,59 @@ document.getElementById("registerForm").addEventListener(
       );
 
 
-      document.getElementById("loginEmail").value = email;
-
-      document.getElementById("registerForm").reset();
-
-      showLogin();
-
-
     } catch (error) {
 
-      console.error("Registration error:", error);
-
-      showToast(
-        error?.message ||
-        "Unable to create your account."
+      console.error(
+        "Registration error:",
+        error
       );
+
+
+      let message =
+        error?.message ||
+        "Unable to create your account.";
+
+
+      /*
+        Make the most common Supabase messages
+        easier for the customer to understand.
+      */
+
+      if (
+        message
+          .toLowerCase()
+          .includes("user already registered")
+      ) {
+
+        message =
+          "An account with this email already exists. Please login.";
+
+      }
+
+
+      showToast(message);
+
 
     } finally {
 
       submitButton.disabled = false;
-      submitButton.textContent = "Create Account";
+
+      submitButton.textContent =
+        "Create Account";
 
     }
 
-  }
-);
+  });
 
 
-/* =========================
+
+/* =========================================================
    LOGIN
-========================= */
+========================================================= */
 
-document.getElementById("loginForm").addEventListener(
-  "submit",
-  async function(event) {
+document
+  .getElementById("loginForm")
+  .addEventListener("submit", async function(event) {
 
     event.preventDefault();
 
@@ -992,40 +1566,67 @@ document.getElementById("loginForm").addEventListener(
 
 
     const email =
-      document.getElementById("loginEmail").value.trim();
+      document
+        .getElementById("loginEmail")
+        .value
+        .trim()
+        .toLowerCase();
+
 
     const password =
-      document.getElementById("loginPassword").value;
+      document.getElementById(
+        "loginPassword"
+      ).value;
 
 
     if (!email || !password) {
 
-      showToast("Enter your email and password.");
+      showToast(
+        "Enter your email and password."
+      );
 
       return;
+
     }
 
 
     const submitButton =
-      event.target.querySelector("button[type='submit']");
+      document.getElementById(
+        "loginSubmit"
+      );
+
 
     submitButton.disabled = true;
-    submitButton.textContent = "Logging in...";
+
+    submitButton.textContent =
+      "Logging in...";
 
 
     try {
 
-      const { data, error } =
-        await supabaseClient.auth.signInWithPassword({
+      const result =
+        await withTimeout(
 
-          email: email,
-          password: password
+          supabaseClient.auth.signInWithPassword({
 
-        });
+            email: email,
+            password: password
+
+          }),
+
+          15000
+
+        );
+
+
+      const data = result.data;
+      const error = result.error;
 
 
       if (error) {
+
         throw error;
+
       }
 
 
@@ -1040,50 +1641,66 @@ document.getElementById("loginForm").addEventListener(
 
       currentUser = data.user;
 
+
       await loadAuthenticatedUser();
 
 
     } catch (error) {
 
-      console.error("Login error:", error);
+      console.error(
+        "Login error:",
+        error
+      );
+
 
       showToast(
         error?.message ||
         "Unable to login."
       );
 
+
     } finally {
 
       submitButton.disabled = false;
-      submitButton.textContent = "Login";
+
+      submitButton.textContent =
+        "Login";
 
     }
 
-  }
-);
+  });
 
 
-/* =========================
-   LOAD USER
-========================= */
+
+/* =========================================================
+   LOAD AUTHENTICATED USER
+========================================================= */
 
 async function loadAuthenticatedUser() {
 
-  if (!verifySupabase()) return;
+  if (!verifySupabase(false)) {
+
+    showAuthPage();
+
+    return;
+
+  }
+
 
   try {
 
-    const {
-      data: {
-        user
-      },
-      error
-    } = await supabaseClient.auth.getUser();
+    const result =
+      await withTimeout(
+
+        supabaseClient.auth.getUser(),
+
+        10000
+
+      );
 
 
-    if (error) {
-      throw error;
-    }
+    const user =
+      result?.data?.user;
 
 
     if (!user) {
@@ -1092,7 +1709,10 @@ async function loadAuthenticatedUser() {
 
       showAuthPage();
 
+      showLogin();
+
       return;
+
     }
 
 
@@ -1101,11 +1721,15 @@ async function loadAuthenticatedUser() {
 
     await loadProfile();
 
+
     showAppPage();
+
 
     updateUserInterface();
 
+
     loadDashboardData();
+
 
   } catch (error) {
 
@@ -1114,16 +1738,30 @@ async function loadAuthenticatedUser() {
       error
     );
 
+
+    currentUser = null;
+
+
     showAuthPage();
+
+
+    showLogin();
+
+
+    showToast(
+      error?.message ||
+      "Unable to load your account."
+    );
 
   }
 
 }
 
 
-/* =========================
+
+/* =========================================================
    PROFILE
-========================= */
+========================================================= */
 
 async function loadProfile() {
 
@@ -1135,34 +1773,52 @@ async function loadProfile() {
 
   try {
 
-    const {
-      data,
-      error
-    } = await supabaseClient
-      .from("profiles")
-      .select("*")
-      .eq("id", currentUser.id)
-      .maybeSingle();
+    const result =
+      await withTimeout(
+
+        supabaseClient
+          .from("profiles")
+          .select("*")
+          .eq("id", currentUser.id)
+          .maybeSingle(),
+
+        8000
+
+      );
+
+
+    const data = result.data;
+    const error = result.error;
 
 
     if (error) {
 
+      /*
+        A missing profile should NOT prevent
+        the customer from logging in.
+      */
+
       console.warn(
-        "Could not load profile:",
+        "Profile could not be loaded:",
         error
       );
 
       return;
+
     }
 
 
-    currentProfile = data;
+    currentProfile = data || null;
 
 
   } catch (error) {
 
+    /*
+      Profile problems must never block login.
+    */
+
     console.warn(
-      "Profile load error:",
+      "Profile load warning:",
       error
     );
 
@@ -1171,25 +1827,10 @@ async function loadProfile() {
 }
 
 
-/* =========================
-   UI
-========================= */
 
-function showAuthPage() {
-
-  document.getElementById("authPage").style.display = "flex";
-  document.getElementById("appPage").style.display = "none";
-
-}
-
-
-function showAppPage() {
-
-  document.getElementById("authPage").style.display = "none";
-  document.getElementById("appPage").style.display = "block";
-
-}
-
+/* =========================================================
+   UPDATE USER INTERFACE
+========================================================= */
 
 function updateUserInterface() {
 
@@ -1218,47 +1859,61 @@ function updateUserInterface() {
     "—";
 
 
-  document.getElementById("userDisplayName").textContent =
-    name;
+  document.getElementById(
+    "userDisplayName"
+  ).textContent = name;
 
 
-  document.getElementById("userDisplayEmail").textContent =
-    email;
+  document.getElementById(
+    "userDisplayEmail"
+  ).textContent = email;
 
 
-  document.getElementById("userInitial").textContent =
+  document.getElementById(
+    "userInitial"
+  ).textContent =
     name.charAt(0).toUpperCase();
 
 
-  document.getElementById("dashName").textContent =
-    name;
+  document.getElementById(
+    "dashName"
+  ).textContent = name;
 
 
-  document.getElementById("dashUsername").textContent =
-    username;
+  document.getElementById(
+    "dashUsername"
+  ).textContent = username;
 
 
-  document.getElementById("dashEmail").textContent =
-    email;
+  document.getElementById(
+    "dashEmail"
+  ).textContent = email;
 
 
-  document.getElementById("profileName").textContent =
-    name;
+  document.getElementById(
+    "profileName"
+  ).textContent = name;
 
 
-  document.getElementById("profileUsername").textContent =
-    username;
+  document.getElementById(
+    "profileUsername"
+  ).textContent = username;
 
 
-  document.getElementById("profileEmail").textContent =
-    email;
+  document.getElementById(
+    "profileEmail"
+  ).textContent = email;
 
 
-  document.getElementById("profileRole").textContent =
+  document.getElementById(
+    "profileRole"
+  ).textContent =
     currentProfile?.role || "user";
 
 
-  document.getElementById("welcomeText").textContent =
+  document.getElementById(
+    "welcomeText"
+  ).textContent =
     "Welcome back, " + name + ".";
 
 
@@ -1270,30 +1925,30 @@ function updateUserInterface() {
     document.getElementById("adminNav");
 
 
-  if (isAdmin) {
+  if (adminNav) {
 
-    adminNav.style.display = "flex";
-
-  } else {
-
-    adminNav.style.display = "none";
+    adminNav.style.display =
+      isAdmin ? "flex" : "none";
 
   }
 
 }
 
 
-/* =========================
+
+/* =========================================================
    NAVIGATION
-========================= */
+========================================================= */
 
 function navigateTo(pageName) {
 
-  document.querySelectorAll(".page").forEach(page => {
+  document
+    .querySelectorAll(".page")
+    .forEach(page => {
 
-    page.style.display = "none";
+      page.style.display = "none";
 
-  });
+    });
 
 
   const page =
@@ -1308,11 +1963,13 @@ function navigateTo(pageName) {
   page.style.display = "block";
 
 
-  document.querySelectorAll(".nav-item").forEach(item => {
+  document
+    .querySelectorAll(".nav-item")
+    .forEach(item => {
 
-    item.classList.remove("active");
+      item.classList.remove("active");
 
-  });
+    });
 
 
   const navItem =
@@ -1331,25 +1988,20 @@ function navigateTo(pageName) {
   const titles = {
 
     dashboard: "Dashboard",
-
     buy: "Buy Number",
-
     active: "Active Numbers",
-
     history: "Order History",
-
     wallet: "Wallet",
-
     support: "Support",
-
     profile: "Profile",
-
     admin: "Admin Dashboard"
 
   };
 
 
-  document.getElementById("pageTitle").textContent =
+  document.getElementById(
+    "pageTitle"
+  ).textContent =
     titles[pageName] || "Dashboard";
 
 
@@ -1376,66 +2028,99 @@ function navigateTo(pageName) {
 }
 
 
-document.querySelectorAll(".nav-item").forEach(item => {
 
-  item.addEventListener("click", () => {
+/* Navigation buttons */
 
-    const page =
-      item.getAttribute("data-page");
+document
+  .querySelectorAll(".nav-item")
+  .forEach(item => {
 
-    if (page === "admin") {
+    item.addEventListener("click", () => {
 
-      if (currentProfile?.role !== "admin") {
+      const page =
+        item.getAttribute("data-page");
 
-        showToast("Administrator access required.");
 
-        return;
+      if (page === "admin") {
+
+        if (
+          currentProfile?.role !== "admin"
+        ) {
+
+          showToast(
+            "Administrator access required."
+          );
+
+          return;
+
+        }
 
       }
 
-    }
 
-    navigateTo(page);
+      navigateTo(page);
 
-  });
-
-});
-
-
-document.querySelectorAll("[data-page-link]").forEach(button => {
-
-  button.addEventListener("click", () => {
-
-    navigateTo(
-      button.getAttribute("data-page-link")
-    );
+    });
 
   });
 
-});
 
 
-/* =========================
+/* Dashboard page buttons */
+
+document
+  .querySelectorAll("[data-page-link]")
+  .forEach(button => {
+
+    button.addEventListener("click", () => {
+
+      navigateTo(
+        button.getAttribute(
+          "data-page-link"
+        )
+      );
+
+    });
+
+  });
+
+
+
+/* =========================================================
    LOGOUT
-========================= */
+========================================================= */
 
-document.getElementById("logoutBtn").addEventListener(
-  "click",
-  async () => {
+document
+  .getElementById("logoutBtn")
+  .addEventListener("click", async () => {
 
     if (!verifySupabase()) return;
 
+
     try {
 
-      await supabaseClient.auth.signOut();
+      await withTimeout(
+
+        supabaseClient.auth.signOut(),
+
+        10000
+
+      );
+
 
       currentUser = null;
       currentProfile = null;
 
+
       showAuthPage();
+
       showLogin();
 
-      showToast("You have been logged out.");
+
+      showToast(
+        "You have been logged out."
+      );
+
 
     } catch (error) {
 
@@ -1444,6 +2129,7 @@ document.getElementById("logoutBtn").addEventListener(
         error
       );
 
+
       showToast(
         error?.message ||
         "Unable to logout."
@@ -1451,36 +2137,47 @@ document.getElementById("logoutBtn").addEventListener(
 
     }
 
-  }
-);
+  });
 
 
-/* =========================
+
+/* =========================================================
    DASHBOARD
-========================= */
+========================================================= */
 
 async function loadDashboardData() {
 
-  document.getElementById("dashboardBalance").textContent =
+  document.getElementById(
+    "dashboardBalance"
+  ).textContent =
     "₦0.00";
 
-  document.getElementById("dashboardActive").textContent =
+
+  document.getElementById(
+    "dashboardActive"
+  ).textContent =
     "0";
 
-  document.getElementById("dashboardOrders").textContent =
+
+  document.getElementById(
+    "dashboardOrders"
+  ).textContent =
     "0";
 
 }
 
 
-/* =========================
+
+/* =========================================================
    COUNTRIES
-========================= */
+========================================================= */
 
 async function loadCountries() {
 
   const select =
-    document.getElementById("countrySelect");
+    document.getElementById(
+      "countrySelect"
+    );
 
 
   select.innerHTML =
@@ -1490,7 +2187,13 @@ async function loadCountries() {
   try {
 
     const response =
-      await fetch("/api/countries");
+      await withTimeout(
+
+        fetch("/api/countries"),
+
+        15000
+
+      );
 
 
     const result =
@@ -1510,7 +2213,9 @@ async function loadCountries() {
     const countries =
       Array.isArray(result)
         ? result
-        : result?.data || result?.countries || [];
+        : result?.data ||
+          result?.countries ||
+          [];
 
 
     select.innerHTML =
@@ -1540,11 +2245,21 @@ async function loadCountries() {
 
 
       option.value = id;
+
       option.textContent = name;
+
 
       select.appendChild(option);
 
     });
+
+
+    if (!countries.length) {
+
+      select.innerHTML =
+        '<option value="">No countries available</option>';
+
+    }
 
 
   } catch (error) {
@@ -1554,8 +2269,10 @@ async function loadCountries() {
       error
     );
 
+
     select.innerHTML =
       '<option value="">Unable to load countries</option>';
+
 
     showToast(
       error?.message ||
@@ -1567,33 +2284,43 @@ async function loadCountries() {
 }
 
 
-document.getElementById("countrySelect").addEventListener(
-  "change",
-  async function() {
 
-    const countryId = this.value;
+/* =========================================================
+   COUNTRY CHANGE
+========================================================= */
 
-    if (!countryId) {
+document
+  .getElementById("countrySelect")
+  .addEventListener(
+    "change",
+    async function() {
 
-      document.getElementById(
-        "servicesContainer"
-      ).innerHTML =
-        '<div class="empty-state">Select a country to view services.</div>';
+      const countryId =
+        this.value;
 
-      return;
+
+      if (!countryId) {
+
+        document.getElementById(
+          "servicesContainer"
+        ).innerHTML =
+          '<div class="empty-state">Select a country to view services.</div>';
+
+        return;
+
+      }
+
+
+      await loadServices(countryId);
 
     }
+  );
 
 
-    await loadServices(countryId);
 
-  }
-);
-
-
-/* =========================
+/* =========================================================
    SERVICES
-========================= */
+========================================================= */
 
 async function loadServices(countryId) {
 
@@ -1610,9 +2337,15 @@ async function loadServices(countryId) {
   try {
 
     const response =
-      await fetch(
-        "/api/services?countryId=" +
-        encodeURIComponent(countryId)
+      await withTimeout(
+
+        fetch(
+          "/api/services?countryId=" +
+          encodeURIComponent(countryId)
+        ),
+
+        15000
+
       );
 
 
@@ -1685,7 +2418,9 @@ async function loadServices(countryId) {
 
         <div>
 
-          <h4>${escapeHtml(name)}</h4>
+          <h4>
+            ${escapeHtml(name)}
+          </h4>
 
           <p class="muted">
             Virtual number service
@@ -1695,7 +2430,9 @@ async function loadServices(countryId) {
 
         <div>
 
-          <strong>${money(price)}</strong>
+          <strong>
+            ${money(price)}
+          </strong>
 
           <button
             class="btn btn-primary"
@@ -1738,6 +2475,7 @@ async function loadServices(countryId) {
       error
     );
 
+
     container.innerHTML =
       `<div class="empty-state">${escapeHtml(
         error?.message ||
@@ -1749,9 +2487,10 @@ async function loadServices(countryId) {
 }
 
 
-/* =========================
+
+/* =========================================================
    ORDER
-========================= */
+========================================================= */
 
 async function orderService(
   serviceCountryPriceId,
@@ -1771,7 +2510,9 @@ async function orderService(
 
   if (!currentUser) {
 
-    showToast("Please login first.");
+    showToast(
+      "Please login first."
+    );
 
     return;
 
@@ -1792,27 +2533,37 @@ async function orderService(
   try {
 
     const response =
-      await fetch(
-        "/api/order",
-        {
-          method: "POST",
+      await withTimeout(
 
-          headers: {
-            "Content-Type": "application/json"
-          },
+        fetch(
+          "/api/order",
+          {
 
-          body: JSON.stringify({
+            method: "POST",
 
-            serviceCountryPriceId:
-              serviceCountryPriceId,
+            headers: {
 
-            quantity: 1,
+              "Content-Type":
+                "application/json"
 
-            autoSearchServer: true
+            },
 
-          })
+            body: JSON.stringify({
 
-        }
+              serviceCountryPriceId:
+                serviceCountryPriceId,
+
+              quantity: 1,
+
+              autoSearchServer: true
+
+            })
+
+          }
+        ),
+
+        20000
+
       );
 
 
@@ -1845,6 +2596,7 @@ async function orderService(
       error
     );
 
+
     showToast(
       error?.message ||
       "Unable to place order."
@@ -1855,9 +2607,10 @@ async function orderService(
 }
 
 
-/* =========================
+
+/* =========================================================
    ACTIVE NUMBERS
-========================= */
+========================================================= */
 
 async function loadActiveNumbers() {
 
@@ -1874,7 +2627,13 @@ async function loadActiveNumbers() {
   try {
 
     const response =
-      await fetch("/api/active");
+      await withTimeout(
+
+        fetch("/api/active"),
+
+        15000
+
+      );
 
 
     const result =
@@ -1963,6 +2722,7 @@ async function loadActiveNumbers() {
       error
     );
 
+
     container.innerHTML =
       `<div class="empty-state">${escapeHtml(
         error?.message ||
@@ -1974,9 +2734,10 @@ async function loadActiveNumbers() {
 }
 
 
-/* =========================
+
+/* =========================================================
    ORDER HISTORY
-========================= */
+========================================================= */
 
 async function loadOrderHistory() {
 
@@ -1993,7 +2754,13 @@ async function loadOrderHistory() {
   try {
 
     const response =
-      await fetch("/api/history");
+      await withTimeout(
+
+        fetch("/api/history"),
+
+        15000
+
+      );
 
 
     const result =
@@ -2081,6 +2848,7 @@ async function loadOrderHistory() {
       error
     );
 
+
     container.innerHTML =
       `<div class="empty-state">${escapeHtml(
         error?.message ||
@@ -2092,26 +2860,28 @@ async function loadOrderHistory() {
 }
 
 
-/* =========================
-   SESSION STARTUP
-========================= */
+
+/* =========================================================
+   APPLICATION STARTUP
+========================================================= */
 
 async function initializeApp() {
 
   /*
-    Give the browser a moment to finish loading
-    the external Supabase library and supabase.js.
+    Wait briefly for /supabase.js to finish
+    creating window.supabaseClient.
   */
 
   let attempts = 0;
 
+
   while (
     !window.supabaseClient &&
-    attempts < 30
+    attempts < 50
   ) {
 
-    await new Promise(
-      resolve => setTimeout(resolve, 100)
+    await new Promise(resolve =>
+      setTimeout(resolve, 100)
     );
 
     attempts++;
@@ -2125,6 +2895,8 @@ async function initializeApp() {
       "Supabase initialization failed."
     );
 
+    showAuthPage();
+
     return;
 
   }
@@ -2132,26 +2904,18 @@ async function initializeApp() {
 
   try {
 
-    const {
-      data: {
-        session
-      },
-      error
-    } = await supabaseClient.auth.getSession();
+    const result =
+      await withTimeout(
 
+        supabaseClient.auth.getSession(),
 
-    if (error) {
+        10000
 
-      console.error(
-        "Session error:",
-        error
       );
 
-      showAuthPage();
 
-      return;
-
-    }
+    const session =
+      result?.data?.session;
 
 
     if (session?.user) {
@@ -2159,11 +2923,14 @@ async function initializeApp() {
       currentUser =
         session.user;
 
+
       await loadAuthenticatedUser();
 
     } else {
 
       showAuthPage();
+
+      showLogin();
 
     }
 
@@ -2175,13 +2942,16 @@ async function initializeApp() {
       error
     );
 
+
     showAuthPage();
+
+    showLogin();
 
   }
 
 
   /*
-    Listen for future login/logout changes.
+    Listen for login/logout changes.
   */
 
   supabaseClient.auth.onAuthStateChange(
@@ -2193,14 +2963,15 @@ async function initializeApp() {
       );
 
 
-      if (
-        event === "SIGNED_OUT"
-      ) {
+      if (event === "SIGNED_OUT") {
 
         currentUser = null;
+
         currentProfile = null;
 
         showAuthPage();
+
+        showLogin();
 
         return;
 
@@ -2215,7 +2986,16 @@ async function initializeApp() {
         currentUser =
           session.user;
 
-        await loadAuthenticatedUser();
+        /*
+          Small delay prevents duplicate auth
+          processing during initial login.
+        */
+
+        setTimeout(() => {
+
+          loadAuthenticatedUser();
+
+        }, 100);
 
       }
 
@@ -2225,7 +3005,11 @@ async function initializeApp() {
 }
 
 
-/* Start application */
+
+/* =========================================================
+   START
+========================================================= */
+
 initializeApp();
 
 </script>
