@@ -15,11 +15,13 @@ export default async function handler(req, res) {
       await sureVerificationRequest("/countries");
 
     const countries =
-      Array.isArray(data?.data)
-        ? data.data
-        : Array.isArray(data)
-          ? data
-          : [];
+      Array.isArray(data?.countries)
+        ? data.countries
+        : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data)
+            ? data
+            : [];
 
     return res.status(200).json({
       success: true,
