@@ -4,7 +4,7 @@ export async function sureVerificationRequest(path, options = {}) {
   const apiKey = process.env.SUREVERIFICATION_API_KEY;
 
   if (!apiKey) {
-    throw new Error("SUREVERIFICATION_API_KEY is missing");
+    throw new Error("SUREVERIFICATION_API_KEY is not configured.");
   }
 
   const response = await fetch(`${BASE_URL}${path}`, {
@@ -15,22 +15,30 @@ export async function sureVerificationRequest(path, options = {}) {
       "x-api-key": apiKey,
       ...(options.headers || {})
     },
-    body: options.body
+    ...(options.body !== undefined
+      ? { body: options.body }
+      : {})
   });
 
   const text = await response.text();
 
-  if (!response.ok) {
+  let data;
+
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
     throw new Error(
-      `SureVerification HTTP ${response.status}: ${text}`
+      `SureVerification returned invalid JSON (HTTP ${response.status}).`
     );
   }
 
-  try {
-    return text ? JSON.parse(text) : {};
-  } catch {
+  if (!response.ok) {
     throw new Error(
-      `SureVerification returned invalid JSON: ${text}`
+      data?.message ||
+      data?.error ||
+      `SureVerification returned HTTP ${response.status}.`
     );
   }
+
+  return data;
 }
