@@ -1,5 +1,6 @@
 import {
-  sureVerificationRequest
+  sureVerificationRequest,
+  getServerForCountry
 } from "./_lib.js";
 
 export default async function handler(req, res) {
@@ -12,64 +13,48 @@ export default async function handler(req, res) {
 
   try {
     const {
-      serviceCountryPriceId,
-      operatorId,
-      quantity,
-      autoSearchServer
+      countryId,
+      service
     } = req.body || {};
 
-    if (!serviceCountryPriceId) {
+    if (!countryId) {
       return res.status(400).json({
         success: false,
-        error:
-          "serviceCountryPriceId is required"
+        error: "countryId is required"
       });
     }
 
-    const body = {
-      serviceCountryPriceId:
-        String(serviceCountryPriceId)
-    };
-
-    if (operatorId) {
-      body.operatorId = String(operatorId);
+    if (!service) {
+      return res.status(400).json({
+        success: false,
+        error: "service is required"
+      });
     }
 
-    if (quantity) {
-      body.quantity = Number(quantity);
-    }
-
-    if (autoSearchServer !== undefined) {
-      body.autoSearchServer =
-        Boolean(autoSearchServer);
-    }
+    const server =
+      getServerForCountry(countryId);
 
     const data =
       await sureVerificationRequest(
-        "/orders/request-single-service",
+        `/${server}/purchase?country_id=${encodeURIComponent(countryId)}&service=${encodeURIComponent(service)}`,
         {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-
-            "Idempotency-Key":
-              crypto.randomUUID()
-          },
-
-          body: JSON.stringify(body)
+          method: "POST"
         }
       );
 
+    const verification =
+      data?.verification || null;
+
     return res.status(200).json({
       success: true,
+      server,
+      verification,
       data
     });
 
   } catch (error) {
     console.error(
-      "SureVerification order error:",
+      "SureVerification purchase error:",
       error
     );
 
@@ -77,7 +62,7 @@ export default async function handler(req, res) {
       success: false,
       error:
         error.message ||
-        "Unable to create order."
+        "Unable to purchase number."
     });
   }
 }
