@@ -1,48 +1,65 @@
-import { buyNumberRequest } from "./_lib.js";
+import {
+  sureVerificationRequest,
+  getServerForCountry
+} from "./_lib.js";
 
 export default async function handler(req, res) {
+  if (req.method !== "GET") {
+    return res.status(405).json({
+      success: false,
+      error: "Method not allowed"
+    });
+  }
+
   try {
-    if (req.method !== "GET") {
-      return res.status(405).json({
+    const {
+      countryId,
+      service
+    } = req.query || {};
+
+    if (!countryId) {
+      return res.status(400).json({
         success: false,
-        error: "Method not allowed"
+        error: "countryId is required"
       });
     }
-
-    const { service, all_prices } = req.query;
 
     if (!service) {
       return res.status(400).json({
         success: false,
-        error: "Service is required"
+        error: "service is required"
       });
     }
 
-    const data = await buyNumberRequest(
-      "/activation-numbers",
-      {
-        action: "getTopCountriesByService",
-        service,
-        all_prices:
-          all_prices === "true"
-            ? "true"
-            : "false"
-      }
-    );
+    const server =
+      getServerForCountry(countryId);
+
+    const data =
+      await sureVerificationRequest(
+        `/${server}/price?country_id=${encodeURIComponent(countryId)}&service=${encodeURIComponent(service)}`
+      );
 
     return res.status(200).json({
       success: true,
-      prices: data?.data || []
+      server,
+      price:
+        data?.price ??
+        data?.data?.price ??
+        null,
+      data
     });
 
   } catch (error) {
-    console.error("BuyNumber prices error:", error);
+    console.error(
+      "SureVerification price error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
       error:
         error.message ||
-        "Unable to load prices"
+        "Unable to load price."
     });
   }
 }
