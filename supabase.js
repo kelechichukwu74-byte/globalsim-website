@@ -1,11 +1,17 @@
+// Global Virtual Sim Web - Supabase Configuration
+
 const SUPABASE_URL = "https://rfitbmkizfmwfqqskwhy.supabase.co";
 
-const SUPABASE_PUBLISHABLE_KEY =
-  "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
+// Paste your Supabase PUBLISHABLE key between the quotes below.
+const SUPABASE_PUBLISHABLE_KEY = "PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE";
 
-const { createClient } = supabase;
+if (!window.supabase) {
+  console.error("Supabase library was not loaded.");
+} else {
+  window.supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+  );
 
-window.supabaseClient = createClient(
-  SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY
-);
+  console.log("Supabase connected successfully.");
+}
