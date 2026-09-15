@@ -1,45 +1,51 @@
-import { buyNumberRequest } from "./_lib.js";
+import {
+  sureVerificationRequest
+} from "./_lib.js";
 
 export default async function handler(req, res) {
+  if (req.method !== "DELETE") {
+    return res.status(405).json({
+      success: false,
+      error: "Method not allowed"
+    });
+  }
+
   try {
-    if (req.method !== "GET") {
-      return res.status(405).json({
-        success: false,
-        error: "Method not allowed"
-      });
-    }
+    const verificationId =
+      req.query?.id ||
+      req.query?.verificationId;
 
-    const { id } = req.query;
-
-    if (!id) {
+    if (!verificationId) {
       return res.status(400).json({
         success: false,
-        error: "Number ID is required"
+        error: "verificationId is required"
       });
     }
 
-    const data = await buyNumberRequest(
-      "/activation-numbers",
-      {
-        action: "setStatus",
-        id,
-        status: "cancel"
-      }
-    );
+    const data =
+      await sureVerificationRequest(
+        `/verifications/cancel/${encodeURIComponent(verificationId)}`,
+        {
+          method: "DELETE"
+        }
+      );
 
     return res.status(200).json({
       success: true,
-      data: data?.data || null
+      data
     });
 
   } catch (error) {
-    console.error("BuyNumber cancel error:", error);
+    console.error(
+      "SureVerification cancel error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
       error:
         error.message ||
-        "Unable to cancel number"
+        "Unable to cancel verification."
     });
   }
 }
