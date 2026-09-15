@@ -1,5 +1,6 @@
 import {
-  sureVerificationRequest
+  sureVerificationRequest,
+  getServerForCountry
 } from "./_lib.js";
 
 export default async function handler(req, res) {
@@ -21,20 +22,24 @@ export default async function handler(req, res) {
       });
     }
 
+    const server =
+      getServerForCountry(countryId);
+
     const data =
       await sureVerificationRequest(
-        `/services/list?countryId=${encodeURIComponent(countryId)}`
+        `/${server}/services?country_id=${encodeURIComponent(countryId)}`
       );
 
     const services =
-      Array.isArray(data?.data)
-        ? data.data
-        : Array.isArray(data)
-          ? data
+      Array.isArray(data?.services)
+        ? data.services
+        : Array.isArray(data?.data)
+          ? data.data
           : [];
 
     return res.status(200).json({
       success: true,
+      server,
       services
     });
 
