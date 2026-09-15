@@ -1,494 +1,1038 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
 
   <title>Global Virtual Sim Web</title>
 
   <meta
     name="description"
-    content="Global Virtual Sim Web — virtual numbers, SMS and voice services worldwide."
-  >
+    content="Global Virtual Sim Web — virtual numbers, SMS and communication services worldwide."
+  />
 
-  <link rel="stylesheet" href="/styles.css">
+  <meta name="theme-color" content="#2563eb" />
 
-  <!-- Supabase MUST load before /supabase.js -->
+  <link rel="stylesheet" href="/styles.css" />
+
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/supabase.js"></script>
+
+  <style>
+    /* =========================================================
+       SMALL PAGE-SPECIFIC STYLES
+       Main design remains in /styles.css
+    ========================================================= */
+
+    .hidden {
+      display: none !important;
+    }
+
+    .muted {
+      color: #64748b;
+    }
+
+    .msg {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #f1f5f9;
+      color: #334155;
+      font-size: 14px;
+    }
+
+    .success-msg {
+      background: #ecfdf5;
+      color: #047857;
+    }
+
+    .error-msg {
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+
+    .warning-msg {
+      background: #fffbeb;
+      color: #92400e;
+    }
+
+    .auth-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 25px;
+      background:
+        radial-gradient(circle at top left, rgba(37,99,235,.14), transparent 35%),
+        #f5f7fb;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 450px;
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(15,23,42,.10);
+    }
+
+    .brand-large {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .brand-large .logo-mark {
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      margin: 0 auto 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #2563eb;
+      color: white;
+      font-weight: 800;
+      font-size: 23px;
+    }
+
+    .brand-large h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .brand-large p {
+      color: #64748b;
+      margin-top: 7px;
+    }
+
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: #f1f5f9;
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 22px;
+    }
+
+    .auth-tabs button {
+      border: 0;
+      background: transparent;
+      padding: 11px;
+      border-radius: 9px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .auth-tabs button.active {
+      background: white;
+      color: #2563eb;
+      box-shadow: 0 2px 8px rgba(15,23,42,.08);
+    }
+
+    .field {
+      margin-bottom: 15px;
+    }
+
+    .field label {
+      display: block;
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 7px;
+      color: #334155;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #dbe2ea;
+      border-radius: 10px;
+      padding: 12px 13px;
+      outline: none;
+      font: inherit;
+      background: white;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+    }
+
+    .password-wrap {
+      position: relative;
+    }
+
+    .password-wrap input {
+      padding-right: 45px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      color: #64748b;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      cursor: pointer;
+      font-weight: 700;
+      font: inherit;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #334155;
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      color: white;
+    }
+
+    .btn-success {
+      background: #059669;
+      color: white;
+    }
+
+    .btn-small {
+      padding: 8px 11px;
+      font-size: 13px;
+    }
+
+    .full {
+      width: 100%;
+    }
+
+    .check-row {
+      display: flex;
+      gap: 9px;
+      align-items: flex-start;
+      font-size: 13px;
+      color: #475569;
+      margin: 15px 0;
+    }
+
+    .check-row input {
+      margin-top: 3px;
+    }
+
+    .app {
+      min-height: 100vh;
+    }
+
+    .topbar {
+      display: none;
+    }
+
+    .page {
+      padding-bottom: 30px;
+    }
+
+    .page-header {
+      margin-bottom: 20px;
+    }
+
+    .page-header h1 {
+      margin: 0 0 5px;
+    }
+
+    .page-header p {
+      margin: 0;
+      color: #64748b;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      border: 1px solid #e5eaf0;
+    }
+
+    .stat-card .label {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    .stat-card .value {
+      font-size: 25px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 18px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #e5eaf0;
+      border-radius: 15px;
+      padding: 20px;
+    }
+
+    .card h2,
+    .card h3 {
+      margin-top: 0;
+    }
+
+    .number-big {
+      font-size: 30px;
+      font-weight: 800;
+      color: #2563eb;
+    }
+
+    .country-grid,
+    .service-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 12px;
+    }
+
+    .country-item,
+    .service-item {
+      border: 1px solid #e2e8f0;
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      cursor: pointer;
+      transition: .15s ease;
+    }
+
+    .country-item:hover,
+    .service-item:hover {
+      border-color: #2563eb;
+      transform: translateY(-1px);
+    }
+
+    .country-item.active,
+    .service-item.active {
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
+
+    .country-item strong,
+    .service-item strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .service-price {
+      font-weight: 800;
+      color: #2563eb;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    th {
+      color: #64748b;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .badge {
+      display: inline-flex;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .badge-pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-approved,
+    .badge-success,
+    .badge-paid {
+      background: #d1fae5;
+      color: #047857;
+    }
+
+    .badge-rejected,
+    .badge-failed {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .deposit-box {
+      border: 1px solid #dbeafe;
+      background: #eff6ff;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .payment-detail {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .payment-detail div {
+      background: white;
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .payment-detail small {
+      display: block;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .activity-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .activity-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      padding: 14px 0;
+      border-bottom: 1px solid #edf0f3;
+    }
+
+    .activity-row:last-child {
+      border-bottom: 0;
+    }
+
+    .activity-row small {
+      color: #64748b;
+    }
+
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 9999;
+      max-width: 360px;
+      background: #0f172a;
+      color: white;
+      padding: 13px 16px;
+      border-radius: 10px;
+      box-shadow: 0 10px 35px rgba(0,0,0,.2);
+    }
+
+    .admin-actions {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .receipt-link {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .empty-state {
+      padding: 30px;
+      text-align: center;
+      color: #64748b;
+    }
+
+    .loading {
+      padding: 20px;
+      text-align: center;
+      color: #64748b;
+    }
+
+    footer {
+      margin-top: 30px;
+      padding: 25px 10px;
+      text-align: center;
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    footer a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      background: rgba(15,23,42,.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 500px;
+      background: white;
+      border-radius: 16px;
+      padding: 22px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .modal-close {
+      border: 0;
+      background: #f1f5f9;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    @media(max-width: 1000px) {
+      .cards {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+
+      .country-grid,
+      .service-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+    }
+
+    @media(max-width: 750px) {
+      .sidebar {
+        width: 250px !important;
+        transform: translateX(-100%);
+        transition: transform .2s ease;
+        z-index: 8000;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main {
+        margin-left: 0 !important;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 13px 16px;
+        background: white;
+        border-bottom: 1px solid #e5e7eb;
+        position: sticky;
+        top: 0;
+        z-index: 7000;
+      }
+
+      .menu-btn {
+        border: 0;
+        background: #f1f5f9;
+        padding: 9px 12px;
+        border-radius: 9px;
+        cursor: pointer;
+      }
+
+      .cards,
+      .grid-2,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .country-grid,
+      .service-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .payment-detail {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-<div id="toast" class="toast"></div>
-
-
 <!-- =========================================================
-     AUTH PAGE
+     AUTH
 ========================================================= -->
 
-<div id="authPage" class="auth-page">
+<section id="auth" class="auth-page">
 
   <div class="auth-card">
 
-    <div class="brand auth-brand">
+    <div class="brand-large">
+      <div class="logo-mark">GS</div>
 
-      <div class="brand-mark">G</div>
+      <h1>Global Virtual Sim Web</h1>
 
-      <div>
-        <strong>Global Virtual Sim Web</strong>
-        <span>Virtual numbers worldwide</span>
-      </div>
+      <p>
+        Virtual numbers, SMS and communication services worldwide.
+      </p>
+    </div>
+
+    <div class="auth-tabs">
+
+      <button
+        id="loginTab"
+        class="active"
+        type="button"
+      >
+        Login
+      </button>
+
+      <button
+        id="registerTab"
+        type="button"
+      >
+        Create Account
+      </button>
 
     </div>
 
+    <form id="authForm">
 
-    <!-- ================= LOGIN ================= -->
-
-    <div id="loginBox">
-
-      <h1>Welcome back</h1>
-
-      <p class="muted">
-        Login to your Global Virtual Sim account.
-      </p>
-
-
-      <form id="loginForm">
-
-        <label>Email</label>
-
-        <input
-          type="email"
-          id="loginEmail"
-          placeholder="Enter your email"
-          autocomplete="email"
-          required
-        >
-
-
-        <label>Password</label>
-
-        <div class="password-wrap">
-
-          <input
-            type="password"
-            id="loginPassword"
-            placeholder="Enter your password"
-            autocomplete="current-password"
-            required
-          >
-
-          <button
-            type="button"
-            class="password-toggle"
-            data-target="loginPassword"
-          >👁</button>
-
-        </div>
-
-
-        <button
-          type="submit"
-          id="loginSubmit"
-          class="btn btn-primary full"
-        >
-          Login
-        </button>
-
-      </form>
-
-
-      <p class="auth-switch">
-
-        Don't have an account?
-
-        <button
-          type="button"
-          id="showRegister"
-        >
-          Create Account
-        </button>
-
-      </p>
-
-    </div>
-
-
-    <!-- ================= REGISTER ================= -->
-
-    <div id="registerBox" style="display:none">
-
-      <h1>Create account</h1>
-
-      <p class="muted">
-        Create your Global Virtual Sim account.
-      </p>
-
-
-      <form id="registerForm">
-
+      <div
+        id="nameField"
+        class="field hidden"
+      >
         <label>Full Name</label>
 
         <input
+          id="fullName"
           type="text"
-          id="registerName"
-          placeholder="Your full name"
           autocomplete="name"
-          required
-        >
+          placeholder="Enter your full name"
+        />
+      </div>
 
-
+      <div
+        id="usernameField"
+        class="field hidden"
+      >
         <label>Username</label>
 
         <input
+          id="username"
           type="text"
-          id="registerUsername"
-          placeholder="Choose a username"
           autocomplete="username"
-          required
-        >
+          placeholder="Choose a username"
+        />
+      </div>
 
+      <div
+        id="referralField"
+        class="field hidden"
+      >
+        <label>Referral Code</label>
+
+        <input
+          id="referralCode"
+          type="text"
+          placeholder="Optional referral code"
+        />
+      </div>
+
+      <div class="field">
 
         <label>Email</label>
 
         <input
+          id="email"
           type="email"
-          id="registerEmail"
-          placeholder="Enter your email"
           autocomplete="email"
           required
-        >
+          placeholder="you@example.com"
+        />
 
+      </div>
+
+      <div class="field">
 
         <label>Password</label>
 
         <div class="password-wrap">
 
           <input
+            id="password"
             type="password"
-            id="registerPassword"
-            placeholder="Create a password"
-            minlength="6"
-            autocomplete="new-password"
+            autocomplete="current-password"
             required
-          >
+            minlength="6"
+            placeholder="Enter your password"
+          />
 
           <button
-            type="button"
             class="password-toggle"
-            data-target="registerPassword"
-          >👁</button>
+            type="button"
+            data-password="password"
+          >
+            👁
+          </button>
 
         </div>
 
+      </div>
+
+      <div
+        id="confirmPasswordField"
+        class="field hidden"
+      >
 
         <label>Confirm Password</label>
 
         <div class="password-wrap">
 
           <input
+            id="confirmPassword"
             type="password"
-            id="registerConfirmPassword"
-            placeholder="Confirm your password"
-            minlength="6"
             autocomplete="new-password"
-            required
-          >
+            placeholder="Confirm your password"
+          />
 
           <button
-            type="button"
             class="password-toggle"
-            data-target="registerConfirmPassword"
-          >👁</button>
+            type="button"
+            data-password="confirmPassword"
+          >
+            👁
+          </button>
 
         </div>
 
+      </div>
 
-        <label class="checkbox-row">
+      <label
+        id="termsField"
+        class="check-row hidden"
+      >
 
-          <input
-            type="checkbox"
-            id="registerTerms"
-            required
-          >
+        <input
+          id="termsCheck"
+          type="checkbox"
+        />
 
-          <span>
-            I agree to the Terms & Conditions and Privacy Policy.
-          </span>
+        <span>
+          I agree to the Terms & Conditions,
+          Privacy Policy and Acceptable Use Policy.
+        </span>
 
-        </label>
+      </label>
 
+      <button
+        id="authButton"
+        class="btn btn-primary full"
+        type="submit"
+      >
+        Login
+      </button>
 
-        <button
-          type="submit"
-          id="registerSubmit"
-          class="btn btn-primary full"
-        >
-          Create Account
-        </button>
+      <div id="authMsg"></div>
 
-      </form>
-
-
-      <p class="auth-switch">
-
-        Already have an account?
-
-        <button
-          type="button"
-          id="showLogin"
-        >
-          Login
-        </button>
-
-      </p>
-
-    </div>
+    </form>
 
   </div>
 
-</div>
-
+</section>
 
 
 <!-- =========================================================
-     MAIN APPLICATION
+     APPLICATION
 ========================================================= -->
 
-<div id="appPage" style="display:none">
+<div
+  id="app"
+  class="app hidden"
+>
+
+  <div class="topbar">
+
+    <button
+      id="menuBtn"
+      class="menu-btn"
+      type="button"
+    >
+      ☰
+    </button>
+
+    <strong>
+      Global Virtual Sim Web
+    </strong>
+
+    <button
+      id="logoutTop"
+      class="btn btn-secondary btn-small"
+      type="button"
+    >
+      Logout
+    </button>
+
+  </div>
 
 
-  <!-- ================= SIDEBAR ================= -->
+  <!-- =======================================================
+       SIDEBAR
+  ======================================================== -->
 
-  <aside class="sidebar">
+  <aside
+    id="sidebar"
+    class="sidebar"
+  >
 
     <div class="brand">
+      <strong>
+        Global Virtual Sim
+      </strong>
 
-      <div class="brand-mark">G</div>
-
-      <div>
-        <strong>Global Virtual Sim</strong>
-        <span>Worldwide services</span>
-      </div>
-
+      <small>
+        Web
+      </small>
     </div>
-
 
     <nav class="nav">
 
       <button
-        class="nav-item active"
-        data-page="dashboard"
+        data-page="home"
+        class="active"
+        type="button"
       >
         Dashboard
       </button>
 
-
       <button
-        class="nav-item"
         data-page="buy"
+        type="button"
       >
         Buy Number
       </button>
 
-
       <button
-        class="nav-item"
-        data-page="active"
+        data-page="activeNumbers"
+        type="button"
       >
         Active Numbers
       </button>
 
-
       <button
-        class="nav-item"
-        data-page="history"
+        data-page="orders"
+        type="button"
       >
         Order History
       </button>
 
-
       <button
-        class="nav-item"
         data-page="wallet"
+        type="button"
       >
         Wallet
       </button>
 
-
       <button
-        class="nav-item"
         data-page="support"
+        type="button"
       >
         Support
       </button>
 
-
       <button
-        class="nav-item"
         data-page="profile"
+        type="button"
       >
         Profile
       </button>
 
-
       <button
-        class="nav-item admin-only"
         id="adminNav"
         data-page="admin"
-        style="display:none"
+        class="hidden"
+        type="button"
       >
         Admin Dashboard
       </button>
 
-    </nav>
-
-
-    <div class="sidebar-bottom">
-
       <button
-        id="logoutBtn"
-        class="btn btn-secondary full"
+        id="logoutSide"
+        type="button"
       >
         Logout
       </button>
 
-    </div>
+    </nav>
 
   </aside>
 
 
-
-  <!-- ================= MAIN ================= -->
+  <!-- =======================================================
+       MAIN
+  ======================================================== -->
 
   <main class="main">
 
+    <!-- HOME -->
 
-    <header class="topbar">
+    <section
+      id="home"
+      class="page"
+    >
 
-      <div>
+      <div class="page-header">
 
-        <h2 id="pageTitle">
-          Dashboard
-        </h2>
+        <h1>
+          Welcome, <span id="nameOut">Member</span>
+        </h1>
 
-        <p
-          id="welcomeText"
-          class="muted"
-        >
-          Welcome back.
+        <p>
+          Manage your virtual numbers, wallet and orders.
         </p>
 
       </div>
 
-
-      <div class="user-chip">
-
-        <span id="userInitial">
-          U
-        </span>
-
-        <div>
-
-          <strong id="userDisplayName">
-            User
-          </strong>
-
-          <small id="userDisplayEmail"></small>
-
-        </div>
-
-      </div>
-
-    </header>
-
-
-
-    <!-- =====================================================
-         DASHBOARD
-    ====================================================== -->
-
-    <section
-      id="page-dashboard"
-      class="page"
-    >
-
       <div class="cards">
 
+        <div class="stat-card">
 
-        <div class="card stat-card">
-
-          <span>
+          <div class="label">
             Wallet Balance
-          </span>
+          </div>
 
-          <strong id="dashboardBalance">
-            ₦0.00
-          </strong>
+          <div
+            id="homeBalance"
+            class="value"
+          >
+            ₦0
+          </div>
 
         </div>
 
+        <div class="stat-card">
 
-        <div class="card stat-card">
-
-          <span>
+          <div class="label">
             Active Numbers
-          </span>
+          </div>
 
-          <strong id="dashboardActive">
+          <div
+            id="activeCount"
+            class="value"
+          >
             0
-          </strong>
+          </div>
 
         </div>
 
+        <div class="stat-card">
 
-        <div class="card stat-card">
-
-          <span>
+          <div class="label">
             Total Orders
-          </span>
+          </div>
 
-          <strong id="dashboardOrders">
+          <div
+            id="orderCount"
+            class="value"
+          >
             0
-          </strong>
+          </div>
 
         </div>
 
+        <div class="stat-card">
 
-        <div class="card stat-card">
+          <div class="label">
+            Transactions
+          </div>
 
-          <span>
-            Account
-          </span>
-
-          <strong id="dashboardStatus">
-            Active
-          </strong>
+          <div
+            id="transactionCount"
+            class="value"
+          >
+            0
+          </div>
 
         </div>
 
       </div>
 
 
-
-      <div class="grid two">
-
+      <div class="grid-2">
 
         <div class="card">
 
-          <h3>
+          <h2>
             Buy a Virtual Number
-          </h3>
+          </h2>
 
           <p class="muted">
-            Choose a country and service to purchase
-            an available virtual number.
+            Select a country and available communication
+            service to purchase a number.
           </p>
 
           <button
             class="btn btn-primary"
-            data-page-link="buy"
+            data-page="buy"
+            type="button"
           >
             Browse Numbers
           </button>
@@ -496,79 +1040,43 @@
         </div>
 
 
-
         <div class="card">
 
-          <h3>
-            Your Account
-          </h3>
+          <h2>
+            Wallet
+          </h2>
 
-          <p>
-            <strong>Name:</strong>
-            <span id="dashName">—</span>
+          <p class="muted">
+            Add funds to your website wallet using the
+            available payment instructions.
           </p>
 
-          <p>
-            <strong>Username:</strong>
-            <span id="dashUsername">—</span>
-          </p>
-
-          <p>
-            <strong>Email:</strong>
-            <span id="dashEmail">—</span>
-          </p>
+          <button
+            class="btn btn-primary"
+            data-page="wallet"
+            type="button"
+          >
+            Open Wallet
+          </button>
 
         </div>
 
       </div>
 
-    </section>
 
+      <div class="card" style="margin-top:18px">
 
-
-    <!-- =====================================================
-         BUY NUMBER
-    ====================================================== -->
-
-    <section
-      id="page-buy"
-      class="page"
-      style="display:none"
-    >
-
-      <div class="card">
-
-        <h3>
-          Buy Virtual Number
-        </h3>
-
-        <p class="muted">
-          Select a country to view available services
-          and pricing.
-        </p>
-
-
-        <label>
-          Country
-        </label>
-
-
-        <select id="countrySelect">
-
-          <option value="">
-            Select a country
-          </option>
-
-        </select>
-
+        <h2>
+          Recent Activity
+        </h2>
 
         <div
-          id="servicesContainer"
-          style="margin-top:20px"
+          id="recentActivity"
+          class="activity-list"
         >
 
           <div class="empty-state">
-            Select a country to view services.
+            No recent activity.
           </div>
 
         </div>
@@ -578,172 +1086,669 @@
     </section>
 
 
-
-    <!-- =====================================================
-         ACTIVE NUMBERS
-    ====================================================== -->
+    <!-- BUY NUMBER -->
 
     <section
-      id="page-active"
-      class="page"
-      style="display:none"
+      id="buy"
+      class="page hidden"
     >
 
-      <div class="card">
+      <div class="page-header">
 
-        <h3>
-          Active Numbers
-        </h3>
+        <h1>
+          Buy Virtual Number
+        </h1>
 
-        <p class="muted">
-          Your currently active virtual numbers
-          will appear here.
+        <p>
+          Choose a country and service.
         </p>
 
-
-        <div id="activeNumbersContainer">
-
-          <div class="empty-state">
-            No active numbers yet.
-          </div>
-
-        </div>
-
       </div>
-
-    </section>
-
-
-
-    <!-- =====================================================
-         HISTORY
-    ====================================================== -->
-
-    <section
-      id="page-history"
-      class="page"
-      style="display:none"
-    >
-
-      <div class="card">
-
-        <h3>
-          Order History
-        </h3>
-
-        <p class="muted">
-          Your previous number orders will appear here.
-        </p>
-
-
-        <div id="historyContainer">
-
-          <div class="empty-state">
-            No orders yet.
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-
-    <!-- =====================================================
-         WALLET
-    ====================================================== -->
-
-    <section
-      id="page-wallet"
-      class="page"
-      style="display:none"
-    >
-
-      <div class="cards">
-
-
-        <div class="card stat-card">
-
-          <span>
-            Available Balance
-          </span>
-
-          <strong id="walletBalance">
-            ₦0.00
-          </strong>
-
-        </div>
-
-
-        <div class="card stat-card">
-
-          <span>
-            Total Deposited
-          </span>
-
-          <strong id="walletDeposited">
-            ₦0.00
-          </strong>
-
-        </div>
-
-
-        <div class="card stat-card">
-
-          <span>
-            Total Spent
-          </span>
-
-          <strong id="walletSpent">
-            ₦0.00
-          </strong>
-
-        </div>
-
-      </div>
-
 
 
       <div class="card">
 
         <h3>
-          Wallet
+          Choose Country
         </h3>
 
-        <p class="muted">
-          Your customer wallet will be connected
-          to the deposit system in the next stage.
-        </p>
-
-
-        <button
-          class="btn btn-primary"
-          type="button"
-          onclick="showToast('Deposit system will be available shortly.')"
+        <div
+          id="countries"
+          class="country-grid"
         >
-          Deposit Funds
-        </button>
+
+          <div class="loading">
+            Loading countries…
+          </div>
+
+        </div>
 
       </div>
-
 
 
       <div
+        id="servicesCard"
+        class="card hidden"
+        style="margin-top:18px"
+      >
+
+        <h3>
+          Available Services
+        </h3>
+
+        <div
+          id="services"
+          class="service-grid"
+        >
+
+          <div class="loading">
+            Select a country first.
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div
+        id="orderPreview"
+        class="card hidden"
+        style="margin-top:18px"
+      >
+
+        <h3>
+          Confirm Purchase
+        </h3>
+
+        <div class="grid-2">
+
+          <div>
+            <p>
+              <strong>Country:</strong>
+              <span id="selectedCountryText">—</span>
+            </p>
+
+            <p>
+              <strong>Service:</strong>
+              <span id="selectedServiceText">—</span>
+            </p>
+
+            <p>
+              <strong>Price:</strong>
+              <span
+                id="selectedPriceText"
+                class="number-big"
+              >
+                ₦0
+              </span>
+            </p>
+          </div>
+
+          <div>
+
+            <p class="muted">
+              Your website wallet will be charged only
+              when the purchase is successfully completed.
+            </p>
+
+            <button
+              id="purchaseButton"
+              class="btn btn-primary"
+              type="button"
+            >
+              Purchase Number
+            </button>
+
+          </div>
+
+        </div>
+
+        <div id="purchaseMsg"></div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ACTIVE NUMBERS -->
+
+    <section
+      id="activeNumbers"
+      class="page hidden"
+    >
+
+      <div class="page-header">
+
+        <h1>
+          Active Numbers
+        </h1>
+
+        <p>
+          Numbers that are currently active or awaiting
+          communication.
+        </p>
+
+      </div>
+
+      <div class="card">
+
+        <div
+          id="activeNumbersList"
+          class="activity-list"
+        >
+
+          <div class="loading">
+            Loading active numbers…
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ORDER HISTORY -->
+
+    <section
+      id="orders"
+      class="page hidden"
+    >
+
+      <div class="page-header">
+
+        <h1>
+          Order History
+        </h1>
+
+        <p>
+          Your virtual-number purchase history.
+        </p>
+
+      </div>
+
+      <div class="card">
+
+        <div class="table-wrap">
+
+          <table>
+
+            <thead>
+
+              <tr>
+                <th>Date</th>
+                <th>Country</th>
+                <th>Service</th>
+                <th>Number</th>
+                <th>Price</th>
+                <th>Status</th>
+              </tr>
+
+            </thead>
+
+            <tbody id="ordersTable">
+
+              <tr>
+                <td colspan="6">
+                  Loading…
+                </td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- WALLET -->
+
+    <section
+      id="wallet"
+      class="page hidden"
+    >
+
+      <div class="page-header">
+
+        <h1>
+          Wallet
+        </h1>
+
+        <p>
+          Manage your balance, deposits and transactions.
+        </p>
+
+      </div>
+
+
+      <div class="cards">
+
+        <div class="stat-card">
+
+          <div class="label">
+            Available Balance
+          </div>
+
+          <div
+            id="walletBalance"
+            class="value"
+          >
+            ₦0
+          </div>
+
+        </div>
+
+        <div class="stat-card">
+
+          <div class="label">
+            Total Deposited
+          </div>
+
+          <div
+            id="totalDeposited"
+            class="value"
+          >
+            ₦0
+          </div>
+
+        </div>
+
+        <div class="stat-card">
+
+          <div class="label">
+            Total Spent
+          </div>
+
+          <div
+            id="totalSpent"
+            class="value"
+          >
+            ₦0
+          </div>
+
+        </div>
+
+        <div class="stat-card">
+
+          <div class="label">
+            Pending Deposits
+          </div>
+
+          <div
+            id="pendingDeposits"
+            class="value"
+          >
+            ₦0
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- PAYMENT INSTRUCTIONS -->
+
+      <div class="deposit-box">
+
+        <h3>
+          Add Money to Your Wallet
+        </h3>
+
+        <p>
+          Make a transfer to the account below, then submit
+          your deposit details and payment receipt.
+        </p>
+
+        <div class="payment-detail">
+
+          <div>
+
+            <small>
+              Payment Method
+            </small>
+
+            <strong>
+              OPay
+            </strong>
+
+          </div>
+
+          <div>
+
+            <small>
+              Account Number
+            </small>
+
+            <strong>
+              9136540119
+            </strong>
+
+          </div>
+
+          <div>
+
+            <small>
+              Account Name
+            </small>
+
+            <strong>
+              Kelechi James
+            </strong>
+
+          </div>
+
+          <div>
+
+            <small>
+              Approval
+            </small>
+
+            <strong>
+              Manual verification
+            </strong>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- DEPOSIT FORM -->
+
+      <div class="card">
+
+        <h3>
+          Submit Deposit
+        </h3>
+
+        <form id="depositForm">
+
+          <div class="grid-2">
+
+            <div class="field">
+
+              <label>
+                Amount (₦)
+              </label>
+
+              <input
+                id="depositAmount"
+                type="number"
+                min="1"
+                step="0.01"
+                required
+                placeholder="e.g. 3000"
+              />
+
+            </div>
+
+            <div class="field">
+
+              <label>
+                Payment Reference
+              </label>
+
+              <input
+                id="depositReference"
+                type="text"
+                placeholder="OPay transfer reference"
+              />
+
+            </div>
+
+          </div>
+
+          <div class="field">
+
+            <label>
+              Payment Receipt
+            </label>
+
+            <input
+              id="depositReceipt"
+              type="file"
+              accept="image/*,.pdf"
+              required
+            />
+
+          </div>
+
+          <div class="field">
+
+            <label>
+              Note
+            </label>
+
+            <textarea
+              id="depositNote"
+              rows="3"
+              placeholder="Optional note"
+            ></textarea>
+
+          </div>
+
+          <button
+            class="btn btn-primary"
+            type="submit"
+          >
+            Submit Deposit
+          </button>
+
+          <div id="depositMsg"></div>
+
+        </form>
+
+      </div>
+
+
+      <!-- WITHDRAWAL -->
+
+      <div
         class="card"
-        style="margin-top:20px"
+        style="margin-top:18px"
+      >
+
+        <h3>
+          Withdraw Funds
+        </h3>
+
+        <p class="muted">
+          Minimum withdrawal is ₦1,000.
+        </p>
+
+        <button
+          id="withdraw"
+          class="btn btn-primary"
+          type="button"
+        >
+          Request Withdrawal
+        </button>
+
+        <form
+          id="payoutForm"
+          class="hidden"
+          style="margin-top:18px"
+        >
+
+          <div class="grid-2">
+
+            <div class="field">
+
+              <label>
+                Bank
+              </label>
+
+              <select id="bankName" required>
+
+                <option value="">
+                  Select bank
+                </option>
+
+                <option>Access Bank</option>
+                <option>Fidelity Bank</option>
+                <option>First Bank</option>
+                <option>GTBank</option>
+                <option>Moniepoint</option>
+                <option>OPay</option>
+                <option>PalmPay</option>
+                <option>Polaris Bank</option>
+                <option>Stanbic IBTC</option>
+                <option>UBA</option>
+                <option>Union Bank</option>
+                <option>Wema Bank</option>
+                <option>Zenith Bank</option>
+                <option>Other</option>
+
+              </select>
+
+            </div>
+
+            <div class="field">
+
+              <label>
+                Account Number
+              </label>
+
+              <input
+                id="accountNumber"
+                type="text"
+                inputmode="numeric"
+                maxlength="10"
+                required
+                placeholder="10-digit account number"
+              />
+
+            </div>
+
+          </div>
+
+
+          <div class="grid-2">
+
+            <div class="field">
+
+              <label>
+                Account Name
+              </label>
+
+              <input
+                id="accountName"
+                type="text"
+                required
+                placeholder="Account name"
+              />
+
+            </div>
+
+            <div class="field">
+
+              <label>
+                Amount (₦)
+              </label>
+
+              <input
+                id="withdrawAmount"
+                type="number"
+                min="1000"
+                step="0.01"
+                required
+                placeholder="Minimum ₦1,000"
+              />
+
+            </div>
+
+          </div>
+
+          <button
+            class="btn btn-primary"
+            type="submit"
+          >
+            Submit Withdrawal
+          </button>
+
+          <button
+            id="cancelWithdraw"
+            class="btn btn-secondary"
+            type="button"
+          >
+            Cancel
+          </button>
+
+          <div id="withdrawMsg"></div>
+
+        </form>
+
+      </div>
+
+
+      <!-- TRANSACTION HISTORY -->
+
+      <div
+        class="card"
+        style="margin-top:18px"
       >
 
         <h3>
           Transaction History
         </h3>
 
+        <div
+          id="transactionHistory"
+          class="activity-list"
+        >
 
-        <div id="transactionContainer">
-
-          <div class="empty-state">
-            No transactions yet.
+          <div class="loading">
+            Loading transactions…
           </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- DEPOSIT HISTORY -->
+
+      <div
+        class="card"
+        style="margin-top:18px"
+      >
+
+        <h3>
+          Deposit History
+        </h3>
+
+        <div class="table-wrap">
+
+          <table>
+
+            <thead>
+
+              <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Reference</th>
+                <th>Status</th>
+              </tr>
+
+            </thead>
+
+            <tbody id="depositHistory">
+
+              <tr>
+                <td colspan="5">
+                  Loading…
+                </td>
+              </tr>
+
+            </tbody>
+
+          </table>
 
         </div>
 
@@ -752,32 +1757,36 @@
     </section>
 
 
-
-    <!-- =====================================================
-         SUPPORT
-    ====================================================== -->
+    <!-- SUPPORT -->
 
     <section
-      id="page-support"
-      class="page"
-      style="display:none"
+      id="support"
+      class="page hidden"
     >
 
-      <div class="grid two">
+      <div class="page-header">
 
+        <h1>
+          Support
+        </h1>
+
+        <p>
+          Need help? Contact Global Virtual Sim Web.
+        </p>
+
+      </div>
+
+      <div class="grid-2">
 
         <div class="card">
 
           <h3>
-            Customer Support
+            Email Support
           </h3>
 
           <p class="muted">
-            Need help with your account, wallet
-            or virtual number?
-            Contact our support team.
+            For account, wallet and service questions.
           </p>
-
 
           <a
             href="mailto:globalsimwebsite@gmail.com"
@@ -788,23 +1797,15 @@
 
         </div>
 
-
-
         <div class="card">
 
           <h3>
-            Support Hours
+            WhatsApp
           </h3>
 
-          <p>
-            <strong>
-              24/7 Support
-            </strong>
-          </p>
-
           <p class="muted">
-            We aim to respond to customer requests
-            as quickly as possible.
+            WhatsApp support can be added here when your
+            official support number is ready.
           </p>
 
         </div>
@@ -814,79 +1815,86 @@
     </section>
 
 
-
-    <!-- =====================================================
-         PROFILE
-    ====================================================== -->
+    <!-- PROFILE -->
 
     <section
-      id="page-profile"
-      class="page"
-      style="display:none"
+      id="profile"
+      class="page hidden"
     >
+
+      <div class="page-header">
+
+        <h1>
+          Profile
+        </h1>
+
+        <p>
+          Your Global Virtual Sim Web account information.
+        </p>
+
+      </div>
 
       <div class="card">
 
-        <h3>
-          My Profile
-        </h3>
+        <div class="field">
 
-
-        <div class="profile-row">
-
-          <span>
+          <label>
             Full Name
-          </span>
+          </label>
 
-          <strong id="profileName">
-            —
-          </strong>
+          <input
+            id="profileName"
+            type="text"
+            readonly
+          />
 
         </div>
 
+        <div class="field">
 
-        <div class="profile-row">
-
-          <span>
+          <label>
             Username
-          </span>
+          </label>
 
-          <strong id="profileUsername">
-            —
-          </strong>
+          <input
+            id="profileUsername"
+            type="text"
+            readonly
+          />
 
         </div>
 
+        <div class="field">
 
-        <div class="profile-row">
-
-          <span>
+          <label>
             Email
-          </span>
+          </label>
 
-          <strong id="profileEmail">
-            —
-          </strong>
+          <input
+            id="profileEmail"
+            type="email"
+            readonly
+          />
 
         </div>
 
+        <div class="field">
 
-        <div class="profile-row">
+          <label>
+            Referral Code
+          </label>
 
-          <span>
-            Account Role
-          </span>
-
-          <strong id="profileRole">
-            user
-          </strong>
+          <input
+            id="profileReferral"
+            type="text"
+            readonly
+          />
 
         </div>
 
       </div>
 
     </section>
-
 
 
     <!-- =====================================================
@@ -894,77 +1902,165 @@
     ====================================================== -->
 
     <section
-      id="page-admin"
-      class="page"
-      style="display:none"
+      id="admin"
+      class="page hidden"
     >
 
-      <div class="card">
+      <div class="page-header">
 
-        <h3>
+        <h1>
           Admin Dashboard
-        </h3>
+        </h1>
 
-        <p class="muted">
-          Administrator controls will be connected
-          to the secure backend as we build
-          the management system.
+        <p>
+          Manage deposits and monitor the platform.
         </p>
 
       </div>
 
+      <div
+        id="adminMsg"
+        class="msg"
+      ></div>
+
 
       <div class="cards">
 
+        <div class="stat-card">
 
-        <div class="card stat-card">
+          <div class="label">
+            Registered Users
+          </div>
 
-          <span>
-            Total Users
-          </span>
-
-          <strong>
-            —
-          </strong>
-
-        </div>
-
-
-        <div class="card stat-card">
-
-          <span>
-            Customer Wallets
-          </span>
-
-          <strong>
-            —
-          </strong>
+          <div
+            id="adminUsers"
+            class="value"
+          >
+            0
+          </div>
 
         </div>
 
+        <div class="stat-card">
 
-        <div class="card stat-card">
+          <div class="label">
+            Total Orders
+          </div>
 
-          <span>
-            Orders
-          </span>
-
-          <strong>
-            —
-          </strong>
+          <div
+            id="adminOrders"
+            class="value"
+          >
+            0
+          </div>
 
         </div>
 
+        <div class="stat-card">
 
-        <div class="card stat-card">
+          <div class="label">
+            Wallet Deposits
+          </div>
 
-          <span>
-            Business Profit
-          </span>
+          <div
+            id="adminDeposits"
+            class="value"
+          >
+            ₦0
+          </div>
 
-          <strong>
-            —
-          </strong>
+        </div>
+
+        <div class="stat-card">
+
+          <div class="label">
+            Pending Deposits
+          </div>
+
+          <div
+            id="adminPendingDeposits"
+            class="value"
+          >
+            0
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- ADMIN DEPOSITS -->
+
+      <div class="card">
+
+        <h2>
+          Deposit Requests
+        </h2>
+
+        <div class="table-wrap">
+
+          <table>
+
+            <thead>
+
+              <tr>
+
+                <th>Date</th>
+                <th>User</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Reference</th>
+                <th>Status</th>
+                <th>Receipt</th>
+                <th>Action</th>
+
+              </tr>
+
+            </thead>
+
+            <tbody id="adminDepositsTable">
+
+              <tr>
+                <td colspan="8">
+                  Loading…
+                </td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+
+      <!-- ADMIN PRICING -->
+
+      <div
+        class="card"
+        style="margin-top:18px"
+      >
+
+        <h2>
+          Pricing
+        </h2>
+
+        <p class="muted">
+          Customer selling prices should be managed from
+          the secure pricing table/backend. Provider costs
+          should never be exposed to ordinary customers.
+        </p>
+
+        <div
+          id="pricingAdmin"
+          class="table-wrap"
+        >
+
+          <div class="empty-state">
+            Pricing management will appear here when the
+            secure admin pricing endpoint is connected.
+          </div>
 
         </div>
 
@@ -973,50 +2069,41 @@
     </section>
 
 
+    <!-- FOOTER -->
 
-    <!-- =====================================================
-         FOOTER
-    ====================================================== -->
-
-    <footer class="footer">
+    <footer>
 
       <div>
         © 2026 Global Virtual Sim Web. All rights reserved.
       </div>
 
-      <div>
+      <div style="margin-top:5px">
         Owned by KelChuk’s.
       </div>
 
+      <div style="margin-top:12px">
 
-      <div class="footer-links">
-
-        <button
-          onclick="showToast('Terms & Conditions coming soon.')"
-        >
+        <a href="#" data-legal="terms">
           Terms & Conditions
-        </button>
+        </a>
 
+        ·
 
-        <button
-          onclick="showToast('Privacy Policy coming soon.')"
-        >
+        <a href="#" data-legal="privacy">
           Privacy Policy
-        </button>
+        </a>
 
+        ·
 
-        <button
-          onclick="showToast('Refund Policy coming soon.')"
-        >
+        <a href="#" data-legal="refund">
           Refund Policy
-        </button>
+        </a>
 
+        ·
 
-        <button
-          onclick="showToast('Acceptable Use Policy coming soon.')"
-        >
+        <a href="#" data-legal="acceptable">
           Acceptable Use Policy
-        </button>
+        </a>
 
       </div>
 
@@ -1027,239 +2114,277 @@
 </div>
 
 
-
 <!-- =========================================================
-     JAVASCRIPT
+     RECEIPT MODAL
 ========================================================= -->
 
+<div
+  id="receiptModal"
+  class="modal hidden"
+>
+
+  <div class="modal-card">
+
+    <div class="modal-head">
+
+      <h3>
+        Payment Receipt
+      </h3>
+
+      <button
+        id="receiptClose"
+        class="modal-close"
+        type="button"
+      >
+        ×
+      </button>
+
+    </div>
+
+    <div id="receiptContent">
+      Loading receipt…
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- TOAST -->
+
+<div
+  id="toast"
+  class="toast hidden"
+></div>
+
+
 <script>
-"use strict";
+
+/* =========================================================
+   SUPABASE
+========================================================= */
+
+const SUPABASE_URL =
+  "https://rfitbmkizfmwfqqskwhy.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
+
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+  );
 
 
 /* =========================================================
-   GLOBAL STATE
+   STATE
 ========================================================= */
 
-let supabaseClient = null;
 let currentUser = null;
 let currentProfile = null;
+
+let selectedCountry = null;
+let selectedService = null;
+let selectedPrice = 0;
+
+let countriesCache = [];
+let servicesCache = [];
 
 
 /* =========================================================
    HELPERS
 ========================================================= */
 
-function showToast(message, duration = 4000) {
-
-  const toast = document.getElementById("toast");
-
-  if (!toast) {
-    alert(message);
-    return;
-  }
-
-  toast.textContent = message;
-  toast.classList.add("show");
-
-  clearTimeout(window.toastTimer);
-
-  window.toastTimer = setTimeout(() => {
-
-    toast.classList.remove("show");
-
-  }, duration);
-}
-
-
-
-function money(value) {
-
-  const number = Number(value || 0);
-
-  return "₦" + number.toLocaleString("en-NG", {
-
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-
-  });
-}
-
+const $ = (id) =>
+  document.getElementById(id);
 
 
 function escapeHtml(value) {
 
   return String(value ?? "")
-
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 
 }
 
 
+function money(value) {
 
-/* =========================================================
-   TIMEOUT HELPER
-========================================================= */
+  return new Intl.NumberFormat(
+    "en-NG",
+    {
+      style: "currency",
+      currency: "NGN",
+      maximumFractionDigits: 2
+    }
+  ).format(Number(value || 0));
 
-function withTimeout(promise, milliseconds = 15000) {
+}
 
-  return Promise.race([
 
-    promise,
+function showToast(message) {
 
+  const toast = $("toast");
+
+  if (!toast) return;
+
+  toast.textContent = message;
+
+  toast.classList.remove("hidden");
+
+  setTimeout(() => {
+    toast.classList.add("hidden");
+  }, 3500);
+
+}
+
+
+function setMessage(id, message, type = "") {
+
+  const element = $(id);
+
+  if (!element) return;
+
+  element.textContent = message;
+
+  element.className =
+    `msg ${type ? type + "-msg" : ""}`;
+
+}
+
+
+async function withTimeout(
+  promise,
+  ms = 15000
+) {
+
+  let timer;
+
+  const timeout =
     new Promise((_, reject) => {
 
-      setTimeout(() => {
-
+      timer = setTimeout(() => {
         reject(
           new Error(
-            "The request timed out. Please check your internet connection and try again."
+            "The request took too long. Please try again."
           )
         );
+      }, ms);
 
-      }, milliseconds);
+    });
 
-    })
+  try {
 
-  ]);
+    return await Promise.race([
+      promise,
+      timeout
+    ]);
 
-}
+  } finally {
 
-
-
-/* =========================================================
-   SUPABASE
-========================================================= */
-
-function getSupabaseClient() {
-
-  if (
-    window.supabaseClient &&
-    typeof window.supabaseClient === "object" &&
-    window.supabaseClient.auth
-  ) {
-
-    supabaseClient = window.supabaseClient;
-
-    return supabaseClient;
+    clearTimeout(timer);
 
   }
 
-  return null;
-
 }
 
 
+/* =========================================================
+   PAGE NAVIGATION
+========================================================= */
 
-function verifySupabase(showError = true) {
+function navigateTo(pageName) {
 
-  const client = getSupabaseClient();
+  document
+    .querySelectorAll(".page")
+    .forEach(page => {
+      page.classList.add("hidden");
+    });
 
-  if (!client) {
 
-    console.error(
-      "Supabase client was not found."
-    );
+  const target =
+    $(pageName);
 
-    if (showError) {
+  if (target) {
+    target.classList.remove("hidden");
+  }
 
-      showToast(
-        "Supabase is not configured correctly. Please check supabase.js."
+
+  document
+    .querySelectorAll("[data-page]")
+    .forEach(button => {
+
+      button.classList.toggle(
+        "active",
+        button.dataset.page === pageName
       );
 
-    }
+    });
 
-    return false;
 
+  $("sidebar")
+    ?.classList.remove("open");
+
+
+  if (pageName === "buy") {
+    loadCountries();
   }
 
-  return true;
+  if (pageName === "activeNumbers") {
+    loadActiveNumbers();
+  }
+
+  if (pageName === "orders") {
+    loadOrderHistory();
+  }
+
+  if (pageName === "wallet") {
+    loadWalletData();
+  }
+
+  if (pageName === "admin") {
+    loadAdmin();
+  }
+
+  if (pageName === "profile") {
+    loadProfilePage();
+  }
 
 }
 
+
+/* Navigation buttons */
+
+document
+  .querySelectorAll("[data-page]")
+  .forEach(button => {
+
+    button.addEventListener(
+      "click",
+      () => {
+        navigateTo(button.dataset.page);
+      }
+    );
+
+  });
 
 
 /* =========================================================
-   AUTH PAGE
+   MOBILE MENU
 ========================================================= */
 
-function showAuthPage() {
-
-  const authPage =
-    document.getElementById("authPage");
-
-  const appPage =
-    document.getElementById("appPage");
-
-  if (authPage) {
-    authPage.style.display = "flex";
-  }
-
-  if (appPage) {
-    appPage.style.display = "none";
-  }
-
-}
-
-
-
-function showAppPage() {
-
-  const authPage =
-    document.getElementById("authPage");
-
-  const appPage =
-    document.getElementById("appPage");
-
-  if (authPage) {
-    authPage.style.display = "none";
-  }
-
-  if (appPage) {
-    appPage.style.display = "block";
-  }
-
-}
-
-
-
-function showLogin() {
-
-  document.getElementById("loginBox").style.display =
-    "block";
-
-  document.getElementById("registerBox").style.display =
-    "none";
-
-}
-
-
-
-function showRegister() {
-
-  document.getElementById("loginBox").style.display =
-    "none";
-
-  document.getElementById("registerBox").style.display =
-    "block";
-
-}
-
-
-
-document
-  .getElementById("showRegister")
-  .addEventListener("click", showRegister);
-
-
-
-document
-  .getElementById("showLogin")
-  .addEventListener("click", showLogin);
-
+$("menuBtn")
+  ?.addEventListener(
+    "click",
+    () => {
+      $("sidebar")
+        ?.classList.toggle("open");
+    }
+  );
 
 
 /* =========================================================
@@ -1267,409 +2392,275 @@ document
 ========================================================= */
 
 document
-  .querySelectorAll(".password-toggle")
+  .querySelectorAll("[data-password]")
   .forEach(button => {
 
-    button.addEventListener("click", () => {
+    button.addEventListener(
+      "click",
+      () => {
 
-      const targetId =
-        button.getAttribute("data-target");
+        const input =
+          $(button.dataset.password);
 
-      const input =
-        document.getElementById(targetId);
+        if (!input) return;
 
-      if (!input) return;
-
-      if (input.type === "password") {
-
-        input.type = "text";
-        button.textContent = "🙈";
-
-      } else {
-
-        input.type = "password";
-        button.textContent = "👁";
+        input.type =
+          input.type === "password"
+            ? "text"
+            : "password";
 
       }
-
-    });
+    );
 
   });
-
 
 
 /* =========================================================
-   REGISTER
+   AUTH MODE
 ========================================================= */
 
-document
-  .getElementById("registerForm")
-  .addEventListener("submit", async function(event) {
+let registerMode = false;
 
-    event.preventDefault();
 
-    if (!verifySupabase()) return;
+function setAuthMode(register) {
 
+  registerMode = register;
 
-    const fullName =
-      document
-        .getElementById("registerName")
-        .value
-        .trim();
+  $("loginTab")
+    ?.classList.toggle(
+      "active",
+      !register
+    );
 
+  $("registerTab")
+    ?.classList.toggle(
+      "active",
+      register
+    );
 
-    const username =
-      document
-        .getElementById("registerUsername")
-        .value
-        .trim();
 
+  [
+    "nameField",
+    "usernameField",
+    "referralField",
+    "confirmPasswordField",
+    "termsField"
+  ].forEach(id => {
 
-    const email =
-      document
-        .getElementById("registerEmail")
-        .value
-        .trim()
-        .toLowerCase();
-
-
-    const password =
-      document.getElementById(
-        "registerPassword"
-      ).value;
-
-
-    const confirmPassword =
-      document.getElementById(
-        "registerConfirmPassword"
-      ).value;
-
-
-    const terms =
-      document.getElementById(
-        "registerTerms"
-      ).checked;
-
-
-    if (
-      !fullName ||
-      !username ||
-      !email ||
-      !password
-    ) {
-
-      showToast(
-        "Please complete all required fields."
-      );
-
-      return;
-
-    }
-
-
-    if (password.length < 6) {
-
-      showToast(
-        "Password must be at least 6 characters."
-      );
-
-      return;
-
-    }
-
-
-    if (password !== confirmPassword) {
-
-      showToast(
-        "Passwords do not match."
-      );
-
-      return;
-
-    }
-
-
-    if (!terms) {
-
-      showToast(
-        "Please accept the Terms & Conditions."
-      );
-
-      return;
-
-    }
-
-
-    const submitButton =
-      document.getElementById(
-        "registerSubmit"
-      );
-
-
-    submitButton.disabled = true;
-
-    submitButton.textContent =
-      "Creating Account...";
-
-
-    try {
-
-      /*
-        IMPORTANT:
-
-        No OTP.
-        No confirmation code.
-        No confirmation-link handling.
-
-        Supabase Confirm Email must remain OFF.
-      */
-
-      const result =
-        await withTimeout(
-
-          supabaseClient.auth.signUp({
-
-            email: email,
-
-            password: password,
-
-            options: {
-
-              data: {
-
-                full_name: fullName,
-                username: username
-
-              }
-
-            }
-
-          }),
-
-          15000
-
-        );
-
-
-      const data = result.data;
-      const error = result.error;
-
-
-      if (error) {
-
-        throw error;
-
-      }
-
-
-      if (!data || !data.user) {
-
-        throw new Error(
-          "Supabase did not return a user account."
-        );
-
-      }
-
-
-      /*
-        We deliberately do NOT write to the profiles
-        table here.
-
-        This prevents an RLS/profile policy problem
-        from making account creation appear stuck.
-
-        The profile can be created securely with a
-        database trigger / backend in the next step.
-      */
-
-
-      document.getElementById(
-        "loginEmail"
-      ).value = email;
-
-
-      document.getElementById(
-        "loginPassword"
-      ).value = "";
-
-
-      document
-        .getElementById("registerForm")
-        .reset();
-
-
-      showLogin();
-
-
-      showToast(
-        "Account created successfully. Please login."
-      );
-
-
-    } catch (error) {
-
-      console.error(
-        "Registration error:",
-        error
-      );
-
-
-      let message =
-        error?.message ||
-        "Unable to create your account.";
-
-
-      /*
-        Make the most common Supabase messages
-        easier for the customer to understand.
-      */
-
-      if (
-        message
-          .toLowerCase()
-          .includes("user already registered")
-      ) {
-
-        message =
-          "An account with this email already exists. Please login.";
-
-      }
-
-
-      showToast(message);
-
-
-    } finally {
-
-      submitButton.disabled = false;
-
-      submitButton.textContent =
-        "Create Account";
-
-    }
+    $(id)?.classList.toggle(
+      "hidden",
+      !register
+    );
 
   });
 
+
+  $("authButton").textContent =
+    register
+      ? "Create Account"
+      : "Login";
+
+
+  $("authMsg").textContent = "";
+
+}
+
+
+$("loginTab")
+  ?.addEventListener(
+    "click",
+    () => setAuthMode(false)
+  );
+
+
+$("registerTab")
+  ?.addEventListener(
+    "click",
+    () => setAuthMode(true)
+  );
 
 
 /* =========================================================
-   LOGIN
+   REGISTER / LOGIN
 ========================================================= */
 
-document
-  .getElementById("loginForm")
-  .addEventListener("submit", async function(event) {
+$("authForm")
+  ?.addEventListener(
+    "submit",
+    async event => {
 
-    event.preventDefault();
+      event.preventDefault();
 
-    if (!verifySupabase()) return;
-
-
-    const email =
-      document
-        .getElementById("loginEmail")
-        .value
-        .trim()
-        .toLowerCase();
-
-
-    const password =
-      document.getElementById(
-        "loginPassword"
-      ).value;
-
-
-    if (!email || !password) {
-
-      showToast(
-        "Enter your email and password."
-      );
-
-      return;
-
-    }
-
-
-    const submitButton =
-      document.getElementById(
-        "loginSubmit"
+      setMessage(
+        "authMsg",
+        "Please wait…"
       );
 
 
-    submitButton.disabled = true;
+      try {
 
-    submitButton.textContent =
-      "Logging in...";
+        const email =
+          $("email")
+            .value
+            .trim();
+
+        const password =
+          $("password")
+            .value;
 
 
-    try {
+        if (!email || !password) {
+          throw new Error(
+            "Enter your email and password."
+          );
+        }
 
-      const result =
-        await withTimeout(
 
-          supabaseClient.auth.signInWithPassword({
+        if (registerMode) {
 
-            email: email,
-            password: password
+          const fullName =
+            $("fullName")
+              .value
+              .trim();
 
-          }),
+          const username =
+            $("username")
+              .value
+              .trim();
 
-          15000
+          const referralCode =
+            $("referralCode")
+              .value
+              .trim();
 
+          const confirmPassword =
+            $("confirmPassword")
+              .value;
+
+
+          if (!fullName) {
+            throw new Error(
+              "Enter your full name."
+            );
+          }
+
+
+          if (!username) {
+            throw new Error(
+              "Choose a username."
+            );
+          }
+
+
+          if (password.length < 6) {
+            throw new Error(
+              "Password must be at least 6 characters."
+            );
+          }
+
+
+          if (password !== confirmPassword) {
+            throw new Error(
+              "Passwords do not match."
+            );
+          }
+
+
+          if (!$("termsCheck").checked) {
+            throw new Error(
+              "Please accept the terms before creating your account."
+            );
+          }
+
+
+          const result =
+            await withTimeout(
+              supabaseClient.auth.signUp({
+                email,
+                password,
+
+                options: {
+                  data: {
+                    full_name: fullName,
+                    username,
+                    referral_code:
+                      referralCode || null
+                  }
+                }
+              })
+            );
+
+
+          if (result.error) {
+            throw result.error;
+          }
+
+
+          /*
+            Email confirmation is expected to be OFF
+            in the Supabase project.
+          */
+
+          if (result.data.session) {
+
+            currentUser =
+              result.data.user;
+
+            await loadAuthenticatedUser();
+
+          } else {
+
+            setMessage(
+              "authMsg",
+              "Account created successfully. You can now log in.",
+              "success"
+            );
+
+            setAuthMode(false);
+
+            $("email").value =
+              email;
+
+          }
+
+
+        } else {
+
+          const result =
+            await withTimeout(
+              supabaseClient.auth
+                .signInWithPassword({
+                  email,
+                  password
+                })
+            );
+
+
+          if (result.error) {
+            throw result.error;
+          }
+
+
+          currentUser =
+            result.data.user;
+
+          await loadAuthenticatedUser();
+
+        }
+
+      } catch (error) {
+
+        setMessage(
+          "authMsg",
+          error.message ||
+          "Unable to continue.",
+          "error"
         );
-
-
-      const data = result.data;
-      const error = result.error;
-
-
-      if (error) {
-
-        throw error;
 
       }
 
-
-      if (!data || !data.user) {
-
-        throw new Error(
-          "Login succeeded but no user session was returned."
-        );
-
-      }
-
-
-      currentUser = data.user;
-
-
-      await loadAuthenticatedUser();
-
-
-    } catch (error) {
-
-      console.error(
-        "Login error:",
-        error
-      );
-
-
-      showToast(
-        error?.message ||
-        "Unable to login."
-      );
-
-
-    } finally {
-
-      submitButton.disabled = false;
-
-      submitButton.textContent =
-        "Login";
-
     }
-
-  });
-
+  );
 
 
 /* =========================================================
@@ -1678,85 +2669,39 @@ document
 
 async function loadAuthenticatedUser() {
 
-  if (!verifySupabase(false)) {
-
-    showAuthPage();
-
-    return;
-
-  }
-
-
-  try {
-
-    const result =
-      await withTimeout(
-
-        supabaseClient.auth.getUser(),
-
-        10000
-
-      );
-
-
-    const user =
-      result?.data?.user;
-
-
-    if (!user) {
-
-      currentUser = null;
-
-      showAuthPage();
-
-      showLogin();
-
-      return;
-
+  const {
+    data: {
+      user
     }
+  } =
+    await supabaseClient.auth.getUser();
 
 
-    currentUser = user;
-
-
-    await loadProfile();
-
-
-    showAppPage();
-
-
-    updateUserInterface();
-
-
-    loadDashboardData();
-
-
-  } catch (error) {
-
-    console.error(
-      "Authenticated user error:",
-      error
-    );
-
-
-    currentUser = null;
-
-
-    showAuthPage();
-
-
-    showLogin();
-
-
-    showToast(
-      error?.message ||
-      "Unable to load your account."
-    );
-
+  if (!user) {
+    return;
   }
+
+
+  currentUser = user;
+
+
+  await loadProfile();
+
+
+  $("auth")
+    ?.classList.add("hidden");
+
+
+  $("app")
+    ?.classList.remove("hidden");
+
+
+  navigateTo("home");
+
+
+  await loadDashboardData();
 
 }
-
 
 
 /* =========================================================
@@ -1765,380 +2710,146 @@ async function loadAuthenticatedUser() {
 
 async function loadProfile() {
 
-  currentProfile = null;
-
-
   if (!currentUser) return;
 
 
-  try {
-
-    const result =
-      await withTimeout(
-
-        supabaseClient
-          .from("profiles")
-          .select("*")
-          .eq("id", currentUser.id)
-          .maybeSingle(),
-
-        8000
-
-      );
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select("*")
+      .eq("id", currentUser.id)
+      .maybeSingle();
 
 
-    const data = result.data;
-    const error = result.error;
-
-
-    if (error) {
-
-      /*
-        A missing profile should NOT prevent
-        the customer from logging in.
-      */
-
-      console.warn(
-        "Profile could not be loaded:",
-        error
-      );
-
-      return;
-
-    }
-
-
-    currentProfile = data || null;
-
-
-  } catch (error) {
-
-    /*
-      Profile problems must never block login.
-    */
-
+  if (error) {
     console.warn(
-      "Profile load warning:",
-      error
+      "Profile:",
+      error.message
     );
-
   }
 
-}
 
-
-
-/* =========================================================
-   UPDATE USER INTERFACE
-========================================================= */
-
-function updateUserInterface() {
-
-  if (!currentUser) return;
-
-
-  const metadata =
-    currentUser.user_metadata || {};
+  currentProfile =
+    data || {
+      id: currentUser.id,
+      full_name:
+        currentUser.user_metadata
+          ?.full_name ||
+        currentUser.email
+          ?.split("@")[0],
+      username:
+        currentUser.user_metadata
+          ?.username ||
+        "",
+      role: "user"
+    };
 
 
   const name =
-    currentProfile?.full_name ||
-    metadata.full_name ||
-    "User";
+    currentProfile.full_name ||
+    currentUser.email?.split("@")[0] ||
+    "Member";
 
 
-  const username =
-    currentProfile?.username ||
-    metadata.username ||
-    "—";
+  $("nameOut").textContent =
+    name;
 
 
-  const email =
-    currentUser.email ||
-    currentProfile?.email ||
-    "—";
+  $("profileName").value =
+    currentProfile.full_name || "";
 
 
-  document.getElementById(
-    "userDisplayName"
-  ).textContent = name;
+  $("profileUsername").value =
+    currentProfile.username || "";
 
 
-  document.getElementById(
-    "userDisplayEmail"
-  ).textContent = email;
+  $("profileEmail").value =
+    currentUser.email || "";
 
 
-  document.getElementById(
-    "userInitial"
-  ).textContent =
-    name.charAt(0).toUpperCase();
+  $("profileReferral").value =
+    currentProfile.referral_code || "";
 
 
-  document.getElementById(
-    "dashName"
-  ).textContent = name;
-
-
-  document.getElementById(
-    "dashUsername"
-  ).textContent = username;
-
-
-  document.getElementById(
-    "dashEmail"
-  ).textContent = email;
-
-
-  document.getElementById(
-    "profileName"
-  ).textContent = name;
-
-
-  document.getElementById(
-    "profileUsername"
-  ).textContent = username;
-
-
-  document.getElementById(
-    "profileEmail"
-  ).textContent = email;
-
-
-  document.getElementById(
-    "profileRole"
-  ).textContent =
-    currentProfile?.role || "user";
-
-
-  document.getElementById(
-    "welcomeText"
-  ).textContent =
-    "Welcome back, " + name + ".";
-
+  /*
+    Admin navigation is only UI.
+    Real admin authorization must also be enforced
+    by Supabase RLS/RPC functions.
+  */
 
   const isAdmin =
-    currentProfile?.role === "admin";
+    currentProfile.role === "admin";
 
 
-  const adminNav =
-    document.getElementById("adminNav");
-
-
-  if (adminNav) {
-
-    adminNav.style.display =
-      isAdmin ? "flex" : "none";
-
-  }
+  $("adminNav")
+    ?.classList.toggle(
+      "hidden",
+      !isAdmin
+    );
 
 }
-
 
 
 /* =========================================================
-   NAVIGATION
+   PROFILE PAGE
 ========================================================= */
 
-function navigateTo(pageName) {
+function loadProfilePage() {
 
-  document
-    .querySelectorAll(".page")
-    .forEach(page => {
+  if (!currentUser) return;
 
-      page.style.display = "none";
+  $("profileName").value =
+    currentProfile?.full_name || "";
 
-    });
+  $("profileUsername").value =
+    currentProfile?.username || "";
 
+  $("profileEmail").value =
+    currentUser.email || "";
 
-  const page =
-    document.getElementById(
-      "page-" + pageName
-    );
-
-
-  if (!page) return;
-
-
-  page.style.display = "block";
-
-
-  document
-    .querySelectorAll(".nav-item")
-    .forEach(item => {
-
-      item.classList.remove("active");
-
-    });
-
-
-  const navItem =
-    document.querySelector(
-      `.nav-item[data-page="${pageName}"]`
-    );
-
-
-  if (navItem) {
-
-    navItem.classList.add("active");
-
-  }
-
-
-  const titles = {
-
-    dashboard: "Dashboard",
-    buy: "Buy Number",
-    active: "Active Numbers",
-    history: "Order History",
-    wallet: "Wallet",
-    support: "Support",
-    profile: "Profile",
-    admin: "Admin Dashboard"
-
-  };
-
-
-  document.getElementById(
-    "pageTitle"
-  ).textContent =
-    titles[pageName] || "Dashboard";
-
-
-  if (pageName === "buy") {
-
-    loadCountries();
-
-  }
-
-
-  if (pageName === "active") {
-
-    loadActiveNumbers();
-
-  }
-
-
-  if (pageName === "history") {
-
-    loadOrderHistory();
-
-  }
+  $("profileReferral").value =
+    currentProfile?.referral_code || "";
 
 }
-
-
-
-/* Navigation buttons */
-
-document
-  .querySelectorAll(".nav-item")
-  .forEach(item => {
-
-    item.addEventListener("click", () => {
-
-      const page =
-        item.getAttribute("data-page");
-
-
-      if (page === "admin") {
-
-        if (
-          currentProfile?.role !== "admin"
-        ) {
-
-          showToast(
-            "Administrator access required."
-          );
-
-          return;
-
-        }
-
-      }
-
-
-      navigateTo(page);
-
-    });
-
-  });
-
-
-
-/* Dashboard page buttons */
-
-document
-  .querySelectorAll("[data-page-link]")
-  .forEach(button => {
-
-    button.addEventListener("click", () => {
-
-      navigateTo(
-        button.getAttribute(
-          "data-page-link"
-        )
-      );
-
-    });
-
-  });
-
 
 
 /* =========================================================
    LOGOUT
 ========================================================= */
 
-document
-  .getElementById("logoutBtn")
-  .addEventListener("click", async () => {
+async function logout() {
 
-    if (!verifySupabase()) return;
+  await supabaseClient.auth.signOut();
 
+  currentUser = null;
+  currentProfile = null;
 
-    try {
+  $("app")
+    ?.classList.add("hidden");
 
-      await withTimeout(
+  $("auth")
+    ?.classList.remove("hidden");
 
-        supabaseClient.auth.signOut(),
+  setAuthMode(false);
 
-        10000
-
-      );
-
-
-      currentUser = null;
-      currentProfile = null;
+}
 
 
-      showAuthPage();
-
-      showLogin();
-
-
-      showToast(
-        "You have been logged out."
-      );
+$("logoutTop")
+  ?.addEventListener(
+    "click",
+    logout
+  );
 
 
-    } catch (error) {
-
-      console.error(
-        "Logout error:",
-        error
-      );
-
-
-      showToast(
-        error?.message ||
-        "Unable to logout."
-      );
-
-    }
-
-  });
-
+$("logoutSide")
+  ?.addEventListener(
+    "click",
+    logout
+  );
 
 
 /* =========================================================
@@ -2147,25 +2858,179 @@ document
 
 async function loadDashboardData() {
 
-  document.getElementById(
-    "dashboardBalance"
-  ).textContent =
-    "₦0.00";
+  if (!currentUser) return;
 
 
-  document.getElementById(
-    "dashboardActive"
-  ).textContent =
-    "0";
+  try {
+
+    const walletResult =
+      await supabaseClient
+        .from("wallets")
+        .select("balance")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
 
 
-  document.getElementById(
-    "dashboardOrders"
-  ).textContent =
-    "0";
+    const balance =
+      walletResult.data?.balance || 0;
+
+
+    $("homeBalance").textContent =
+      money(balance);
+
+
+    const ordersResult =
+      await supabaseClient
+        .from("orders")
+        .select("id,status")
+        .eq("user_id", currentUser.id);
+
+
+    const orders =
+      ordersResult.data || [];
+
+
+    $("orderCount").textContent =
+      orders.length;
+
+
+    const active =
+      orders.filter(order =>
+        [
+          "pending",
+          "active",
+          "success"
+        ].includes(
+          String(order.status)
+        )
+      );
+
+
+    $("activeCount").textContent =
+      active.length;
+
+
+    const txResult =
+      await supabaseClient
+        .from("wallet_transactions")
+        .select("id")
+        .eq("user_id", currentUser.id);
+
+
+    $("transactionCount").textContent =
+      txResult.data?.length || 0;
+
+
+    await loadRecentActivity();
+
+  } catch (error) {
+
+    console.warn(
+      "Dashboard:",
+      error.message
+    );
+
+  }
 
 }
 
+
+/* =========================================================
+   RECENT ACTIVITY
+========================================================= */
+
+async function loadRecentActivity() {
+
+  const box =
+    $("recentActivity");
+
+  if (!box || !currentUser) return;
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from("wallet_transactions")
+      .select(
+        "id,type,amount,description,created_at"
+      )
+      .eq("user_id", currentUser.id)
+      .order(
+        "created_at",
+        { ascending: false }
+      )
+      .limit(6);
+
+
+  if (error) {
+
+    box.innerHTML =
+      `<div class="empty-state">
+        ${escapeHtml(error.message)}
+      </div>`;
+
+    return;
+  }
+
+
+  if (!data?.length) {
+
+    box.innerHTML =
+      `<div class="empty-state">
+        No wallet activity yet.
+      </div>`;
+
+    return;
+
+  }
+
+
+  box.innerHTML =
+    data.map(item => {
+
+      const positive =
+        item.type === "deposit" ||
+        item.type === "refund" ||
+        item.type === "adjustment";
+
+
+      return `
+        <div class="activity-row">
+
+          <span>
+            <strong>
+              ${escapeHtml(
+                item.description ||
+                item.type
+              )}
+            </strong>
+
+            <br>
+
+            <small>
+              ${new Date(
+                item.created_at
+              ).toLocaleString("en-NG")}
+            </small>
+          </span>
+
+          <strong>
+            ${positive ? "+" : "-"}
+            ${money(
+              Math.abs(
+                Number(item.amount || 0)
+              )
+            )}
+          </strong>
+
+        </div>
+      `;
+
+    }).join("");
+
+}
 
 
 /* =========================================================
@@ -2174,438 +3039,572 @@ async function loadDashboardData() {
 
 async function loadCountries() {
 
-  const select =
-    document.getElementById(
-      "countrySelect"
-    );
+  const box =
+    $("countries");
+
+  if (!box) return;
 
 
-  select.innerHTML =
-    '<option value="">Loading countries...</option>';
+  box.innerHTML =
+    `<div class="loading">
+      Loading countries…
+    </div>`;
 
 
   try {
 
     const response =
-      await withTimeout(
-
-        fetch("/api/countries"),
-
-        15000
-
-      );
+      await fetch("/api/countries");
 
 
-    const result =
+    const data =
       await response.json();
 
 
     if (!response.ok) {
-
       throw new Error(
-        result?.error ||
+        data.message ||
+        data.error ||
         "Unable to load countries."
       );
-
     }
 
 
-    const countries =
-      Array.isArray(result)
-        ? result
-        : result?.data ||
-          result?.countries ||
-          [];
+    countriesCache =
+      Array.isArray(data)
+        ? data
+        : data.data || [];
 
 
-    select.innerHTML =
-      '<option value="">Select a country</option>';
+    if (!countriesCache.length) {
 
-
-    countries.forEach(country => {
-
-      const option =
-        document.createElement("option");
-
-
-      const id =
-        country.id ||
-        country.countryId ||
-        country.country_id;
-
-
-      const name =
-        country.name ||
-        country.countryName ||
-        country.country ||
-        country.title;
-
-
-      if (!id || !name) return;
-
-
-      option.value = id;
-
-      option.textContent = name;
-
-
-      select.appendChild(option);
-
-    });
-
-
-    if (!countries.length) {
-
-      select.innerHTML =
-        '<option value="">No countries available</option>';
-
-    }
-
-
-  } catch (error) {
-
-    console.error(
-      "Countries error:",
-      error
-    );
-
-
-    select.innerHTML =
-      '<option value="">Unable to load countries</option>';
-
-
-    showToast(
-      error?.message ||
-      "Unable to load countries."
-    );
-
-  }
-
-}
-
-
-
-/* =========================================================
-   COUNTRY CHANGE
-========================================================= */
-
-document
-  .getElementById("countrySelect")
-  .addEventListener(
-    "change",
-    async function() {
-
-      const countryId =
-        this.value;
-
-
-      if (!countryId) {
-
-        document.getElementById(
-          "servicesContainer"
-        ).innerHTML =
-          '<div class="empty-state">Select a country to view services.</div>';
-
-        return;
-
-      }
-
-
-      await loadServices(countryId);
-
-    }
-  );
-
-
-
-/* =========================================================
-   SERVICES
-========================================================= */
-
-async function loadServices(countryId) {
-
-  const container =
-    document.getElementById(
-      "servicesContainer"
-    );
-
-
-  container.innerHTML =
-    '<div class="empty-state">Loading services...</div>';
-
-
-  try {
-
-    const response =
-      await withTimeout(
-
-        fetch(
-          "/api/services?countryId=" +
-          encodeURIComponent(countryId)
-        ),
-
-        15000
-
-      );
-
-
-    const result =
-      await response.json();
-
-
-    if (!response.ok) {
-
-      throw new Error(
-        result?.error ||
-        "Unable to load services."
-      );
-
-    }
-
-
-    const services =
-      Array.isArray(result)
-        ? result
-        : result?.data ||
-          result?.services ||
-          [];
-
-
-    if (!services.length) {
-
-      container.innerHTML =
-        '<div class="empty-state">No services are currently available for this country.</div>';
+      box.innerHTML =
+        `<div class="empty-state">
+          No countries are currently available.
+        </div>`;
 
       return;
 
     }
 
 
-    container.innerHTML = "";
+    box.innerHTML =
+      countriesCache
+        .map(country => {
+
+          const id =
+            country.id ||
+            country.countryId;
+
+          const name =
+            country.name ||
+            country.countryName ||
+            "Unknown country";
+
+          const code =
+            country.code ||
+            country.countryCode ||
+            "";
 
 
-    services.forEach(service => {
+          return `
+            <div
+              class="country-item"
+              data-country-id="${escapeHtml(id)}"
+            >
 
-      const wrapper =
-        document.createElement("div");
+              <strong>
+                ${escapeHtml(name)}
+              </strong>
 
+              <span class="muted">
+                ${escapeHtml(code)}
+              </span>
 
-      wrapper.className =
-        "card service-card";
+            </div>
+          `;
 
-
-      const name =
-        service.name ||
-        service.serviceName ||
-        service.title ||
-        "Service";
-
-
-      const price =
-        service.price ||
-        service.amount ||
-        service.customerPrice ||
-        0;
+        })
+        .join("");
 
 
-      const serviceId =
-        service.serviceCountryPriceId ||
-        service.id ||
-        service.serviceId;
+    box
+      .querySelectorAll(
+        ".country-item"
+      )
+      .forEach(item => {
+
+        item.addEventListener(
+          "click",
+          () => {
+
+            box
+              .querySelectorAll(
+                ".country-item"
+              )
+              .forEach(x =>
+                x.classList.remove("active")
+              );
 
 
-      wrapper.innerHTML = `
-
-        <div>
-
-          <h4>
-            ${escapeHtml(name)}
-          </h4>
-
-          <p class="muted">
-            Virtual number service
-          </p>
-
-        </div>
-
-        <div>
-
-          <strong>
-            ${money(price)}
-          </strong>
-
-          <button
-            class="btn btn-primary"
-            type="button"
-          >
-            Buy
-          </button>
-
-        </div>
-
-      `;
+            item.classList.add("active");
 
 
-      const button =
-        wrapper.querySelector("button");
+            selectedCountry =
+              countriesCache.find(
+                country =>
+                  String(
+                    country.id ||
+                    country.countryId
+                  ) ===
+                  String(
+                    item.dataset.countryId
+                  )
+              );
 
 
-      button.addEventListener(
-        "click",
-        () => {
+            loadServices(
+              item.dataset.countryId
+            );
 
-          orderService(
-            serviceId,
-            name
-          );
+          }
+        );
 
-        }
-      );
-
-
-      container.appendChild(wrapper);
-
-    });
-
+      });
 
   } catch (error) {
 
-    console.error(
-      "Services error:",
-      error
-    );
-
-
-    container.innerHTML =
-      `<div class="empty-state">${escapeHtml(
-        error?.message ||
-        "Unable to load services."
-      )}</div>`;
+    box.innerHTML =
+      `<div class="empty-state">
+        ${escapeHtml(error.message)}
+      </div>`;
 
   }
 
 }
 
 
-
 /* =========================================================
-   ORDER
+   SERVICES
 ========================================================= */
 
-async function orderService(
-  serviceCountryPriceId,
-  serviceName
+async function loadServices(
+  countryId
 ) {
 
-  if (!serviceCountryPriceId) {
+  const card =
+    $("servicesCard");
 
-    showToast(
-      "This service is missing its provider ID."
-    );
-
-    return;
-
-  }
+  const box =
+    $("services");
 
 
-  if (!currentUser) {
-
-    showToast(
-      "Please login first."
-    );
-
-    return;
-
-  }
+  card?.classList.remove(
+    "hidden"
+  );
 
 
-  const confirmed =
-    confirm(
-      "Purchase " +
-      serviceName +
-      "?\n\nYour wallet balance will be checked before the order is completed."
-    );
-
-
-  if (!confirmed) return;
+  box.innerHTML =
+    `<div class="loading">
+      Loading services…
+    </div>`;
 
 
   try {
 
     const response =
-      await withTimeout(
-
-        fetch(
-          "/api/order",
-          {
-
-            method: "POST",
-
-            headers: {
-
-              "Content-Type":
-                "application/json"
-
-            },
-
-            body: JSON.stringify({
-
-              serviceCountryPriceId:
-                serviceCountryPriceId,
-
-              quantity: 1,
-
-              autoSearchServer: true
-
-            })
-
-          }
-        ),
-
-        20000
-
+      await fetch(
+        `/api/services?countryId=${encodeURIComponent(
+          countryId
+        )}`
       );
 
 
-    const result =
+    const data =
       await response.json();
 
 
     if (!response.ok) {
 
       throw new Error(
-        result?.error ||
-        "Unable to place order."
+        data.message ||
+        data.error ||
+        "Unable to load services."
       );
 
     }
 
 
-    showToast(
-      "Order submitted successfully."
-    );
+    servicesCache =
+      Array.isArray(data)
+        ? data
+        : data.data || [];
 
 
-    navigateTo("active");
+    if (!servicesCache.length) {
 
+      box.innerHTML =
+        `<div class="empty-state">
+          No services are available for this country.
+        </div>`;
+
+      return;
+
+    }
+
+
+    box.innerHTML =
+      servicesCache
+        .map(service => {
+
+          const prices =
+            service.prices ||
+            [];
+
+
+          const price =
+            prices[0];
+
+
+          const providerPrice =
+            Number(
+              price?.sellPrice ||
+              price?.promoPrice ||
+              service.retailSellPrice ||
+              service.minPrice ||
+              0
+            );
+
+
+          const displayPrice =
+            providerPrice;
+
+
+          return `
+            <div
+              class="service-item"
+              data-service-id="${escapeHtml(
+                service.id
+              )}"
+            >
+
+              <strong>
+                ${escapeHtml(
+                  service.name ||
+                  service.code ||
+                  "Service"
+                )}
+              </strong>
+
+              <span class="service-price">
+                ${money(displayPrice)}
+              </span>
+
+              <br>
+
+              <small class="muted">
+                Stock:
+                ${Number(
+                  price?.stock ||
+                  service.stock ||
+                  0
+                ).toLocaleString()}
+              </small>
+
+            </div>
+          `;
+
+        })
+        .join("");
+
+
+    box
+      .querySelectorAll(
+        ".service-item"
+      )
+      .forEach(item => {
+
+        item.addEventListener(
+          "click",
+          () => {
+
+            box
+              .querySelectorAll(
+                ".service-item"
+              )
+              .forEach(x =>
+                x.classList.remove("active")
+              );
+
+
+            item.classList.add("active");
+
+
+            selectedService =
+              servicesCache.find(
+                service =>
+                  String(service.id) ===
+                  String(
+                    item.dataset.serviceId
+                  )
+              );
+
+
+            preparePurchase();
+
+          }
+        );
+
+      });
 
   } catch (error) {
 
-    console.error(
-      "Order error:",
-      error
-    );
-
-
-    showToast(
-      error?.message ||
-      "Unable to place order."
-    );
+    box.innerHTML =
+      `<div class="empty-state">
+        ${escapeHtml(error.message)}
+      </div>`;
 
   }
 
 }
 
+
+/* =========================================================
+   PURCHASE PREVIEW
+========================================================= */
+
+function preparePurchase() {
+
+  if (!selectedCountry ||
+      !selectedService) {
+    return;
+  }
+
+
+  const prices =
+    selectedService.prices ||
+    [];
+
+
+  const priceObject =
+    prices[0] ||
+    {};
+
+
+  selectedPrice =
+    Number(
+      priceObject.promoPrice ||
+      priceObject.sellPrice ||
+      selectedService.retailSellPrice ||
+      selectedService.minPrice ||
+      0
+    );
+
+
+  /*
+    The provider's catalog price is displayed here
+    as the current service price until your secure
+    admin pricing layer is connected.
+
+    For production customer pricing, use your
+    server-side public pricing endpoint.
+  */
+
+
+  $("selectedCountryText").textContent =
+    selectedCountry.name ||
+    selectedCountry.countryName ||
+    "—";
+
+
+  $("selectedServiceText").textContent =
+    selectedService.name ||
+    selectedService.code ||
+    "—";
+
+
+  $("selectedPriceText").textContent =
+    money(selectedPrice);
+
+
+  $("orderPreview")
+    .classList.remove("hidden");
+
+}
+
+
+/* =========================================================
+   PURCHASE NUMBER
+========================================================= */
+
+$("purchaseButton")
+  ?.addEventListener(
+    "click",
+    async () => {
+
+      if (!selectedCountry ||
+          !selectedService) {
+
+        setMessage(
+          "purchaseMsg",
+          "Select a country and service first.",
+          "error"
+        );
+
+        return;
+
+      }
+
+
+      if (selectedPrice <= 0) {
+
+        setMessage(
+          "purchaseMsg",
+          "This service does not currently have a valid price.",
+          "error"
+        );
+
+        return;
+
+      }
+
+
+      const confirmed =
+        confirm(
+          `Purchase this number for ${money(
+            selectedPrice
+          )}?`
+        );
+
+
+      if (!confirmed) {
+        return;
+      }
+
+
+      $("purchaseButton").disabled =
+        true;
+
+
+      setMessage(
+        "purchaseMsg",
+        "Processing your purchase…"
+      );
+
+
+      try {
+
+        const prices =
+          selectedService.prices ||
+          [];
+
+
+        const priceObject =
+          prices[0];
+
+
+        const serviceCountryPriceId =
+          priceObject?.id ||
+          priceObject?.serviceCountryPriceId;
+
+
+        if (!serviceCountryPriceId) {
+
+          throw new Error(
+            "The provider did not return a valid service price ID."
+          );
+
+        }
+
+
+        const response =
+          await fetch(
+            "/api/order",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body: JSON.stringify({
+
+                serviceCountryPriceId,
+
+                quantity: 1,
+
+                autoSearchServer: true
+
+              })
+
+            }
+          );
+
+
+        const data =
+          await response.json();
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            data.message ||
+            data.error ||
+            "Unable to purchase the number."
+          );
+
+        }
+
+
+        /*
+          IMPORTANT:
+          The secure production version of /api/order
+          should verify wallet balance and debit the
+          customer's wallet atomically before completing
+          the order.
+        */
+
+
+        setMessage(
+          "purchaseMsg",
+          "Number purchased successfully.",
+          "success"
+        );
+
+
+        showToast(
+          "Number purchased successfully."
+        );
+
+
+        await loadDashboardData();
+
+        await loadOrderHistory();
+
+        navigateTo(
+          "activeNumbers"
+        );
+
+
+      } catch (error) {
+
+        setMessage(
+          "purchaseMsg",
+          error.message ||
+          "Purchase failed.",
+          "error"
+        );
+
+      } finally {
+
+        $("purchaseButton").disabled =
+          false;
+
+      }
+
+    }
+  );
 
 
 /* =========================================================
@@ -2614,125 +3613,114 @@ async function orderService(
 
 async function loadActiveNumbers() {
 
-  const container =
-    document.getElementById(
-      "activeNumbersContainer"
-    );
+  const box =
+    $("activeNumbersList");
 
 
-  container.innerHTML =
-    '<div class="empty-state">Loading active numbers...</div>';
+  box.innerHTML =
+    `<div class="loading">
+      Loading active numbers…
+    </div>`;
 
 
   try {
 
     const response =
-      await withTimeout(
-
-        fetch("/api/active"),
-
-        15000
-
-      );
+      await fetch("/api/active");
 
 
-    const result =
+    const data =
       await response.json();
 
 
     if (!response.ok) {
 
       throw new Error(
-        result?.error ||
+        data.message ||
+        data.error ||
         "Unable to load active numbers."
       );
 
     }
 
 
-    const orders =
-      Array.isArray(result)
-        ? result
-        : result?.data ||
-          result?.orders ||
-          [];
+    const rows =
+      Array.isArray(data)
+        ? data
+        : data.data || [];
 
 
-    if (!orders.length) {
+    if (!rows.length) {
 
-      container.innerHTML =
-        '<div class="empty-state">No active numbers yet.</div>';
+      box.innerHTML =
+        `<div class="empty-state">
+          No active numbers.
+        </div>`;
 
       return;
 
     }
 
 
-    container.innerHTML = "";
+    box.innerHTML =
+      rows.map(row => {
+
+        const number =
+          row.phone_number ||
+          row.phoneNumber ||
+          row.number ||
+          "—";
 
 
-    orders.forEach(order => {
-
-      const item =
-        document.createElement("div");
-
-
-      item.className =
-        "history-item";
+        const service =
+          row.service_name ||
+          row.service ||
+          "Virtual Number";
 
 
-      item.innerHTML = `
-
-        <strong>
-          ${escapeHtml(
-            order.phoneNumber ||
-            order.number ||
-            "Number pending"
-          )}
-        </strong>
-
-        <span>
-          ${escapeHtml(
-            order.serviceName ||
-            order.service ||
-            "Virtual number"
-          )}
-        </span>
-
-        <span>
-          Status:
-          ${escapeHtml(
-            order.status ||
-            "Active"
-          )}
-        </span>
-
-      `;
+        const status =
+          row.status ||
+          "active";
 
 
-      container.appendChild(item);
+        return `
+          <div class="activity-row">
 
-    });
+            <span>
 
+              <strong>
+                ${escapeHtml(number)}
+              </strong>
+
+              <br>
+
+              <small>
+                ${escapeHtml(service)}
+              </small>
+
+            </span>
+
+            <span class="badge badge-approved">
+              ${escapeHtml(
+                String(status)
+              )}
+            </span>
+
+          </div>
+        `;
+
+      }).join("");
 
   } catch (error) {
 
-    console.error(
-      "Active numbers error:",
-      error
-    );
-
-
-    container.innerHTML =
-      `<div class="empty-state">${escapeHtml(
-        error?.message ||
-        "Unable to load active numbers."
-      )}</div>`;
+    box.innerHTML =
+      `<div class="empty-state">
+        ${escapeHtml(error.message)}
+      </div>`;
 
   }
 
 }
-
 
 
 /* =========================================================
@@ -2741,276 +3729,1524 @@ async function loadActiveNumbers() {
 
 async function loadOrderHistory() {
 
-  const container =
-    document.getElementById(
-      "historyContainer"
-    );
+  const table =
+    $("ordersTable");
 
 
-  container.innerHTML =
-    '<div class="empty-state">Loading order history...</div>';
+  table.innerHTML =
+    `<tr>
+      <td colspan="6">
+        Loading…
+      </td>
+    </tr>`;
 
 
   try {
 
-    const response =
-      await withTimeout(
+    /*
+      Prefer your own Supabase orders table because it
+      keeps customer history isolated to that customer.
+    */
 
-        fetch("/api/history"),
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from("orders")
+        .select(
+          "id,country_name,country_code,service_name,phone_number,selling_price,status,created_at"
+        )
+        .eq(
+          "user_id",
+          currentUser.id
+        )
+        .order(
+          "created_at",
+          { ascending: false }
+        );
 
-        15000
 
-      );
-
-
-    const result =
-      await response.json();
-
-
-    if (!response.ok) {
-
-      throw new Error(
-        result?.error ||
-        "Unable to load order history."
-      );
-
+    if (error) {
+      throw error;
     }
 
 
-    const orders =
-      Array.isArray(result)
-        ? result
-        : result?.data ||
-          result?.orders ||
-          [];
+    if (!data?.length) {
 
-
-    if (!orders.length) {
-
-      container.innerHTML =
-        '<div class="empty-state">No orders yet.</div>';
+      table.innerHTML =
+        `<tr>
+          <td colspan="6">
+            No orders yet.
+          </td>
+        </tr>`;
 
       return;
 
     }
 
 
-    container.innerHTML = "";
+    table.innerHTML =
+      data.map(order => {
 
+        return `
+          <tr>
 
-    orders.forEach(order => {
+            <td>
+              ${new Date(
+                order.created_at
+              ).toLocaleString("en-NG")}
+            </td>
 
-      const item =
-        document.createElement("div");
+            <td>
+              ${escapeHtml(
+                order.country_name ||
+                order.country_code ||
+                "—"
+              )}
+            </td>
 
+            <td>
+              ${escapeHtml(
+                order.service_name ||
+                "—"
+              )}
+            </td>
 
-      item.className =
-        "history-item";
+            <td>
+              ${escapeHtml(
+                order.phone_number ||
+                "Pending"
+              )}
+            </td>
 
+            <td>
+              ${money(
+                order.selling_price
+              )}
+            </td>
 
-      item.innerHTML = `
+            <td>
+              <span class="badge badge-pending">
+                ${escapeHtml(
+                  order.status ||
+                  "pending"
+                )}
+              </span>
+            </td>
 
-        <strong>
-          ${escapeHtml(
-            order.serviceName ||
-            order.service ||
-            "Virtual Number"
-          )}
-        </strong>
+          </tr>
+        `;
 
-        <span>
-          ${escapeHtml(
-            order.phoneNumber ||
-            order.number ||
-            "Pending"
-          )}
-        </span>
-
-        <span>
-          ${escapeHtml(
-            order.status ||
-            "Unknown"
-          )}
-        </span>
-
-      `;
-
-
-      container.appendChild(item);
-
-    });
+      }).join("");
 
 
   } catch (error) {
 
-    console.error(
-      "History error:",
-      error
-    );
-
-
-    container.innerHTML =
-      `<div class="empty-state">${escapeHtml(
-        error?.message ||
-        "Unable to load order history."
-      )}</div>`;
+    table.innerHTML =
+      `<tr>
+        <td colspan="6">
+          ${escapeHtml(error.message)}
+        </td>
+      </tr>`;
 
   }
 
 }
 
 
-
 /* =========================================================
-   APPLICATION STARTUP
+   WALLET DATA
 ========================================================= */
 
-async function initializeApp() {
+async function loadWalletData() {
 
-  /*
-    Wait briefly for /supabase.js to finish
-    creating window.supabaseClient.
-  */
-
-  let attempts = 0;
+  if (!currentUser) return;
 
 
-  while (
-    !window.supabaseClient &&
-    attempts < 50
-  ) {
+  try {
 
-    await new Promise(resolve =>
-      setTimeout(resolve, 100)
+    const walletResult =
+      await supabaseClient
+        .from("wallets")
+        .select("balance")
+        .eq(
+          "user_id",
+          currentUser.id
+        )
+        .maybeSingle();
+
+
+    $("walletBalance").textContent =
+      money(
+        walletResult.data?.balance ||
+        0
+      );
+
+
+    const depositsResult =
+      await supabaseClient
+        .from("deposits")
+        .select(
+          "id,amount,status,created_at"
+        )
+        .eq(
+          "user_id",
+          currentUser.id
+        )
+        .order(
+          "created_at",
+          { ascending: false }
+        );
+
+
+    const deposits =
+      depositsResult.data || [];
+
+
+    const approved =
+      deposits
+        .filter(x =>
+          x.status === "approved"
+        )
+        .reduce(
+          (sum,x) =>
+            sum + Number(x.amount || 0),
+          0
+        );
+
+
+    const pending =
+      deposits
+        .filter(x =>
+          x.status === "pending"
+        )
+        .reduce(
+          (sum,x) =>
+            sum + Number(x.amount || 0),
+          0
+        );
+
+
+    $("totalDeposited").textContent =
+      money(approved);
+
+
+    $("pendingDeposits").textContent =
+      money(pending);
+
+
+    const txResult =
+      await supabaseClient
+        .from("wallet_transactions")
+        .select(
+          "id,type,amount,balance_before,balance_after,description,created_at"
+        )
+        .eq(
+          "user_id",
+          currentUser.id
+        )
+        .order(
+          "created_at",
+          { ascending: false }
+        );
+
+
+    const transactions =
+      txResult.data || [];
+
+
+    const spent =
+      transactions
+        .filter(x =>
+          x.type === "number_purchase"
+        )
+        .reduce(
+          (sum,x) =>
+            sum +
+            Math.abs(
+              Number(x.amount || 0)
+            ),
+          0
+        );
+
+
+    $("totalSpent").textContent =
+      money(spent);
+
+
+    renderTransactions(
+      transactions
     );
 
-    attempts++;
+
+    renderDeposits(
+      deposits
+    );
+
+  } catch (error) {
+
+    console.warn(
+      "Wallet:",
+      error.message
+    );
 
   }
 
+}
 
-  if (!verifySupabase()) {
 
-    console.error(
-      "Supabase initialization failed."
-    );
+/* =========================================================
+   TRANSACTION HISTORY
+========================================================= */
 
-    showAuthPage();
+function renderTransactions(
+  transactions
+) {
+
+  const box =
+    $("transactionHistory");
+
+
+  if (!transactions.length) {
+
+    box.innerHTML =
+      `<div class="empty-state">
+        No transactions yet.
+      </div>`;
 
     return;
 
   }
 
 
-  try {
+  box.innerHTML =
+    transactions.map(item => {
 
-    const result =
-      await withTimeout(
-
-        supabaseClient.auth.getSession(),
-
-        10000
-
-      );
-
-
-    const session =
-      result?.data?.session;
+      const positive =
+        [
+          "deposit",
+          "refund",
+          "adjustment"
+        ].includes(item.type);
 
 
-    if (session?.user) {
+      return `
+        <div class="activity-row">
 
-      currentUser =
-        session.user;
+          <span>
+
+            <strong>
+              ${escapeHtml(
+                item.description ||
+                item.type
+              )}
+            </strong>
+
+            <br>
+
+            <small>
+              ${new Date(
+                item.created_at
+              ).toLocaleString("en-NG")}
+            </small>
+
+          </span>
+
+          <span>
+
+            <strong>
+              ${positive ? "+" : "-"}
+              ${money(
+                Math.abs(
+                  Number(item.amount || 0)
+                )
+              )}
+            </strong>
+
+            <br>
+
+            <small>
+              Balance:
+              ${money(
+                item.balance_after
+              )}
+            </small>
+
+          </span>
+
+        </div>
+      `;
+
+    }).join("");
+
+}
 
 
-      await loadAuthenticatedUser();
+/* =========================================================
+   DEPOSIT HISTORY
+========================================================= */
 
-    } else {
+function renderDeposits(
+  deposits
+) {
 
-      showAuthPage();
-
-      showLogin();
-
-    }
-
-
-  } catch (error) {
-
-    console.error(
-      "Startup error:",
-      error
-    );
+  const table =
+    $("depositHistory");
 
 
-    showAuthPage();
+  if (!deposits.length) {
 
-    showLogin();
+    table.innerHTML =
+      `<tr>
+        <td colspan="5">
+          No deposits yet.
+        </td>
+      </tr>`;
+
+    return;
 
   }
 
 
-  /*
-    Listen for login/logout changes.
-  */
+  table.innerHTML =
+    deposits.map(item => {
 
-  supabaseClient.auth.onAuthStateChange(
-    async (event, session) => {
-
-      console.log(
-        "Auth event:",
-        event
-      );
+      const status =
+        String(
+          item.status ||
+          "pending"
+        ).toLowerCase();
 
 
-      if (event === "SIGNED_OUT") {
+      let badge =
+        "badge-pending";
 
-        currentUser = null;
 
-        currentProfile = null;
+      if (status === "approved") {
+        badge = "badge-approved";
+      }
 
-        showAuthPage();
+      if (status === "rejected") {
+        badge = "badge-rejected";
+      }
 
-        showLogin();
+
+      return `
+        <tr>
+
+          <td>
+            ${new Date(
+              item.created_at
+            ).toLocaleString("en-NG")}
+          </td>
+
+          <td>
+            ${money(item.amount)}
+          </td>
+
+          <td>
+            OPay
+          </td>
+
+          <td>
+            —
+          </td>
+
+          <td>
+            <span class="badge ${badge}">
+              ${escapeHtml(status)}
+            </span>
+          </td>
+
+        </tr>
+      `;
+
+    }).join("");
+
+}
+
+
+/* =========================================================
+   SUBMIT DEPOSIT
+========================================================= */
+
+$("depositForm")
+  ?.addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+
+      if (!currentUser) {
+        return;
+      }
+
+
+      const amount =
+        Number(
+          $("depositAmount").value
+        );
+
+
+      const reference =
+        $("depositReference")
+          .value
+          .trim();
+
+
+      const note =
+        $("depositNote")
+          .value
+          .trim();
+
+
+      const file =
+        $("depositReceipt")
+          .files[0];
+
+
+      if (amount <= 0) {
+
+        setMessage(
+          "depositMsg",
+          "Enter a valid deposit amount.",
+          "error"
+        );
 
         return;
 
       }
 
 
-      if (
-        event === "SIGNED_IN" &&
-        session?.user
-      ) {
+      if (!file) {
 
-        currentUser =
-          session.user;
+        setMessage(
+          "depositMsg",
+          "Please upload your payment receipt.",
+          "error"
+        );
 
-        /*
-          Small delay prevents duplicate auth
-          processing during initial login.
-        */
+        return;
 
-        setTimeout(() => {
+      }
 
-          loadAuthenticatedUser();
 
-        }, 100);
+      setMessage(
+        "depositMsg",
+        "Uploading receipt…"
+      );
+
+
+      try {
+
+        const extension =
+          file.name
+            .split(".")
+            .pop()
+            .toLowerCase();
+
+
+        const path =
+          `${currentUser.id}/${crypto.randomUUID()}.${extension}`;
+
+
+        const upload =
+          await supabaseClient.storage
+            .from("deposit-receipts")
+            .upload(
+              path,
+              file,
+              {
+                upsert: false
+              }
+            );
+
+
+        if (upload.error) {
+          throw upload.error;
+        }
+
+
+        const {
+          error
+        } =
+          await supabaseClient
+            .from("deposits")
+            .insert({
+
+              user_id:
+                currentUser.id,
+
+              amount,
+
+              payment_method:
+                "OPay",
+
+              payment_reference:
+                reference || null,
+
+              receipt_url:
+                path,
+
+              customer_note:
+                note || null,
+
+              status:
+                "pending"
+
+            });
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        setMessage(
+          "depositMsg",
+          "Deposit submitted. Your payment will be reviewed by the administrator.",
+          "success"
+        );
+
+
+        event.target.reset();
+
+
+        showToast(
+          "Deposit submitted successfully."
+        );
+
+
+        await loadWalletData();
+
+      } catch (error) {
+
+        setMessage(
+          "depositMsg",
+          error.message ||
+          "Unable to submit deposit.",
+          "error"
+        );
 
       }
 
     }
   );
 
-}
 
+/* =========================================================
+   WITHDRAWAL
+========================================================= */
+
+$("withdraw")
+  ?.addEventListener(
+    "click",
+    () => {
+
+      $("payoutForm")
+        ?.classList.toggle(
+          "hidden"
+        );
+
+      $("withdrawMsg").textContent =
+        "";
+
+    }
+  );
+
+
+$("cancelWithdraw")
+  ?.addEventListener(
+    "click",
+    () => {
+
+      $("payoutForm")
+        ?.classList.add(
+          "hidden"
+        );
+
+    }
+  );
+
+
+$("payoutForm")
+  ?.addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+
+      const amount =
+        Number(
+          $("withdrawAmount")
+            .value
+        );
+
+
+      const bank =
+        $("bankName")
+          .value;
+
+
+      const accountNumber =
+        $("accountNumber")
+          .value
+          .trim();
+
+
+      const accountName =
+        $("accountName")
+          .value
+          .trim();
+
+
+      if (amount < 1000) {
+
+        setMessage(
+          "withdrawMsg",
+          "Minimum withdrawal is ₦1,000.",
+          "error"
+        );
+
+        return;
+
+      }
+
+
+      if (!/^[0-9]{10}$/.test(
+        accountNumber
+      )) {
+
+        setMessage(
+          "withdrawMsg",
+          "Enter a valid 10-digit account number.",
+          "error"
+        );
+
+        return;
+
+      }
+
+
+      if (!bank) {
+
+        setMessage(
+          "withdrawMsg",
+          "Select your bank.",
+          "error"
+        );
+
+        return;
+
+      }
+
+
+      if (!accountName) {
+
+        setMessage(
+          "withdrawMsg",
+          "Enter the account name.",
+          "error"
+        );
+
+        return;
+
+      }
+
+
+      setMessage(
+        "withdrawMsg",
+        "Submitting withdrawal request…"
+      );
+
+
+      try {
+
+        /*
+          This RPC must perform the balance check and
+          create the withdrawal request atomically.
+        */
+
+        const {
+          error
+        } =
+          await supabaseClient.rpc(
+            "request_withdrawal",
+            {
+              p_bank_name:
+                bank,
+
+              p_account_number:
+                accountNumber,
+
+              p_account_name:
+                accountName,
+
+              p_amount:
+                amount
+            }
+          );
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        setMessage(
+          "withdrawMsg",
+          "Withdrawal request submitted for review.",
+          "success"
+        );
+
+
+        event.target.reset();
+
+
+        await loadWalletData();
+
+      } catch (error) {
+
+        setMessage(
+          "withdrawMsg",
+          error.message ||
+          "Unable to submit withdrawal request.",
+          "error"
+        );
+
+      }
+
+    }
+  );
 
 
 /* =========================================================
-   START
+   ADMIN
 ========================================================= */
 
-initializeApp();
+async function checkAdmin() {
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient.rpc(
+      "is_admin"
+    );
+
+
+  if (error) {
+
+    /*
+      Some existing projects may use
+      is_current_user_admin instead.
+    */
+
+    const fallback =
+      await supabaseClient.rpc(
+        "is_current_user_admin"
+      );
+
+
+    if (fallback.error) {
+      return false;
+    }
+
+
+    return Boolean(
+      fallback.data
+    );
+
+  }
+
+
+  return Boolean(data);
+
+}
+
+
+/* =========================================================
+   ADMIN DASHBOARD
+========================================================= */
+
+async function loadAdmin() {
+
+  const allowed =
+    await checkAdmin();
+
+
+  if (!allowed) {
+
+    setMessage(
+      "adminMsg",
+      "Administrator access required.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  setMessage(
+    "adminMsg",
+    "Administrator access confirmed.",
+    "success"
+  );
+
+
+  try {
+
+    const users =
+      await supabaseClient
+        .from("profiles")
+        .select(
+          "id",
+          { count: "exact", head: true }
+        );
+
+
+    $("adminUsers").textContent =
+      users.count || 0;
+
+
+    const orders =
+      await supabaseClient
+        .from("orders")
+        .select(
+          "id",
+          { count: "exact", head: true }
+        );
+
+
+    $("adminOrders").textContent =
+      orders.count || 0;
+
+
+    const deposits =
+      await supabaseClient
+        .from("deposits")
+        .select(
+          "id,amount,status,created_at,user_id,payment_method,payment_reference,receipt_url,customer_note"
+        )
+        .order(
+          "created_at",
+          { ascending: false }
+        );
+
+
+    if (deposits.error) {
+      throw deposits.error;
+    }
+
+
+    const all =
+      deposits.data || [];
+
+
+    const approved =
+      all
+        .filter(x =>
+          x.status === "approved"
+        )
+        .reduce(
+          (sum,x) =>
+            sum + Number(x.amount || 0),
+          0
+        );
+
+
+    const pending =
+      all.filter(
+        x => x.status === "pending"
+      );
+
+
+    $("adminDeposits").textContent =
+      money(approved);
+
+
+    $("adminPendingDeposits").textContent =
+      pending.length;
+
+
+    renderAdminDeposits(
+      all
+    );
+
+
+  } catch (error) {
+
+    setMessage(
+      "adminMsg",
+      error.message ||
+      "Unable to load admin data.",
+      "error"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   ADMIN DEPOSITS
+========================================================= */
+
+async function renderAdminDeposits(
+  deposits
+) {
+
+  const table =
+    $("adminDepositsTable");
+
+
+  if (!deposits.length) {
+
+    table.innerHTML =
+      `<tr>
+        <td colspan="8">
+          No deposits found.
+        </td>
+      </tr>`;
+
+    return;
+
+  }
+
+
+  /*
+    Load profile names separately so we don't depend on
+    a particular foreign-key relationship.
+  */
+
+  const userIds =
+    [
+      ...new Set(
+        deposits.map(
+          x => x.user_id
+        )
+      )
+    ];
+
+
+  let profiles = [];
+
+
+  if (userIds.length) {
+
+    const result =
+      await supabaseClient
+        .from("profiles")
+        .select(
+          "id,full_name,username,email"
+        )
+        .in(
+          "id",
+          userIds
+        );
+
+
+    profiles =
+      result.data || [];
+
+  }
+
+
+  const profileMap =
+    new Map(
+      profiles.map(
+        p => [
+          String(p.id),
+          p
+        ]
+      )
+    );
+
+
+  table.innerHTML =
+    deposits.map(item => {
+
+      const profile =
+        profileMap.get(
+          String(item.user_id)
+        );
+
+
+      const status =
+        String(
+          item.status ||
+          "pending"
+        ).toLowerCase();
+
+
+      let badge =
+        "badge-pending";
+
+
+      if (status === "approved") {
+        badge = "badge-approved";
+      }
+
+
+      if (status === "rejected") {
+        badge = "badge-rejected";
+      }
+
+
+      return `
+        <tr>
+
+          <td>
+            ${new Date(
+              item.created_at
+            ).toLocaleString("en-NG")}
+          </td>
+
+          <td>
+            ${escapeHtml(
+              profile?.full_name ||
+              profile?.username ||
+              profile?.email ||
+              item.user_id
+            )}
+          </td>
+
+          <td>
+            <strong>
+              ${money(item.amount)}
+            </strong>
+          </td>
+
+          <td>
+            ${escapeHtml(
+              item.payment_method ||
+              "OPay"
+            )}
+          </td>
+
+          <td>
+            ${escapeHtml(
+              item.payment_reference ||
+              "—"
+            )}
+          </td>
+
+          <td>
+            <span class="badge ${badge}">
+              ${escapeHtml(status)}
+            </span>
+          </td>
+
+          <td>
+
+            ${
+              item.receipt_url
+                ? `
+                  <button
+                    class="btn btn-secondary btn-small"
+                    type="button"
+                    onclick="viewReceipt('${escapeHtml(
+                      item.receipt_url
+                    )}')"
+                  >
+                    View Receipt
+                  </button>
+                `
+                : "—"
+            }
+
+          </td>
+
+          <td>
+
+            ${
+              status === "pending"
+                ? `
+                  <div class="admin-actions">
+
+                    <button
+                      class="btn btn-success btn-small"
+                      type="button"
+                      onclick="processDeposit(
+                        '${item.id}',
+                        'approve'
+                      )"
+                    >
+                      Approve
+                    </button>
+
+                    <button
+                      class="btn btn-danger btn-small"
+                      type="button"
+                      onclick="processDeposit(
+                        '${item.id}',
+                        'reject'
+                      )"
+                    >
+                      Reject
+                    </button>
+
+                  </div>
+                `
+                : "Processed"
+            }
+
+          </td>
+
+        </tr>
+      `;
+
+    }).join("");
+
+}
+
+
+/* =========================================================
+   ADMIN PROCESS DEPOSIT
+========================================================= */
+
+async function processDeposit(
+  depositId,
+  action
+) {
+
+  const label =
+    action === "approve"
+      ? "approve"
+      : "reject";
+
+
+  const confirmed =
+    confirm(
+      `Are you sure you want to ${label} this deposit?`
+    );
+
+
+  if (!confirmed) {
+    return;
+  }
+
+
+  const note =
+    prompt(
+      "Optional admin note:"
+    );
+
+
+  try {
+
+    let result;
+
+
+    if (action === "approve") {
+
+      result =
+        await supabaseClient.rpc(
+          "approve_deposit",
+          {
+            p_deposit_id:
+              depositId,
+
+            p_admin_note:
+              note || null
+          }
+        );
+
+    } else {
+
+      result =
+        await supabaseClient.rpc(
+          "reject_deposit",
+          {
+            p_deposit_id:
+              depositId,
+
+            p_admin_note:
+              note || null
+          }
+        );
+
+    }
+
+
+    if (result.error) {
+      throw result.error;
+    }
+
+
+    showToast(
+      action === "approve"
+        ? "Deposit approved."
+        : "Deposit rejected."
+    );
+
+
+    await loadAdmin();
+
+  } catch (error) {
+
+    showToast(
+      error.message ||
+      "Unable to process deposit."
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   ADMIN RECEIPT VIEW
+========================================================= */
+
+async function viewReceipt(
+  path
+) {
+
+  $("receiptModal")
+    ?.classList.remove(
+      "hidden"
+    );
+
+
+  $("receiptContent").innerHTML =
+    "Generating secure receipt link…";
+
+
+  try {
+
+    const result =
+      await supabaseClient.storage
+        .from("deposit-receipts")
+        .createSignedUrl(
+          path,
+          300
+        );
+
+
+    if (result.error) {
+      throw result.error;
+    }
+
+
+    const url =
+      result.data?.signedUrl;
+
+
+    if (!url) {
+      throw new Error(
+        "Unable to generate receipt link."
+      );
+    }
+
+
+    const isImage =
+      /\.(jpg|jpeg|png|webp|gif)$/i
+        .test(path);
+
+
+    if (isImage) {
+
+      $("receiptContent").innerHTML =
+        `
+          <img
+            src="${escapeHtml(url)}"
+            alt="Payment receipt"
+            style="
+              max-width:100%;
+              border-radius:10px;
+            "
+          />
+
+          <p style="margin-top:12px">
+            <a
+              href="${escapeHtml(url)}"
+              target="_blank"
+              rel="noopener"
+            >
+              Open receipt in new tab
+            </a>
+          </p>
+        `;
+
+    } else {
+
+      $("receiptContent").innerHTML =
+        `
+          <p>
+            Receipt uploaded as a document.
+          </p>
+
+          <a
+            href="${escapeHtml(url)}"
+            target="_blank"
+            rel="noopener"
+            class="btn btn-primary"
+          >
+            Open Receipt
+          </a>
+        `;
+
+    }
+
+  } catch (error) {
+
+    $("receiptContent").textContent =
+      error.message ||
+      "Unable to open receipt.";
+
+  }
+
+}
+
+
+$("receiptClose")
+  ?.addEventListener(
+    "click",
+    () => {
+
+      $("receiptModal")
+        ?.classList.add(
+          "hidden"
+        );
+
+    }
+  );
+
+
+$("receiptModal")
+  ?.addEventListener(
+    "click",
+    event => {
+
+      if (
+        event.target ===
+        $("receiptModal")
+      ) {
+
+        $("receiptModal")
+          .classList.add(
+            "hidden"
+          );
+
+      }
+
+    }
+  );
+
+
+/* =========================================================
+   LEGAL LINKS
+========================================================= */
+
+document
+  .querySelectorAll("[data-legal]")
+  .forEach(link => {
+
+    link.addEventListener(
+      "click",
+      event => {
+
+        event.preventDefault();
+
+
+        const type =
+          link.dataset.legal;
+
+
+        const titles = {
+
+          terms:
+            "Terms & Conditions",
+
+          privacy:
+            "Privacy Policy",
+
+          refund:
+            "Refund Policy",
+
+          acceptable:
+            "Acceptable Use Policy"
+
+        };
+
+
+        alert(
+          `${titles[type]}\n\n` +
+          "This policy page is being prepared for Global Virtual Sim Web. Please publish the final legal policy before launching paid services."
+        );
+
+      }
+    );
+
+  });
+
+
+/* =========================================================
+   AUTH SESSION CHECK
+========================================================= */
+
+(async function init() {
+
+  setAuthMode(false);
+
+
+  const {
+    data
+  } =
+    await supabaseClient.auth.getSession();
+
+
+  if (data?.session?.user) {
+
+    currentUser =
+      data.session.user;
+
+
+    await loadAuthenticatedUser();
+
+  }
+
+})();
+
+
+/* =========================================================
+   AUTH STATE LISTENER
+========================================================= */
+
+supabaseClient.auth
+  .onAuthStateChange(
+    async (
+      event,
+      session
+    ) => {
+
+      if (
+        session?.user &&
+        !currentUser
+      ) {
+
+        currentUser =
+          session.user;
+
+        await loadAuthenticatedUser();
+
+      }
+
+      if (!session) {
+
+        currentUser = null;
+        currentProfile = null;
+
+      }
+
+    }
+  );
+
 
 </script>
 
