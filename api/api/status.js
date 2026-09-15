@@ -1,6 +1,6 @@
 import {
   sureVerificationRequest
-} from "../_lib.js";
+} from "./_lib.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -11,18 +11,20 @@ export default async function handler(req, res) {
   }
 
   try {
-    const id = req.query?.id;
+    const verificationId =
+      req.query?.id ||
+      req.query?.verificationId;
 
-    if (!id) {
+    if (!verificationId) {
       return res.status(400).json({
         success: false,
-        error: "Order ID is required"
+        error: "verificationId is required"
       });
     }
 
     const data =
       await sureVerificationRequest(
-        `/orders/getStatus/${encodeURIComponent(id)}`
+        `/verifications/sms/${encodeURIComponent(verificationId)}`
       );
 
     return res.status(200).json({
@@ -40,7 +42,7 @@ export default async function handler(req, res) {
       success: false,
       error:
         error.message ||
-        "Unable to retrieve order status."
+        "Unable to get verification status."
     });
   }
 }
