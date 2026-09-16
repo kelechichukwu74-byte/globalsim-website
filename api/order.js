@@ -1,6 +1,6 @@
 import {
   sureVerificationRequest
-} from "./_lib.js";
+} from "./_lib.js";Cuando venga saldremos juntas
 
 
 const SUPABASE_URL =
