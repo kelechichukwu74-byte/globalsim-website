@@ -1,6087 +1,766 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
-  />
+<!-- =========================================================
+     GLOBALSIM UI UPDATE
+     Dashboard redesign + searchable countries/services
+     + flags + service icons + password visibility
+     + remove withdrawals + OPay WhatsApp notice
+     ========================================================= -->
 
-  <title>Global Virtual Sim Web</title>
+<style>
+  /* =========================================================
+     PASSWORD VISIBILITY
+     ========================================================= */
 
-  <meta
-    name="description"
-    content="Buy legitimate virtual numbers and communication services through Global Virtual Sim Web."
-  />
+  .gvs-password-wrap {
+    position: relative;
+    width: 100%;
+  }
 
-  <meta name="theme-color" content="#2563eb" />
+  .gvs-password-wrap input {
+    padding-right: 52px !important;
+  }
 
-  <link rel="stylesheet" href="/styles.css" />
+  .gvs-password-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border: 0;
+    background: transparent;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    z-index: 5;
+  }
 
-  <style>
-    /* =========================================================
-       GLOBAL SAFETY / DISPLAY FIXES
-       ========================================================= */
+  .gvs-password-toggle:hover {
+    background: rgba(37, 99, 235, 0.08);
+  }
 
-    * {
-      box-sizing: border-box;
+
+  /* =========================================================
+     SEARCHABLE SELECTS
+     ========================================================= */
+
+  .gvs-search-select {
+    position: relative;
+    width: 100%;
+  }
+
+  .gvs-select-display {
+    width: 100%;
+    min-height: 52px;
+    border: 1px solid #dbe4f0;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 0 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: #111827;
+    cursor: pointer;
+    text-align: left;
+    transition: 0.2s ease;
+  }
+
+  .gvs-select-display:hover,
+  .gvs-search-select.open .gvs-select-display {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+  }
+
+  .gvs-selected-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .gvs-selected-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .gvs-chevron {
+    font-size: 18px;
+    flex: 0 0 auto;
+    transition: transform 0.2s ease;
+  }
+
+  .gvs-search-select.open .gvs-chevron {
+    transform: rotate(180deg);
+  }
+
+  .gvs-dropdown {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 7px);
+    background: #ffffff;
+    border: 1px solid #dbe4f0;
+    border-radius: 14px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+    z-index: 5000;
+    overflow: hidden;
+    display: none;
+  }
+
+  .gvs-search-select.open .gvs-dropdown {
+    display: block;
+  }
+
+  .gvs-search-box {
+    padding: 10px;
+    border-bottom: 1px solid #edf1f7;
+    background: #f8fafc;
+  }
+
+  .gvs-search-input {
+    width: 100%;
+    height: 44px;
+    border: 1px solid #dbe4f0;
+    border-radius: 10px;
+    padding: 0 13px;
+    outline: none;
+    background: #ffffff;
+  }
+
+  .gvs-search-input:focus {
+    border-color: #2563eb;
+  }
+
+  .gvs-options {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .gvs-option {
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 13px;
+    border: 0;
+    border-bottom: 1px solid #f1f5f9;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+    color: #111827;
+    cursor: pointer;
+  }
+
+  .gvs-option:hover {
+    background: #eff6ff;
+  }
+
+  .gvs-option.active {
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-weight: 700;
+  }
+
+  .gvs-option-icon {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #eff6ff;
+    font-size: 18px;
+  }
+
+  .gvs-option-text {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .gvs-option-name {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .gvs-option-price {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .gvs-no-results {
+    padding: 25px 15px;
+    text-align: center;
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  .gvs-flag {
+    font-size: 23px;
+    line-height: 1;
+  }
+
+
+  /* =========================================================
+     WALLET HERO / DASHBOARD
+     ========================================================= */
+
+  .gvs-wallet-hero {
+    position: relative;
+    overflow: hidden;
+    min-height: 300px;
+    padding: 34px;
+    margin-bottom: 24px;
+    border-radius: 30px;
+    background:
+      radial-gradient(
+        circle at 92% 10%,
+        rgba(255,255,255,0.18),
+        transparent 30%
+      ),
+      radial-gradient(
+        circle at 5% 105%,
+        rgba(255,255,255,0.10),
+        transparent 28%
+      ),
+      linear-gradient(
+        135deg,
+        #2563eb 0%,
+        #315fe8 45%,
+        #4168ee 100%
+      );
+    color: #ffffff;
+    box-shadow: 0 20px 50px rgba(37, 99, 235, 0.22);
+  }
+
+  .gvs-wallet-hero::before {
+    content: "";
+    position: absolute;
+    width: 260px;
+    height: 260px;
+    right: -70px;
+    top: -120px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+  }
+
+  .gvs-wallet-hero::after {
+    content: "";
+    position: absolute;
+    width: 190px;
+    height: 190px;
+    left: -90px;
+    bottom: -115px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+
+  .gvs-wallet-hero-content {
+    position: relative;
+    z-index: 2;
+  }
+
+  .gvs-wallet-label {
+    font-size: 18px;
+    font-weight: 500;
+    opacity: 0.9;
+    margin-bottom: 8px;
+  }
+
+  .gvs-wallet-amount-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .gvs-wallet-amount {
+    font-size: clamp(42px, 7vw, 72px);
+    line-height: 1;
+    font-weight: 850;
+    letter-spacing: -2px;
+  }
+
+  .gvs-wallet-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.28);
+    backdrop-filter: blur(12px);
+    font-size: 17px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .gvs-status-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 0 5px rgba(74,222,128,0.12);
+  }
+
+  .gvs-add-money-btn {
+    position: relative;
+    z-index: 3;
+    width: 100%;
+    min-height: 88px;
+    margin-top: 42px;
+    border: 0;
+    border-radius: 28px;
+    background: #ffffff;
+    color: #4f63df;
+    font-size: 26px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    cursor: pointer;
+    box-shadow: 0 12px 30px rgba(15,23,42,0.10);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .gvs-add-money-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 35px rgba(15,23,42,0.14);
+  }
+
+  .gvs-add-money-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 15px;
+    background: #eef2ff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    line-height: 1;
+  }
+
+
+  /* =========================================================
+     OPAY NOTICE
+     ========================================================= */
+
+  .gvs-whatsapp-notice {
+    margin-top: 16px;
+    padding: 15px 16px;
+    border-radius: 12px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e3a8a;
+    line-height: 1.55;
+    font-size: 13px;
+  }
+
+  .gvs-whatsapp-notice strong {
+    color: #1d4ed8;
+  }
+
+  .gvs-whatsapp-link {
+    color: #1d4ed8;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+
+  /* =========================================================
+     RESPONSIVE
+     ========================================================= */
+
+  @media (max-width: 700px) {
+
+    .gvs-wallet-hero {
+      padding: 25px 20px;
+      border-radius: 24px;
+      min-height: 270px;
     }
 
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      min-height: 100%;
+    .gvs-wallet-amount-row {
+      display: block;
     }
 
-    body {
-      background: #f5f7fb;
-      color: #111827;
-      font-family:
-        Inter,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        Helvetica,
-        Arial,
-        sans-serif;
+    .gvs-wallet-status {
+      margin-top: 20px;
+      font-size: 15px;
+      padding: 10px 17px;
     }
 
-    button,
-    input,
-    select,
-    textarea {
-      font: inherit;
+    .gvs-wallet-amount {
+      font-size: 48px;
     }
 
-    button {
-      cursor: pointer;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    /* =========================================================
-       AUTH
-       ========================================================= */
-
-    #auth {
-      min-height: 100vh;
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background:
-        radial-gradient(
-          circle at top left,
-          rgba(37, 99, 235, 0.14),
-          transparent 35%
-        ),
-        #f5f7fb;
-    }
-
-    .auth-wrapper {
-      width: 100%;
-      max-width: 460px;
-    }
-
-    .brand-center {
-      text-align: center;
-      margin-bottom: 24px;
-    }
-
-    .brand-logo {
-      width: 64px;
-      height: 64px;
-      border-radius: 18px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: #2563eb;
-      color: #fff;
-      font-size: 27px;
-      font-weight: 800;
-      box-shadow: 0 15px 35px rgba(37, 99, 235, 0.25);
-      margin-bottom: 12px;
-    }
-
-    .brand-center h1 {
-      margin: 0;
-      font-size: 25px;
-      font-weight: 800;
-    }
-
-    .brand-center p {
-      margin: 7px 0 0;
-      color: #64748b;
-      font-size: 14px;
-    }
-
-    .auth-card {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 18px;
-      padding: 25px;
-      box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
-    }
-
-    .auth-tabs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 5px;
-      background: #f1f5f9;
-      border-radius: 11px;
-      padding: 5px;
-      margin-bottom: 22px;
-    }
-
-    .auth-tab {
-      border: 0;
-      background: transparent;
-      padding: 11px;
-      border-radius: 8px;
-      font-weight: 700;
-      color: #64748b;
-    }
-
-    .auth-tab.active {
-      background: #fff;
-      color: #2563eb;
-      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-    }
-
-    .auth-form h2 {
-      margin: 0 0 6px;
+    .gvs-add-money-btn {
+      min-height: 72px;
+      margin-top: 30px;
+      border-radius: 21px;
       font-size: 21px;
     }
 
-    .auth-form > p {
-      color: #64748b;
-      font-size: 14px;
-      margin: 0 0 20px;
-    }
-
-    .form-group {
-      margin-bottom: 15px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 13px;
-      font-weight: 700;
-      margin-bottom: 7px;
-      color: #334155;
-    }
-
-    .form-control {
-      width: 100%;
-      border: 1px solid #dbe2ea;
-      background: #fff;
-      border-radius: 10px;
-      padding: 12px 13px;
-      outline: none;
-      color: #111827;
-      transition: 0.2s ease;
-    }
-
-    .form-control:focus {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    }
-
-    .checkbox-row {
-      display: flex;
-      gap: 9px;
-      align-items: flex-start;
-      margin: 14px 0 18px;
-      font-size: 13px;
-      color: #64748b;
-    }
-
-    .checkbox-row input {
-      margin-top: 3px;
-    }
-
-    .primary-btn,
-    .secondary-btn,
-    .danger-btn,
-    .success-btn {
-      border: 0;
-      border-radius: 10px;
-      padding: 11px 15px;
-      font-weight: 700;
-      transition: 0.2s ease;
-    }
-
-    .primary-btn {
-      background: #2563eb;
-      color: white;
-    }
-
-    .primary-btn:hover {
-      background: #1d4ed8;
-    }
-
-    .secondary-btn {
-      background: #eef2ff;
-      color: #2563eb;
-    }
-
-    .success-btn {
-      background: #16a34a;
-      color: #fff;
-    }
-
-    .danger-btn {
-      background: #fee2e2;
-      color: #b91c1c;
-    }
-
-    .full-btn {
-      width: 100%;
-    }
-
-    .small-btn {
-      padding: 8px 11px;
-      font-size: 12px;
-    }
-
-    /* =========================================================
-       APP LAYOUT
-       ========================================================= */
-
-    #app {
-      min-height: 100vh;
-      width: 100%;
-    }
-
-    .app-shell {
-      min-height: 100vh;
-      display: flex;
-      width: 100%;
-    }
-
-    .sidebar {
-      width: 250px;
-      min-width: 250px;
-      background: #0f172a;
-      color: white;
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      z-index: 1000;
-      overflow-y: auto;
-    }
-
-    .sidebar-brand {
-      padding: 22px 18px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .sidebar-brand-row {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-    }
-
-    .sidebar-brand-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 11px;
-      background: #2563eb;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-    }
-
-    .sidebar-brand strong {
-      font-size: 15px;
-      display: block;
-    }
-
-    .sidebar-brand small {
-      display: block;
-      color: #94a3b8;
-      margin-top: 2px;
-      font-size: 11px;
-    }
-
-    .nav-section {
-      padding: 17px 12px 7px;
-      color: #64748b;
-      text-transform: uppercase;
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-    }
-
-    .nav-list {
-      padding: 0 10px 15px;
-    }
-
-    .nav-btn {
-      width: 100%;
-      border: 0;
-      background: transparent;
-      color: #cbd5e1;
-      text-align: left;
-      padding: 11px 12px;
-      border-radius: 9px;
-      margin-bottom: 3px;
-      font-weight: 600;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .nav-btn:hover {
-      background: rgba(255, 255, 255, 0.06);
-      color: #fff;
-    }
-
-    .nav-btn.active {
-      background: #2563eb;
-      color: #fff;
-    }
-
-    .sidebar-bottom {
-      padding: 15px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .user-mini {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-
-    .avatar {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background: #1e40af;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: 800;
-    }
-
-    .user-mini-text {
-      min-width: 0;
-    }
-
-    .user-mini-text strong {
-      display: block;
-      color: #fff;
-      font-size: 12px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .user-mini-text span {
-      display: block;
-      color: #94a3b8;
-      font-size: 10px;
-      margin-top: 2px;
-    }
-
-    .logout-btn {
-      width: 100%;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: transparent;
-      color: #cbd5e1;
-      border-radius: 8px;
-      padding: 9px;
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .logout-btn:hover {
-      background: rgba(255, 255, 255, 0.06);
-    }
-
-    /* =========================================================
-       MAIN
-       ========================================================= */
-
-    .main {
-      margin-left: 250px;
-      width: calc(100% - 250px);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .topbar {
-      min-height: 70px;
-      background: #fff;
-      border-bottom: 1px solid #e5e7eb;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 25px;
-      position: sticky;
-      top: 0;
-      z-index: 500;
-    }
-
-    .topbar-title {
-      min-width: 0;
-    }
-
-    .topbar-title h2 {
-      margin: 0;
-      font-size: 18px;
-    }
-
-    .topbar-title p {
-      margin: 3px 0 0;
-      font-size: 12px;
-      color: #64748b;
-    }
-
-    .mobile-menu {
-      display: none;
-      border: 0;
-      background: #eff6ff;
-      color: #2563eb;
-      border-radius: 8px;
-      padding: 8px 10px;
-      margin-right: 10px;
-    }
-
-    .content {
-      flex: 1;
-      padding: 25px;
-      width: 100%;
-    }
-
-    /*
-      IMPORTANT:
-      Do not use generic ".page { display:none }".
-      JavaScript controls visibility with .page.hidden.
-    */
-    .page {
-      display: block;
-      width: 100%;
-    }
-
-    .page.hidden {
-      display: none !important;
-    }
-
-    /* =========================================================
-       CARDS / DASHBOARD
-       ========================================================= */
-
-    .welcome-card {
-      background: linear-gradient(135deg, #1d4ed8, #2563eb);
-      color: #fff;
-      border-radius: 17px;
-      padding: 24px;
-      margin-bottom: 20px;
-      box-shadow: 0 15px 35px rgba(37, 99, 235, 0.18);
-    }
-
-    .welcome-card h1 {
-      margin: 0;
-      font-size: 24px;
-    }
-
-    .welcome-card p {
-      margin: 7px 0 0;
-      color: #dbeafe;
-      font-size: 13px;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-
-    .stat-card {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 18px;
-      min-width: 0;
-    }
-
-    .stat-label {
-      font-size: 12px;
-      color: #64748b;
-      font-weight: 600;
-    }
-
-    .stat-value {
-      font-size: 24px;
-      font-weight: 800;
-      margin-top: 8px;
-      color: #0f172a;
-      word-break: break-word;
-    }
-
-    .stat-sub {
-      margin-top: 5px;
-      font-size: 11px;
-      color: #94a3b8;
-    }
-
-    .section-card {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 19px;
-      margin-bottom: 18px;
-    }
-
-    .section-heading {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .section-heading h3 {
-      margin: 0;
-      font-size: 16px;
-    }
-
-    .section-heading p {
-      margin: 4px 0 0;
-      color: #64748b;
-      font-size: 12px;
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px;
-    }
-
-    .grid-3 {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 18px;
-    }
-
-    /* =========================================================
-       BUY NUMBER
-       ========================================================= */
-
-    .product-card {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 18px;
-    }
-
-    .product-card h3 {
-      margin: 0 0 6px;
-      font-size: 15px;
-    }
-
-    .product-card p {
-      margin: 0 0 14px;
-      color: #64748b;
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    .price-preview {
-      background: #f8fafc;
-      border-radius: 10px;
-      padding: 13px;
-      margin: 12px 0;
-    }
-
-    .price-preview-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 7px;
-      font-size: 12px;
-    }
-
-    .price-preview-row:last-child {
-      margin-bottom: 0;
-      padding-top: 8px;
-      border-top: 1px solid #e2e8f0;
-      font-weight: 800;
-      color: #0f172a;
-    }
-
-    /* =========================================================
-       TABLES
-       ========================================================= */
-
-    .table-wrapper {
-      width: 100%;
-      overflow-x: auto;
-    }
-
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 650px;
-    }
-
-    .data-table th {
-      text-align: left;
-      background: #f8fafc;
-      color: #64748b;
-      font-size: 11px;
-      padding: 11px 12px;
-      white-space: nowrap;
-      border-bottom: 1px solid #e2e8f0;
-    }
-
-    .data-table td {
-      padding: 12px;
-      border-bottom: 1px solid #edf2f7;
-      font-size: 12px;
-      vertical-align: middle;
-    }
-
-    .data-table tr:last-child td {
-      border-bottom: 0;
-    }
-
-    /* =========================================================
-       BADGES
-       ========================================================= */
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      border-radius: 999px;
-      padding: 4px 8px;
-      font-size: 10px;
-      font-weight: 800;
-      text-transform: capitalize;
-    }
-
-    .badge-success {
-      background: #dcfce7;
-      color: #166534;
-    }
-
-    .badge-warning {
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .badge-danger {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-
-    .badge-info {
-      background: #dbeafe;
-      color: #1e40af;
-    }
-
-    .badge-neutral {
-      background: #f1f5f9;
-      color: #475569;
-    }
-
-    /* =========================================================
-       WALLET
-       ========================================================= */
-
-    .wallet-balance {
-      background: linear-gradient(135deg, #0f172a, #1e293b);
-      color: white;
-      border-radius: 16px;
-      padding: 24px;
-    }
-
-    .wallet-balance small {
-      color: #94a3b8;
-      font-size: 12px;
-    }
-
-    .wallet-balance .amount {
-      font-size: 32px;
-      font-weight: 800;
-      margin-top: 7px;
-    }
-
-    .payment-info {
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
+    .gvs-add-money-icon {
+      width: 36px;
+      height: 36px;
       border-radius: 12px;
-      padding: 15px;
-      margin-bottom: 15px;
     }
+  }
+</style>
 
-    .payment-info h4 {
-      margin: 0 0 10px;
-      color: #1e40af;
-    }
-
-    .payment-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 15px;
-      padding: 6px 0;
-      font-size: 13px;
-    }
-
-    .payment-row span:first-child {
-      color: #64748b;
-    }
-
-    .payment-row strong {
-      color: #0f172a;
-    }
-
-    /* =========================================================
-       ALERTS
-       ========================================================= */
-
-    #toast-container {
-      position: fixed;
-      right: 18px;
-      bottom: 18px;
-      z-index: 5000;
-      width: min(360px, calc(100vw - 36px));
-    }
-
-    .toast {
-      background: #0f172a;
-      color: white;
-      padding: 13px 15px;
-      border-radius: 10px;
-      margin-top: 8px;
-      font-size: 12px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
-    }
-
-    .toast.success {
-      background: #166534;
-    }
-
-    .toast.error {
-      background: #991b1b;
-    }
-
-    .toast.warning {
-      background: #92400e;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 35px 20px;
-      color: #64748b;
-      font-size: 13px;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 25px;
-      color: #64748b;
-      font-size: 13px;
-    }
-
-    /* =========================================================
-       SUPPORT / PROFILE
-       ========================================================= */
-
-    .support-box {
-      text-align: center;
-      padding: 30px 20px;
-    }
-
-    .support-icon {
-      width: 55px;
-      height: 55px;
-      margin: 0 auto 13px;
-      border-radius: 50%;
-      background: #eff6ff;
-      color: #2563eb;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-    }
-
-    .support-box h3 {
-      margin: 0 0 7px;
-    }
-
-    .support-box p {
-      margin: 0 auto 15px;
-      color: #64748b;
-      max-width: 500px;
-      font-size: 13px;
-      line-height: 1.6;
-    }
-
-    .profile-grid {
-      display: grid;
-      grid-template-columns: 130px 1fr;
-      gap: 15px;
-      padding: 12px 0;
-      border-bottom: 1px solid #edf2f7;
-    }
-
-    .profile-grid:last-child {
-      border-bottom: 0;
-    }
-
-    .profile-grid span {
-      color: #64748b;
-      font-size: 12px;
-    }
-
-    .profile-grid strong {
-      font-size: 13px;
-      word-break: break-word;
-    }
-
-    /* =========================================================
-       FOOTER
-       ========================================================= */
-
-    .site-footer {
-      padding: 25px;
-      background: #fff;
-      border-top: 1px solid #e5e7eb;
-      text-align: center;
-      color: #64748b;
-      font-size: 11px;
-      line-height: 1.7;
-    }
-
-    .footer-brand {
-      font-weight: 800;
-      color: #334155;
-      margin-bottom: 3px;
-    }
-
-    .footer-links {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 8px 14px;
-      margin-top: 10px;
-    }
-
-    .footer-links a {
-      color: #2563eb;
-      text-decoration: none;
-      cursor: pointer;
-    }
-
-    .footer-links a:hover {
-      text-decoration: underline;
-    }
-
-    /* =========================================================
-       MODAL
-       ========================================================= */
-
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.55);
-      z-index: 4000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .modal {
-      width: 100%;
-      max-width: 520px;
-      background: #fff;
-      border-radius: 15px;
-      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2);
-      overflow: hidden;
-    }
-
-    .modal-header {
-      padding: 16px 18px;
-      border-bottom: 1px solid #e5e7eb;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .modal-header h3 {
-      margin: 0;
-      font-size: 16px;
-    }
-
-    .modal-close {
-      border: 0;
-      background: transparent;
-      font-size: 22px;
-      color: #64748b;
-    }
-
-    .modal-body {
-      padding: 18px;
-    }
-
-    /* =========================================================
-       MOBILE
-       ========================================================= */
-
-    @media (max-width: 1000px) {
-      .stats-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .grid-3 {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 800px) {
-      .sidebar {
-        transform: translateX(-100%);
-        transition: transform 0.2s ease;
-      }
-
-      .sidebar.open {
-        transform: translateX(0);
-      }
-
-      .main {
-        margin-left: 0;
-        width: 100%;
-      }
-
-      .mobile-menu {
-        display: inline-block;
-      }
-
-      .topbar {
-        padding: 0 15px;
-      }
-
-      .content {
-        padding: 15px;
-      }
-
-      .grid-2 {
-        grid-template-columns: 1fr;
-      }
-
-      .site-footer {
-        padding: 20px 15px;
-      }
-    }
-
-    @media (max-width: 520px) {
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .welcome-card h1 {
-        font-size: 20px;
-      }
-
-      .stat-value {
-        font-size: 22px;
-      }
-
-      .auth-card {
-        padding: 20px;
-      }
-
-      .payment-row {
-        flex-direction: column;
-        gap: 2px;
-      }
-
-      .profile-grid {
-        grid-template-columns: 1fr;
-        gap: 3px;
-      }
-    }
-  </style>
-</head>
-
-<body>
-
-  <!-- =========================================================
-       TOASTS
-       ========================================================= -->
-
-  <div id="toast-container"></div>
-
-  <!-- =========================================================
-       AUTHENTICATION
-       ========================================================= -->
-
-  <section id="auth">
-
-    <div class="auth-wrapper">
-
-      <div class="brand-center">
-        <div class="brand-logo">G</div>
-        <h1>Global Virtual Sim Web</h1>
-        <p>Virtual numbers & communication services</p>
-      </div>
-
-      <div class="auth-card">
-
-        <div class="auth-tabs">
-          <button
-            id="loginTab"
-            class="auth-tab active"
-            type="button"
-            onclick="setAuthMode('login')"
-          >
-            Login
-          </button>
-
-          <button
-            id="registerTab"
-            class="auth-tab"
-            type="button"
-            onclick="setAuthMode('register')"
-          >
-            Create Account
-          </button>
-        </div>
-
-        <!-- LOGIN -->
-
-        <form
-          id="loginForm"
-          class="auth-form"
-          onsubmit="handleLogin(event)"
-        >
-
-          <h2>Welcome back</h2>
-
-          <p>
-            Login to manage your virtual numbers and wallet.
-          </p>
-
-          <div class="form-group">
-            <label for="loginEmail">Email Address</label>
-
-            <input
-              id="loginEmail"
-              class="form-control"
-              type="email"
-              autocomplete="email"
-              required
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="loginPassword">Password</label>
-
-            <input
-              id="loginPassword"
-              class="form-control"
-              type="password"
-              autocomplete="current-password"
-              required
-              placeholder="Enter your password"
-            />
-          </div>
-
-          <button
-            id="loginButton"
-            class="primary-btn full-btn"
-            type="submit"
-          >
-            Login
-          </button>
-
-        </form>
-
-        <!-- REGISTER -->
-
-        <form
-          id="registerForm"
-          class="auth-form hidden"
-          onsubmit="handleRegister(event)"
-        >
-
-          <h2>Create your account</h2>
-
-          <p>
-            Create your Global Virtual Sim Web account.
-          </p>
-
-          <div class="form-group">
-            <label for="registerFullName">Full Name</label>
-
-            <input
-              id="registerFullName"
-              class="form-control"
-              type="text"
-              autocomplete="name"
-              required
-              placeholder="Your full name"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="registerUsername">Username</label>
-
-            <input
-              id="registerUsername"
-              class="form-control"
-              type="text"
-              autocomplete="username"
-              required
-              placeholder="Choose a username"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="registerReferral">Referral Code (Optional)</label>
-
-            <input
-              id="registerReferral"
-              class="form-control"
-              type="text"
-              placeholder="Referral code"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="registerEmail">Email Address</label>
-
-            <input
-              id="registerEmail"
-              class="form-control"
-              type="email"
-              autocomplete="email"
-              required
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="registerPassword">Password</label>
-
-            <input
-              id="registerPassword"
-              class="form-control"
-              type="password"
-              autocomplete="new-password"
-              required
-              minlength="6"
-              placeholder="At least 6 characters"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="registerConfirmPassword">
-              Confirm Password
-            </label>
-
-            <input
-              id="registerConfirmPassword"
-              class="form-control"
-              type="password"
-              autocomplete="new-password"
-              required
-              minlength="6"
-              placeholder="Repeat your password"
-            />
-          </div>
-
-          <label class="checkbox-row">
-            <input
-              id="registerTerms"
-              type="checkbox"
-              required
-            />
-
-            <span>
-              I agree to the Terms & Conditions and Acceptable Use Policy.
-            </span>
-          </label>
-
-          <button
-            id="registerButton"
-            class="primary-btn full-btn"
-            type="submit"
-          >
-            Create Account
-          </button>
-
-        </form>
-
-      </div>
-
-    </div>
-
-  </section>
-
-
-  <!-- =========================================================
-       MAIN APPLICATION
-       ========================================================= -->
-
-  <section id="app" class="hidden">
-
-    <div class="app-shell">
-
-      <!-- SIDEBAR -->
-
-      <aside id="sidebar" class="sidebar">
-
-        <div class="sidebar-brand">
-
-          <div class="sidebar-brand-row">
-
-            <div class="sidebar-brand-icon">
-              G
-            </div>
-
-            <div>
-              <strong>Global Virtual Sim</strong>
-              <small>Web</small>
-            </div>
-
-          </div>
-
-        </div>
-
-
-        <div class="nav-section">
-          Main
-        </div>
-
-        <div class="nav-list">
-
-          <button
-            class="nav-btn active"
-            data-page="home"
-            onclick="navigateTo('home')"
-          >
-            🏠
-            <span>Dashboard</span>
-          </button>
-
-          <button
-            class="nav-btn"
-            data-page="buy"
-            onclick="navigateTo('buy')"
-          >
-            📱
-            <span>Buy Number</span>
-          </button>
-
-          <button
-            class="nav-btn"
-            data-page="active"
-            onclick="navigateTo('active')"
-          >
-            📞
-            <span>Active Numbers</span>
-          </button>
-
-          <button
-            class="nav-btn"
-            data-page="orders"
-            onclick="navigateTo('orders')"
-          >
-            🧾
-            <span>Order History</span>
-          </button>
-
-          <button
-            class="nav-btn"
-            data-page="wallet"
-            onclick="navigateTo('wallet')"
-          >
-            💳
-            <span>Wallet</span>
-          </button>
-
-        </div>
-
-
-        <div class="nav-section">
-          Account
-        </div>
-
-        <div class="nav-list">
-
-          <button
-            class="nav-btn"
-            data-page="support"
-            onclick="navigateTo('support')"
-          >
-            💬
-            <span>Support</span>
-          </button>
-
-          <button
-            class="nav-btn"
-            data-page="profile"
-            onclick="navigateTo('profile')"
-          >
-            👤
-            <span>Profile</span>
-          </button>
-
-          <button
-            id="adminNavButton"
-            class="nav-btn hidden"
-            data-page="admin"
-            onclick="navigateTo('admin')"
-          >
-            ⚙️
-            <span>Admin Dashboard</span>
-          </button>
-
-        </div>
-
-
-        <div class="sidebar-bottom">
-
-          <div class="user-mini">
-
-            <div
-              id="sidebarAvatar"
-              class="avatar"
-            >
-              U
-            </div>
-
-            <div class="user-mini-text">
-
-              <strong id="sidebarName">
-                User
-              </strong>
-
-              <span id="sidebarEmail">
-                -
-              </span>
-
-            </div>
-
-          </div>
-
-          <button
-            class="logout-btn"
-            type="button"
-            onclick="handleLogout()"
-          >
-            Logout
-          </button>
-
-        </div>
-
-      </aside>
-
-
-      <!-- MAIN -->
-
-      <main class="main">
-
-        <header class="topbar">
-
-          <div style="display:flex;align-items:center;min-width:0;">
-
-            <button
-              id="mobileMenuButton"
-              class="mobile-menu"
-              type="button"
-              onclick="toggleSidebar()"
-            >
-              ☰
-            </button>
-
-            <div class="topbar-title">
-
-              <h2 id="pageTitle">
-                Dashboard
-              </h2>
-
-              <p id="pageSubtitle">
-                Overview of your account
-              </p>
-
-            </div>
-
-          </div>
-
-          <div>
-            <span
-              id="topbarBalance"
-              class="badge badge-info"
-            >
-              ₦0.00
-            </span>
-          </div>
-
-        </header>
-
-
-        <div class="content">
-
-          <!-- =================================================
-               HOME / DASHBOARD
-               ================================================= -->
-
-          <section
-            id="page-home"
-            class="page"
-          >
-
-            <div class="welcome-card">
-
-              <h1>
-                Welcome, <span id="welcomeName">User</span>
-              </h1>
-
-              <p>
-                Manage your virtual numbers, orders and wallet from one place.
-              </p>
-
-            </div>
-
-
-            <div class="stats-grid">
-
-              <div class="stat-card">
-
-                <div class="stat-label">
-                  Wallet Balance
-                </div>
-
-                <div
-                  id="dashboardBalance"
-                  class="stat-value"
-                >
-                  ₦0.00
-                </div>
-
-                <div class="stat-sub">
-                  Available funds
-                </div>
-
-              </div>
-
-
-              <div class="stat-card">
-
-                <div class="stat-label">
-                  Active Numbers
-                </div>
-
-                <div
-                  id="dashboardActiveNumbers"
-                  class="stat-value"
-                >
-                  0
-                </div>
-
-                <div class="stat-sub">
-                  Current activations
-                </div>
-
-              </div>
-
-
-              <div class="stat-card">
-
-                <div class="stat-label">
-                  Total Orders
-                </div>
-
-                <div
-                  id="dashboardOrders"
-                  class="stat-value"
-                >
-                  0
-                </div>
-
-                <div class="stat-sub">
-                  Your orders
-                </div>
-
-              </div>
-
-
-              <div class="stat-card">
-
-                <div class="stat-label">
-                  Transactions
-                </div>
-
-                <div
-                  id="dashboardTransactions"
-                  class="stat-value"
-                >
-                  0
-                </div>
-
-                <div class="stat-sub">
-                  Wallet activity
-                </div>
-
-              </div>
-
-            </div>
-
-
-            <div class="grid-2">
-
-              <div class="section-card">
-
-                <div class="section-heading">
-
-                  <div>
-                    <h3>Quick Actions</h3>
-                    <p>Common account actions</p>
-                  </div>
-
-                </div>
-
-                <div style="display:grid;gap:9px;">
-
-                  <button
-                    class="primary-btn"
-                    onclick="navigateTo('buy')"
-                  >
-                    📱 Buy a Number
-                  </button>
-
-                  <button
-                    class="secondary-btn"
-                    onclick="navigateTo('wallet')"
-                  >
-                    💳 Fund Wallet
-                  </button>
-
-                  <button
-                    class="secondary-btn"
-                    onclick="navigateTo('orders')"
-                  >
-                    🧾 View Orders
-                  </button>
-
-                </div>
-
-              </div>
-
-
-              <div class="section-card">
-
-                <div class="section-heading">
-
-                  <div>
-                    <h3>Recent Activity</h3>
-                    <p>Your latest wallet transactions</p>
-                  </div>
-
-                </div>
-
-                <div
-                  id="recentActivity"
-                  class="empty-state"
-                >
-                  No recent activity.
-                </div>
-
-              </div>
-
-            </div>
-
-          </section>
-
-
-          <!-- =================================================
-               BUY NUMBER
-               ================================================= -->
-
-          <section
-            id="page-buy"
-            class="page hidden"
-          >
-
-            <div class="section-card">
-
-              <div class="section-heading">
-
-                <div>
-                  <h3>Buy Virtual Number</h3>
-                  <p>
-                    Select a country and an available communication service.
-                  </p>
-                </div>
-
-              </div>
-
-
-              <div class="grid-2">
-
-                <div>
-
-                  <div class="form-group">
-
-                    <label for="countrySelect">
-                      Country
-                    </label>
-
-                    <select
-                      id="countrySelect"
-                      class="form-control"
-                      onchange="loadServices()"
-                    >
-
-                      <option value="">
-                        Select a country
-                      </option>
-
-                    </select>
-
-                  </div>
-
-
-                  <div class="form-group">
-
-                    <label for="serviceSelect">
-                      Service
-                    </label>
-
-                    <select
-                      id="serviceSelect"
-                      class="form-control"
-                      onchange="updatePurchasePreview()"
-                    >
-
-                      <option value="">
-                        Select a service
-                      </option>
-
-                    </select>
-
-                  </div>
-
-                </div>
-
-
-                <div class="product-card">
-
-                  <h3>
-                    Order Preview
-                  </h3>
-
-                  <p>
-                    Review the selected number before placing your order.
-                  </p>
-
-                  <div class="price-preview">
-
-                    <div class="price-preview-row">
-
-                      <span>
-                        Country
-                      </span>
-
-                      <strong id="previewCountry">
-                        —
-                      </strong>
-
-                    </div>
-
-                    <div class="price-preview-row">
-
-                      <span>
-                        Service
-                      </span>
-
-                      <strong id="previewService">
-                        —
-                      </strong>
-
-                    </div>
-
-                    <div class="price-preview-row">
-
-                      <span>
-                        Price
-                      </span>
-
-                      <strong id="previewPrice">
-                        —
-                      </strong>
-
-                    </div>
-
-                  </div>
-
-                  <button
-                    id="purchaseButton"
-                    class="primary-btn full-btn"
-                    type="button"
-                    onclick="purchaseNumber()"
-                    disabled
-                  >
-                    Purchase Number
-                  </button>
-
-                </div>
-
-              </div>
-
-            </div>
-
-
-            <div class="section-card">
-
-              <div class="section-heading">
-
-                <div>
-                  <h3>How it works</h3>
-                  <p>Simple and transparent</p>
-                </div>
-
-              </div>
-
-              <div class="grid-3">
-
-                <div class="product-card">
-                  <h3>1. Fund Wallet</h3>
-                  <p>
-                    Add funds to your account using the available payment method.
-                  </p>
-                </div>
-
-                <div class="product-card">
-                  <h3>2. Select Number</h3>
-                  <p>
-                    Choose an available country and legitimate communication service.
-                  </p>
-                </div>
-
-                <div class="product-card">
-                  <h3>3. Receive Service</h3>
-                  <p>
-                    Your purchased activation will appear under Active Numbers.
-                  </p>
-                </div>
-
-              </div>
-
-            </div>
-
-          </section>
-
-
-          <!-- =================================================
-               ACTIVE NUMBERS
-               ================================================= -->
-
-          <section
-            id="page-active"
-            class="page hidden"
-          >
-
-            <div class="section-card">
-
-              <div class="section-heading">
-
-                <div>
-                  <h3>Active Numbers</h3>
-                  <p>Your currently active number activations.</p>
-                </div>
-
-                <button
-                  class="secondary-btn small-btn"
-                  onclick="loadActiveNumbers()"
-                >
-                  Refresh
-                </button>
-
-              </div>
-
-              <div
-                id="activeNumbersContainer"
-                class="loading"
-              >
-                Loading active numbers...
-              </div>
-
-            </div>
-
-          </section>
-
-
-          <!-- =================================================
-               ORDER HISTORY
-               ================================================= -->
-
-          <section
-            id="page-orders"
-            class="page hidden"
-          >
-
-            <div class="section-card">
-
-              <div class="section-heading">
-
-                <div>
-                  <h3>Order History</h3>
-                  <p>Your previous purchases.</p>
-                </div>
-
-                <button
-                  class="secondary-btn small-btn"
-                  onclick="loadOrderHistory()"
-                >
-                  Refresh
-                </button>
-
-              </div>
-
-              <div
-                id="orderHistoryContainer"
-                class="loading"
-              >
-                Loading orders...
-              </div>
-
-            </div>
-
-          </section>
-
-
-          <!-- =================================================
-               WALLET
-               ================================================= -->
-
-          <section
-            id="page-wallet"
-            class="page hidden"
-          >
-
-            <div class="grid-2">
-
-              <div class="wallet-balance">
-
-                <small>
-                  Available Wallet Balance
-                </small>
-
-                <div
-                  id="walletPageBalance"
-                  class="amount"
-                >
-                  ₦0.00
-                </div>
-
-                <div style="margin-top:15px;color:#94a3b8;font-size:12px;">
-                  Use your wallet balance for eligible purchases.
-                </div>
-
-              </div>
-
-
-              <div class="section-card">
-
-                <div class="section-heading">
-
-                  <div>
-                    <h3>Deposit Status</h3>
-                    <p>Manual deposits are reviewed by an administrator.</p>
-                  </div>
-
-                </div>
-
-                <p
-                  style="font-size:13px;color:#64748b;line-height:1.6;margin:0;"
-                >
-                  After making your transfer, submit the amount and receipt.
-                  Your wallet will be credited after the deposit is approved.
-                </p>
-
-              </div>
-
-            </div>
-
-
-            <div class="grid-2">
-
-              <!-- DEPOSIT -->
-
-              <div class="section-card">
-
-                <div class="section-heading">
-
-                  <div>
-                    <h3>Fund Wallet</h3>
-                    <p>Manual OPay deposit</p>
-                  </div>
-
-                </div>
-
-
-                <div class="payment-info">
-
-                  <h4>
-                    OPay Payment Details
-                  </h4>
-
-                  <div class="payment-row">
-
-                    <span>
-                      Account Number
-                    </span>
-
-                    <strong>
-                      9136540119
-                    </strong>
-
-                  </div>
-
-                  <div class="payment-row">
-
-                    <span>
-                      Account Name
-                    </span>
-
-                    <strong>
-                      Kelechi James
-                    </strong>
-
-                  </div>
-
-                  <div class="payment-row">
-
-                    <span>
-                      Payment Method
-                    </span>
-
-                    <strong>
-                      OPay
-                    </strong>
-
-                  </div>
-
-                </div>
-
-
-                <form
-                  id="depositForm"
-                  onsubmit="submitDeposit(event)"
-                >
-
-                  <div class="form-group">
-
-                    <label for="depositAmount">
-                      Amount
-                    </label>
-
-                    <input
-                      id="depositAmount"
-                      class="form-control"
-                      type="number"
-                      min="1"
-                      step="0.01"
-                      required
-                      placeholder="Enter amount"
-                    />
-
-                  </div>
-
-
-                  <div class="form-group">
-
-                    <label for="depositReference">
-                      Transfer Reference (Optional)
-                    </label>
-
-                    <input
-                      id="depositReference"
-                      class="form-control"
-                      type="text"
-                      placeholder="Payment reference"
-                    />
-
-                  </div>
-
-
-                  <div class="form-group">
-
-                    <label for="depositNote">
-                      Note (Optional)
-                    </label>
-
-                    <textarea
-                      id="depositNote"
-                      class="form-control"
-                      rows="3"
-                      placeholder="Additional information"
-                    ></textarea>
-
-                  </div>
-
-
-                  <div class="form-group">
-
-                    <label for="depositReceipt">
-                      Payment Receipt
-                    </label>
-
-                    <input
-                      id="depositReceipt"
-                      class="form-control"
-                      type="file"
-                      accept="image/*,.pdf"
-                      required
-                    />
-
-                  </div>
-
-
-                  <button
-                    id="depositButton"
-                    class="primary-btn full-btn"
-                    type="submit"
-                  >
-                    Submit Deposit
-                  </button>
-
-                </form>
-
-              </div>
-
-
-              <!-- WITHDRAW -->
-
-              <div class="section-card">
-
-                <div class="section-heading">
-
-                  <div>
-                    <h3>Withdraw Funds</h3>
-                    <p>Request a withdrawal from your wallet.</p>
-                  </div>
-
-                </div>
-
-
-                <form
-                  id="withdrawForm"
-                  onsubmit="submitWithdrawal(event)"
-                >
-
-                  <div class="form-group">
-
-                    <label for="withdrawBank">
-                      Bank
-                    </label>
-
-                    <select
-                      id="withdrawBank"
-                      class="form-control"
-                    >
-
-                      <option value="">
-                        Select bank
-                      </option>
-
-                      <option>Access Bank</option>
-                      <option>Fidelity Bank</option>
-                      <option>First Bank</option>
-                      <option>GTBank</option>
-                      <option>Moniepoint</option>
-                      <option>OPay</option>
-                      <option>PalmPay</option>
-                      <option>Polaris Bank</option>
-                      <option>Stanbic IBTC</option>
-                      <option>UBA</option>
-                      <option>Union Bank</option>
-                      <option>Wema Bank</option>
-                      <option>Zenith Bank</option>
-                      <option>Other</option>
-
-                    </select>
-
-                  </div>
-
-
-                  <div class="form-group">
-
-                    <label for="withdrawAccountNumber">
-                      Account Number
-                    </label>
-
-                    <input
-                      id="withdrawAccountNumber"
-                      class="form-control"
-                      type="text"
-                      inputmode="numeric"
-                      maxlength="10"
-                      placeholder="10-digit account number"
-                    />
-
-                  </div>
-
-
-                  <div class="form-group">
-
-                    <label for="withdrawAccountName">
-                      Account Name
-                    </label>
-
-                    <input
-                      id="withdrawAccountName"
-                      class="form-control"
-                      type="text"
-                      placeholder="Account holder name"
-                    />
-
-                  </div>
-
-
-                  <div class="form-group">
-
-                    <label for="withdrawAmount">
-                      Amount
-                    </label>
-
-                    <input
-                      id="withdrawAmount"
-                      class="form-control"
-                      type="number"
-                      min="1000"
-                      step="0.01"
-                      placeholder="Minimum ₦1,000"
-                    />
-
-                  </div>
-
-
-                  <button
-                    id="withdrawButton"
-                    class="primary-btn full-btn"
-                    type="submit"
-                  >
-                    Request Withdrawal
-                  </button>
-
-                </form>
-
-              </div>
-
-            </div>
-
-
-            <!-- TRANSACTIONS -->
-
-            <div class="section-card">
-
-              <div class="section-heading">
-
-                <div>
-                  <h3>Transaction History</h3>
-                  <p>Your wallet activity.</p>
-                </div>
-
-              </div>
-
-              <div
-                id="walletTransactionsContainer"
-                class="loading"
-              >
-                Loading transactions...
-              </div>
-
-            </div>
-
-
-            <!-- DEPOSITS -->
-
-            <div class="section-card">
-
-              <div class="section-heading">
-
-                <div>
-                  <h3>Deposit History</h3>
-                  <p>Previous wallet funding requests.</p>
-                </div>
-
-              </div>
-
-              <div
-                id="depositHistoryContainer"
-                class="loading"
-              >
-                Loading deposits...
-              </div>
-
-            </div>
-
-          </section>
-
-
-          <!-- =================================================
-               SUPPORT
-               ================================================= -->
-
-          <section
-            id="page-support"
-            class="page hidden"
-          >
-
-            <div class="section-card support-box">
-
-              <div class="support-icon">
-                💬
-              </div>
-
-              <h3>
-                Global Virtual Sim Web Support
-              </h3>
-
-              <p>
-                If you need help with your account, wallet deposit,
-                order or another website issue, contact our support team.
-              </p>
-
-              <a
-                href="mailto:watchandearn.ng@gmail.com"
-                class="primary-btn"
-                style="display:inline-block;text-decoration:none;"
-              >
-                Email Support
-              </a>
-
-            </div>
-
-
-            <div class="grid-3">
-
-              <div class="product-card">
-                <h3>Wallet Help</h3>
-                <p>
-                  Contact support if your approved deposit does not appear
-                  correctly in your wallet.
-                </p>
-              </div>
-
-              <div class="product-card">
-                <h3>Order Help</h3>
-                <p>
-                  Provide your order reference when reporting an order issue.
-                </p>
-              </div>
-
-              <div class="product-card">
-                <h3>Account Help</h3>
-                <p>
-                  Never share your password with support or another user.
-                </p>
-              </div>
-
-            </div>
-
-          </section>
-
-
-          <!-- =================================================
-               PROFILE
-               ================================================= -->
-
-          <section
-            id="page-profile"
-            class="page hidden"
-          >
-
-            <div class="section-card">
-
-              <div class="section-heading">
-
-                <div>
-                  <h3>My Profile</h3>
-                  <p>Your account information.</p>
-                </div>
-
-              </div>
-
-
-              <div class="profile-grid">
-
-                <span>
-                  Full Name
-                </span>
-
-                <strong id="profileFullName">
-                  —
-                </strong>
-
-              </div>
-
-
-              <div class="profile-grid">
-
-                <span>
-                  Username
-                </span>
-
-                <strong id="profileUsername">
-                  —
-                </strong>
-
-              </div>
-
-
-              <div class="profile-grid">
-
-                <span>
-                  Email
-                </span>
-
-                <strong id="profileEmail">
-                  —
-                </strong>
-
-              </div>
-
-
-              <div class="profile-grid">
-
-                <span>
-                  Account Role
-                </span>
-
-                <strong id="profileRole">
-                  Customer
-                </strong>
-
-              </div>
-
-
-              <div class="profile-grid">
-
-                <span>
-                  Referral Code
-                </span>
-
-                <strong id="profileReferral">
-                  —
-                </strong>
-
-              </div>
-
-            </div>
-
-          </section>
-
-
-          <!-- =================================================
-               ADMIN
-               ================================================= -->
-
-          <section
-            id="page-admin"
-            class="page hidden"
-          >
-
-            <div
-              id="adminAccessDenied"
-              class="section-card hidden"
-            >
-
-              <div class="empty-state">
-                Administrator access is required.
-              </div>
-
-            </div>
-
-
-            <div id="adminContent">
-
-              <div class="stats-grid">
-
-                <div class="stat-card">
-
-                  <div class="stat-label">
-                    Users
-                  </div>
-
-                  <div
-                    id="adminUsersCount"
-                    class="stat-value"
-                  >
-                    0
-                  </div>
-
-                </div>
-
-
-                <div class="stat-card">
-
-                  <div class="stat-label">
-                    Orders
-                  </div>
-
-                  <div
-                    id="adminOrdersCount"
-                    class="stat-value"
-                  >
-                    0
-                  </div>
-
-                </div>
-
-
-                <div class="stat-card">
-
-                  <div class="stat-label">
-                    Deposits
-                  </div>
-
-                  <div
-                    id="adminDepositsCount"
-                    class="stat-value"
-                  >
-                    0
-                  </div>
-
-                </div>
-
-
-                <div class="stat-card">
-
-                  <div class="stat-label">
-                    Pending Deposits
-                  </div>
-
-                  <div
-                    id="adminPendingCount"
-                    class="stat-value"
-                  >
-                    0
-                  </div>
-
-                </div>
-
-              </div>
-
-
-              <div class="section-card">
-
-                <div class="section-heading">
-
-                  <div>
-                    <h3>Pending Deposit Requests</h3>
-                    <p>
-                      Review customer payment receipts before crediting wallets.
-                    </p>
-                  </div>
-
-                  <button
-                    class="secondary-btn small-btn"
-                    onclick="loadAdmin()"
-                  >
-                    Refresh
-                  </button>
-
-                </div>
-
-
-                <div
-                  id="adminDepositsContainer"
-                  class="loading"
-                >
-                  Loading deposit requests...
-                </div>
-
-              </div>
-
-
-              <div class="section-card">
-
-                <div class="section-heading">
-
-                  <div>
-                    <h3>Recent Orders</h3>
-                    <p>Customer order records.</p>
-                  </div>
-
-                </div>
-
-                <div
-                  id="adminOrdersContainer"
-                  class="loading"
-                >
-                  Loading orders...
-                </div>
-
-              </div>
-
-
-              <div class="section-card">
-
-                <div class="section-heading">
-
-                  <div>
-                    <h3>Customers</h3>
-                    <p>Registered customer accounts.</p>
-                  </div>
-
-                </div>
-
-                <div
-                  id="adminUsersContainer"
-                  class="loading"
-                >
-                  Loading users...
-                </div>
-
-              </div>
-
-            </div>
-
-          </section>
-
-        </div>
-
-
-        <!-- FOOTER -->
-
-        <footer class="site-footer">
-
-          <div class="footer-brand">
-            © 2026 Global Virtual Sim Web. All rights reserved.
-          </div>
-
-          <div>
-            Owned by KelChuk’s.
-          </div>
-
-          <div class="footer-links">
-
-            <a onclick="showLegal('Support')">
-              Support
-            </a>
-
-            <a onclick="showLegal('Contact')">
-              Contact
-            </a>
-
-            <a href="mailto:watchandearn.ng@gmail.com">
-              Email
-            </a>
-
-            <a onclick="showLegal('Telegram')">
-              Telegram
-            </a>
-
-            <a onclick="showLegal('Terms & Conditions')">
-              Terms & Conditions
-            </a>
-
-            <a onclick="showLegal('Privacy Policy')">
-              Privacy Policy
-            </a>
-
-            <a onclick="showLegal('Refund Policy')">
-              Refund Policy
-            </a>
-
-            <a onclick="showLegal('Acceptable Use Policy')">
-              Acceptable Use Policy
-            </a>
-
-            <a
-              id="footerAdminLink"
-              class="hidden"
-              onclick="navigateTo('admin')"
-            >
-              Admin Dashboard
-            </a>
-
-          </div>
-
-        </footer>
-
-      </main>
-
-    </div>
-
-  </section>
-
-
-  <!-- =========================================================
-       RECEIPT MODAL
-       ========================================================= -->
-
-  <div
-    id="receiptModal"
-    class="modal-backdrop hidden"
-    onclick="closeReceiptModal(event)"
-  >
-
-    <div
-      class="modal"
-      onclick="event.stopPropagation()"
-    >
-
-      <div class="modal-header">
-
-        <h3>
-          Deposit Receipt
-        </h3>
-
-        <button
-          class="modal-close"
-          onclick="closeReceiptModal()"
-        >
-          ×
-        </button>
-
-      </div>
-
-      <div
-        id="receiptModalBody"
-        class="modal-body"
-      >
-        Loading receipt...
-      </div>
-
-    </div>
-
-  </div>
-
-
-  <!-- =========================================================
-       LEGAL MODAL
-       ========================================================= -->
-
-  <div
-    id="legalModal"
-    class="modal-backdrop hidden"
-    onclick="closeLegalModal(event)"
-  >
-
-    <div
-      class="modal"
-      onclick="event.stopPropagation()"
-    >
-
-      <div class="modal-header">
-
-        <h3 id="legalTitle">
-          Information
-        </h3>
-
-        <button
-          class="modal-close"
-          onclick="closeLegalModal()"
-        >
-          ×
-        </button>
-
-      </div>
-
-      <div
-        id="legalBody"
-        class="modal-body"
-      >
-        Information.
-      </div>
-
-    </div>
-
-  </div>
-
-
-  <!-- =========================================================
-       SUPABASE
-       ========================================================= -->
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-
-  <script>
-    /* =========================================================
-       SUPABASE CONFIG
-       ========================================================= */
-
-    const SUPABASE_URL =
-      "https://rfitbmkizfmwfqqskwhy.supabase.co";
-
-    const SUPABASE_PUBLISHABLE_KEY =
-      "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
-
-    const supabaseClient =
-      window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_PUBLISHABLE_KEY
-      );
-
-
-    /* =========================================================
-       GLOBAL STATE
-       ========================================================= */
-
-    let currentUser = null;
-    let currentProfile = null;
-    let currentWallet = null;
-    let currentServices = [];
-    let currentCountries = [];
-    let isAdmin = false;
-    let currentPage = "home";
-
-
-    /* =========================================================
-       HELPERS
-       ========================================================= */
-
-    function $(id) {
-      return document.getElementById(id);
-    }
-
-
-    function escapeHtml(value) {
-      if (value === null || value === undefined) {
-        return "";
-      }
-
-      return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-
-    function formatMoney(value) {
-      const amount = Number(value || 0);
-
-      return "₦" + amount.toLocaleString("en-NG", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-    }
-
-
-    function formatDate(value) {
-      if (!value) return "—";
-
-      const date = new Date(value);
-
-      if (Number.isNaN(date.getTime())) {
-        return "—";
-      }
-
-      return date.toLocaleString("en-NG", {
-        dateStyle: "medium",
-        timeStyle: "short"
-      });
-    }
-
-
-    function showToast(message, type = "") {
-      const container = $("toast-container");
-
-      const toast = document.createElement("div");
-
-      toast.className =
-        "toast" + (type ? " " + type : "");
-
-      toast.textContent = message;
-
-      container.appendChild(toast);
-
-      setTimeout(() => {
-        toast.remove();
-      }, 4500);
-    }
-
-
-    function setButtonLoading(button, loading, loadingText) {
-      if (!button) return;
-
-      if (loading) {
-        button.dataset.originalText = button.textContent;
-        button.disabled = true;
-        button.textContent = loadingText || "Please wait...";
-      } else {
-        button.disabled = false;
-
-        if (button.dataset.originalText) {
-          button.textContent = button.dataset.originalText;
-        }
-      }
-    }
-
-
-    /* =========================================================
-       AUTH MODE
-       ========================================================= */
-
-    function setAuthMode(mode) {
-
-      const loginForm = $("loginForm");
-      const registerForm = $("registerForm");
-
-      const loginTab = $("loginTab");
-      const registerTab = $("registerTab");
-
-      if (mode === "register") {
-
-        loginForm.classList.add("hidden");
-        registerForm.classList.remove("hidden");
-
-        loginTab.classList.remove("active");
-        registerTab.classList.add("active");
-
-      } else {
-
-        registerForm.classList.add("hidden");
-        loginForm.classList.remove("hidden");
-
-        registerTab.classList.remove("active");
-        loginTab.classList.add("active");
-
-      }
-    }
-
-
-    /* =========================================================
-       REGISTER
-       ========================================================= */
-
-    async function handleRegister(event) {
-
-      event.preventDefault();
-
-      const button = $("registerButton");
-
-      const fullName =
-        $("registerFullName").value.trim();
-
-      const username =
-        $("registerUsername").value.trim();
-
-      const referralCode =
-        $("registerReferral").value.trim();
-
-      const email =
-        $("registerEmail").value.trim();
-
-      const password =
-        $("registerPassword").value;
-
-      const confirmPassword =
-        $("registerConfirmPassword").value;
-
-      if (password !== confirmPassword) {
-
-        showToast(
-          "Passwords do not match.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      setButtonLoading(
-        button,
-        true,
-        "Creating account..."
-      );
-
-
-      try {
-
-        const {
-          data,
-          error
-        } = await supabaseClient.auth.signUp({
-
-          email,
-          password,
-
-          options: {
-            data: {
-              full_name: fullName,
-              username: username,
-              referral_code: referralCode
-            }
-          }
-
-        });
-
-
-        if (error) {
-          throw error;
-        }
-
-
-        /*
-          Email confirmation has been disabled in Supabase.
-          If the account is immediately authenticated, open the app.
-          Otherwise return to login.
-        */
-
-        if (data?.session) {
-
-          currentUser = data.session.user;
-
-          await loadAuthenticatedUser();
-
-        } else {
-
-          showToast(
-            "Account created successfully. You can now log in.",
-            "success"
-          );
-
-          $("registerForm").reset();
-
-          setAuthMode("login");
-
-          $("loginEmail").value = email;
-
-        }
-
-      } catch (error) {
-
-        console.error("Registration error:", error);
-
-        showToast(
-          error.message || "Unable to create account.",
-          "error"
-        );
-
-      } finally {
-
-        setButtonLoading(
-          button,
-          false
-        );
-
-      }
-    }
-
-
-    /* =========================================================
-       LOGIN
-       ========================================================= */
-
-    async function handleLogin(event) {
-
-      event.preventDefault();
-
-      const button = $("loginButton");
-
-      const email =
-        $("loginEmail").value.trim();
-
-      const password =
-        $("loginPassword").value;
-
-
-      setButtonLoading(
-        button,
-        true,
-        "Logging in..."
-      );
-
-
-      try {
-
-        const {
-          data,
-          error
-        } = await supabaseClient.auth.signInWithPassword({
-          email,
-          password
-        });
-
-
-        if (error) {
-          throw error;
-        }
-
-
-        currentUser =
-          data?.user || null;
-
-
-        await loadAuthenticatedUser();
-
-
-      } catch (error) {
-
-        console.error("Login error:", error);
-
-        showToast(
-          error.message || "Unable to log in.",
-          "error"
-        );
-
-      } finally {
-
-        setButtonLoading(
-          button,
-          false
-        );
-
-      }
-    }
-
-
-    /* =========================================================
-       LOAD AUTHENTICATED USER
-       ========================================================= */
-
-    async function loadAuthenticatedUser() {
-
-      try {
-
-        const {
-          data,
-          error
-        } = await supabaseClient.auth.getUser();
-
-
-        if (error) {
-          throw error;
-        }
-
-
-        if (!data?.user) {
-
-          showAuth();
-
-          return;
-        }
-
-
-        currentUser = data.user;
-
-
-        /*
-          IMPORTANT DISPLAY FIX:
-          Hide authentication and show the complete app shell
-          before loading dashboard data.
-        */
-
-        $("auth").classList.add("hidden");
-        $("app").classList.remove("hidden");
-
-
-        await loadProfile();
-
-        await checkAdmin();
-
-        updateUserInterface();
-
-        navigateTo("home");
-
-        await loadDashboard();
-
-
-      } catch (error) {
-
-        console.error(
-          "loadAuthenticatedUser error:",
-          error
-        );
-
-        showToast(
-          error.message ||
-          "Unable to load your account.",
-          "error"
-        );
-
-        showAuth();
-
-      }
-    }
-
-
-    function showAuth() {
-
-      $("app").classList.add("hidden");
-      $("auth").classList.remove("hidden");
-
-      currentUser = null;
-      currentProfile = null;
-      currentWallet = null;
-      isAdmin = false;
-
-    }
-
-
-    /* =========================================================
-       PROFILE
-       ========================================================= */
-
-    async function loadProfile() {
-
-      if (!currentUser) return;
-
-
-      const {
-        data,
-        error
-      } = await supabaseClient
-        .from("profiles")
-        .select("*")
-        .eq("id", currentUser.id)
-        .maybeSingle();
-
-
-      if (error) {
-
-        console.error(
-          "Profile load error:",
-          error
-        );
-
-        /*
-          The account can still use auth even if
-          the profile row has not been created.
-        */
-
-        currentProfile = {
-          id: currentUser.id,
-          email: currentUser.email,
-          role: "customer"
-        };
-
-        return;
-      }
-
-
-      currentProfile =
-        data || {
-          id: currentUser.id,
-          email: currentUser.email,
-          role: "customer"
-        };
-
-    }
-
-
-    function updateUserInterface() {
-
-      const email =
-        currentUser?.email || "—";
-
-      const fullName =
-        currentProfile?.full_name ||
-        currentUser?.user_metadata?.full_name ||
-        currentProfile?.username ||
-        "User";
-
-      const username =
-        currentProfile?.username ||
-        currentUser?.user_metadata?.username ||
-        "—";
-
-
-      $("welcomeName").textContent =
-        fullName.split(" ")[0] || "User";
-
-
-      $("sidebarName").textContent =
-        fullName;
-
-
-      $("sidebarEmail").textContent =
-        email;
-
-
-      $("sidebarAvatar").textContent =
-        String(fullName).charAt(0).toUpperCase();
-
-
-      $("profileFullName").textContent =
-        fullName;
-
-
-      $("profileUsername").textContent =
-        username;
-
-
-      $("profileEmail").textContent =
-        email;
-
-
-      $("profileRole").textContent =
-        currentProfile?.role || "customer";
-
-
-      $("profileReferral").textContent =
-        currentProfile?.referral_code ||
-        currentUser?.user_metadata?.referral_code ||
-        "—";
-
-    }
-
-
-    /* =========================================================
-       ADMIN CHECK
-       ========================================================= */
-
-    async function checkAdmin() {
-
-      isAdmin = false;
-
-
-      if (!currentUser) {
-        return false;
-      }
-
-
-      try {
-
-        const {
-          data,
-          error
-        } = await supabaseClient.rpc(
-          "is_admin"
-        );
-
-
-        if (!error) {
-          isAdmin = data === true;
-        }
-
-      } catch (error) {
-
-        console.warn(
-          "Admin RPC unavailable:",
-          error
-        );
-
-      }
-
-
-      /*
-        Fallback to profile role.
-      */
-
-      if (
-        currentProfile?.role === "admin"
-      ) {
-        isAdmin = true;
-      }
-
-
-      if (isAdmin) {
-
-        $("adminNavButton").classList.remove("hidden");
-        $("footerAdminLink").classList.remove("hidden");
-
-      } else {
-
-        $("adminNavButton").classList.add("hidden");
-        $("footerAdminLink").classList.add("hidden");
-
-      }
-
-
-      return isAdmin;
-    }
-
-
-    /* =========================================================
-       NAVIGATION
-       ========================================================= */
-
-    function navigateTo(page) {
-
-      if (!currentUser) {
-        return;
-      }
-
-
-      if (
-        page === "admin" &&
-        !isAdmin
-      ) {
-
-        showToast(
-          "Administrator access required.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      const pages =
-        document.querySelectorAll(".page");
-
-
-      pages.forEach(section => {
-
-        section.classList.add("hidden");
-
-      });
-
-
-      const target =
-        $("page-" + page);
-
-
-      if (!target) {
-
-        console.error(
-          "Page not found:",
-          page
-        );
-
-        return;
-      }
-
-
-      target.classList.remove("hidden");
-
-
-      document
-        .querySelectorAll(".nav-btn")
-        .forEach(button => {
-
-          button.classList.remove("active");
-
-        });
-
-
-      const navButton =
-        document.querySelector(
-          `.nav-btn[data-page="${page}"]`
-        );
-
-
-      if (navButton) {
-        navButton.classList.add("active");
-      }
-
-
-      const titles = {
-
-        home: [
-          "Dashboard",
-          "Overview of your account"
-        ],
-
-        buy: [
-          "Buy Number",
-          "Choose an available virtual number"
-        ],
-
-        active: [
-          "Active Numbers",
-          "Manage your active activations"
-        ],
-
-        orders: [
-          "Order History",
-          "Review your previous orders"
-        ],
-
-        wallet: [
-          "Wallet",
-          "Manage your funds and transactions"
-        ],
-
-        support: [
-          "Support",
-          "Get help with your account"
-        ],
-
-        profile: [
-          "Profile",
-          "Manage your account information"
-        ],
-
-        admin: [
-          "Admin Dashboard",
-          "Manage deposits, users and orders"
-        ]
-
-      };
-
-
-      const title =
-        titles[page] || titles.home;
-
-
-      $("pageTitle").textContent =
-        title[0];
-
-
-      $("pageSubtitle").textContent =
-        title[1];
-
-
-      currentPage = page;
-
-
-      /*
-        Close mobile sidebar after navigation.
-      */
-
-      $("sidebar").classList.remove("open");
-
-
-      /*
-        Load page-specific data.
-      */
-
-      if (page === "home") {
-        loadDashboard();
-      }
-
-      if (page === "buy") {
-        loadCountries();
-      }
-
-      if (page === "active") {
-        loadActiveNumbers();
-      }
-
-      if (page === "orders") {
-        loadOrderHistory();
-      }
-
-      if (page === "wallet") {
-        loadWalletData();
-      }
-
-      if (page === "profile") {
-        loadProfilePage();
-      }
-
-      if (page === "admin") {
-        loadAdmin();
-      }
-
-    }
-
-
-    /* =========================================================
-       SIDEBAR MOBILE
-       ========================================================= */
-
-    function toggleSidebar() {
-
-      $("sidebar").classList.toggle("open");
-
-    }
-
-
-    /* =========================================================
-       DASHBOARD
-       ========================================================= */
-
-    async function loadDashboard() {
-
-      if (!currentUser) return;
-
-
-      try {
-
-        await loadWallet();
-
-
-        const {
-          data: orders,
-          error: ordersError
-        } = await supabaseClient
-          .from("orders")
-          .select("id,status")
-          .eq("user_id", currentUser.id);
-
-
-        if (ordersError) {
-          console.error(ordersError);
-        }
-
-
-        const {
-          data: transactions,
-          error: txError
-        } = await supabaseClient
-          .from("wallet_transactions")
-          .select("*")
-          .eq("user_id", currentUser.id)
-          .order("created_at", {
-            ascending: false
-          })
-          .limit(8);
-
-
-        if (txError) {
-          console.error(txError);
-        }
-
-
-        const orderList =
-          orders || [];
-
-
-        const txList =
-          transactions || [];
-
-
-        const activeCount =
-          orderList.filter(order =>
-            ["active", "pending"].includes(
-              String(order.status || "").toLowerCase()
-            )
-          ).length;
-
-
-        $("dashboardOrders").textContent =
-          orderList.length;
-
-
-        $("dashboardActiveNumbers").textContent =
-          activeCount;
-
-
-        $("dashboardTransactions").textContent =
-          txList.length;
-
-
-        renderRecentActivity(txList);
-
-
-      } catch (error) {
-
-        console.error(
-          "Dashboard error:",
-          error
-        );
-
-      }
-
-    }
-
-
-    function renderRecentActivity(transactions) {
-
-      const container =
-        $("recentActivity");
-
-
-      if (!transactions.length) {
-
-        container.innerHTML =
-          "No recent activity.";
-
-        return;
-      }
-
-
-      container.innerHTML =
-        transactions
-          .slice(0, 5)
-          .map(tx => {
-
-            const positive =
-              Number(tx.amount) >= 0;
-
-
-            return `
-              <div
-                style="
-                  display:flex;
-                  justify-content:space-between;
-                  gap:12px;
-                  padding:9px 0;
-                  border-bottom:1px solid #edf2f7;
-                  text-align:left;
-                "
-              >
-
-                <div>
-
-                  <strong
-                    style="
-                      display:block;
-                      font-size:12px;
-                      color:#334155;
-                    "
-                  >
-                    ${escapeHtml(
-                      tx.description ||
-                      tx.type ||
-                      "Transaction"
-                    )}
-                  </strong>
-
-                  <span
-                    style="
-                      display:block;
-                      font-size:10px;
-                      color:#94a3b8;
-                      margin-top:3px;
-                    "
-                  >
-                    ${formatDate(tx.created_at)}
-                  </span>
-
-                </div>
-
-                <strong
-                  style="
-                    white-space:nowrap;
-                    color:${positive ? "#16a34a" : "#dc2626"};
-                  "
-                >
-                  ${positive ? "+" : ""}
-                  ${formatMoney(tx.amount)}
-                </strong>
-
-              </div>
-            `;
-
-          })
-          .join("");
-
-    }
-
-
-    /* =========================================================
-       WALLET
-       ========================================================= */
-
-    async function loadWallet() {
-
-      if (!currentUser) return;
-
-
-      const {
-        data,
-        error
-      } = await supabaseClient
-        .from("wallets")
-        .select("*")
-        .eq("user_id", currentUser.id)
-        .maybeSingle();
-
-
-      if (error) {
-
-        console.error(
-          "Wallet error:",
-          error
-        );
-
-        currentWallet = {
-          balance: 0
-        };
-
-      } else {
-
-        currentWallet =
-          data || {
-            balance: 0
-          };
-
-      }
-
-
-      const balance =
-        Number(currentWallet.balance || 0);
-
-
-      $("dashboardBalance").textContent =
-        formatMoney(balance);
-
-
-      $("walletPageBalance").textContent =
-        formatMoney(balance);
-
-
-      $("topbarBalance").textContent =
-        formatMoney(balance);
-
-    }
-
-
-    async function loadWalletData() {
-
-      await loadWallet();
-
-      await loadWalletTransactions();
-
-      await loadDepositHistory();
-
-    }
-
-
-    async function loadWalletTransactions() {
-
-      const container =
-        $("walletTransactionsContainer");
-
-
-      container.innerHTML =
-        '<div class="loading">Loading transactions...</div>';
-
-
-      const {
-        data,
-        error
-      } = await supabaseClient
-        .from("wallet_transactions")
-        .select("*")
-        .eq("user_id", currentUser.id)
-        .order("created_at", {
-          ascending: false
-        });
-
-
-      if (error) {
-
-        console.error(error);
-
-        container.innerHTML =
-          '<div class="empty-state">Unable to load transactions.</div>';
-
-        return;
-      }
-
-
-      if (!data?.length) {
-
-        container.innerHTML =
-          '<div class="empty-state">No wallet transactions yet.</div>';
-
-        return;
-      }
-
-
-      container.innerHTML = `
-
-        <div class="table-wrapper">
-
-          <table class="data-table">
-
-            <thead>
-
-              <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Description</th>
-                <th>Amount</th>
-                <th>Balance After</th>
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              ${data.map(tx => {
-
-                const amount =
-                  Number(tx.amount || 0);
-
-                return `
-
-                  <tr>
-
-                    <td>
-                      ${formatDate(tx.created_at)}
-                    </td>
-
-                    <td>
-                      <span class="badge badge-neutral">
-                        ${escapeHtml(tx.type || "transaction")}
-                      </span>
-                    </td>
-
-                    <td>
-                      ${escapeHtml(
-                        tx.description || "—"
-                      )}
-                    </td>
-
-                    <td>
-                      <strong>
-                        ${amount >= 0 ? "+" : ""}
-                        ${formatMoney(amount)}
-                      </strong>
-                    </td>
-
-                    <td>
-                      ${formatMoney(
-                        tx.balance_after
-                      )}
-                    </td>
-
-                  </tr>
-
-                `;
-
-              }).join("")}
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      `;
-
-    }
-
-
-    async function loadDepositHistory() {
-
-      const container =
-        $("depositHistoryContainer");
-
-
-      container.innerHTML =
-        '<div class="loading">Loading deposits...</div>';
-
-
-      const {
-        data,
-        error
-      } = await supabaseClient
-        .from("deposits")
-        .select("*")
-        .eq("user_id", currentUser.id)
-        .order("created_at", {
-          ascending: false
-        });
-
-
-      if (error) {
-
-        console.error(error);
-
-        container.innerHTML =
-          '<div class="empty-state">Unable to load deposit history.</div>';
-
-        return;
-      }
-
-
-      if (!data?.length) {
-
-        container.innerHTML =
-          '<div class="empty-state">No deposits submitted yet.</div>';
-
-        return;
-      }
-
-
-      container.innerHTML = `
-
-        <div class="table-wrapper">
-
-          <table class="data-table">
-
-            <thead>
-
-              <tr>
-                <th>Date</th>
-                <th>Amount</th>
-                <th>Method</th>
-                <th>Reference</th>
-                <th>Status</th>
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              ${data.map(deposit => `
-
-                <tr>
-
-                  <td>
-                    ${formatDate(
-                      deposit.created_at
-                    )}
-                  </td>
-
-                  <td>
-                    <strong>
-                      ${formatMoney(
-                        deposit.amount
-                      )}
-                    </strong>
-                  </td>
-
-                  <td>
-                    ${escapeHtml(
-                      deposit.payment_method || "OPay"
-                    )}
-                  </td>
-
-                  <td>
-                    ${escapeHtml(
-                      deposit.payment_reference || "—"
-                    )}
-                  </td>
-
-                  <td>
-                    ${statusBadge(
-                      deposit.status
-                    )}
-                  </td>
-
-                </tr>
-
-              `).join("")}
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      `;
-
-    }
-
-
-    /* =========================================================
-       DEPOSIT
-       ========================================================= */
-
-    async function submitDeposit(event) {
-
-      event.preventDefault();
-
-
-      if (!currentUser) {
-
-        showToast(
-          "Please log in first.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      const button =
-        $("depositButton");
-
-
-      const amount =
-        Number(
-          $("depositAmount").value
-        );
-
-
-      const reference =
-        $("depositReference").value.trim();
-
-
-      const note =
-        $("depositNote").value.trim();
-
-
-      const receipt =
-        $("depositReceipt").files[0];
-
-
-      if (!amount || amount <= 0) {
-
-        showToast(
-          "Enter a valid deposit amount.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      if (!receipt) {
-
-        showToast(
-          "Please upload your payment receipt.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      setButtonLoading(
-        button,
-        true,
-        "Submitting..."
-      );
-
-
-      try {
-
-        /*
-          Upload the receipt into the user's own folder.
-        */
-
-        const extension =
-          receipt.name.includes(".")
-            ? receipt.name.split(".").pop()
-            : "file";
-
-
-        const filePath =
-          `${currentUser.id}/${crypto.randomUUID()}.${extension}`;
-
-
-        const {
-          error: uploadError
-        } = await supabaseClient.storage
-          .from("deposit-receipts")
-          .upload(
-            filePath,
-            receipt,
-            {
-              upsert: false,
-              contentType: receipt.type
-            }
-          );
-
-
-        if (uploadError) {
-          throw uploadError;
-        }
-
-
-        /*
-          Create pending deposit record.
-        */
-
-        const {
-          error: depositError
-        } = await supabaseClient
-          .from("deposits")
-          .insert({
-
-            user_id: currentUser.id,
-
-            amount,
-
-            payment_method: "OPay",
-
-            payment_reference:
-              reference || null,
-
-            receipt_url:
-              filePath,
-
-            customer_note:
-              note || null,
-
-            status: "pending"
-
-          });
-
-
-        if (depositError) {
-          throw depositError;
-        }
-
-
-        $("depositForm").reset();
-
-
-        showToast(
-          "Deposit submitted successfully. It is now pending admin review.",
-          "success"
-        );
-
-
-        await loadDepositHistory();
-
-
-      } catch (error) {
-
-        console.error(
-          "Deposit error:",
-          error
-        );
-
-        showToast(
-          error.message ||
-          "Unable to submit deposit.",
-          "error"
-        );
-
-      } finally {
-
-        setButtonLoading(
-          button,
-          false
-        );
-
-      }
-
-    }
-
-
-    /* =========================================================
-       WITHDRAWAL
-       ========================================================= */
-
-    async function submitWithdrawal(event) {
-
-      event.preventDefault();
-
-
-      const button =
-        $("withdrawButton");
-
-
-      const bank =
-        $("withdrawBank").value;
-
-
-      const accountNumber =
-        $("withdrawAccountNumber")
-          .value
-          .trim();
-
-
-      const accountName =
-        $("withdrawAccountName")
-          .value
-          .trim();
-
-
-      const amount =
-        Number(
-          $("withdrawAmount").value
-        );
-
-
-      if (!bank) {
-
-        showToast(
-          "Select your bank.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      if (!/^\d{10}$/.test(accountNumber)) {
-
-        showToast(
-          "Enter a valid 10-digit account number.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      if (!accountName) {
-
-        showToast(
-          "Enter the account name.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      if (!amount || amount < 1000) {
-
-        showToast(
-          "Minimum withdrawal is ₦1,000.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      setButtonLoading(
-        button,
-        true,
-        "Submitting..."
-      );
-
-
-      try {
-
-        /*
-          This calls your secure Supabase RPC.
-          The RPC must perform the balance/withdrawal
-          transaction server-side.
-        */
-
-        const {
-          data,
-          error
-        } = await supabaseClient.rpc(
-          "request_withdrawal",
-          {
-            p_bank_name: bank,
-            p_account_number: accountNumber,
-            p_account_name: accountName,
-            p_amount: amount
-          }
-        );
-
-
-        if (error) {
-          throw error;
-        }
-
-
-        showToast(
-          "Withdrawal request submitted successfully.",
-          "success"
-        );
-
-
-        $("withdrawForm").reset();
-
-
-        await loadWalletData();
-
-        await loadDashboard();
-
-
-      } catch (error) {
-
-        console.error(
-          "Withdrawal error:",
-          error
-        );
-
-        showToast(
-          error.message ||
-          "Unable to submit withdrawal request.",
-          "error"
-        );
-
-      } finally {
-
-        setButtonLoading(
-          button,
-          false
-        );
-
-      }
-
-    }
-
-
-    /* =========================================================
-       COUNTRIES
-       ========================================================= */
-
-    async function loadCountries() {
-
-      const select =
-        $("countrySelect");
-
-
-      if (
-        select.options.length > 1
-      ) {
-        return;
-      }
-
-
-      select.innerHTML =
-        '<option value="">Loading countries...</option>';
-
-
-      try {
-
-        const response =
-          await fetch("/api/countries");
-
-
-        if (!response.ok) {
-
-          throw new Error(
-            "Unable to load countries."
-          );
-
-        }
-
-
-        const result =
-          await response.json();
-
-
-        currentCountries =
-          Array.isArray(result)
-            ? result
-            : (
-                result.data ||
-                result.countries ||
-                []
-              );
-
-
-        select.innerHTML =
-          '<option value="">Select a country</option>';
-
-
-        currentCountries.forEach(country => {
-
-          const option =
-            document.createElement("option");
-
-
-          const id =
-            country.id ??
-            country.countryId ??
-            country.country_id;
-
-
-          const name =
-            country.name ??
-            country.countryName ??
-            country.country_name ??
-            id;
-
-
-          option.value = id;
-
-          option.textContent = name;
-
-          option.dataset.countryName =
-            name;
-
-          select.appendChild(option);
-
-        });
-
-
-      } catch (error) {
-
-        console.error(
-          "Countries error:",
-          error
-        );
-
-        select.innerHTML =
-          '<option value="">Unable to load countries</option>';
-
-
-        showToast(
-          "Unable to load countries.",
-          "error"
-        );
-
-      }
-
-    }
-
-
-    /* =========================================================
-       SERVICES
-       ========================================================= */
-
-    async function loadServices() {
-
-      const countrySelect =
-        $("countrySelect");
-
-
-      const serviceSelect =
-        $("serviceSelect");
-
-
-      const countryId =
-        countrySelect.value;
-
-
-      serviceSelect.innerHTML =
-        '<option value="">Loading services...</option>';
-
-
-      $("purchaseButton").disabled =
-        true;
-
-
-      if (!countryId) {
-
-        serviceSelect.innerHTML =
-          '<option value="">Select a service</option>';
-
-        updatePurchasePreview();
-
-        return;
-      }
-
-
-      try {
-
-        const response =
-          await fetch(
-            `/api/services?countryId=${encodeURIComponent(countryId)}`
-          );
-
-
-        if (!response.ok) {
-
-          throw new Error(
-            "Unable to load services."
-          );
-
-        }
-
-
-        const result =
-          await response.json();
-
-
-        currentServices =
-          Array.isArray(result)
-            ? result
-            : (
-                result.data ||
-                result.services ||
-                []
-              );
-
-
-        serviceSelect.innerHTML =
-          '<option value="">Select a service</option>';
-
-
-        currentServices.forEach(service => {
-
-          const option =
-            document.createElement("option");
-
-
-          const id =
-            service.id ??
-            service.serviceId ??
-            service.service_id ??
-            service.serviceCountryPriceId ??
-            service.service_country_price_id;
-
-
-          const name =
-            service.name ??
-            service.serviceName ??
-            service.service_name ??
-            service.title ??
-            id;
-
-
-          const price =
-            service.selling_price ??
-            service.sellingPrice ??
-            service.price ??
-            service.amount ??
-            null;
-
-
-          option.value =
-            id;
-
-
-          option.textContent =
-            price !== null
-              ? `${name} — ${formatMoney(price)}`
-              : name;
-
-
-          option.dataset.serviceName =
-            name;
-
-
-          option.dataset.price =
-            price ?? "";
-
-
-          option.dataset.raw =
-            JSON.stringify(service);
-
-
-          serviceSelect.appendChild(option);
-
-        });
-
-
-        updatePurchasePreview();
-
-
-      } catch (error) {
-
-        console.error(
-          "Services error:",
-          error
-        );
-
-
-        serviceSelect.innerHTML =
-          '<option value="">Unable to load services</option>';
-
-
-        showToast(
-          "Unable to load services.",
-          "error"
-        );
-
-      }
-
-    }
-
-
-    /* =========================================================
-       PURCHASE PREVIEW
-       ========================================================= */
-
-    function updatePurchasePreview() {
-
-      const countrySelect =
-        $("countrySelect");
-
-
-      const serviceSelect =
-        $("serviceSelect");
-
-
-      const countryOption =
-        countrySelect.options[
-          countrySelect.selectedIndex
-        ];
-
-
-      const serviceOption =
-        serviceSelect.options[
-          serviceSelect.selectedIndex
-        ];
-
-
-      $("previewCountry").textContent =
-        countryOption?.dataset?.countryName ||
-        countryOption?.textContent ||
-        "—";
-
-
-      $("previewService").textContent =
-        serviceOption?.dataset?.serviceName ||
-        serviceOption?.textContent ||
-        "—";
-
-
-      const price =
-        serviceOption?.dataset?.price;
-
-
-      $("previewPrice").textContent =
-        price !== undefined &&
-        price !== ""
-          ? formatMoney(price)
-          : "—";
-
-
-      $("purchaseButton").disabled =
-        !countrySelect.value ||
-        !serviceSelect.value;
-
-    }
-
-
-    /* =========================================================
-       PURCHASE NUMBER
-       ========================================================= */
-
-    async function purchaseNumber() {
-
-      if (!currentUser) {
-
-        showToast(
-          "Please log in first.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      const countrySelect =
-        $("countrySelect");
-
-
-      const serviceSelect =
-        $("serviceSelect");
-
-
-      const countryId =
-        countrySelect.value;
-
-
-      const serviceOption =
-        serviceSelect.options[
-          serviceSelect.selectedIndex
-        ];
-
-
-      if (!countryId || !serviceOption?.value) {
-
-        showToast(
-          "Select a country and service first.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      const countryName =
-        countrySelect
-          .options[
-            countrySelect.selectedIndex
-          ]
-          ?.dataset
-          ?.countryName ||
-        countrySelect
-          .options[
-            countrySelect.selectedIndex
-          ]
-          ?.textContent ||
-        "";
-
-
-      let serviceData = {};
-
-
-      try {
-
-        serviceData =
-          JSON.parse(
-            serviceOption.dataset.raw ||
-            "{}"
-          );
-
-      } catch (_) {}
-
-
-      const serviceCountryPriceId =
-        serviceData.serviceCountryPriceId ??
-        serviceData.service_country_price_id ??
-        serviceData.id ??
-        serviceOption.value;
-
-
-      const button =
-        $("purchaseButton");
-
-
-      setButtonLoading(
-        button,
-        true,
-        "Processing..."
-      );
-
-
-      try {
-
-        /*
-          IMPORTANT:
-          /api/order must remain server-side.
-          Your SUREVERIFICATION_API_KEY must never
-          be placed in this HTML.
-        */
-
-        const response =
-          await fetch("/api/order", {
-
-            method: "POST",
-
-            headers: {
-              "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify({
-
-              serviceCountryPriceId,
-
-              quantity: 1,
-
-              autoSearchServer: true,
-
-              countryId,
-
-              countryName,
-
-              serviceName:
-                serviceData.serviceName ||
-                serviceData.name ||
-                serviceOption.dataset.serviceName ||
-                serviceOption.textContent
-
-            })
-
-          });
-
-
-        const result =
-          await response.json()
-            .catch(() => ({}));
-
-
-        if (!response.ok) {
-
-          throw new Error(
-            result.message ||
-            result.error ||
-            "Unable to purchase number."
-          );
-
-        }
-
-
-        /*
-          Expected provider/server response.
-        */
-
-        showToast(
-          result.message ||
-          "Number purchase submitted successfully.",
-          "success"
-        );
-
-
-        await loadActiveNumbers();
-
-        await loadOrderHistory();
-
-        await loadWallet();
-
-        await loadDashboard();
-
-        navigateTo("active");
-
-
-      } catch (error) {
-
-        console.error(
-          "Purchase error:",
-          error
-        );
-
-        showToast(
-          error.message ||
-          "Unable to purchase number.",
-          "error"
-        );
-
-      } finally {
-
-        setButtonLoading(
-          button,
-          false
-        );
-
-      }
-
-    }
-
-
-    /* =========================================================
-       ACTIVE NUMBERS
-       ========================================================= */
-
-    async function loadActiveNumbers() {
-
-      const container =
-        $("activeNumbersContainer");
-
-
-      container.innerHTML =
-        '<div class="loading">Loading active numbers...</div>';
-
-
-      try {
-
-        const response =
-          await fetch("/api/active");
-
-
-        if (!response.ok) {
-
-          throw new Error(
-            "Unable to load active numbers."
-          );
-
-        }
-
-
-        const result =
-          await response.json();
-
-
-        const numbers =
-          Array.isArray(result)
-            ? result
-            : (
-                result.data ||
-                result.activations ||
-                result.numbers ||
-                []
-              );
-
-
-        if (!numbers.length) {
-
-          container.innerHTML =
-            '<div class="empty-state">You do not have any active numbers yet.</div>';
-
-          return;
-        }
-
-
-        container.innerHTML = `
-
-          <div class="table-wrapper">
 
-            <table class="data-table">
+<script>
+(function () {
 
-              <thead>
+  "use strict";
 
-                <tr>
-                  <th>Number</th>
-                  <th>Service</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                </tr>
 
-              </thead>
+  /* =========================================================
+     SMALL HELPERS
+     ========================================================= */
 
-              <tbody>
+  function gvs$(id) {
+    return document.getElementById(id);
+  }
 
-                ${numbers.map(item => `
 
-                  <tr>
+  function gvsEscape(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
 
-                    <td>
-                      <strong>
-                        ${escapeHtml(
-                          item.phone_number ||
-                          item.phoneNumber ||
-                          item.number ||
-                          "—"
-                        )}
-                      </strong>
-                    </td>
 
-                    <td>
-                      ${escapeHtml(
-                        item.service ||
-                        item.service_name ||
-                        item.serviceName ||
-                        "—"
-                      )}
-                    </td>
+  function gvsFlag(code) {
 
-                    <td>
-                      ${statusBadge(
-                        item.status ||
-                        "active"
-                      )}
-                    </td>
+    const value =
+      String(code || "")
+        .trim()
+        .toUpperCase();
 
-                    <td>
-                      ${formatDate(
-                        item.created_at ||
-                        item.createdAt
-                      )}
-                    </td>
-
-                  </tr>
-
-                `).join("")}
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-        `;
-
-      } catch (error) {
-
-        console.error(
-          "Active numbers error:",
-          error
-        );
-
-        container.innerHTML =
-          '<div class="empty-state">Unable to load active numbers.</div>';
-
-      }
-
-    }
-
-
-    /* =========================================================
-       ORDER HISTORY
-       ========================================================= */
-
-    async function loadOrderHistory() {
-
-      const container =
-        $("orderHistoryContainer");
-
-
-      container.innerHTML =
-        '<div class="loading">Loading orders...</div>';
-
-
-      if (!currentUser) {
-        return;
-      }
-
-
-      const {
-        data,
-        error
-      } = await supabaseClient
-        .from("orders")
-        .select("*")
-        .eq("user_id", currentUser.id)
-        .order("created_at", {
-          ascending: false
-        });
-
-
-      if (error) {
-
-        console.error(
-          "Order history error:",
-          error
-        );
-
-        container.innerHTML =
-          '<div class="empty-state">Unable to load order history.</div>';
-
-        return;
-      }
-
-
-      if (!data?.length) {
-
-        container.innerHTML =
-          '<div class="empty-state">No orders yet.</div>';
-
-        return;
-      }
-
-
-      container.innerHTML = `
-
-        <div class="table-wrapper">
-
-          <table class="data-table">
-
-            <thead>
-
-              <tr>
-                <th>Date</th>
-                <th>Country</th>
-                <th>Service</th>
-                <th>Number</th>
-                <th>Price</th>
-                <th>Status</th>
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              ${data.map(order => `
-
-                <tr>
-
-                  <td>
-                    ${formatDate(
-                      order.created_at
-                    )}
-                  </td>
-
-                  <td>
-                    ${escapeHtml(
-                      order.country_name ||
-                      "—"
-                    )}
-                  </td>
-
-                  <td>
-                    ${escapeHtml(
-                      order.service_name ||
-                      "—"
-                    )}
-                  </td>
-
-                  <td>
-                    ${escapeHtml(
-                      order.phone_number ||
-                      "—"
-                    )}
-                  </td>
-
-                  <td>
-                    ${formatMoney(
-                      order.selling_price
-                    )}
-                  </td>
-
-                  <td>
-                    ${statusBadge(
-                      order.status
-                    )}
-                  </td>
-
-                </tr>
-
-              `).join("")}
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      `;
-
-    }
-
-
-    /* =========================================================
-       STATUS BADGE
-       ========================================================= */
-
-    function statusBadge(status) {
-
-      const normalized =
-        String(status || "unknown")
-          .toLowerCase();
-
-
-      let className =
-        "badge-neutral";
-
-
-      if (
-        [
-          "approved",
-          "success",
-          "completed",
-          "active",
-          "paid"
-        ].includes(normalized)
-      ) {
-
-        className =
-          "badge-success";
-
-      } else if (
-        [
-          "pending",
-          "processing"
-        ].includes(normalized)
-      ) {
-
-        className =
-          "badge-warning";
-
-      } else if (
-        [
-          "rejected",
-          "failed",
-          "cancelled",
-          "expired",
-          "refunded"
-        ].includes(normalized)
-      ) {
-
-        className =
-          "badge-danger";
-
-      } else if (
-        normalized === "info"
-      ) {
-
-        className =
-          "badge-info";
-
-      }
-
-
-      return `
-        <span class="badge ${className}">
-          ${escapeHtml(normalized)}
-        </span>
-      `;
-
-    }
-
-
-    /* =========================================================
-       PROFILE PAGE
-       ========================================================= */
-
-    async function loadProfilePage() {
-
-      await loadProfile();
-
-      updateUserInterface();
-
-    }
-
-
-    /* =========================================================
-       ADMIN DASHBOARD
-       ========================================================= */
-
-    async function loadAdmin() {
-
-      if (!isAdmin) {
-
-        $("adminContent")
-          .classList.add("hidden");
-
-        $("adminAccessDenied")
-          .classList.remove("hidden");
-
-        return;
-      }
-
-
-      $("adminAccessDenied")
-        .classList.add("hidden");
-
-
-      $("adminContent")
-        .classList.remove("hidden");
-
-
-      try {
-
-        await Promise.all([
-          loadAdminUsers(),
-          loadAdminOrders(),
-          loadAdminDeposits()
-        ]);
-
-      } catch (error) {
-
-        console.error(
-          "Admin load error:",
-          error
-        );
-
-        showToast(
-          "Unable to load some admin data.",
-          "error"
-        );
-
-      }
-
-    }
-
-
-    /* =========================================================
-       ADMIN USERS
-       ========================================================= */
-
-    async function loadAdminUsers() {
-
-      const container =
-        $("adminUsersContainer");
-
-
-      container.innerHTML =
-        '<div class="loading">Loading users...</div>';
-
-
-      const {
-        data,
-        error
-      } = await supabaseClient
-        .from("profiles")
-        .select("*")
-        .order("created_at", {
-          ascending: false
-        });
-
-
-      if (error) {
-
-        console.error(error);
-
-        container.innerHTML =
-          '<div class="empty-state">Unable to load users.</div>';
-
-        return;
-      }
-
-
-      $("adminUsersCount").textContent =
-        data?.length || 0;
-
-
-      if (!data?.length) {
-
-        container.innerHTML =
-          '<div class="empty-state">No users found.</div>';
-
-        return;
-      }
-
-
-      container.innerHTML = `
-
-        <div class="table-wrapper">
-
-          <table class="data-table">
-
-            <thead>
-
-              <tr>
-                <th>Name</th>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Created</th>
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              ${data.map(user => `
-
-                <tr>
-
-                  <td>
-                    ${escapeHtml(
-                      user.full_name ||
-                      "—"
-                    )}
-                  </td>
-
-                  <td>
-                    ${escapeHtml(
-                      user.username ||
-                      "—"
-                    )}
-                  </td>
-
-                  <td>
-                    ${escapeHtml(
-                      user.email ||
-                      "—"
-                    )}
-                  </td>
-
-                  <td>
-                    ${statusBadge(
-                      user.role ||
-                      "customer"
-                    )}
-                  </td>
-
-                  <td>
-                    ${formatDate(
-                      user.created_at
-                    )}
-                  </td>
-
-                </tr>
-
-              `).join("")}
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      `;
-
-    }
-
-
-    /* =========================================================
-       ADMIN ORDERS
-       ========================================================= */
-
-    async function loadAdminOrders() {
-
-      const container =
-        $("adminOrdersContainer");
-
-
-      container.innerHTML =
-        '<div class="loading">Loading orders...</div>';
-
-
-      const {
-        data,
-        error
-      } = await supabaseClient
-        .from("orders")
-        .select("*")
-        .order("created_at", {
-          ascending: false
-        })
-        .limit(100);
-
-
-      if (error) {
-
-        console.error(error);
-
-        container.innerHTML =
-          '<div class="empty-state">Unable to load orders.</div>';
-
-        return;
-      }
-
-
-      $("adminOrdersCount").textContent =
-        data?.length || 0;
-
-
-      if (!data?.length) {
-
-        container.innerHTML =
-          '<div class="empty-state">No orders found.</div>';
-
-        return;
-      }
-
-
-      container.innerHTML = `
-
-        <div class="table-wrapper">
-
-          <table class="data-table">
-
-            <thead>
-
-              <tr>
-                <th>Date</th>
-                <th>User ID</th>
-                <th>Country</th>
-                <th>Service</th>
-                <th>Number</th>
-                <th>Price</th>
-                <th>Status</th>
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              ${data.map(order => `
-
-                <tr>
-
-                  <td>
-                    ${formatDate(
-                      order.created_at
-                    )}
-                  </td>
-
-                  <td>
-                    <small>
-                      ${escapeHtml(
-                        order.user_id
-                      )}
-                    </small>
-                  </td>
-
-                  <td>
-                    ${escapeHtml(
-                      order.country_name ||
-                      "—"
-                    )}
-                  </td>
-
-                  <td>
-                    ${escapeHtml(
-                      order.service_name ||
-                      "—"
-                    )}
-                  </td>
-
-                  <td>
-                    ${escapeHtml(
-                      order.phone_number ||
-                      "—"
-                    )}
-                  </td>
-
-                  <td>
-                    ${formatMoney(
-                      order.selling_price
-                    )}
-                  </td>
-
-                  <td>
-                    ${statusBadge(
-                      order.status
-                    )}
-                  </td>
-
-                </tr>
-
-              `).join("")}
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      `;
-
-    }
-
-
-    /* =========================================================
-       ADMIN DEPOSITS
-       ========================================================= */
-
-    async function loadAdminDeposits() {
-
-      const container =
-        $("adminDepositsContainer");
-
-
-      container.innerHTML =
-        '<div class="loading">Loading deposit requests...</div>';
-
-
-      const {
-        data,
-        error
-      } = await supabaseClient
-        .from("deposits")
-        .select("*")
-        .order("created_at", {
-          ascending: false
-        })
-        .limit(100);
-
-
-      if (error) {
-
-        console.error(error);
-
-        container.innerHTML =
-          '<div class="empty-state">Unable to load deposits.</div>';
-
-        return;
-      }
-
-
-      const deposits =
-        data || [];
-
-
-      $("adminDepositsCount").textContent =
-        deposits.length;
-
-
-      $("adminPendingCount").textContent =
-        deposits.filter(
-          d => d.status === "pending"
-        ).length;
-
-
-      if (!deposits.length) {
-
-        container.innerHTML =
-          '<div class="empty-state">No deposit requests found.</div>';
-
-        return;
-      }
-
-
-      container.innerHTML = `
-
-        <div class="table-wrapper">
-
-          <table class="data-table">
-
-            <thead>
-
-              <tr>
-                <th>Date</th>
-                <th>User</th>
-                <th>Amount</th>
-                <th>Reference</th>
-                <th>Status</th>
-                <th>Receipt</th>
-                <th>Action</th>
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              ${deposits.map(deposit => `
-
-                <tr>
-
-                  <td>
-                    ${formatDate(
-                      deposit.created_at
-                    )}
-                  </td>
-
-                  <td>
-                    <small>
-                      ${escapeHtml(
-                        deposit.user_id
-                      )}
-                    </small>
-                  </td>
-
-                  <td>
-                    <strong>
-                      ${formatMoney(
-                        deposit.amount
-                      )}
-                    </strong>
-                  </td>
-
-                  <td>
-                    ${escapeHtml(
-                      deposit.payment_reference ||
-                      "—"
-                    )}
-                  </td>
-
-                  <td>
-                    ${statusBadge(
-                      deposit.status
-                    )}
-                  </td>
-
-                  <td>
-
-                    ${
-                      deposit.receipt_url
-                        ? `
-                          <button
-                            class="secondary-btn small-btn"
-                            onclick="viewReceipt('${escapeHtml(
-                              deposit.receipt_url
-                            )}')"
-                          >
-                            View
-                          </button>
-                        `
-                        : "—"
-                    }
-
-                  </td>
-
-                  <td>
-
-                    ${
-                      deposit.status === "pending"
-                        ? `
-                          <div
-                            style="
-                              display:flex;
-                              gap:6px;
-                              flex-wrap:wrap;
-                            "
-                          >
-
-                            <button
-                              class="success-btn small-btn"
-                              onclick="processDeposit(
-                                '${deposit.id}',
-                                'approve'
-                              )"
-                            >
-                              Approve
-                            </button>
-
-                            <button
-                              class="danger-btn small-btn"
-                              onclick="processDeposit(
-                                '${deposit.id}',
-                                'reject'
-                              )"
-                            >
-                              Reject
-                            </button>
-
-                          </div>
-                        `
-                        : "Processed"
-                    }
-
-                  </td>
-
-                </tr>
-
-              `).join("")}
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      `;
-
+    if (!/^[A-Z]{2}$/.test(value)) {
+      return "🌐";
     }
-
-
-    /* =========================================================
-       ADMIN PROCESS DEPOSIT
-       ========================================================= */
-
-    async function processDeposit(
-      depositId,
-      action
-    ) {
-
-      if (!isAdmin) {
-
-        showToast(
-          "Administrator access required.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      let note = null;
-
-
-      if (action === "reject") {
-
-        note =
-          prompt(
-            "Enter a reason for rejecting this deposit (optional):"
-          );
-
-      } else {
-
-        note =
-          prompt(
-            "Enter an admin note (optional):"
-          );
-
-      }
-
 
-      if (
-        !confirm(
-          action === "approve"
-            ? "Approve this deposit and credit the customer's wallet?"
-            : "Reject this deposit?"
+    return [...value]
+      .map(letter =>
+        String.fromCodePoint(
+          127397 + letter.charCodeAt(0)
         )
-      ) {
+      )
+      .join("");
 
-        return;
+  }
+
+
+  function gvsServiceIcon(name) {
+
+    const value =
+      String(name || "")
+        .toLowerCase()
+        .trim();
+
+    const icons = {
+
+      whatsapp: "💬",
+      telegram: "✈️",
+      signal: "🔵",
+      instagram: "📷",
+      facebook: "📘",
+      tiktok: "🎵",
+      google: "🔎",
+      gmail: "✉️",
+      microsoft: "🪟",
+      outlook: "📧",
+      discord: "🎮",
+      twitter: "𝕏",
+      x: "𝕏",
+      snapchat: "👻",
+      uber: "🚕",
+      bolt: "🚗",
+      airbnb: "🏠",
+      amazon: "📦",
+      alibaba: "🛒",
+      ebay: "🛍️",
+      paypal: "💳",
+      binance: "₿",
+      bybit: "₿",
+      coinbase: "🪙",
+      foodora: "🍔",
+      doordash: "🍔",
+      coca: "🥤",
+      cocacola: "🥤",
+      "coca-cola": "🥤",
+      upwork: "💼",
+      jiomart: "🛒",
+      rapi: "🚗",
+      rappi: "🛵"
+
+    };
+
+    for (const key of Object.keys(icons)) {
+      if (value.includes(key)) {
+        return icons[key];
       }
-
-
-      try {
-
-        const functionName =
-          action === "approve"
-            ? "approve_deposit"
-            : "reject_deposit";
-
-
-        const {
-          data,
-          error
-        } = await supabaseClient.rpc(
-          functionName,
-          {
-            p_deposit_id: depositId,
-            p_admin_note: note || null
-          }
-        );
-
-
-        if (error) {
-          throw error;
-        }
-
-
-        showToast(
-          action === "approve"
-            ? "Deposit approved and wallet credited."
-            : "Deposit rejected.",
-          "success"
-        );
-
-
-        await loadAdmin();
-
-
-      } catch (error) {
-
-        console.error(
-          "Deposit processing error:",
-          error
-        );
-
-        showToast(
-          error.message ||
-          "Unable to process deposit.",
-          "error"
-        );
-
-      }
-
     }
 
-
-    /* =========================================================
-       RECEIPT VIEWER
-       ========================================================= */
-
-    async function viewReceipt(path) {
-
-      $("receiptModal").classList.remove("hidden");
-
-      $("receiptModalBody").innerHTML =
-        '<div class="loading">Opening receipt...</div>';
+    return "📱";
+  }
 
 
-      try {
+  /* =========================================================
+     REMOVE WITHDRAWAL COMPLETELY FROM UI
+     ========================================================= */
 
-        const {
-          data,
-          error
-        } = await supabaseClient.storage
-          .from("deposit-receipts")
-          .createSignedUrl(
-            path,
-            300
-          );
+  function removeWithdrawals() {
 
+    document
+      .querySelectorAll(
+        "form, .section-card, .product-card, div"
+      )
+      .forEach(element => {
 
-        if (error) {
-          throw error;
-        }
-
-
-        if (!data?.signedUrl) {
-          throw new Error("Receipt unavailable.");
-        }
-
-
-        const url =
-          data.signedUrl;
-
-
-        const lower =
-          path.toLowerCase();
-
+        const text =
+          (element.innerText || "")
+            .trim()
+            .toLowerCase();
 
         if (
-          lower.endsWith(".pdf")
+          text.includes("withdraw funds") &&
+          text.includes("request a withdrawal")
         ) {
+          element.remove();
+        }
 
-          $("receiptModalBody").innerHTML = `
+      });
 
-            <a
-              href="${url}"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="primary-btn"
-              style="display:inline-block;text-decoration:none;"
-            >
-              Open Receipt
-            </a>
 
-          `;
+    document
+      .querySelectorAll(
+        "#withdrawForm, #withdrawButton, #withdrawBank, #withdrawAccountNumber, #withdrawAccountName, #withdrawAmount"
+      )
+      .forEach(element => {
+        element.remove();
+      });
+
+  }
+
+
+  /* =========================================================
+     PASSWORD EYE BUTTONS
+     ========================================================= */
+
+  function addPasswordToggle(input) {
+
+    if (!input || input.dataset.gvsPasswordReady === "1") {
+      return;
+    }
+
+    input.dataset.gvsPasswordReady = "1";
+
+    const wrapper =
+      document.createElement("div");
+
+    wrapper.className =
+      "gvs-password-wrap";
+
+    input.parentNode.insertBefore(
+      wrapper,
+      input
+    );
+
+    wrapper.appendChild(input);
+
+    const button =
+      document.createElement("button");
+
+    button.type = "button";
+
+    button.className =
+      "gvs-password-toggle";
+
+    button.innerHTML = "👁️";
+
+    button.setAttribute(
+      "aria-label",
+      "Show password"
+    );
+
+    button.addEventListener(
+      "click",
+      function () {
+
+        if (input.type === "password") {
+
+          input.type = "text";
+
+          button.innerHTML = "🙈";
+
+          button.setAttribute(
+            "aria-label",
+            "Hide password"
+          );
 
         } else {
 
-          $("receiptModalBody").innerHTML = `
+          input.type = "password";
 
-            <img
-              src="${url}"
-              alt="Deposit receipt"
-              style="
-                display:block;
-                max-width:100%;
-                max-height:70vh;
-                margin:auto;
-                border-radius:8px;
-              "
-            />
+          button.innerHTML = "👁️";
 
-          `;
+          button.setAttribute(
+            "aria-label",
+            "Show password"
+          );
 
         }
 
-      } catch (error) {
+      }
+    );
 
-        console.error(
-          "Receipt error:",
-          error
-        );
+    wrapper.appendChild(button);
 
-        $("receiptModalBody").innerHTML =
-          '<div class="empty-state">Unable to open receipt.</div>';
+  }
 
+
+  function setupPasswordToggles() {
+
+    [
+      "loginPassword",
+      "registerPassword",
+      "registerConfirmPassword"
+    ].forEach(id => {
+
+      const input = gvs$(id);
+
+      if (input) {
+        addPasswordToggle(input);
       }
 
+    });
+
+  }
+
+
+  /* =========================================================
+     SEARCHABLE SELECT CREATOR
+     ========================================================= */
+
+  function createSearchableSelect(
+    selectId,
+    type
+  ) {
+
+    const select =
+      gvs$(selectId);
+
+    if (!select) {
+      return null;
     }
 
-
-    function closeReceiptModal(event) {
-
-      if (
-        event &&
-        event.target !== $("receiptModal")
-      ) {
-        return;
-      }
-
-
-      $("receiptModal")
-        .classList.add("hidden");
-
+    if (select.dataset.gvsSearchReady === "1") {
+      return select.nextElementSibling;
     }
 
+    select.dataset.gvsSearchReady = "1";
 
-    /* =========================================================
-       LEGAL / FOOTER
-       ========================================================= */
+    select.style.display = "none";
 
-    function showLegal(title) {
+    const wrapper =
+      document.createElement("div");
 
-      $("legalTitle").textContent =
-        title;
+    wrapper.className =
+      "gvs-search-select";
 
+    wrapper.dataset.type =
+      type;
 
-      const content = {
+    const display =
+      document.createElement("button");
 
-        "Support": `
-          <p>
-            For support, contact the Global Virtual Sim Web support team
-            through the available support channel.
-          </p>
-          <p>
-            Email:
-            <strong>watchandearn.ng@gmail.com</strong>
-          </p>
-        `,
+    display.type = "button";
 
-        "Contact": `
-          <p>
-            For account, payment or service enquiries, contact support.
-          </p>
-          <p>
-            Email:
-            <strong>watchandearn.ng@gmail.com</strong>
-          </p>
-        `,
+    display.className =
+      "gvs-select-display";
 
-        "Telegram": `
-          <p>
-            Our Telegram support/contact details will be published here
-            when the official Telegram channel is ready.
-          </p>
-        `,
+    display.innerHTML = `
+      <span class="gvs-selected-content">
+        <span class="gvs-selected-label">
+          Select ${type}
+        </span>
+      </span>
+      <span class="gvs-chevron">⌄</span>
+    `;
 
-        "Terms & Conditions": `
-          <p>
-            By using Global Virtual Sim Web, you agree to use the service
-            lawfully and responsibly.
-          </p>
+    const dropdown =
+      document.createElement("div");
 
-          <p>
-            Customers are responsible for ensuring that their use of
-            purchased communication services complies with applicable laws,
-            provider rules and the terms of the services they use.
-          </p>
-        `,
+    dropdown.className =
+      "gvs-dropdown";
 
-        "Privacy Policy": `
-          <p>
-            Global Virtual Sim Web may process account, order, wallet and
-            payment-submission information necessary to operate the service.
-          </p>
+    dropdown.innerHTML = `
+      <div class="gvs-search-box">
+        <input
+          type="search"
+          class="gvs-search-input"
+          placeholder="Search ${type.toLowerCase()}..."
+          autocomplete="off"
+        />
+      </div>
 
-          <p>
-            Passwords and secret API credentials should never be shared
-            with other users.
-          </p>
-        `,
+      <div class="gvs-options"></div>
+    `;
 
-        "Refund Policy": `
-          <p>
-            Refund requests are reviewed according to the status of the
-            relevant order or transaction and the applicable provider rules.
-          </p>
+    wrapper.appendChild(display);
+    wrapper.appendChild(dropdown);
 
-          <p>
-            Contact support with your order reference when requesting help
-            with a transaction.
-          </p>
-        `,
+    select.parentNode.insertBefore(
+      wrapper,
+      select
+    );
 
-        "Acceptable Use Policy": `
-          <p>
-            Global Virtual Sim Web services must only be used for lawful,
-            legitimate communication purposes.
-          </p>
-
-          <p>
-            Fraud, impersonation, harassment, abuse of communication
-            networks, or attempts to bypass security and verification
-            systems are prohibited.
-          </p>
-        `
-
-      };
-
-
-      $("legalBody").innerHTML =
-        content[title] ||
-        "<p>Information unavailable.</p>";
-
-
-      $("legalModal")
-        .classList.remove("hidden");
-
-    }
-
-
-    function closeLegalModal(event) {
-
-      if (
-        event &&
-        event.target !== $("legalModal")
-      ) {
-        return;
-      }
-
-
-      $("legalModal")
-        .classList.add("hidden");
-
-    }
-
-
-    /* =========================================================
-       LOGOUT
-       ========================================================= */
-
-    async function handleLogout() {
-
-      try {
-
-        await supabaseClient.auth.signOut();
-
-      } catch (error) {
-
-        console.error(
-          "Logout error:",
-          error
-        );
-
-      }
-
-
-      showAuth();
-
-      setAuthMode("login");
-
-      showToast(
-        "You have been logged out.",
-        "success"
+    const searchInput =
+      dropdown.querySelector(
+        ".gvs-search-input"
       );
 
-    }
+    display.addEventListener(
+      "click",
+      function (event) {
 
+        event.preventDefault();
 
-    /* =========================================================
-       AUTH STATE LISTENER
-       ========================================================= */
+        document
+          .querySelectorAll(
+            ".gvs-search-select.open"
+          )
+          .forEach(other => {
 
-    supabaseClient.auth.onAuthStateChange(
-      async (event, session) => {
+            if (other !== wrapper) {
+              other.classList.remove("open");
+            }
 
-        console.log(
-          "Auth state:",
-          event
-        );
+          });
 
+        wrapper.classList.toggle("open");
 
-        if (
-          session?.user &&
-          !currentUser
-        ) {
-
-          currentUser =
-            session.user;
-
-
-          /*
-            Delay slightly so Supabase has finished
-            its auth-state transition before database
-            queries begin.
-          */
+        if (wrapper.classList.contains("open")) {
 
           setTimeout(
-            () => loadAuthenticatedUser(),
-            0
+            () => searchInput.focus(),
+            50
           );
-
-        }
-
-
-        if (
-          !session &&
-          event === "SIGNED_OUT"
-        ) {
-
-          showAuth();
 
         }
 
@@ -6089,86 +768,774 @@
     );
 
 
-    /* =========================================================
-       INITIALIZATION
-       ========================================================= */
+    searchInput.addEventListener(
+      "input",
+      function () {
+        renderOptions(
+          wrapper,
+          select,
+          type
+        );
+      }
+    );
 
-    async function init() {
+
+    document.addEventListener(
+      "click",
+      function (event) {
+
+        if (!wrapper.contains(event.target)) {
+          wrapper.classList.remove("open");
+        }
+
+      }
+    );
+
+
+    wrapper._gvsRender =
+      function () {
+
+        renderOptions(
+          wrapper,
+          select,
+          type
+        );
+
+      };
+
+
+    renderOptions(
+      wrapper,
+      select,
+      type
+    );
+
+    return wrapper;
+
+  }
+
+
+  function renderOptions(
+    wrapper,
+    select,
+    type
+  ) {
+
+    const optionsContainer =
+      wrapper.querySelector(
+        ".gvs-options"
+      );
+
+    const searchInput =
+      wrapper.querySelector(
+        ".gvs-search-input"
+      );
+
+    const query =
+      String(
+        searchInput?.value || ""
+      )
+        .toLowerCase()
+        .trim();
+
+
+    const options =
+      Array.from(select.options)
+        .filter(option =>
+          option.value
+        )
+        .filter(option => {
+
+          const name =
+            option.dataset.countryName ||
+            option.dataset.serviceName ||
+            option.textContent ||
+            "";
+
+          return name
+            .toLowerCase()
+            .includes(query);
+
+        });
+
+
+    if (!options.length) {
+
+      optionsContainer.innerHTML =
+        '<div class="gvs-no-results">No matching results found.</div>';
+
+      return;
+
+    }
+
+
+    optionsContainer.innerHTML =
+      options
+        .map(option => {
+
+          const isCountry =
+            type === "country";
+
+          const name =
+            option.dataset.countryName ||
+            option.dataset.serviceName ||
+            option.textContent ||
+            option.value;
+
+          const raw =
+            option.dataset.raw || "{}";
+
+          let data = {};
+
+          try {
+            data = JSON.parse(raw);
+          } catch (_) {}
+
+
+          const icon =
+            isCountry
+              ? gvsFlag(
+                  data.code ||
+                  data.country_code ||
+                  data.countryCode ||
+                  ""
+                )
+              : gvsServiceIcon(name);
+
+
+          let priceText = "";
+
+          if (!isCountry) {
+
+            const price =
+              option.dataset.price;
+
+            if (
+              price !== undefined &&
+              price !== ""
+            ) {
+
+              priceText =
+                `<span class="gvs-option-price">
+                  ${gvsEscape(
+                    typeof formatMoney === "function"
+                      ? formatMoney(price)
+                      : `₦${price}`
+                  )}
+                </span>`;
+
+            }
+
+          }
+
+
+          return `
+            <button
+              type="button"
+              class="gvs-option ${
+                select.value === option.value
+                  ? "active"
+                  : ""
+              }"
+              data-value="${gvsEscape(option.value)}"
+            >
+
+              <span class="gvs-option-icon">
+                ${icon}
+              </span>
+
+              <span class="gvs-option-text">
+
+                <span class="gvs-option-name">
+                  ${gvsEscape(name)}
+                </span>
+
+                ${priceText}
+
+              </span>
+
+            </button>
+          `;
+
+        })
+        .join("");
+
+
+    optionsContainer
+      .querySelectorAll(".gvs-option")
+      .forEach(button => {
+
+        button.addEventListener(
+          "click",
+          function () {
+
+            const value =
+              button.dataset.value;
+
+            select.value = value;
+
+            const selected =
+              select.options[
+                select.selectedIndex
+              ];
+
+            const name =
+              selected?.dataset?.countryName ||
+              selected?.dataset?.serviceName ||
+              selected?.textContent ||
+              "Select " + type;
+
+
+            const icon =
+              type === "country"
+                ? gvsFlag(
+                    (() => {
+
+                      try {
+
+                        const data =
+                          JSON.parse(
+                            selected?.dataset?.raw ||
+                            "{}"
+                          );
+
+                        return (
+                          data.code ||
+                          data.country_code ||
+                          data.countryCode ||
+                          ""
+                        );
+
+                      } catch (_) {
+
+                        return "";
+
+                      }
+
+                    })()
+                  )
+                : gvsServiceIcon(name);
+
+
+            const label =
+              wrapper.querySelector(
+                ".gvs-selected-label"
+              );
+
+            const content =
+              wrapper.querySelector(
+                ".gvs-selected-content"
+              );
+
+
+            content.innerHTML = `
+              <span class="gvs-flag">
+                ${icon}
+              </span>
+
+              <span class="gvs-selected-label">
+                ${gvsEscape(name)}
+              </span>
+            `;
+
+
+            wrapper.classList.remove(
+              "open"
+            );
+
+
+            const event =
+              new Event(
+                "change",
+                {
+                  bubbles: true
+                }
+              );
+
+            select.dispatchEvent(event);
+
+
+            if (type === "country") {
+
+              if (
+                typeof loadServices ===
+                "function"
+              ) {
+                loadServices();
+              }
+
+            } else {
+
+              if (
+                typeof updatePurchasePreview ===
+                "function"
+              ) {
+                updatePurchasePreview();
+              }
+
+            }
+
+          }
+        );
+
+      });
+
+  }
+
+
+  /* =========================================================
+     REFRESH SEARCHABLE SELECT
+     ========================================================= */
+
+  function refreshSearchableSelect(
+    selectId
+  ) {
+
+    const select =
+      gvs$(selectId);
+
+    if (!select) {
+      return;
+    }
+
+    const wrapper =
+      select.nextElementSibling;
+
+    if (
+      wrapper &&
+      wrapper.classList.contains(
+        "gvs-search-select"
+      )
+    ) {
+
+      if (wrapper._gvsRender) {
+        wrapper._gvsRender();
+      }
+
+    }
+
+  }
+
+
+  /* =========================================================
+     DASHBOARD HERO
+     ========================================================= */
+
+  function buildDashboardHero() {
+
+    const page =
+      gvs$("page-home");
+
+    if (!page) {
+      return;
+    }
+
+    if (
+      page.querySelector(
+        ".gvs-wallet-hero"
+      )
+    ) {
+      return;
+    }
+
+
+    const hero =
+      document.createElement("div");
+
+    hero.className =
+      "gvs-wallet-hero";
+
+    hero.innerHTML = `
+
+      <div class="gvs-wallet-hero-content">
+
+        <div class="gvs-wallet-label">
+          Wallet Balance
+        </div>
+
+        <div class="gvs-wallet-amount-row">
+
+          <div
+            id="gvsHeroBalance"
+            class="gvs-wallet-amount"
+          >
+            ₦0.00
+          </div>
+
+          <div class="gvs-wallet-status">
+
+            <span class="gvs-status-dot"></span>
+
+            Active
+
+          </div>
+
+        </div>
+
+        <button
+          type="button"
+          class="gvs-add-money-btn"
+          onclick="navigateTo('wallet')"
+        >
+
+          <span class="gvs-add-money-icon">
+            +
+          </span>
+
+          Add Money
+
+        </button>
+
+      </div>
+
+    `;
+
+
+    const firstElement =
+      page.firstElementChild;
+
+    if (firstElement) {
+
+      page.insertBefore(
+        hero,
+        firstElement
+      );
+
+    } else {
+
+      page.appendChild(hero);
+
+    }
+
+
+    updateHeroBalance();
+
+  }
+
+
+  function updateHeroBalance() {
+
+    const heroBalance =
+      gvs$("gvsHeroBalance");
+
+    if (!heroBalance) {
+      return;
+    }
+
+
+    const dashboardBalance =
+      gvs$("dashboardBalance");
+
+    const walletBalance =
+      gvs$("walletPageBalance");
+
+    const source =
+      dashboardBalance ||
+      walletBalance;
+
+
+    if (source) {
+
+      heroBalance.textContent =
+        source.textContent ||
+        "₦0.00";
+
+    }
+
+  }
+
+
+  /* =========================================================
+     OPAY WHATSAPP NOTICE
+     ========================================================= */
+
+  function addOpayNotice() {
+
+    const depositForm =
+      gvs$("depositForm");
+
+    if (!depositForm) {
+      return;
+    }
+
+    if (
+      depositForm.parentElement.querySelector(
+        ".gvs-whatsapp-notice"
+      )
+    ) {
+      return;
+    }
+
+
+    const notice =
+      document.createElement("div");
+
+    notice.className =
+      "gvs-whatsapp-notice";
+
+    notice.innerHTML = `
+      <strong>Need faster approval?</strong><br>
+      After making your OPay payment and submitting your receipt,
+      send us a message on WhatsApp at
+      <a
+        class="gvs-whatsapp-link"
+        href="https://wa.me/2349136540119"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        09136540119
+      </a>
+      for faster confirmation.
+    `;
+
+
+    depositForm.parentElement.appendChild(
+      notice
+    );
+
+  }
+
+
+  /* =========================================================
+     IMPROVE PURCHASE ERROR
+     ========================================================= */
+
+  function improvePurchaseErrorHandling() {
+
+    if (
+      typeof window.purchaseNumber !==
+      "function"
+    ) {
+      return;
+    }
+
+    if (
+      window.purchaseNumber.__gvsWrapped
+    ) {
+      return;
+    }
+
+    const originalPurchase =
+      window.purchaseNumber;
+
+    async function wrappedPurchase() {
 
       try {
 
-        setAuthMode("login");
-
-
-        const {
-          data,
-          error
-        } = await supabaseClient.auth.getSession();
-
-
-        if (error) {
-
-          console.error(
-            "Session error:",
-            error
-          );
-
-          showAuth();
-
-          return;
-        }
-
-
-        if (data?.session?.user) {
-
-          currentUser =
-            data.session.user;
-
-
-          await loadAuthenticatedUser();
-
-        } else {
-
-          showAuth();
-
-        }
+        return await originalPurchase.apply(
+          this,
+          arguments
+        );
 
       } catch (error) {
 
         console.error(
-          "Initialization error:",
+          "GlobalSim purchase error:",
           error
         );
 
-        showAuth();
+        if (
+          typeof showToast ===
+          "function"
+        ) {
+
+          showToast(
+            "Unable to process number. Please check your wallet balance and try again.",
+            "error"
+          );
+
+        }
 
       }
 
     }
 
+    wrappedPurchase.__gvsWrapped = true;
 
-    /*
-      Start application only after DOM is ready.
-      This also prevents the "only footer appears"
-      situation caused by page initialization timing.
-    */
+    window.purchaseNumber =
+      wrappedPurchase;
+
+  }
+
+
+  /* =========================================================
+     WRAP COUNTRY/SERVICE LOADING
+     ========================================================= */
+
+  function wrapLoaders() {
 
     if (
-      document.readyState === "loading"
+      typeof window.loadCountries ===
+        "function" &&
+      !window.loadCountries.__gvsWrapped
     ) {
 
-      document.addEventListener(
-        "DOMContentLoaded",
-        init
-      );
+      const originalCountries =
+        window.loadCountries;
 
-    } else {
+      async function wrappedCountries() {
 
-      init();
+        const result =
+          await originalCountries.apply(
+            this,
+            arguments
+          );
+
+        refreshSearchableSelect(
+          "countrySelect"
+        );
+
+        return result;
+
+      }
+
+      wrappedCountries.__gvsWrapped = true;
+
+      window.loadCountries =
+        wrappedCountries;
 
     }
 
-  </script>
 
-</body>
-</html>
+    if (
+      typeof window.loadServices ===
+        "function" &&
+      !window.loadServices.__gvsWrapped
+    ) {
+
+      const originalServices =
+        window.loadServices;
+
+      async function wrappedServices() {
+
+        const result =
+          await originalServices.apply(
+            this,
+            arguments
+          );
+
+        refreshSearchableSelect(
+          "serviceSelect"
+        );
+
+        return result;
+
+      }
+
+      wrappedServices.__gvsWrapped = true;
+
+      window.loadServices =
+        wrappedServices;
+
+    }
+
+  }
+
+
+  /* =========================================================
+     KEEP HERO BALANCE IN SYNC
+     ========================================================= */
+
+  function startBalanceObserver() {
+
+    const dashboardBalance =
+      gvs$("dashboardBalance");
+
+    const walletBalance =
+      gvs$("walletPageBalance");
+
+    [
+      dashboardBalance,
+      walletBalance
+    ]
+      .filter(Boolean)
+      .forEach(element => {
+
+        const observer =
+          new MutationObserver(
+            updateHeroBalance
+          );
+
+        observer.observe(
+          element,
+          {
+            childList: true,
+            characterData: true,
+            subtree: true
+          }
+        );
+
+      });
+
+  }
+
+
+  /* =========================================================
+     INITIALIZE
+     ========================================================= */
+
+  function initializeGlobalSimUI() {
+
+    removeWithdrawals();
+
+    setupPasswordToggles();
+
+    createSearchableSelect(
+      "countrySelect",
+      "country"
+    );
+
+    createSearchableSelect(
+      "serviceSelect",
+      "service"
+    );
+
+    buildDashboardHero();
+
+    addOpayNotice();
+
+    wrapLoaders();
+
+    improvePurchaseErrorHandling();
+
+    startBalanceObserver();
+
+    updateHeroBalance();
+
+  }
+
+
+  /*
+    Run after the existing GlobalSim application
+    has loaded its normal scripts.
+  */
+
+  if (
+    document.readyState ===
+    "loading"
+  ) {
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      function () {
+
+        setTimeout(
+          initializeGlobalSimUI,
+          250
+        );
+
+      }
+    );
+
+  } else {
+
+    setTimeout(
+      initializeGlobalSimUI,
+      250
+    );
+
+  }
+
+
+})();
+</script>
