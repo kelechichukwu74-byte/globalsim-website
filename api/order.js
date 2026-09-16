@@ -1,12 +1,10 @@
 import {
   sureVerificationRequest
-} from "./_lib.js";Cuando venga saldremos juntas
-
+} from "./_lib.js";
 
 const SUPABASE_URL =
   process.env.SUPABASE_URL ||
   "https://rfitbmkizfmwfqqskwhy.supabase.co";
-
 
 const SUPABASE_PUBLISHABLE_KEY =
   process.env.SUPABASE_PUBLISHABLE_KEY ||
@@ -19,50 +17,33 @@ async function supabaseRequest(
   options = {}
 ) {
 
-  const response =
-    await fetch(
-      `${SUPABASE_URL}${path}`,
-      {
-        method:
-          options.method || "GET",
+  const response = await fetch(
+    `${SUPABASE_URL}${path}`,
+    {
+      method: options.method || "GET",
 
-        headers: {
-          apikey:
-            SUPABASE_PUBLISHABLE_KEY,
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+      },
 
-          Authorization:
-            `Bearer ${accessToken}`,
-
-          "Content-Type":
-            "application/json",
-
-          ...(options.headers || {})
-        },
-
-        ...(options.body !== undefined
-          ? {
-              body:
-                JSON.stringify(
-                  options.body
-                )
-            }
-          : {})
-      }
-    );
+      ...(options.body !== undefined
+        ? {
+            body: JSON.stringify(options.body)
+          }
+        : {})
+    }
+  );
 
 
-  const text =
-    await response.text();
-
+  const text = await response.text();
 
   let data = null;
 
-
   try {
-    data =
-      text
-        ? JSON.parse(text)
-        : null;
+    data = text ? JSON.parse(text) : null;
   } catch {
     data = null;
   }
@@ -85,10 +66,7 @@ async function supabaseRequest(
 }
 
 
-function getServer(
-  countryId,
-  countryName
-) {
+function getServer(countryName) {
 
   const name =
     String(countryName || "")
@@ -98,8 +76,7 @@ function getServer(
 
   if (
     name === "united states" ||
-    name ===
-      "united states of america" ||
+    name === "united states of america" ||
     name === "usa" ||
     name === "us"
   ) {
@@ -111,10 +88,7 @@ function getServer(
 }
 
 
-export default async function handler(
-  req,
-  res
-) {
+export default async function handler(req, res) {
 
   if (req.method !== "POST") {
 
@@ -127,8 +101,7 @@ export default async function handler(
 
 
   const authorization =
-    req.headers?.authorization ||
-    "";
+    req.headers?.authorization || "";
 
 
   if (
@@ -164,10 +137,10 @@ export default async function handler(
   try {
 
     /*
-      -------------------------------------------------------
-      1. Verify the logged-in Supabase user
-      -------------------------------------------------------
-    */
+     * ----------------------------------------------------
+     * 1. Verify the logged-in user
+     * ----------------------------------------------------
+     */
 
     const user =
       await supabaseRequest(
@@ -180,7 +153,8 @@ export default async function handler(
 
       return res.status(401).json({
         success: false,
-        error: "Your session has expired. Please log in again."
+        error:
+          "Your session has expired. Please log in again."
       });
 
     }
@@ -193,21 +167,16 @@ export default async function handler(
     const countryId =
       body.countryId;
 
-
     const countryName =
       body.countryName || "";
 
-
-    const serviceCountryPriceId =
-      body.serviceCountryPriceId;
-
+    const serviceId =
+      body.serviceCountryPriceId ||
+      body.serviceId ||
+      body.service;
 
     const serviceName =
       body.serviceName || "";
-
-
-    const quantity =
-      Number(body.quantity || 1);
 
 
     if (!countryId) {
@@ -220,7 +189,7 @@ export default async function handler(
     }
 
 
-    if (!serviceCountryPriceId) {
+    if (!serviceId) {
 
       return res.status(400).json({
         success: false,
@@ -240,86 +209,11 @@ export default async function handler(
     }
 
 
-    if (
-      !Number.isInteger(quantity) ||
-      quantity < 1 ||
-      quantity > 1
-    ) {
-
-      return res.status(400).json({
-        success: false,
-        error: "Invalid quantity."
-      });
-
-    }
-
-
     /*
-      -------------------------------------------------------
-      2. Select the correct SureVerification server
-      -------------------------------------------------------
-    */
-
-    const server =
-      getServer(
-        countryId,
-        countryName
-      );
-
-
-    /*
-      -------------------------------------------------------
-      3. Get the provider price
-      -------------------------------------------------------
-    */
-
-    const priceResponse =
-      await sureVerificationRequest(
-        `/${server}/price?country_id=${encodeURIComponent(
-          countryId
-        )}&service=${encodeURIComponent(
-          serviceCountryPriceId
-        )}`
-      );
-
-
-    const providerPrice =
-      Number(
-        priceResponse?.price ??
-        priceResponse?.data?.price ??
-        priceResponse?.amount ??
-        priceResponse?.data?.amount
-      );
-
-
-    if (
-      !Number.isFinite(providerPrice) ||
-      providerPrice <= 0
-    ) {
-
-      console.error(
-        "Invalid SureVerification price:",
-        priceResponse
-      );
-
-
-      return res.status(400).json({
-        success: false,
-        error: "Unable to determine the number price."
-      });
-
-    }
-
-
-    const totalPrice =
-      providerPrice * quantity;
-
-
-    /*
-      -------------------------------------------------------
-      4. Get the customer's wallet
-      -------------------------------------------------------
-    */
+     * ----------------------------------------------------
+     * 2. Get wallet
+     * ----------------------------------------------------
+     */
 
     const wallets =
       await supabaseRequest(
@@ -350,27 +244,94 @@ export default async function handler(
       Number(wallet.balance || 0);
 
 
+    /*
+     * ----------------------------------------------------
+     * 3. Get provider price
+     *
+     * This is temporary until the Admin Pricing system
+     * is connected. The Admin Pricing system will later
+     * supply the customer's actual selling price.
+     * ----------------------------------------------------
+     */
+
+    const server =
+      getServer(countryName);
+
+
+    const priceResponse =
+      await sureVerificationRequest(
+        `/${server}/price?country_id=${encodeURIComponent(
+          countryId
+        )}&service=${encodeURIComponent(
+          serviceId
+        )}`
+      );
+
+
+    const providerPrice =
+      Number(
+        priceResponse?.price ??
+        priceResponse?.data?.price ??
+        priceResponse?.amount ??
+        priceResponse?.data?.amount
+      );
+
+
+    if (
+      !Number.isFinite(providerPrice) ||
+      providerPrice <= 0
+    ) {
+
+      return res.status(400).json({
+        success: false,
+        error:
+          "Unable to determine the number price."
+      });
+
+    }
+
+
+    const totalPrice =
+      providerPrice;
+
+
+    /*
+     * ----------------------------------------------------
+     * 4. Check wallet BEFORE purchase
+     * ----------------------------------------------------
+     */
+
     if (
       !Number.isFinite(currentBalance) ||
       currentBalance < totalPrice
     ) {
 
       return res.status(400).json({
+
         success: false,
-        error: "Insufficient wallet balance."
+
+        code:
+          "INSUFFICIENT_FUNDS",
+
+        error:
+          "Insufficient wallet balance.",
+
+        balance:
+          currentBalance,
+
+        price:
+          totalPrice
+
       });
 
     }
 
 
     /*
-      -------------------------------------------------------
-      5. Reserve the money BEFORE purchasing the number.
-      
-      This prevents a customer from receiving a number
-      without having enough money in the wallet.
-      -------------------------------------------------------
-    */
+     * ----------------------------------------------------
+     * 5. Debit wallet
+     * ----------------------------------------------------
+     */
 
     const newBalance =
       currentBalance - totalPrice;
@@ -380,6 +341,8 @@ export default async function handler(
       await supabaseRequest(
         `/rest/v1/wallets?user_id=eq.${encodeURIComponent(
           user.id
+        )}&balance=eq.${encodeURIComponent(
+          currentBalance
         )}`,
         accessToken,
         {
@@ -400,54 +363,58 @@ export default async function handler(
 
     if (
       !Array.isArray(walletUpdate) ||
-      !walletUpdate.length
+      walletUpdate.length === 0
     ) {
 
-      throw new Error(
-        "Unable to debit wallet."
-      );
+      return res.status(409).json({
+
+        success: false,
+
+        error:
+          "Your wallet balance changed. Please try again."
+
+      });
 
     }
 
+
+    /*
+     * ----------------------------------------------------
+     * 6. Purchase number
+     * ----------------------------------------------------
+     */
 
     let purchaseResponse;
 
 
     try {
 
-      /*
-        -----------------------------------------------------
-        6. Purchase the number from SureVerification
-        -----------------------------------------------------
-      */
-
       purchaseResponse =
         await sureVerificationRequest(
           `/${server}/purchase?country_id=${encodeURIComponent(
             countryId
           )}&service=${encodeURIComponent(
-            serviceCountryPriceId
+            serviceId
           )}`,
           {
             method: "POST"
           }
         );
 
-
     } catch (providerError) {
 
       /*
-        -----------------------------------------------------
-        7. Provider failed.
-           Return the reserved money to the wallet.
-        -----------------------------------------------------
-      */
+       * Provider failed.
+       * Refund the wallet automatically.
+       */
 
       try {
 
         await supabaseRequest(
           `/rest/v1/wallets?user_id=eq.${encodeURIComponent(
             user.id
+          )}&balance=eq.${encodeURIComponent(
+            newBalance
           )}`,
           accessToken,
           {
@@ -474,6 +441,12 @@ export default async function handler(
 
     }
 
+
+    /*
+     * ----------------------------------------------------
+     * 7. Read purchased verification
+     * ----------------------------------------------------
+     */
 
     const verification =
       purchaseResponse?.verification ||
@@ -508,66 +481,83 @@ export default async function handler(
 
 
     /*
-      -------------------------------------------------------
-      8. Save the successful order
-      -------------------------------------------------------
-    */
+     * ----------------------------------------------------
+     * 8. Save order
+     * ----------------------------------------------------
+     */
 
-    const order =
-      await supabaseRequest(
-        "/rest/v1/orders",
-        accessToken,
-        {
-          method: "POST",
+    let order = null;
 
-          headers: {
-            Prefer:
-              "return=representation"
-          },
 
-          body: {
-            user_id:
-              user.id,
+    try {
 
-            country_id:
-              String(countryId),
+      order =
+        await supabaseRequest(
+          "/rest/v1/orders",
+          accessToken,
+          {
+            method: "POST",
 
-            country_name:
-              countryName,
+            headers: {
+              Prefer:
+                "return=representation"
+            },
 
-            service:
-              String(serviceCountryPriceId),
+            body: {
 
-            service_name:
-              serviceName,
+              user_id:
+                user.id,
 
-            number:
-              number || null,
+              country_id:
+                String(countryId),
 
-            price:
-              totalPrice,
+              country_name:
+                countryName,
 
-            status:
-              providerStatus,
+              service:
+                String(serviceId),
 
-            request_id:
-              requestId || null,
+              service_name:
+                serviceName,
 
-            verification_id:
-              verificationId,
+              number:
+                number || null,
 
-            server:
-              server
+              price:
+                totalPrice,
+
+              status:
+                providerStatus,
+
+              request_id:
+                requestId || null,
+
+              verification_id:
+                verificationId,
+
+              server:
+                server
+
+            }
+
           }
-        }
+        );
+
+    } catch (orderError) {
+
+      console.error(
+        "Order database error:",
+        orderError
       );
+
+    }
 
 
     /*
-      -------------------------------------------------------
-      9. Record the wallet transaction
-      -------------------------------------------------------
-    */
+     * ----------------------------------------------------
+     * 9. Record wallet transaction
+     * ----------------------------------------------------
+     */
 
     try {
 
@@ -578,6 +568,7 @@ export default async function handler(
           method: "POST",
 
           body: {
+
             user_id:
               user.id,
 
@@ -592,35 +583,38 @@ export default async function handler(
 
             reference:
               requestId || null
+
           }
+
         }
       );
 
     } catch (transactionError) {
 
-      /*
-        The order and wallet debit have already succeeded.
-        Keep the purchase intact but log the transaction
-        failure for admin investigation.
-      */
-
       console.error(
-        "Wallet transaction record error:",
+        "Wallet transaction error:",
         transactionError
       );
 
     }
 
 
+    /*
+     * ----------------------------------------------------
+     * 10. SUCCESS
+     * ----------------------------------------------------
+     */
+
     return res.status(200).json({
 
-      success: true,
+      success:
+        true,
 
       message:
-        purchaseResponse?.message ||
         "Number purchased successfully.",
 
-      server,
+      server:
+        server,
 
       price:
         totalPrice,
@@ -628,19 +622,31 @@ export default async function handler(
       balance:
         newBalance,
 
+      number:
+        number,
+
+      request_id:
+        requestId,
+
+      verification_id:
+        verificationId,
+
+      status:
+        providerStatus,
+
       order:
         Array.isArray(order)
           ? order[0]
           : order,
 
       verification:
-
         verification || {
 
           request_id:
             requestId,
 
-          number,
+          number:
+            number,
 
           service:
             serviceName,
@@ -650,10 +656,10 @@ export default async function handler(
 
           id:
             verificationId
+
         }
 
     });
-
 
   } catch (error) {
 
@@ -663,9 +669,16 @@ export default async function handler(
     );
 
 
+    /*
+     * IMPORTANT:
+     * Return the REAL error from the API.
+     * Do not hide it behind "Unable to purchase number."
+     */
+
     return res.status(500).json({
 
-      success: false,
+      success:
+        false,
 
       error:
         error?.message ||
