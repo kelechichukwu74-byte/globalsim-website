@@ -1449,30 +1449,6 @@
             class="page"
           >
 
-            <div class="gvs-wallet-hero">
-              <div class="gvs-wallet-hero-top">
-                <div>
-                  <div class="gvs-wallet-label">Wallet Balance</div>
-                  <div id="gvsHeroBalance" class="gvs-wallet-amount">₦0.00</div>
-                </div>
-                <span class="gvs-active-pill">● Active</span>
-              </div>
-
-              <div class="gvs-wallet-hero-bottom">
-                <div class="gvs-wallet-subtitle">
-                  Available for virtual number purchases
-                </div>
-                <button
-                  type="button"
-                  class="gvs-add-money-btn"
-                  onclick="navigateTo('wallet')"
-                >
-                  <span class="gvs-plus">+</span>
-                  Add Money
-                </button>
-              </div>
-            </div>
-
             <div class="welcome-card">
 
               <h1>
@@ -2007,16 +1983,6 @@
 
                 </div>
 
-                <div class="gvs-whatsapp-notice">
-                  <strong>⚡ Faster approval</strong>
-                  <span>
-                    After submitting your deposit, send your payment receipt on WhatsApp:
-                    <a href="https://wa.me/2349136540119" target="_blank" rel="noopener">
-                      09136540119
-                    </a>
-                  </span>
-                </div>
-
 
                 <form
                   id="depositForm"
@@ -2103,7 +2069,129 @@
 
               </div>
 
-              <!-- TRANSACTIONS -->
+
+              <!-- WITHDRAW -->
+
+              <div class="section-card">
+
+                <div class="section-heading">
+
+                  <div>
+                    <h3>Withdraw Funds</h3>
+                    <p>Request a withdrawal from your wallet.</p>
+                  </div>
+
+                </div>
+
+
+                <form
+                  id="withdrawForm"
+                  onsubmit="submitWithdrawal(event)"
+                >
+
+                  <div class="form-group">
+
+                    <label for="withdrawBank">
+                      Bank
+                    </label>
+
+                    <select
+                      id="withdrawBank"
+                      class="form-control"
+                    >
+
+                      <option value="">
+                        Select bank
+                      </option>
+
+                      <option>Access Bank</option>
+                      <option>Fidelity Bank</option>
+                      <option>First Bank</option>
+                      <option>GTBank</option>
+                      <option>Moniepoint</option>
+                      <option>OPay</option>
+                      <option>PalmPay</option>
+                      <option>Polaris Bank</option>
+                      <option>Stanbic IBTC</option>
+                      <option>UBA</option>
+                      <option>Union Bank</option>
+                      <option>Wema Bank</option>
+                      <option>Zenith Bank</option>
+                      <option>Other</option>
+
+                    </select>
+
+                  </div>
+
+
+                  <div class="form-group">
+
+                    <label for="withdrawAccountNumber">
+                      Account Number
+                    </label>
+
+                    <input
+                      id="withdrawAccountNumber"
+                      class="form-control"
+                      type="text"
+                      inputmode="numeric"
+                      maxlength="10"
+                      placeholder="10-digit account number"
+                    />
+
+                  </div>
+
+
+                  <div class="form-group">
+
+                    <label for="withdrawAccountName">
+                      Account Name
+                    </label>
+
+                    <input
+                      id="withdrawAccountName"
+                      class="form-control"
+                      type="text"
+                      placeholder="Account holder name"
+                    />
+
+                  </div>
+
+
+                  <div class="form-group">
+
+                    <label for="withdrawAmount">
+                      Amount
+                    </label>
+
+                    <input
+                      id="withdrawAmount"
+                      class="form-control"
+                      type="number"
+                      min="1000"
+                      step="0.01"
+                      placeholder="Minimum ₦1,000"
+                    />
+
+                  </div>
+
+
+                  <button
+                    id="withdrawButton"
+                    class="primary-btn full-btn"
+                    type="submit"
+                  >
+                    Request Withdrawal
+                  </button>
+
+                </form>
+
+              </div>
+
+            </div>
+
+
+            <!-- TRANSACTIONS -->
 
             <div class="section-card">
 
@@ -2333,6 +2421,22 @@
                 <div class="stat-card">
 
                   <div class="stat-label">
+                    Users
+                  </div>
+
+                  <div
+                    id="adminUsersCount"
+                    class="stat-value"
+                  >
+                    0
+                  </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                  <div class="stat-label">
                     Orders
                   </div>
 
@@ -2379,6 +2483,40 @@
 
               </div>
 
+
+              <div class="section-card">
+                <div class="section-heading">
+                  <div>
+                    <h3>Pricing</h3>
+                    <p>Set the selling price for each country and service.</p>
+                  </div>
+                </div>
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label for="adminPricingCountry">Country</label>
+                    <select id="adminPricingCountry" class="form-control" onchange="loadAdminPricingServices()">
+                      <option value="">Select a country</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="adminPricingService">Service</label>
+                    <select id="adminPricingService" class="form-control">
+                      <option value="">Select a service</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label for="adminPricingAmount">Selling Price (₦)</label>
+                    <input id="adminPricingAmount" class="form-control" type="number" min="1" step="1" placeholder="Enter selling price" />
+                  </div>
+                  <div style="display:flex;align-items:end;">
+                    <button id="adminPricingSave" class="primary-btn full-btn" type="button" onclick="saveAdminPricing()">Save Price</button>
+                  </div>
+                </div>
+                <div id="adminPricingStatus" class="small-muted"></div>
+                <div id="adminPricingTable" style="margin-top:16px;"></div>
+              </div>
 
               <div class="section-card">
 
@@ -4041,6 +4179,159 @@
 
     }
 
+
+    /* =========================================================
+       WITHDRAWAL
+       ========================================================= */
+
+    async function submitWithdrawal(event) {
+
+      event.preventDefault();
+
+
+      const button =
+        $("withdrawButton");
+
+
+      const bank =
+        $("withdrawBank").value;
+
+
+      const accountNumber =
+        $("withdrawAccountNumber")
+          .value
+          .trim();
+
+
+      const accountName =
+        $("withdrawAccountName")
+          .value
+          .trim();
+
+
+      const amount =
+        Number(
+          $("withdrawAmount").value
+        );
+
+
+      if (!bank) {
+
+        showToast(
+          "Select your bank.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      if (!/^\d{10}$/.test(accountNumber)) {
+
+        showToast(
+          "Enter a valid 10-digit account number.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      if (!accountName) {
+
+        showToast(
+          "Enter the account name.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      if (!amount || amount < 1000) {
+
+        showToast(
+          "Minimum withdrawal is ₦1,000.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      setButtonLoading(
+        button,
+        true,
+        "Submitting..."
+      );
+
+
+      try {
+
+        /*
+          This calls your secure Supabase RPC.
+          The RPC must perform the balance/withdrawal
+          transaction server-side.
+        */
+
+        const {
+          data,
+          error
+        } = await supabaseClient.rpc(
+          "request_withdrawal",
+          {
+            p_bank_name: bank,
+            p_account_number: accountNumber,
+            p_account_name: accountName,
+            p_amount: amount
+          }
+        );
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        showToast(
+          "Withdrawal request submitted successfully.",
+          "success"
+        );
+
+
+        $("withdrawForm").reset();
+
+
+        await loadWalletData();
+
+        await loadDashboard();
+
+
+      } catch (error) {
+
+        console.error(
+          "Withdrawal error:",
+          error
+        );
+
+        showToast(
+          error.message ||
+          "Unable to submit withdrawal request.",
+          "error"
+        );
+
+      } finally {
+
+        setButtonLoading(
+          button,
+          false
+        );
+
+      }
+
+    }
+
+
     /* =========================================================
        COUNTRIES
        ========================================================= */
@@ -4113,11 +4404,6 @@
             country.country_name ??
             id;
 
-          const code =
-            country.code ??
-            country.country_code ??
-            country.countryCode ??
-            "";
 
           option.value = id;
 
@@ -4125,17 +4411,6 @@
 
           option.dataset.countryName =
             name;
-
-          option.dataset.countryCode =
-            code;
-
-          option.dataset.server =
-            country.server ||
-            (
-              String(code).toUpperCase() === "US"
-                ? "usa-server-1"
-                : "global-server-1"
-            );
 
           select.appendChild(option);
 
@@ -4180,15 +4455,6 @@
       const countryId =
         countrySelect.value;
 
-      const countryOption =
-        countrySelect.options[
-          countrySelect.selectedIndex
-        ];
-
-      const server =
-        countryOption?.dataset?.server ||
-        "global-server-1";
-
 
       serviceSelect.innerHTML =
         '<option value="">Loading services...</option>';
@@ -4213,7 +4479,7 @@
 
         const response =
           await fetch(
-            `/api/services?countryId=${encodeURIComponent(countryId)}&server=${encodeURIComponent(server)}`
+            `/api/services?countryId=${encodeURIComponent(countryId)}`
           );
 
 
@@ -4484,26 +4750,13 @@
           be placed in this HTML.
         */
 
-        const sessionResult =
-          await supabaseClient.auth.getSession();
-
-        const accessToken =
-          sessionResult?.data?.session?.access_token;
-
-        if (!accessToken) {
-          throw new Error(
-            "Your session has expired. Please log in again."
-          );
-        }
-
         const response =
           await fetch("/api/order", {
 
             method: "POST",
 
             headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${accessToken}`
+              "Content-Type": "application/json"
             },
 
             body: JSON.stringify({
@@ -4949,6 +5202,197 @@
        ADMIN DASHBOARD
        ========================================================= */
 
+
+    async function getCurrentAccessToken() {
+      const { data } = await supabaseClient.auth.getSession();
+      return data?.session?.access_token || null;
+    }
+
+    async function loadAdminPricing() {
+      const countrySelect = $("adminPricingCountry");
+      const serviceSelect = $("adminPricingService");
+      const table = $("adminPricingTable");
+
+      if (!countrySelect || !serviceSelect || !table) return;
+
+      try {
+        const countriesResponse = await fetch("/api/countries");
+        const countriesData = await countriesResponse.json();
+
+        if (countriesData?.success) {
+          countrySelect.innerHTML =
+            '<option value="">Select a country</option>' +
+            (countriesData.countries || []).map(country => `
+              <option value="${escapeHtml(String(country.id))}"
+                data-name="${escapeHtml(country.name || "")}"
+                data-code="${escapeHtml(country.code || "")}"
+                data-server="${escapeHtml(country.server || "")}">
+                ${escapeHtml(country.name || String(country.id))}
+              </option>
+            `).join("");
+        }
+
+        const token = await getCurrentAccessToken();
+        if (!token) throw new Error("Unauthorized.");
+
+        const response = await fetch("/api/admin-pricing", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data?.success) {
+          throw new Error(data?.error || "Unable to load prices.");
+        }
+
+        const rows = data.prices || [];
+
+        table.innerHTML = rows.length ? `
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Country</th>
+                  <th>Service</th>
+                  <th>Selling Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.map(row => `
+                  <tr>
+                    <td>${escapeHtml(row.country_name || row.country_id || "—")}</td>
+                    <td>${escapeHtml(row.service_name || row.service_id || "—")}</td>
+                    <td>${formatMoney(row.selling_price)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        ` : '<div class="empty-state">No custom selling prices have been set yet.</div>';
+
+      } catch (error) {
+        console.error("Admin pricing load error:", error);
+        table.innerHTML = '<div class="empty-state">Unable to load pricing.</div>';
+      }
+    }
+
+    async function loadAdminPricingServices() {
+      const countrySelect = $("adminPricingCountry");
+      const serviceSelect = $("adminPricingService");
+      if (!countrySelect || !serviceSelect) return;
+
+      const option = countrySelect.options[countrySelect.selectedIndex];
+      const countryId = countrySelect.value;
+      const server = option?.dataset?.server || "";
+
+      serviceSelect.innerHTML =
+        '<option value="">Loading services...</option>';
+
+      if (!countryId) {
+        serviceSelect.innerHTML =
+          '<option value="">Select a service</option>';
+        return;
+      }
+
+      try {
+        const query =
+          `/api/services?countryId=${encodeURIComponent(countryId)}` +
+          (server ? `&server=${encodeURIComponent(server)}` : "");
+
+        const response = await fetch(query);
+        const data = await response.json();
+
+        if (!response.ok || !data?.success) {
+          throw new Error(data?.error || "Unable to load services.");
+        }
+
+        serviceSelect.innerHTML =
+          '<option value="">Select a service</option>' +
+          (data.services || []).map(service => `
+            <option value="${escapeHtml(String(service.id))}"
+              data-name="${escapeHtml(service.name || "")}">
+              ${escapeHtml(service.name || String(service.id))}
+            </option>
+          `).join("");
+
+      } catch (error) {
+        console.error("Admin pricing services error:", error);
+        serviceSelect.innerHTML =
+          '<option value="">Unable to load services</option>';
+      }
+    }
+
+    async function saveAdminPricing() {
+      const countrySelect = $("adminPricingCountry");
+      const serviceSelect = $("adminPricingService");
+      const amountInput = $("adminPricingAmount");
+      const status = $("adminPricingStatus");
+      const button = $("adminPricingSave");
+
+      const countryOption =
+        countrySelect?.options[countrySelect.selectedIndex];
+      const serviceOption =
+        serviceSelect?.options[serviceSelect.selectedIndex];
+
+      const countryId = countrySelect?.value;
+      const serviceId = serviceSelect?.value;
+      const sellingPrice = Number(amountInput?.value);
+
+      if (!countryId || !serviceId || !Number.isFinite(sellingPrice) || sellingPrice <= 0) {
+        if (status) status.textContent =
+          "Select a country, service and enter a valid selling price.";
+        return;
+      }
+
+      try {
+        button.disabled = true;
+        if (status) status.textContent = "Saving price...";
+
+        const token = await getCurrentAccessToken();
+        if (!token) throw new Error("Unauthorized.");
+
+        const response = await fetch("/api/admin-pricing", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            countryId,
+            countryName:
+              countryOption?.dataset?.name ||
+              countryOption?.textContent?.trim() ||
+              "",
+            serviceId,
+            serviceName:
+              serviceOption?.dataset?.name ||
+              serviceOption?.textContent?.trim() ||
+              "",
+            sellingPrice
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data?.success) {
+          throw new Error(data?.error || "Unable to save selling price.");
+        }
+
+        if (status) status.textContent =
+          "Selling price saved successfully.";
+
+        amountInput.value = "";
+        await loadAdminPricing();
+
+      } catch (error) {
+        console.error("Save pricing error:", error);
+        if (status) status.textContent =
+          error?.message || "Unable to save selling price.";
+      } finally {
+        button.disabled = false;
+      }
+    }
+
     async function loadAdmin() {
 
       if (!isAdmin) {
@@ -4976,7 +5420,8 @@
         await Promise.all([
           loadAdminUsers(),
           loadAdminOrders(),
-          loadAdminDeposits()
+          loadAdminDeposits(),
+          loadAdminPricing()
         ]);
 
       } catch (error) {
@@ -5949,586 +6394,6 @@
 
     }
 
-  </script>
-
-  <style>
-    /* =========================================================
-       GLOBALSIM UPDATED UI
-       ========================================================= */
-
-    .gvs-wallet-hero {
-      background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
-      color: #fff;
-      border-radius: 20px;
-      padding: 22px;
-      margin-bottom: 20px;
-      box-shadow: 0 16px 35px rgba(37, 99, 235, 0.20);
-    }
-
-    .gvs-wallet-hero-top,
-    .gvs-wallet-hero-bottom {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-
-    .gvs-wallet-hero-bottom {
-      margin-top: 22px;
-    }
-
-    .gvs-wallet-label {
-      font-size: 12px;
-      font-weight: 700;
-      opacity: .88;
-      margin-bottom: 7px;
-    }
-
-    .gvs-wallet-amount {
-      font-size: clamp(30px, 7vw, 44px);
-      line-height: 1;
-      font-weight: 900;
-      letter-spacing: -1px;
-    }
-
-    .gvs-active-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255,255,255,.18);
-      border: 1px solid rgba(255,255,255,.28);
-      border-radius: 999px;
-      padding: 7px 11px;
-      font-size: 11px;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-    .gvs-wallet-subtitle {
-      font-size: 12px;
-      color: rgba(255,255,255,.86);
-    }
-
-    .gvs-add-money-btn {
-      border: 0;
-      border-radius: 12px;
-      background: #fff;
-      color: #1d4ed8;
-      padding: 11px 15px;
-      font-weight: 800;
-      font-size: 12px;
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      box-shadow: 0 8px 20px rgba(15,23,42,.14);
-    }
-
-    .gvs-plus {
-      font-size: 18px;
-      line-height: 1;
-    }
-
-    .gvs-whatsapp-notice {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      border-radius: 12px;
-      padding: 12px 14px;
-      margin: 0 0 16px;
-      color: #1e3a8a;
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    .gvs-whatsapp-notice a {
-      color: #1d4ed8;
-      font-weight: 800;
-      text-decoration: none;
-    }
-
-    .gvs-search-select {
-      position: relative;
-      width: 100%;
-    }
-
-    .gvs-search-select-input {
-      width: 100%;
-      border: 1px solid #dbe3ef;
-      border-radius: 10px;
-      padding: 12px 38px 12px 12px;
-      background: #fff;
-      color: #0f172a;
-      outline: none;
-    }
-
-    .gvs-search-select-input:focus {
-      border-color: #60a5fa;
-      box-shadow: 0 0 0 3px rgba(37,99,235,.10);
-    }
-
-    .gvs-search-select-arrow {
-      position: absolute;
-      right: 12px;
-      top: 12px;
-      pointer-events: none;
-      color: #64748b;
-    }
-
-    .gvs-search-select-menu {
-      position: absolute;
-      z-index: 1500;
-      left: 0;
-      right: 0;
-      top: calc(100% + 5px);
-      max-height: 260px;
-      overflow-y: auto;
-      background: #fff;
-      border: 1px solid #dbe3ef;
-      border-radius: 12px;
-      box-shadow: 0 16px 35px rgba(15,23,42,.14);
-      padding: 5px;
-      display: none;
-    }
-
-    .gvs-search-select.open .gvs-search-select-menu {
-      display: block;
-    }
-
-    .gvs-search-option {
-      width: 100%;
-      border: 0;
-      background: transparent;
-      text-align: left;
-      padding: 10px;
-      border-radius: 9px;
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      color: #0f172a;
-      font-size: 12px;
-    }
-
-    .gvs-search-option:hover {
-      background: #eff6ff;
-    }
-
-    .gvs-option-icon {
-      width: 24px;
-      text-align: center;
-      font-size: 16px;
-      flex: 0 0 24px;
-    }
-
-    .gvs-option-text {
-      min-width: 0;
-      flex: 1;
-    }
-
-    .gvs-option-text strong {
-      display: block;
-      font-size: 12px;
-    }
-
-    .gvs-option-text small {
-      display: block;
-      color: #64748b;
-      margin-top: 2px;
-      font-size: 10px;
-    }
-
-    .gvs-native-select-hidden {
-      position: absolute !important;
-      width: 1px !important;
-      height: 1px !important;
-      opacity: 0 !important;
-      pointer-events: none !important;
-    }
-
-    .gvs-password-wrap {
-      position: relative;
-    }
-
-    .gvs-password-wrap .form-control {
-      padding-right: 44px;
-    }
-
-    .gvs-password-toggle {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      border: 0;
-      background: transparent;
-      color: #64748b;
-      padding: 5px;
-      line-height: 1;
-      font-size: 17px;
-    }
-
-    @media (max-width: 600px) {
-      .gvs-wallet-hero-top,
-      .gvs-wallet-hero-bottom {
-        align-items: flex-start;
-      }
-
-      .gvs-wallet-hero-bottom {
-        flex-direction: column;
-      }
-
-      .gvs-add-money-btn {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-  </style>
-
-  <script>
-    /* =========================================================
-       GLOBALSIM UPDATED BEHAVIOUR
-       ========================================================= */
-
-    (function () {
-      "use strict";
-
-      function gvs$(id) {
-        return document.getElementById(id);
-      }
-
-      function gvsEscape(value) {
-        return String(value ?? "")
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#039;");
-      }
-
-      function gvsFlag(code) {
-        const value = String(code || "").trim().toUpperCase();
-        if (!/^[A-Z]{2}$/.test(value)) return "🌐";
-        return [...value].map(c =>
-          String.fromCodePoint(127397 + c.charCodeAt(0))
-        ).join("");
-      }
-
-      function gvsServiceIcon(name) {
-        const value = String(name || "").toLowerCase();
-
-        if (value.includes("whatsapp")) return "🟢";
-        if (value.includes("telegram")) return "✈️";
-        if (value.includes("signal")) return "🔵";
-        if (value.includes("facebook")) return "🔷";
-        if (value.includes("instagram")) return "📸";
-        if (value.includes("google")) return "🔴";
-        if (value.includes("tiktok")) return "🎵";
-        if (value.includes("discord")) return "💬";
-        if (value.includes("twitter") || value.includes("x.com")) return "𝕏";
-        return "📱";
-      }
-
-      function addPasswordToggle(input) {
-        if (!input || input.dataset.gvsPasswordReady === "1") return;
-
-        input.dataset.gvsPasswordReady = "1";
-
-        const wrap = document.createElement("div");
-        wrap.className = "gvs-password-wrap";
-
-        input.parentNode.insertBefore(wrap, input);
-        wrap.appendChild(input);
-
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "gvs-password-toggle";
-        button.setAttribute("aria-label", "Show password");
-        button.textContent = "👁";
-
-        button.addEventListener("click", function () {
-          const visible = input.type === "text";
-          input.type = visible ? "password" : "text";
-          button.textContent = visible ? "👁" : "🙈";
-          button.setAttribute(
-            "aria-label",
-            visible ? "Show password" : "Hide password"
-          );
-        });
-
-        wrap.appendChild(button);
-      }
-
-      function setupPasswordToggles() {
-        document
-          .querySelectorAll('input[type="password"]')
-          .forEach(addPasswordToggle);
-      }
-
-      function renderSearchableSelect(select, kind) {
-        if (!select || select.dataset.gvsSearchReady === "1") return;
-
-        select.dataset.gvsSearchReady = "1";
-        select.classList.add("gvs-native-select-hidden");
-
-        const wrapper = document.createElement("div");
-        wrapper.className = "gvs-search-select";
-
-        const input = document.createElement("input");
-        input.type = "text";
-        input.className = "gvs-search-select-input";
-        input.autocomplete = "off";
-        input.placeholder =
-          kind === "country"
-            ? "Search country..."
-            : "Search service...";
-
-        const arrow = document.createElement("span");
-        arrow.className = "gvs-search-select-arrow";
-        arrow.textContent = "⌄";
-
-        const menu = document.createElement("div");
-        menu.className = "gvs-search-select-menu";
-
-        select.parentNode.insertBefore(wrapper, select);
-        wrapper.appendChild(input);
-        wrapper.appendChild(arrow);
-        wrapper.appendChild(menu);
-
-        function optionData(option) {
-          const value = option.value;
-          const label = option.textContent.trim();
-
-          if (kind === "country") {
-            return {
-              value,
-              label,
-              icon: gvsFlag(option.dataset.countryCode),
-              sub: ""
-            };
-          }
-
-          let name = option.dataset.serviceName || label;
-          let price = option.dataset.price || "";
-
-          return {
-            value,
-            label,
-            icon: gvsServiceIcon(name),
-            sub: price ? formatMoney(price) : ""
-          };
-        }
-
-        function refresh(query) {
-          const q = String(query || "").toLowerCase().trim();
-          menu.innerHTML = "";
-
-          const options = Array.from(select.options)
-            .filter(option => option.value)
-            .map(optionData)
-            .filter(item =>
-              !q ||
-              item.label.toLowerCase().includes(q) ||
-              item.sub.toLowerCase().includes(q)
-            );
-
-          if (!options.length) {
-            menu.innerHTML =
-              '<div class="empty-state" style="padding:18px;">No matches found.</div>';
-            return;
-          }
-
-          options.forEach(item => {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.className = "gvs-search-option";
-
-            button.innerHTML =
-              '<span class="gvs-option-icon">' +
-              gvsEscape(item.icon) +
-              '</span>' +
-              '<span class="gvs-option-text">' +
-              '<strong>' + gvsEscape(item.label) + '</strong>' +
-              (item.sub
-                ? '<small>' + gvsEscape(item.sub) + '</small>'
-                : '') +
-              '</span>';
-
-            button.addEventListener("click", function () {
-              select.value = item.value;
-              input.value =
-                select.options[select.selectedIndex]?.textContent.trim() ||
-                item.label;
-
-              wrapper.classList.remove("open");
-
-              select.dispatchEvent(
-                new Event("change", { bubbles: true })
-              );
-            });
-
-            menu.appendChild(button);
-          });
-        }
-
-        input.addEventListener("focus", function () {
-          refresh(input.value);
-          wrapper.classList.add("open");
-        });
-
-        input.addEventListener("input", function () {
-          refresh(input.value);
-          wrapper.classList.add("open");
-        });
-
-        document.addEventListener("click", function (event) {
-          if (!wrapper.contains(event.target)) {
-            wrapper.classList.remove("open");
-          }
-        });
-
-        select.addEventListener("change", function () {
-          const selected =
-            select.options[select.selectedIndex];
-
-          input.value =
-            selected && selected.value
-              ? selected.textContent.trim()
-              : "";
-
-          refresh("");
-        });
-
-        refresh("");
-      }
-
-      function setupSearchableSelects() {
-        renderSearchableSelect(gvs$("countrySelect"), "country");
-        renderSearchableSelect(gvs$("serviceSelect"), "service");
-      }
-
-      function removeWithdrawals() {
-        document
-          .querySelectorAll(
-            '#withdrawForm, [id^="withdraw"], [for^="withdraw"]'
-          )
-          .forEach(element => {
-            const parent =
-              element.closest(".section-card");
-
-            if (parent) {
-              parent.remove();
-            } else {
-              element.remove();
-            }
-          });
-
-        document
-          .querySelectorAll(
-            '[onclick*="submitWithdrawal"]'
-          )
-          .forEach(element => element.remove());
-      }
-
-      function addOpayNotice() {
-        if (document.getElementById("gvsOpayNotice")) return;
-
-        const walletPage = gvs$("page-wallet");
-        if (!walletPage) return;
-
-        const notice = document.createElement("div");
-        notice.id = "gvsOpayNotice";
-        notice.className = "gvs-whatsapp-notice";
-
-        notice.innerHTML =
-          "<strong>⚡ Faster approval</strong>" +
-          "<span>After your OPay transfer, send the receipt on WhatsApp: " +
-          '<a href="https://wa.me/2349136540119" target="_blank" rel="noopener">09136540119</a>' +
-          "</span>";
-
-        const firstCard =
-          walletPage.querySelector(".section-card");
-
-        if (firstCard) {
-          firstCard.parentNode.insertBefore(
-            notice,
-            firstCard
-          );
-        }
-      }
-
-      function updateHeroBalance() {
-        const source =
-          gvs$("dashboardBalance") ||
-          gvs$("walletPageBalance");
-
-        const target =
-          gvs$("gvsHeroBalance");
-
-        if (!source || !target) return;
-
-        target.textContent =
-          source.textContent || "₦0.00";
-      }
-
-      function observeBalance() {
-        const nodes = [
-          gvs$("dashboardBalance"),
-          gvs$("walletPageBalance")
-        ];
-
-        nodes.forEach(node => {
-          if (!node) return;
-
-          new MutationObserver(updateHeroBalance)
-            .observe(node, {
-              childList: true,
-              characterData: true,
-              subtree: true
-            });
-        });
-
-        updateHeroBalance();
-      }
-
-      function improvePurchaseErrorHandling() {
-        const originalToast =
-          window.showToast;
-
-        if (typeof originalToast !== "function") return;
-
-        window.showToast = function (message, type) {
-          if (
-            type === "error" &&
-            (
-              String(message || "").toLowerCase().includes("purchase") ||
-              String(message || "").toLowerCase().includes("number")
-            )
-          ) {
-            message = "Unable to purchase number.";
-          }
-
-          return originalToast(message, type);
-        };
-      }
-
-      function initUpdatedUI() {
-        removeWithdrawals();
-        setupPasswordToggles();
-        setupSearchableSelects();
-        addOpayNotice();
-        observeBalance();
-        improvePurchaseErrorHandling();
-      }
-
-      if (document.readyState === "loading") {
-        document.addEventListener(
-          "DOMContentLoaded",
-          initUpdatedUI
-        );
-      } else {
-        initUpdatedUI();
-      }
-    })();
   </script>
 
 </body>
