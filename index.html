@@ -2333,22 +2333,6 @@
                 <div class="stat-card">
 
                   <div class="stat-label">
-                    Users
-                  </div>
-
-                  <div
-                    id="adminUsersCount"
-                    class="stat-value"
-                  >
-                    0
-                  </div>
-
-                </div>
-
-
-                <div class="stat-card">
-
-                  <div class="stat-label">
                     Orders
                   </div>
 
@@ -4129,6 +4113,11 @@
             country.country_name ??
             id;
 
+          const code =
+            country.code ??
+            country.country_code ??
+            country.countryCode ??
+            "";
 
           option.value = id;
 
