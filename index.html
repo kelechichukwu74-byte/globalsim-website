@@ -1017,6 +1017,89 @@
       }
     }
   </style>
+<style>
+
+    /* =========================================================
+       FINAL DASHBOARD / SELECT FIXES
+       ========================================================= */
+    #page-home > .stats-grid {
+      display: none !important;
+    }
+
+    .gvs-wallet-hero {
+      padding: 16px 17px !important;
+      border-radius: 16px !important;
+      margin-bottom: 14px !important;
+      min-height: 0 !important;
+      height: auto !important;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.14) !important;
+    }
+
+    .gvs-wallet-hero-top {
+      gap: 10px !important;
+    }
+
+    .gvs-wallet-hero-bottom {
+      margin-top: 13px !important;
+      gap: 10px !important;
+    }
+
+    .gvs-wallet-label {
+      margin-bottom: 5px !important;
+      font-size: 11px !important;
+    }
+
+    .gvs-wallet-amount {
+      font-size: 32px !important;
+    }
+
+    .gvs-active-pill {
+      padding: 6px 10px !important;
+      font-size: 10px !important;
+    }
+
+    .gvs-wallet-subtitle {
+      font-size: 11px !important;
+    }
+
+    .gvs-add-money-btn {
+      padding: 10px 14px !important;
+      font-size: 12px !important;
+      border-radius: 10px !important;
+    }
+
+    .welcome-card {
+      padding: 16px 17px !important;
+      border-radius: 15px !important;
+      margin-bottom: 14px !important;
+    }
+
+    .welcome-card h1 {
+      font-size: 19px !important;
+    }
+
+    .welcome-card p {
+      font-size: 12px !important;
+    }
+
+    @media (max-width: 600px) {
+      .gvs-wallet-hero-top {
+        align-items: center !important;
+      }
+
+      .gvs-wallet-hero-bottom {
+        flex-direction: column !important;
+        align-items: stretch !important;
+      }
+
+      .gvs-add-money-btn {
+        width: 100% !important;
+        min-height: 44px !important;
+        justify-content: center !important;
+      }
+    }
+
+  </style>
 </head>
 
 <body>
@@ -6396,6 +6479,16 @@
               : "";
 
           refresh("");
+        });
+
+        // Countries and services are loaded asynchronously. Watch the native
+        // select for new options and immediately refresh the visible menu.
+        const optionsObserver = new MutationObserver(function () {
+          refresh(input.value);
+        });
+
+        optionsObserver.observe(select, {
+          childList: true
         });
 
         refresh("");
