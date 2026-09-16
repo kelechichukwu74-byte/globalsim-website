@@ -6255,5 +6255,26 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 })();
 </script>
 
+
+<style>
+.admin-search-wrap{position:relative}
+.admin-search-input{width:100%;box-sizing:border-box;margin-bottom:6px;padding:10px 12px;border:1px solid #d8e2ef;border-radius:10px;background:#fff}
+</style>
+<script>
+(function(){
+  function enhance(id, placeholder){
+    const select=document.getElementById(id); if(!select||select.dataset.searchEnhanced==='1') return;
+    select.dataset.searchEnhanced='1';
+    const wrap=document.createElement('div'); wrap.className='admin-search-wrap';
+    const input=document.createElement('input'); input.className='admin-search-input'; input.placeholder=placeholder; input.type='search'; input.autocomplete='off';
+    select.parentNode.insertBefore(wrap,select); wrap.appendChild(input); wrap.appendChild(select);
+    function filter(){ const q=input.value.trim().toLowerCase(); Array.from(select.options).forEach(o=>{o.hidden=!!q && o.value && !(o.textContent||'').toLowerCase().includes(q);}); }
+    input.addEventListener('input',filter);
+  }
+  function init(){ enhance('adminPricingCountry','Search country...'); enhance('adminPricingService','Search service...'); }
+  document.addEventListener('DOMContentLoaded',init);
+  setTimeout(init,1000); setTimeout(init,2500);
+})();
+</script>
 </body>
 </html>
