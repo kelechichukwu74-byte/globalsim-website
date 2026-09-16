@@ -10,13 +10,11 @@ const SUPABASE_PUBLISHABLE_KEY =
   process.env.SUPABASE_PUBLISHABLE_KEY ||
   "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
 
-
 async function supabaseRequest(
   path,
   accessToken,
   options = {}
 ) {
-
   const response = await fetch(
     `${SUPABASE_URL}${path}`,
     {
@@ -37,7 +35,6 @@ async function supabaseRequest(
     }
   );
 
-
   const text = await response.text();
 
   let data = null;
@@ -48,9 +45,7 @@ async function supabaseRequest(
     data = null;
   }
 
-
   if (!response.ok) {
-
     const message =
       data?.message ||
       data?.error_description ||
@@ -61,18 +56,14 @@ async function supabaseRequest(
     throw new Error(message);
   }
 
-
   return data;
 }
 
-
 function getServer(countryName) {
-
   const name =
     String(countryName || "")
       .trim()
       .toLowerCase();
-
 
   if (
     name === "united states" ||
@@ -83,64 +74,43 @@ function getServer(countryName) {
     return "usa-server-1";
   }
 
-
   return "global-server-1";
 }
-
 
 export default async function handler(req, res) {
 
   if (req.method !== "POST") {
-
     return res.status(405).json({
       success: false,
       error: "Method not allowed"
     });
-
   }
-
 
   const authorization =
     req.headers?.authorization || "";
-
 
   if (
     !authorization
       .toLowerCase()
       .startsWith("bearer ")
   ) {
-
     return res.status(401).json({
       success: false,
       error: "Authentication required."
     });
-
   }
-
 
   const accessToken =
-    authorization
-      .slice(7)
-      .trim();
-
+    authorization.slice(7).trim();
 
   if (!accessToken) {
-
     return res.status(401).json({
       success: false,
       error: "Authentication required."
     });
-
   }
 
-
   try {
-
-    /*
-     * ----------------------------------------------------
-     * 1. Verify the logged-in user
-     * ----------------------------------------------------
-     */
 
     const user =
       await supabaseRequest(
@@ -148,21 +118,15 @@ export default async function handler(req, res) {
         accessToken
       );
 
-
     if (!user?.id) {
-
       return res.status(401).json({
         success: false,
         error:
           "Your session has expired. Please log in again."
       });
-
     }
 
-
-    const body =
-      req.body || {};
-
+    const body = req.body || {};
 
     const countryId =
       body.countryId;
@@ -178,41 +142,29 @@ export default async function handler(req, res) {
     const serviceName =
       body.serviceName || "";
 
-
     if (!countryId) {
-
       return res.status(400).json({
         success: false,
         error: "Country is required."
       });
-
     }
-
 
     if (!serviceId) {
-
       return res.status(400).json({
         success: false,
         error: "Service is required."
       });
-
     }
-
 
     if (!serviceName) {
-
       return res.status(400).json({
         success: false,
         error: "Service is required."
       });
-
     }
 
-
     /*
-     * ----------------------------------------------------
-     * 2. Get wallet
-     * ----------------------------------------------------
+     * Get customer wallet
      */
 
     const wallets =
@@ -223,40 +175,31 @@ export default async function handler(req, res) {
         accessToken
       );
 
-
     const wallet =
       Array.isArray(wallets)
         ? wallets[0]
         : null;
 
-
     if (!wallet) {
-
       return res.status(400).json({
         success: false,
         error: "Wallet not found."
       });
-
     }
-
 
     const currentBalance =
       Number(wallet.balance || 0);
 
-
     /*
-     * ----------------------------------------------------
-     * 3. Get provider price
+     * Get provider price.
      *
-     * This is temporary until the Admin Pricing system
-     * is connected. The Admin Pricing system will later
-     * supply the customer's actual selling price.
-     * ----------------------------------------------------
+     * This is only temporary.
+     * The Admin Pricing system will later
+     * determine the customer's selling price.
      */
 
     const server =
       getServer(countryName);
-
 
     const priceResponse =
       await sureVerificationRequest(
@@ -267,7 +210,6 @@ export default async function handler(req, res) {
         )}`
       );
 
-
     const providerPrice =
       Number(
         priceResponse?.price ??
@@ -276,66 +218,46 @@ export default async function handler(req, res) {
         priceResponse?.data?.amount
       );
 
-
     if (
       !Number.isFinite(providerPrice) ||
       providerPrice <= 0
     ) {
-
       return res.status(400).json({
         success: false,
         error:
           "Unable to determine the number price."
       });
-
     }
-
 
     const totalPrice =
       providerPrice;
 
-
     /*
-     * ----------------------------------------------------
-     * 4. Check wallet BEFORE purchase
-     * ----------------------------------------------------
+     * Check wallet BEFORE purchasing.
      */
 
     if (
       !Number.isFinite(currentBalance) ||
       currentBalance < totalPrice
     ) {
-
       return res.status(400).json({
-
         success: false,
-
-        code:
-          "INSUFFICIENT_FUNDS",
-
+        code: "INSUFFICIENT_FUNDS",
         error:
           "Insufficient wallet balance.",
-
         balance:
           currentBalance,
-
         price:
           totalPrice
-
       });
-
     }
 
-
     /*
-     * ----------------------------------------------------
-     * 5. Debit wallet
-     * ----------------------------------------------------
+     * Deduct wallet balance.
      */
 
     const newBalance =
       currentBalance - totalPrice;
-
 
     const walletUpdate =
       await supabaseRequest(
@@ -360,32 +282,22 @@ export default async function handler(req, res) {
         }
       );
 
-
     if (
       !Array.isArray(walletUpdate) ||
       walletUpdate.length === 0
     ) {
-
       return res.status(409).json({
-
         success: false,
-
         error:
           "Your wallet balance changed. Please try again."
-
       });
-
     }
 
-
     /*
-     * ----------------------------------------------------
-     * 6. Purchase number
-     * ----------------------------------------------------
+     * Purchase number from SureVerification.
      */
 
     let purchaseResponse;
-
 
     try {
 
@@ -405,7 +317,7 @@ export default async function handler(req, res) {
 
       /*
        * Provider failed.
-       * Refund the wallet automatically.
+       * Refund the customer's wallet.
        */
 
       try {
@@ -436,16 +348,11 @@ export default async function handler(req, res) {
 
       }
 
-
       throw providerError;
-
     }
 
-
     /*
-     * ----------------------------------------------------
-     * 7. Read purchased verification
-     * ----------------------------------------------------
+     * Read purchased verification.
      */
 
     const verification =
@@ -454,12 +361,10 @@ export default async function handler(req, res) {
       purchaseResponse?.data ||
       null;
 
-
     const number =
       verification?.number ||
       purchaseResponse?.number ||
       "";
-
 
     const requestId =
       verification?.request_id ||
@@ -467,27 +372,21 @@ export default async function handler(req, res) {
       purchaseResponse?.request_id ||
       "";
 
-
     const verificationId =
       verification?.id ||
       verification?.verification_id ||
       verification?.verificationId ||
       null;
 
-
     const providerStatus =
       verification?.status ||
       "active";
 
-
     /*
-     * ----------------------------------------------------
-     * 8. Save order
-     * ----------------------------------------------------
+     * Save order.
      */
 
     let order = null;
-
 
     try {
 
@@ -504,7 +403,6 @@ export default async function handler(req, res) {
             },
 
             body: {
-
               user_id:
                 user.id,
 
@@ -537,9 +435,7 @@ export default async function handler(req, res) {
 
               server:
                 server
-
             }
-
           }
         );
 
@@ -552,11 +448,8 @@ export default async function handler(req, res) {
 
     }
 
-
     /*
-     * ----------------------------------------------------
-     * 9. Record wallet transaction
-     * ----------------------------------------------------
+     * Record wallet transaction.
      */
 
     try {
@@ -568,7 +461,6 @@ export default async function handler(req, res) {
           method: "POST",
 
           body: {
-
             user_id:
               user.id,
 
@@ -583,9 +475,7 @@ export default async function handler(req, res) {
 
             reference:
               requestId || null
-
           }
-
         }
       );
 
@@ -598,11 +488,8 @@ export default async function handler(req, res) {
 
     }
 
-
     /*
-     * ----------------------------------------------------
-     * 10. SUCCESS
-     * ----------------------------------------------------
+     * Successful purchase.
      */
 
     return res.status(200).json({
@@ -641,7 +528,6 @@ export default async function handler(req, res) {
 
       verification:
         verification || {
-
           request_id:
             requestId,
 
@@ -656,7 +542,6 @@ export default async function handler(req, res) {
 
           id:
             verificationId
-
         }
 
     });
@@ -667,13 +552,6 @@ export default async function handler(req, res) {
       "SureVerification order error:",
       error
     );
-
-
-    /*
-     * IMPORTANT:
-     * Return the REAL error from the API.
-     * Do not hide it behind "Unable to purchase number."
-     */
 
     return res.status(500).json({
 
@@ -687,5 +565,4 @@ export default async function handler(req, res) {
     });
 
   }
-
 }
