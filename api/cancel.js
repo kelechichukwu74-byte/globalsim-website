@@ -2,69 +2,98 @@ import {
   sureVerificationRequest
 } from "./_lib.js";
 
-
 const SUPABASE_URL =
   process.env.SUPABASE_URL ||
   "https://rfitbmkizfmwfqqskwhy.supabase.co";
 
-
 const SUPABASE_PUBLISHABLE_KEY =
-  process.env.SUPABASE_PUBLISHABLE_KEY ||
-  "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
-
+  process.env.SUPABASE_PUBLISHABLE_KEY;
 
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+function getBearerToken(req) {
+  const header =
+    req.headers?.authorization ||
+    req.headers?.Authorization ||
+    "";
 
-/*
-  -------------------------------------------------------
-  Supabase server request
-  -------------------------------------------------------
-*/
+  if (!header.startsWith("Bearer ")) {
+    return null;
+  }
+
+  return header.slice(7).trim();
+}
+
+async function getAuthenticatedUser(req) {
+  const token = getBearerToken(req);
+
+  if (!token) {
+    throw new Error("Unauthorized.");
+  }
+
+  if (!SUPABASE_PUBLISHABLE_KEY) {
+    throw new Error(
+      "SUPABASE_PUBLISHABLE_KEY is not configured."
+    );
+  }
+
+  const response = await fetch(
+    `${SUPABASE_URL}/auth/v1/user`,
+    {
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json"
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Unauthorized.");
+  }
+
+  const user = await response.json();
+
+  if (!user?.id) {
+    throw new Error("Unauthorized.");
+  }
+
+  return user;
+}
 
 async function supabaseRequest(
   path,
   options = {}
 ) {
-
   if (!SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error(
       "SUPABASE_SERVICE_ROLE_KEY is not configured."
     );
   }
 
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/${path}`,
-      {
-        ...options,
-
-        headers: {
-          apikey:
-            SUPABASE_SERVICE_ROLE_KEY,
-
-          Authorization:
-            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-
-          "Content-Type":
-            "application/json",
-
-          Accept:
-            "application/json",
-
-          Prefer:
-            "return=representation",
-
-          ...(options.headers || {})
-        }
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/${path}`,
+    {
+      ...options,
+      headers: {
+        apikey:
+          SUPABASE_SERVICE_ROLE_KEY,
+        Authorization:
+          `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type":
+          "application/json",
+        Accept:
+          "application/json",
+        Prefer:
+          "return=representation",
+        ...(options.headers || {})
       }
-    );
-
+    }
+  );
 
   const text =
     await response.text();
-
 
   let data = {};
 
@@ -79,7 +108,6 @@ async function supabaseRequest(
     );
   }
 
-
   if (!response.ok) {
     throw new Error(
       data?.message ||
@@ -89,105 +117,21 @@ async function supabaseRequest(
     );
   }
 
-
   return data;
-
 }
 
-
-/*
-  -------------------------------------------------------
-  Get customer access token
-  -------------------------------------------------------
-*/
-
-function getToken(req) {
-
-  const header =
-    req.headers?.authorization ||
-    req.headers?.Authorization ||
-    "";
-
-
-  if (
-    !header.startsWith(
-      "Bearer "
-    )
-  ) {
-    return null;
-  }
-
-
-  return header.slice(7);
-
+function quote(value) {
+  return encodeURIComponent(
+    String(value)
+  );
 }
-
-
-/*
-  -------------------------------------------------------
-  Verify logged-in customer
-  -------------------------------------------------------
-*/
-
-async function getAuthenticatedUser(
-  req
-) {
-
-  const token =
-    getToken(req);
-
-
-  if (!token) {
-    throw new Error(
-      "Unauthorized."
-    );
-  }
-
-
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/auth/v1/user`,
-      {
-        headers: {
-          apikey:
-            SUPABASE_PUBLISHABLE_KEY,
-
-          Authorization:
-            `Bearer ${token}`,
-
-          Accept:
-            "application/json"
-        }
-      }
-    );
-
-
-  if (!response.ok) {
-    throw new Error(
-      "Unauthorized."
-    );
-  }
-
-
-  return await response.json();
-
-}
-
-
-/*
-  -------------------------------------------------------
-  Safely add money back to the wallet.
-  -------------------------------------------------------
-*/
 
 async function refundWallet(
   userId,
   amount
 ) {
-
   const refundAmount =
     Number(amount);
-
 
   if (
     !Number.isFinite(
@@ -200,490 +144,278 @@ async function refundWallet(
     );
   }
 
-
   for (
     let attempt = 0;
     attempt < 5;
     attempt++
   ) {
-
     const wallets =
       await supabaseRequest(
-        `wallets?user_id=eq.${encodeURIComponent(
+        `wallets?user_id=eq.${quote(
           userId
-        )}&select=id,user_id,balance&limit=1`
+        )}&select=user_id,balance&limit=1`
       );
-
 
     const wallet =
       wallets?.[0];
 
-
     if (!wallet) {
       throw new Error(
-        "Wallet not found."
+        "Wallet not found while processing refund."
       );
     }
-
 
     const currentBalance =
       Number(
         wallet.balance || 0
       );
 
+    if (
+      !Number.isFinite(
+        currentBalance
+      )
+    ) {
+      throw new Error(
+        "Unable to read wallet balance."
+      );
+    }
 
     const newBalance =
       currentBalance +
       refundAmount;
 
-
     const updated =
       await supabaseRequest(
-        `wallets?id=eq.${encodeURIComponent(
-          wallet.id
-        )}&user_id=eq.${encodeURIComponent(
+        `wallets?user_id=eq.${quote(
           userId
         )}&balance=eq.${encodeURIComponent(
           currentBalance
         )}`,
         {
-          method:
-            "PATCH",
-
-          body:
-            JSON.stringify({
-              balance:
-                newBalance,
-
-              updated_at:
-                new Date().toISOString()
-            })
+          method: "PATCH",
+          body: JSON.stringify({
+            balance:
+              newBalance,
+            updated_at:
+              new Date().toISOString()
+          })
         }
       );
-
 
     if (
       Array.isArray(updated) &&
       updated.length > 0
     ) {
-
       return {
-        success:
-          true,
-
-        balance:
-          Number(
-            updated[0].balance
-          )
+        previousBalance:
+          currentBalance,
+        newBalance
       };
-
     }
-
   }
 
-
   throw new Error(
-    "Wallet balance changed. Please try again."
+    "Unable to complete wallet refund automatically."
   );
-
 }
 
-
-/*
-  -------------------------------------------------------
-  Record wallet transaction
-  -------------------------------------------------------
-*/
-
-async function createWalletTransaction(
-  values
+async function createRefundTransaction(
+  userId,
+  amount,
+  balanceAfter,
+  description
 ) {
-
-  return await supabaseRequest(
-    "wallet_transactions",
-    {
-      method:
-        "POST",
-
-      body:
-        JSON.stringify(
-          values
-        )
-    }
-  );
-
+  try {
+    await supabaseRequest(
+      "wallet_transactions",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          user_id:
+            userId,
+          amount:
+            Number(amount),
+          balance_after:
+            Number(balanceAfter),
+          type:
+            "refund",
+          description:
+            description
+        })
+      }
+    );
+  } catch (error) {
+    console.error(
+      "Refund transaction history error:",
+      error
+    );
+  }
 }
-
-
-/*
-  -------------------------------------------------------
-  MAIN CANCEL HANDLER
-  -------------------------------------------------------
-*/
 
 export default async function handler(
   req,
   res
 ) {
-
-  if (
-    req.method !== "DELETE"
-  ) {
-
+  if (req.method !== "POST") {
     return res.status(405).json({
       success:
         false,
-
       error:
         "Method not allowed"
     });
-
   }
 
-
   let user = null;
-
   let order = null;
-
-  let cancellationStarted =
-    false;
-
+  let refundAmount = 0;
+  let refundCompleted = false;
 
   try {
-
-    /*
-      ---------------------------------------------------
-      1. Verify customer
-      ---------------------------------------------------
-    */
-
     user =
       await getAuthenticatedUser(
         req
       );
 
-
-    /*
-      ---------------------------------------------------
-      2. Get verification ID
-      ---------------------------------------------------
-    */
+    const body =
+      req.body || {};
 
     const verificationId =
-      req.query?.id ||
-      req.query?.verificationId;
-
+      body.verificationId ??
+      body.verification_id ??
+      body.requestId ??
+      body.request_id;
 
     if (!verificationId) {
-
       return res.status(400).json({
         success:
           false,
-
         error:
-          "verificationId is required"
+          "Verification ID is required."
       });
-
     }
 
-
     /*
-      ---------------------------------------------------
-      3. Find this order.
-
-      IMPORTANT:
-      The order MUST belong to the logged-in user.
-      ---------------------------------------------------
-    */
-
+     * Only the authenticated user's order can be cancelled.
+     */
     const orders =
       await supabaseRequest(
-        `orders?verification_id=eq.${encodeURIComponent(
-          verificationId
-        )}&user_id=eq.${encodeURIComponent(
+        `orders?user_id=eq.${quote(
           user.id
+        )}&verification_id=eq.${quote(
+          verificationId
         )}&select=*&limit=1`
       );
-
 
     order =
       orders?.[0];
 
-
     if (!order) {
-
       return res.status(404).json({
         success:
           false,
-
         error:
           "Order not found."
       });
-
     }
-
-
-    /*
-      ---------------------------------------------------
-      4. Prevent duplicate cancellation/refund
-      ---------------------------------------------------
-    */
 
     const currentStatus =
       String(
         order.status || ""
       ).toLowerCase();
 
-
     if (
-      currentStatus === "cancelled" ||
-      currentStatus === "canceled" ||
-      currentStatus === "refunded"
+      currentStatus ===
+        "cancelled" ||
+      currentStatus ===
+        "canceled"
     ) {
-
       return res.status(400).json({
         success:
           false,
-
         error:
           "This number has already been cancelled."
       });
-
     }
 
+    if (
+      currentStatus ===
+        "refunded"
+    ) {
+      return res.status(400).json({
+        success:
+          false,
+        error:
+          "This number has already been refunded."
+      });
+    }
 
     if (
-      currentStatus === "cancelling"
+      currentStatus ===
+        "cancelling"
     ) {
-
       return res.status(409).json({
         success:
           false,
-
         error:
-          "Cancellation is already being processed."
+          "This number is already being cancelled. Please wait."
       });
-
     }
 
-
     /*
-      ---------------------------------------------------
-      5. Make sure at least 2 minutes have passed.
-      ---------------------------------------------------
-    */
-
+     * SureVerification requires at least 2 minutes
+     * before a number can be cancelled.
+     */
     const createdAt =
-      order.created_at
-        ? new Date(
-            order.created_at
-          )
-        : null;
-
+      new Date(
+        order.created_at
+      ).getTime();
 
     if (
-      createdAt &&
-      !Number.isNaN(
-        createdAt.getTime()
+      !Number.isFinite(
+        createdAt
       )
     ) {
-
-      const elapsed =
-        Date.now() -
-        createdAt.getTime();
-
-
-      const minimumWait =
-        2 * 60 * 1000;
-
-
-      if (
-        elapsed <
-        minimumWait
-      ) {
-
-        const remaining =
-          Math.ceil(
-            (
-              minimumWait -
-              elapsed
-            ) / 1000
-          );
-
-
-        return res.status(400).json({
-          success:
-            false,
-
-          error:
-            `You can cancel this number after 2 minutes.`,
-
-          secondsRemaining:
-            remaining
-        });
-
-      }
-
-    }
-
-
-    /*
-      ---------------------------------------------------
-      6. Lock the order.
-
-      This prevents two cancellation requests
-      from both receiving a refund.
-      ---------------------------------------------------
-    */
-
-    const lockedRows =
-      await supabaseRequest(
-        `orders?id=eq.${encodeURIComponent(
-          order.id
-        )}&user_id=eq.${encodeURIComponent(
-          user.id
-        )}&status=neq.cancelled&status=neq.canceled&status=neq.refunded&status=neq.cancelling`,
-        {
-          method:
-            "PATCH",
-
-          body:
-            JSON.stringify({
-              status:
-                "cancelling",
-
-              updated_at:
-                new Date().toISOString()
-            })
-        }
-      );
-
-
-    if (
-      !Array.isArray(
-        lockedRows
-      ) ||
-      lockedRows.length === 0
-    ) {
-
-      return res.status(409).json({
+      return res.status(400).json({
         success:
           false,
-
         error:
-          "Cancellation is already being processed."
+          "Unable to determine when this number was purchased."
       });
-
     }
 
+    const elapsed =
+      Date.now() -
+      createdAt;
 
-    cancellationStarted =
-      true;
+    const minimumWait =
+      2 * 60 * 1000;
 
-
-    /*
-      ---------------------------------------------------
-      7. Cancel the verification with SureVerification.
-      ---------------------------------------------------
-    */
-
-    let providerResult;
-
-
-    try {
-
-      providerResult =
-        await sureVerificationRequest(
-          `/verifications/cancel/${encodeURIComponent(
-            verificationId
-          )}`,
-          {
-            method:
-              "DELETE"
-          }
-        );
-
-    } catch (
-      providerError
+    if (
+      elapsed <
+      minimumWait
     ) {
+      const remainingMs =
+        minimumWait -
+        elapsed;
 
-      /*
-        Provider cancellation failed.
-
-        Restore the order status.
-        Do NOT refund because the provider
-        did not confirm cancellation.
-      */
-
-      try {
-
-        await supabaseRequest(
-          `orders?id=eq.${encodeURIComponent(
-            order.id
-          )}&user_id=eq.${encodeURIComponent(
-            user.id
-          )}&status=eq.cancelling`,
-          {
-            method:
-              "PATCH",
-
-            body:
-              JSON.stringify({
-                status:
-                  order.status ||
-                  "active",
-
-                updated_at:
-                  new Date().toISOString()
-              })
-          }
+      const remainingSeconds =
+        Math.ceil(
+          remainingMs /
+            1000
         );
-
-      } catch (
-        restoreError
-      ) {
-
-        console.error(
-          "Unable to restore order status:",
-          restoreError
-        );
-
-      }
-
-
-      cancellationStarted =
-        false;
-
 
       return res.status(400).json({
         success:
           false,
-
         error:
-          providerError?.message ||
-          "Unable to cancel this number.",
-
-        refunded:
-          false
+          `Please wait ${remainingSeconds} more seconds before cancelling this number.`,
+        remaining_seconds:
+          remainingSeconds
       });
-
     }
 
-
-    /*
-      ---------------------------------------------------
-      8. Determine refund amount.
-
-      The order.price contains the ADMIN SELLING PRICE
-      that the customer actually paid.
-      ---------------------------------------------------
-    */
-
-    const refundAmount =
-      Number(
-        order.price
-      );
-
+    refundAmount =
+      Number(order.price);
 
     if (
       !Number.isFinite(
@@ -691,261 +423,222 @@ export default async function handler(
       ) ||
       refundAmount <= 0
     ) {
-
-      /*
-        Provider cancellation succeeded, but the
-        stored order price is invalid.
-
-        Mark the order cancelled so it cannot
-        be cancelled repeatedly, but report the
-        refund problem to the customer.
-      */
-
-      try {
-
-        await supabaseRequest(
-          `orders?id=eq.${encodeURIComponent(
-            order.id
-          )}&user_id=eq.${encodeURIComponent(
-            user.id
-          )}&status=eq.cancelling`,
-          {
-            method:
-              "PATCH",
-
-            body:
-              JSON.stringify({
-                status:
-                  "cancelled",
-
-                updated_at:
-                  new Date().toISOString()
-              })
-          }
-        );
-
-      } catch (
-        updateError
-      ) {
-
-        console.error(
-          "Order cancellation update error:",
-          updateError
-        );
-
-      }
-
-
-      return res.status(500).json({
+      return res.status(400).json({
         success:
           false,
-
         error:
-          "Number was cancelled, but the refund amount could not be determined. Please contact support.",
-
-        refunded:
-          false
+          "Unable to determine the amount to refund."
       });
-
     }
 
-
     /*
-      ---------------------------------------------------
-      9. Refund the customer's wallet.
-      ---------------------------------------------------
-    */
-
-    const refund =
-      await refundWallet(
-        user.id,
-        refundAmount
-      );
-
-
-    /*
-      ---------------------------------------------------
-      10. Record refund transaction.
-      ---------------------------------------------------
-    */
-
-    try {
-
-      await createWalletTransaction({
-        user_id:
-          user.id,
-
-        amount:
-          refundAmount,
-
-        type:
-          "refund",
-
-        description:
-          `Refund for cancelled ${order.service_name || "number"} number`,
-
-        reference:
-          `refund-${verificationId}`
-      });
-
-    } catch (
-      transactionError
-    ) {
-
-      /*
-        Wallet has already been refunded.
-
-        Do not refund again.
-        Only log the transaction-record problem.
-      */
-
-      console.error(
-        "Refund transaction record error:",
-        transactionError
-      );
-
-    }
-
-
-    /*
-      ---------------------------------------------------
-      11. Mark order as cancelled.
-      ---------------------------------------------------
-    */
-
-    const cancelledRows =
+     * Lock the order first so two cancellation requests
+     * cannot both receive a refund.
+     */
+    const locked =
       await supabaseRequest(
-        `orders?id=eq.${encodeURIComponent(
+        `orders?id=eq.${quote(
           order.id
-        )}&user_id=eq.${encodeURIComponent(
+        )}&user_id=eq.${quote(
           user.id
-        )}&status=eq.cancelling`,
+        )}&status=eq.${quote(
+          order.status
+        )}`,
         {
           method:
             "PATCH",
-
           body:
             JSON.stringify({
               status:
-                "cancelled",
-
+                "cancelling",
               updated_at:
                 new Date().toISOString()
             })
         }
       );
 
-
-    /*
-      ---------------------------------------------------
-      12. Return success.
-      ---------------------------------------------------
-    */
-
-    return res.status(200).json({
-
-      success:
-        true,
-
-      message:
-        "Number cancelled successfully.",
-
-      refunded:
-        true,
-
-      refund:
-        refundAmount,
-
-      balance:
-        refund.balance,
-
-      verificationId,
-
-      provider:
-        providerResult,
-
-      order:
-        cancelledRows?.[0] ||
-        {
-          ...order,
-
-          status:
-            "cancelled"
-        }
-
-    });
-
-
-  } catch (error) {
-
-    console.error(
-      "SureVerification cancellation error:",
-      error
-    );
-
-
-    /*
-      If an unexpected error happens after
-      cancellation started, restore the order
-      only if it has not already been cancelled.
-    */
-
     if (
-      cancellationStarted &&
-      order?.id &&
-      user?.id
+      !Array.isArray(
+        locked
+      ) ||
+      locked.length === 0
     ) {
+      return res.status(409).json({
+        success:
+          false,
+        error:
+          "This number is already being processed. Please try again."
+      });
+    }
 
+    /*
+     * Cancel the actual SureVerification activation.
+     */
+    try {
+      await sureVerificationRequest(
+        `/verifications/cancel/${encodeURIComponent(
+          verificationId
+        )}`,
+        {
+          method:
+            "DELETE"
+        }
+      );
+    } catch (providerError) {
+      /*
+       * Release the lock if the provider cancellation failed.
+       */
       try {
-
         await supabaseRequest(
-          `orders?id=eq.${encodeURIComponent(
+          `orders?id=eq.${quote(
             order.id
-          )}&user_id=eq.${encodeURIComponent(
+          )}&user_id=eq.${quote(
             user.id
           )}&status=eq.cancelling`,
           {
             method:
               "PATCH",
-
             body:
               JSON.stringify({
                 status:
                   order.status ||
                   "active",
+                updated_at:
+                  new Date().toISOString()
+              })
+          }
+        );
+      } catch (unlockError) {
+        console.error(
+          "Unable to release cancellation lock:",
+          unlockError
+        );
+      }
 
+      throw new Error(
+        providerError?.message ||
+        "Unable to cancel the number."
+      );
+    }
+
+    /*
+     * Provider cancellation succeeded.
+     * Now refund exactly the amount charged to the customer.
+     */
+    const refund =
+      await refundWallet(
+        user.id,
+        refundAmount
+      );
+
+    refundCompleted =
+      true;
+
+    /*
+     * Mark the order as cancelled and refunded.
+     */
+    let finalOrder;
+
+    try {
+      const updatedOrders =
+        await supabaseRequest(
+          `orders?id=eq.${quote(
+            order.id
+          )}&user_id=eq.${quote(
+            user.id
+          )}&status=eq.cancelling`,
+          {
+            method:
+              "PATCH",
+            body:
+              JSON.stringify({
+                status:
+                  "cancelled",
                 updated_at:
                   new Date().toISOString()
               })
           }
         );
 
-      } catch (
-        restoreError
-      ) {
-
-        console.error(
-          "Cancellation restore error:",
-          restoreError
-        );
-
-      }
-
+      finalOrder =
+        updatedOrders?.[0] ||
+        null;
+    } catch (orderUpdateError) {
+      console.error(
+        "Order cancellation status update failed:",
+        orderUpdateError
+      );
     }
 
+    await createRefundTransaction(
+      user.id,
+      refundAmount,
+      refund.newBalance,
+      `Refund: cancelled ${order.phone_number || verificationId}`
+    );
+
+    return res.status(200).json({
+      success:
+        true,
+      message:
+        "Number cancelled successfully. Your wallet has been refunded.",
+      refunded:
+        refundAmount,
+      balance:
+        refund.newBalance,
+      order:
+        finalOrder ||
+        {
+          ...order,
+          status:
+            "cancelled"
+        }
+    });
+
+  } catch (error) {
+    console.error(
+      "Cancel number error:",
+      error
+    );
+
+    /*
+     * If the provider was cancelled and the wallet was refunded,
+     * never issue another refund from this error path.
+     */
+    if (
+      refundCompleted
+    ) {
+      return res.status(200).json({
+        success:
+          true,
+        message:
+          "Number cancelled and wallet refunded.",
+        refunded:
+          refundAmount
+      });
+    }
+
+    const message =
+      error?.message ||
+      "Unable to cancel the number.";
+
+    if (
+      message ===
+      "Unauthorized."
+    ) {
+      return res.status(401).json({
+        success:
+          false,
+        error:
+          message
+      });
+    }
 
     return res.status(500).json({
       success:
         false,
-
       error:
-        error?.message ||
-        "Unable to cancel verification.",
-
-      refunded:
-        false
+        message
     });
-
   }
-
 }
