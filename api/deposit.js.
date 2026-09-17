@@ -1,0 +1,269 @@
+const SUPABASE_URL =
+  process.env.SUPABASE_URL ||
+  "https://rfitbmkizfmwfqqskwhy.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+  process.env.SUPABASE_PUBLISHABLE_KEY;
+
+const SUPABASE_SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+function getBearerToken(req) {
+  const header =
+    req.headers?.authorization ||
+    req.headers?.Authorization ||
+    "";
+
+  if (!header.startsWith("Bearer ")) {
+    return null;
+  }
+
+  return header.slice(7).trim();
+}
+
+async function getAuthenticatedUser(req) {
+  const token =
+    getBearerToken(req);
+
+  if (!token) {
+    throw new Error("Unauthorized.");
+  }
+
+  if (!SUPABASE_PUBLISHABLE_KEY) {
+    throw new Error(
+      "SUPABASE_PUBLISHABLE_KEY is not configured."
+    );
+  }
+
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/auth/v1/user`,
+      {
+        headers: {
+          apikey:
+            SUPABASE_PUBLISHABLE_KEY,
+          Authorization:
+            `Bearer ${token}`,
+          Accept:
+            "application/json"
+        }
+      }
+    );
+
+  if (!response.ok) {
+    throw new Error("Unauthorized.");
+  }
+
+  const user =
+    await response.json();
+
+  if (!user?.id) {
+    throw new Error("Unauthorized.");
+  }
+
+  return user;
+}
+
+async function supabaseRequest(
+  path,
+  options = {}
+) {
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY is not configured."
+    );
+  }
+
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/rest/v1/${path}`,
+      {
+        ...options,
+        headers: {
+          apikey:
+            SUPABASE_SERVICE_ROLE_KEY,
+          Authorization:
+            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          "Content-Type":
+            "application/json",
+          Accept:
+            "application/json",
+          Prefer:
+            "return=representation",
+          ...(options.headers || {})
+        }
+      }
+    );
+
+  const text =
+    await response.text();
+
+  let data = {};
+
+  try {
+    data =
+      text
+        ? JSON.parse(text)
+        : {};
+  } catch {
+    throw new Error(
+      `Supabase returned invalid JSON (HTTP ${response.status}).`
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+      data?.hint ||
+      data?.details ||
+      `Supabase request failed (HTTP ${response.status}).`
+    );
+  }
+
+  return data;
+}
+
+function quote(value) {
+  return encodeURIComponent(
+    String(value)
+  );
+}
+
+export default async function handler(
+  req,
+  res
+) {
+  try {
+    const user =
+      await getAuthenticatedUser(
+        req
+      );
+
+    if (
+      req.method === "GET"
+    ) {
+      const deposits =
+        await supabaseRequest(
+          `deposits?user_id=eq.${quote(
+            user.id
+          )}&select=*&order=created_at.desc`
+        );
+
+      return res.status(200).json({
+        success:
+          true,
+        deposits:
+          deposits || []
+      });
+    }
+
+    if (
+      req.method !== "POST"
+    ) {
+      return res.status(405).json({
+        success:
+          false,
+        error:
+          "Method not allowed"
+      });
+    }
+
+    const body =
+      req.body || {};
+
+    const amount =
+      Number(
+        body.amount
+      );
+
+    const receiptUrl =
+      String(
+        body.receipt_url ??
+        body.receiptUrl ??
+        body.receipt ??
+        ""
+      ).trim();
+
+    if (
+      !Number.isFinite(
+        amount
+      ) ||
+      amount <= 0
+    ) {
+      return res.status(400).json({
+        success:
+          false,
+        error:
+          "Enter a valid deposit amount."
+      });
+    }
+
+    if (!receiptUrl) {
+      return res.status(400).json({
+        success:
+          false,
+        error:
+          "Please upload your OPay payment receipt."
+      });
+    }
+
+    const deposit =
+      await supabaseRequest(
+        "deposits",
+        {
+          method:
+            "POST",
+          body:
+            JSON.stringify({
+              user_id:
+                user.id,
+              amount:
+                amount,
+              receipt_url:
+                receiptUrl,
+              status:
+                "pending"
+            })
+        }
+      );
+
+    return res.status(200).json({
+      success:
+        true,
+      message:
+        "Deposit submitted successfully. Please wait for admin approval.",
+      deposit:
+        deposit?.[0] ||
+        null
+    });
+
+  } catch (error) {
+    console.error(
+      "Deposit API error:",
+      error
+    );
+
+    const message =
+      error?.message ||
+      "Unable to submit deposit.";
+
+    if (
+      message ===
+      "Unauthorized."
+    ) {
+      return res.status(401).json({
+        success:
+          false,
+        error:
+          message
+      });
+    }
+
+    return res.status(500).json({
+      success:
+        false,
+      error:
+        message
+    });
+  }
+}
