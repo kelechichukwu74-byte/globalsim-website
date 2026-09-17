@@ -8,6 +8,7 @@
   />
 
   <title>Global Virtual Sim Web</title>
+  <!-- Global Virtual Sim Web — customer service loader v2 -->
 
   <meta
     name="description"
@@ -2735,6 +2736,7 @@
     let currentWallet = null;
     let currentServices = [];
     const serviceCache = {};
+    const serviceRequestCache = {};
     let currentCountries = [];
     let isAdmin = false;
     let currentPage = "home";
@@ -4284,9 +4286,12 @@
         countryOption?.dataset?.server ||
         "";
 
-      if (serviceCache[countryId]) {
+      const serviceCacheKey =
+        `${countryId}:${server}`;
+
+      if (serviceCache[serviceCacheKey]) {
         currentServices =
-          serviceCache[countryId];
+          serviceCache[serviceCacheKey];
 
         serviceSelect.innerHTML =
           '<option value="">Select a service</option>';
@@ -4349,17 +4354,29 @@
             `&server=${encodeURIComponent(server)}`;
         }
 
-        const response =
-          await fetch(query);
+        let request =
+          serviceRequestCache[serviceCacheKey];
 
-        if (!response.ok) {
-          throw new Error(
-            "Unable to load services."
-          );
+        if (!request) {
+          request = fetch(query)
+            .then(async response => {
+              if (!response.ok) {
+                throw new Error(
+                  "Unable to load services."
+                );
+              }
+              return response.json();
+            })
+            .finally(() => {
+              delete serviceRequestCache[serviceCacheKey];
+            });
+
+          serviceRequestCache[serviceCacheKey] = request;
         }
 
         const result =
-          await response.json();
+          await request;
+
 
         currentServices =
           Array.isArray(result)
@@ -4370,7 +4387,7 @@
                 []
               );
 
-        serviceCache[countryId] =
+        serviceCache[serviceCacheKey] =
           currentServices;
 
         serviceSelect.innerHTML =
