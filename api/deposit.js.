@@ -129,19 +129,211 @@ function quote(value) {
   );
 }
 
+async function verifyAdmin(req) {
+  const user =
+    await getAuthenticatedUser(req);
+
+  const profiles =
+    await supabaseRequest(
+      `profiles?id=eq.${quote(
+        user.id
+      )}&select=id,role&limit=1`
+    );
+
+  const profile =
+    profiles?.[0];
+
+  if (
+    !profile ||
+    String(profile.role)
+      .toLowerCase() !==
+      "admin"
+  ) {
+    throw new Error(
+      "Administrator access is required."
+    );
+  }
+
+  return user;
+}
+
+async function addWalletBalance(
+  userId,
+  amount
+) {
+  const depositAmount =
+    Number(amount);
+
+  if (
+    !Number.isFinite(
+      depositAmount
+    ) ||
+    depositAmount <= 0
+  ) {
+    throw new Error(
+      "Invalid deposit amount."
+    );
+  }
+
+  for (
+    let attempt = 0;
+    attempt < 5;
+    attempt++
+  ) {
+    const wallets =
+      await supabaseRequest(
+        `wallets?user_id=eq.${quote(
+          userId
+        )}&select=user_id,balance&limit=1`
+      );
+
+    const wallet =
+      wallets?.[0];
+
+    if (!wallet) {
+      throw new Error(
+        "Customer wallet was not found."
+      );
+    }
+
+    const currentBalance =
+      Number(
+        wallet.balance || 0
+      );
+
+    if (
+      !Number.isFinite(
+        currentBalance
+      )
+    ) {
+      throw new Error(
+        "Unable to read customer wallet balance."
+      );
+    }
+
+    const newBalance =
+      currentBalance +
+      depositAmount;
+
+    const updated =
+      await supabaseRequest(
+        `wallets?user_id=eq.${quote(
+          userId
+        )}&balance=eq.${encodeURIComponent(
+          currentBalance
+        )}`,
+        {
+          method:
+            "PATCH",
+          body:
+            JSON.stringify({
+              balance:
+                newBalance,
+              updated_at:
+                new Date().toISOString()
+            })
+        }
+      );
+
+    if (
+      Array.isArray(
+        updated
+      ) &&
+      updated.length > 0
+    ) {
+      return {
+        previousBalance:
+          currentBalance,
+        newBalance
+      };
+    }
+  }
+
+  throw new Error(
+    "Unable to update the customer wallet. Please try again."
+  );
+}
+
+async function createWalletTransaction({
+  userId,
+  amount,
+  balanceAfter,
+  description
+}) {
+  try {
+    await supabaseRequest(
+      "wallet_transactions",
+      {
+        method:
+          "POST",
+        body:
+          JSON.stringify({
+            user_id:
+              userId,
+            amount:
+              Number(amount),
+            balance_after:
+              Number(balanceAfter),
+            type:
+              "deposit",
+            description:
+              description
+          })
+      }
+    );
+  } catch (error) {
+    console.error(
+      "Wallet transaction history error:",
+      error
+    );
+  }
+}
+
 export default async function handler(
   req,
   res
 ) {
   try {
-    const user =
-      await getAuthenticatedUser(
-        req
-      );
+    /*
+      GET
 
+      If ?admin=true is supplied, only an admin
+      can receive all customer deposits.
+
+      Otherwise, the authenticated customer
+      receives only their own deposits.
+    */
     if (
       req.method === "GET"
     ) {
+      const adminMode =
+        String(
+          req.query?.admin ||
+          ""
+        ).toLowerCase() ===
+        "true";
+
+      if (adminMode) {
+        await verifyAdmin(req);
+
+        const deposits =
+          await supabaseRequest(
+            "deposits?select=*&order=created_at.desc"
+          );
+
+        return res.status(200).json({
+          success:
+            true,
+          deposits:
+            deposits || []
+        });
+      }
+
+      const user =
+        await getAuthenticatedUser(
+          req
+        );
+
       const deposits =
         await supabaseRequest(
           `deposits?user_id=eq.${quote(
@@ -170,6 +362,342 @@ export default async function handler(
 
     const body =
       req.body || {};
+
+    /*
+      ADMIN ACTION
+
+      Frontend will later call:
+
+      POST /api/deposit
+
+      {
+        "admin": true,
+        "depositId": "...",
+        "action": "approve"
+      }
+
+      or:
+
+      {
+        "admin": true,
+        "depositId": "...",
+        "action": "reject"
+      }
+    */
+    const adminMode =
+      body.admin === true ||
+      String(
+        body.admin || ""
+      ).toLowerCase() ===
+        "true";
+
+    if (adminMode) {
+      await verifyAdmin(req);
+
+      const depositId =
+        body.depositId ??
+        body.deposit_id ??
+        body.id;
+
+      const action =
+        String(
+          body.action ||
+          body.status ||
+          ""
+        )
+          .trim()
+          .toLowerCase();
+
+      if (!depositId) {
+        return res.status(400).json({
+          success:
+            false,
+          error:
+            "Deposit ID is required."
+        });
+      }
+
+      if (
+        action !== "approve" &&
+        action !== "reject"
+      ) {
+        return res.status(400).json({
+          success:
+            false,
+          error:
+            "Action must be approve or reject."
+        });
+      }
+
+      const deposits =
+        await supabaseRequest(
+          `deposits?id=eq.${quote(
+            depositId
+          )}&select=*&limit=1`
+        );
+
+      const deposit =
+        deposits?.[0];
+
+      if (!deposit) {
+        return res.status(404).json({
+          success:
+            false,
+          error:
+            "Deposit not found."
+        });
+      }
+
+      const currentStatus =
+        String(
+          deposit.status ||
+          ""
+        ).toLowerCase();
+
+      if (
+        currentStatus ===
+          "approved" ||
+        currentStatus ===
+          "completed"
+      ) {
+        return res.status(400).json({
+          success:
+            false,
+          error:
+            "This deposit has already been approved."
+        });
+      }
+
+      if (
+        currentStatus ===
+        "rejected"
+      ) {
+        return res.status(400).json({
+          success:
+            false,
+          error:
+            "This deposit has already been rejected."
+        });
+      }
+
+      /*
+        REJECT
+      */
+      if (
+        action === "reject"
+      ) {
+        const rejected =
+          await supabaseRequest(
+            `deposits?id=eq.${quote(
+              depositId
+            )}&status=eq.${quote(
+              deposit.status ||
+                "pending"
+            )}`,
+            {
+              method:
+                "PATCH",
+              body:
+                JSON.stringify({
+                  status:
+                    "rejected",
+                  updated_at:
+                    new Date().toISOString()
+                })
+            }
+          );
+
+        if (
+          !Array.isArray(
+            rejected
+          ) ||
+          rejected.length === 0
+        ) {
+          return res.status(409).json({
+            success:
+              false,
+            error:
+              "This deposit is already being processed."
+          });
+        }
+
+        return res.status(200).json({
+          success:
+            true,
+          message:
+            "Deposit rejected successfully.",
+          deposit:
+            rejected[0]
+        });
+      }
+
+      /*
+        APPROVE
+      */
+      const amount =
+        Number(
+          deposit.amount
+        );
+
+      if (
+        !Number.isFinite(
+          amount
+        ) ||
+        amount <= 0
+      ) {
+        return res.status(400).json({
+          success:
+            false,
+          error:
+            "Invalid deposit amount."
+        });
+      }
+
+      if (!deposit.user_id) {
+        return res.status(400).json({
+          success:
+            false,
+          error:
+            "This deposit is not linked to a customer."
+        });
+      }
+
+      /*
+        Lock the deposit before crediting
+        the wallet to prevent double approval.
+      */
+      const locked =
+        await supabaseRequest(
+          `deposits?id=eq.${quote(
+            depositId
+          )}&status=eq.${quote(
+            deposit.status ||
+              "pending"
+          )}`,
+          {
+            method:
+              "PATCH",
+            body:
+              JSON.stringify({
+                status:
+                  "processing",
+                updated_at:
+                  new Date().toISOString()
+              })
+          }
+        );
+
+      if (
+        !Array.isArray(
+          locked
+        ) ||
+        locked.length === 0
+      ) {
+        return res.status(409).json({
+          success:
+            false,
+          error:
+            "This deposit is already being processed."
+        });
+      }
+
+      try {
+        const wallet =
+          await addWalletBalance(
+            deposit.user_id,
+            amount
+          );
+
+        await createWalletTransaction({
+          userId:
+            deposit.user_id,
+          amount:
+            amount,
+          balanceAfter:
+            wallet.newBalance,
+          description:
+            `Approved deposit: ₦${amount.toLocaleString(
+              "en-NG"
+            )}`
+        });
+
+        const approved =
+          await supabaseRequest(
+            `deposits?id=eq.${quote(
+              depositId
+            )}&status=eq.processing`,
+            {
+              method:
+                "PATCH",
+              body:
+                JSON.stringify({
+                  status:
+                    "approved",
+                  updated_at:
+                    new Date().toISOString()
+                })
+            }
+          );
+
+        return res.status(200).json({
+          success:
+            true,
+          message:
+            "Deposit approved and wallet credited successfully.",
+          deposit:
+            approved?.[0] ||
+            null,
+          credited:
+            amount,
+          balance:
+            wallet.newBalance
+        });
+
+      } catch (processingError) {
+        console.error(
+          "Deposit approval processing error:",
+          processingError
+        );
+
+        /*
+          Return the deposit to pending if
+          wallet crediting failed.
+        */
+        try {
+          await supabaseRequest(
+            `deposits?id=eq.${quote(
+              depositId
+            )}&status=eq.processing`,
+            {
+              method:
+                "PATCH",
+              body:
+                JSON.stringify({
+                  status:
+                    "pending",
+                  updated_at:
+                    new Date().toISOString()
+                })
+            }
+          );
+        } catch (unlockError) {
+          console.error(
+            "Unable to reset deposit status:",
+            unlockError
+          );
+        }
+
+        throw processingError;
+      }
+    }
+
+    /*
+      CUSTOMER DEPOSIT SUBMISSION
+    */
+    const user =
+      await getAuthenticatedUser(
+        req
+      );
 
     const amount =
       Number(
@@ -245,13 +773,25 @@ export default async function handler(
 
     const message =
       error?.message ||
-      "Unable to submit deposit.";
+      "Unable to process deposit.";
 
     if (
       message ===
       "Unauthorized."
     ) {
       return res.status(401).json({
+        success:
+          false,
+        error:
+          message
+      });
+    }
+
+    if (
+      message ===
+      "Administrator access is required."
+    ) {
+      return res.status(403).json({
         success:
           false,
         error:
