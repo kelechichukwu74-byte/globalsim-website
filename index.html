@@ -6297,7 +6297,7 @@ const wrap=document.createElement("div"),input=document.createElement("input"),l
 wrap.className="gvs-search-wrap";input.className="gvs-search-input";input.type="search";input.autocomplete="off";input.placeholder=type==="country"?"Search country...":"Search service...";
 list.className="gvs-search-list";wrap.append(input,list);sel.parentNode.insertBefore(wrap,sel);
 function items(){
-return [...sel.options].filter(o=>o.value).map(o=>{let raw={};try{raw=JSON.parse(o.dataset.raw||"{}")}catch{};return {...raw,id:o.value,name:o.dataset.countryName||o.dataset.serviceName||o.textContent.trim(),code:o.dataset.countryCode||raw.code||raw.country_code||""}});
+return [...sel.options].filter(o=>o.value).map(o=>{let raw={};try{raw=JSON.parse(o.dataset.raw||"{}")}catch{};return {...raw,id:o.value,name:o.dataset.countryName||o.dataset.serviceName||o.textContent.trim(),code:o.dataset.countryCode||raw.code||raw.country_code||o.dataset.code||""}});
 }
 function render(){
 let q=input.value.trim().toLowerCase(),arr=items().filter(x=>!q||String(x.name).toLowerCase().includes(q)||String(x.code).toLowerCase().includes(q));
@@ -6309,7 +6309,7 @@ input.onfocus=render;input.oninput=render;document.addEventListener("click",e=>{
 sel.addEventListener("change",()=>{let x=items().find(a=>String(a.id)===String(sel.value));if(x)input.value=(type==="country"?flag(x):icon(x.name))+" "+x.name});
 }
 
-function init(){enhance(document.getElementById("countrySelect"),"country");enhance(document.getElementById("serviceSelect"),"service")}
+function init(){enhance(document.getElementById("countrySelect"),"country");enhance(document.getElementById("serviceSelect"),"service");enhance(document.getElementById("adminPricingCountry"),"country");enhance(document.getElementById("adminPricingService"),"service")}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
 </script>
