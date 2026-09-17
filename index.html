@@ -2734,6 +2734,7 @@
     let currentProfile = null;
     let currentWallet = null;
     let currentServices = [];
+    const serviceCache = {};
     let currentCountries = [];
     let isAdmin = false;
     let currentPage = "home";
@@ -4250,29 +4251,22 @@
        ========================================================= */
 
     async function loadServices() {
-
       const countrySelect =
         $("countrySelect");
-
 
       const serviceSelect =
         $("serviceSelect");
 
-
       const countryId =
         countrySelect.value;
-
 
       serviceSelect.innerHTML =
         '<option value="">Loading services...</option>';
 
-
       $("purchaseButton").disabled =
         true;
 
-
       if (!countryId) {
-
         serviceSelect.innerHTML =
           '<option value="">Select a service</option>';
 
@@ -4281,27 +4275,91 @@
         return;
       }
 
+      const countryOption =
+        countrySelect.options[
+          countrySelect.selectedIndex
+        ];
+
+      const server =
+        countryOption?.dataset?.server ||
+        "";
+
+      if (serviceCache[countryId]) {
+        currentServices =
+          serviceCache[countryId];
+
+        serviceSelect.innerHTML =
+          '<option value="">Select a service</option>';
+
+        currentServices.forEach(service => {
+          const option =
+            document.createElement("option");
+
+          const id =
+            service.id ??
+            service.serviceId ??
+            service.service_id ??
+            service.serviceCountryPriceId ??
+            service.service_country_price_id;
+
+          const name =
+            service.name ??
+            service.serviceName ??
+            service.service_name ??
+            service.title ??
+            id;
+
+          const price =
+            service.selling_price ??
+            service.sellingPrice ??
+            service.price ??
+            service.amount ??
+            null;
+
+          option.value =
+            id;
+
+          option.textContent =
+            price !== null
+              ? `${name} — ${formatMoney(price)}`
+              : name;
+
+          option.dataset.serviceName =
+            name;
+
+          option.dataset.price =
+            price ?? "";
+
+          option.dataset.raw =
+            JSON.stringify(service);
+
+          serviceSelect.appendChild(option);
+        });
+
+        updatePurchasePreview();
+        return;
+      }
 
       try {
+        let query =
+          `/api/services?countryId=${encodeURIComponent(countryId)}`;
+
+        if (server) {
+          query +=
+            `&server=${encodeURIComponent(server)}`;
+        }
 
         const response =
-          await fetch(
-            `/api/services?countryId=${encodeURIComponent(countryId)}`
-          );
-
+          await fetch(query);
 
         if (!response.ok) {
-
           throw new Error(
             "Unable to load services."
           );
-
         }
-
 
         const result =
           await response.json();
-
 
         currentServices =
           Array.isArray(result)
@@ -4312,16 +4370,15 @@
                 []
               );
 
+        serviceCache[countryId] =
+          currentServices;
 
         serviceSelect.innerHTML =
           '<option value="">Select a service</option>';
 
-
         currentServices.forEach(service => {
-
           const option =
             document.createElement("option");
-
 
           const id =
             service.id ??
@@ -4330,14 +4387,12 @@
             service.serviceCountryPriceId ??
             service.service_country_price_id;
 
-
           const name =
             service.name ??
             service.serviceName ??
             service.service_name ??
             service.title ??
             id;
-
 
           const price =
             service.selling_price ??
@@ -4346,56 +4401,41 @@
             service.amount ??
             null;
 
-
           option.value =
             id;
-
 
           option.textContent =
             price !== null
               ? `${name} — ${formatMoney(price)}`
               : name;
 
-
           option.dataset.serviceName =
             name;
-
 
           option.dataset.price =
             price ?? "";
 
-
           option.dataset.raw =
             JSON.stringify(service);
 
-
           serviceSelect.appendChild(option);
-
         });
 
-
         updatePurchasePreview();
-
-
       } catch (error) {
-
         console.error(
           "Services error:",
           error
         );
 
-
         serviceSelect.innerHTML =
           '<option value="">Unable to load services</option>';
-
 
         showToast(
           "Unable to load services.",
           "error"
         );
-
       }
-
     }
 
 
