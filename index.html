@@ -4736,136 +4736,291 @@
        ACTIVE NUMBERS
        ========================================================= */
 
+    function activeNumberValue(item) {
+      return item.phone_number || item.phoneNumber || item.number || "—";
+    }
+
+    function activeServiceValue(item) {
+      return item.service || item.service_name || item.serviceName || "—";
+    }
+
+    function activeVerificationId(item) {
+      return item.verification_id || item.verificationId || item.request_id || item.requestId || "";
+    }
+
+    function activeSmsText(item) {
+      const sms = item.sms || item.smsData || item.verification || item;
+      const code =
+        sms?.code ||
+        sms?.otp ||
+        sms?.sms_code ||
+        sms?.verification_code ||
+        sms?.data?.code ||
+        sms?.data?.otp ||
+        sms?.verification?.code ||
+        "";
+
+      const message =
+        sms?.message ||
+        sms?.sms ||
+        sms?.text ||
+        sms?.body ||
+        sms?.data?.message ||
+        sms?.data?.sms ||
+        sms?.data?.text ||
+        "";
+
+      if (code && message) return `Code: ${code} — ${message}`;
+      if (code) return `Code: ${code}`;
+      if (message) return String(message);
+      return "Waiting for incoming SMS...";
+    }
+
+    function activeProviderStatus(item) {
+      return String(item.status || item.provider_status || "active").toLowerCase();
+    }
+
+    function activeCreatedTime(item) {
+      const raw = item.created_at || item.createdAt;
+      const time = raw ? new Date(raw).getTime() : Date.now();
+      return Number.isFinite(time) ? time : Date.now();
+    }
+
+    function activeCanCancel(item) {
+      const status = activeProviderStatus(item);
+      const verificationId = activeVerificationId(item);
+      const elapsed = Date.now() - activeCreatedTime(item);
+      return Boolean(
+        verificationId &&
+        elapsed >= 2 * 60 * 1000 &&
+        !["cancelled", "canceled", "refunded", "completed", "expired", "cancelling"].includes(status)
+      );
+    }
+
+    function activeWaitingText(item) {
+      const elapsed = Date.now() - activeCreatedTime(item);
+      const remaining = Math.max(0, 2 * 60 * 1000 - elapsed);
+      if (remaining <= 0) return "Cancellation available";
+      const seconds = Math.ceil(remaining / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `Cancel available in ${minutes}:${String(secs).padStart(2, "0")}`;
+    }
+
+    async function copyActiveNumber(number) {
+      try {
+        await navigator.clipboard.writeText(String(number));
+        showToast("Number copied.", "success");
+      } catch (error) {
+        console.error("Copy number error:", error);
+        showToast("Unable to copy number.", "error");
+      }
+    }
+
+    async function cancelActiveNumber(verificationId) {
+      if (!verificationId) {
+        showToast("Verification ID is missing.", "error");
+        return;
+      }
+
+      const button = document.querySelector(
+        `[data-cancel-verification="${CSS.escape(String(verificationId))}"]`
+      );
+
+      if (button) {
+        button.disabled = true;
+        button.textContent = "Cancelling...";
+      }
+
+      try {
+        const token = await getCurrentAccessToken();
+
+        if (!token) {
+          throw new Error("Unauthorized.");
+        }
+
+        const response = await fetch("/api/cancel", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            verificationId
+          })
+        });
+
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok || result.success === false) {
+          throw new Error(
+            result.error ||
+            result.message ||
+            "Unable to cancel number."
+          );
+        }
+
+        showToast(
+          result.message || "Number cancelled and wallet refunded successfully.",
+          "success"
+        );
+
+        await loadWallet();
+        await loadDashboard();
+        await loadOrderHistory();
+        await loadActiveNumbers();
+
+      } catch (error) {
+        console.error("Cancel number error:", error);
+        showToast(
+          error.message || "Unable to cancel number.",
+          "error"
+        );
+
+        if (button) {
+          button.disabled = false;
+          button.textContent = "Cancel Number";
+        }
+      }
+    }
+
+    function renderActiveNumbers(numbers) {
+      const container = $("activeNumbersContainer");
+
+      if (!numbers.length) {
+        container.innerHTML =
+          '<div class="empty-state">You do not have any active numbers yet.</div>';
+        return;
+      }
+
+      container.innerHTML = numbers.map((item, index) => {
+        const number = activeNumberValue(item);
+        const service = activeServiceValue(item);
+        const verificationId = activeVerificationId(item);
+        const status = activeProviderStatus(item);
+        const smsText = activeSmsText(item);
+        const canCancel = activeCanCancel(item);
+        const waitingText = activeWaitingText(item);
+        const price = Number(item.price ?? item.selling_price ?? item.sellingPrice ?? 0);
+        const created = item.created_at || item.createdAt;
+        const safeVerification = escapeHtml(String(verificationId));
+        const safeNumber = escapeHtml(String(number));
+        const safeService = escapeHtml(String(service));
+        const safeSms = escapeHtml(String(smsText));
+
+        return `
+          <div class="gvs-active-card" data-active-index="${index}">
+            <div class="gvs-active-top">
+              <div>
+                <div class="gvs-active-label">Purchased number</div>
+                <div class="gvs-active-number">${safeNumber}</div>
+                <div class="gvs-active-service">${safeService}</div>
+              </div>
+              <div class="gvs-active-status">
+                ${statusBadge(status)}
+              </div>
+            </div>
+
+            <div class="gvs-active-actions">
+              <button
+                type="button"
+                class="secondary-btn small-btn"
+                onclick="copyActiveNumber(${JSON.stringify(String(number))})"
+              >
+                Copy Number
+              </button>
+            </div>
+
+            <div class="gvs-sms-box">
+              <div class="gvs-sms-title">SMS</div>
+              <div class="gvs-sms-text">${safeSms}</div>
+            </div>
+
+            <div class="gvs-active-meta">
+              <span>${created ? escapeHtml(formatDate(created)) : "Just now"}</span>
+              ${price > 0 ? `<span>${escapeHtml(formatMoney(price))}</span>` : ""}
+            </div>
+
+            <div class="gvs-cancel-area">
+              ${
+                canCancel
+                  ? `
+                    <button
+                      type="button"
+                      class="danger-btn small-btn"
+                      data-cancel-verification="${safeVerification}"
+                      onclick="cancelActiveNumber(${JSON.stringify(String(verificationId))})"
+                    >
+                      Cancel Number
+                    </button>
+                  `
+                  : `
+                    <div class="gvs-cancel-waiting">${escapeHtml(waitingText)}</div>
+                  `
+              }
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
     async function loadActiveNumbers() {
-
-      const container =
-        $("activeNumbersContainer");
-
+      const container = $("activeNumbersContainer");
 
       container.innerHTML =
         '<div class="loading">Loading active numbers...</div>';
 
-
       try {
+        const token = await getCurrentAccessToken();
 
-        const response =
-          await fetch("/api/active");
+        if (!token) {
+          throw new Error("Unauthorized.");
+        }
 
+        const response = await fetch("/api/active", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
 
         if (!response.ok) {
-
+          const result = await response.json().catch(() => ({}));
           throw new Error(
-            "Unable to load active numbers."
+            result.error || "Unable to load active numbers."
           );
-
         }
 
+        const result = await response.json();
+        const numbers = Array.isArray(result)
+          ? result
+          : (
+              result.data ||
+              result.activations ||
+              result.numbers ||
+              []
+            );
 
-        const result =
-          await response.json();
-
-
-        const numbers =
-          Array.isArray(result)
-            ? result
-            : (
-                result.data ||
-                result.activations ||
-                result.numbers ||
-                []
-              );
-
-
-        if (!numbers.length) {
-
-          container.innerHTML =
-            '<div class="empty-state">You do not have any active numbers yet.</div>';
-
-          return;
-        }
-
-
-        container.innerHTML = `
-
-          <div class="table-wrapper">
-
-            <table class="data-table">
-
-              <thead>
-
-                <tr>
-                  <th>Number</th>
-                  <th>Service</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                </tr>
-
-              </thead>
-
-              <tbody>
-
-                ${numbers.map(item => `
-
-                  <tr>
-
-                    <td>
-                      <strong>
-                        ${escapeHtml(
-                          item.phone_number ||
-                          item.phoneNumber ||
-                          item.number ||
-                          "—"
-                        )}
-                      </strong>
-                    </td>
-
-                    <td>
-                      ${escapeHtml(
-                        item.service ||
-                        item.service_name ||
-                        item.serviceName ||
-                        "—"
-                      )}
-                    </td>
-
-                    <td>
-                      ${statusBadge(
-                        item.status ||
-                        "active"
-                      )}
-                    </td>
-
-                    <td>
-                      ${formatDate(
-                        item.created_at ||
-                        item.createdAt
-                      )}
-                    </td>
-
-                  </tr>
-
-                `).join("")}
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-        `;
+        renderActiveNumbers(numbers);
 
       } catch (error) {
-
-        console.error(
-          "Active numbers error:",
-          error
-        );
+        console.error("Active numbers error:", error);
 
         container.innerHTML =
-          '<div class="empty-state">Unable to load active numbers.</div>';
+          `<div class="empty-state">${escapeHtml(error.message || "Unable to load active numbers.")}</div>`;
+      }
+    }
 
+    function startActiveNumberCountdown() {
+      if (window.gvsActiveCountdown) {
+        clearInterval(window.gvsActiveCountdown);
       }
 
+      window.gvsActiveCountdown = setInterval(() => {
+        const page = document.getElementById("page-active");
+        if (!page || page.classList.contains("hidden")) return;
+
+        loadActiveNumbers();
+      }, 15000);
     }
 
 
@@ -6324,8 +6479,27 @@
 
     }
 
+    startActiveNumberCountdown();
+
   </script>
 
+
+<style>
+.gvs-active-card{border:1px solid #dbe7f2;border-radius:16px;padding:16px;margin-top:14px;background:#fff;box-shadow:0 8px 24px rgba(20,50,90,.07)}
+.gvs-active-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.gvs-active-label{font-size:12px;color:#718096;margin-bottom:5px}
+.gvs-active-number{font-size:22px;font-weight:800;letter-spacing:.2px;color:#14243a;word-break:break-all}
+.gvs-active-service{font-size:13px;color:#66768c;margin-top:4px}
+.gvs-active-actions{margin-top:13px;display:flex;gap:8px;flex-wrap:wrap}
+.gvs-sms-box{margin-top:14px;padding:13px;border-radius:12px;background:#f5f9fd;border:1px solid #e0ebf5}
+.gvs-sms-title{font-weight:700;font-size:13px;margin-bottom:5px;color:#24364d}
+.gvs-sms-text{font-size:13px;color:#52657d;word-break:break-word}
+.gvs-active-meta{display:flex;justify-content:space-between;gap:10px;margin-top:12px;font-size:12px;color:#7a8a9d}
+.gvs-cancel-area{margin-top:13px;padding-top:13px;border-top:1px solid #edf2f7}
+.gvs-cancel-waiting{font-size:12px;color:#738399}
+.danger-btn{border:0;border-radius:10px;padding:10px 14px;background:#dc3545;color:#fff;font-weight:700;cursor:pointer}
+.danger-btn:disabled{opacity:.6;cursor:not-allowed}
+</style>
 
 <style>
 .gvs-search-wrap{position:relative;width:100%}
