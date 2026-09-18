@@ -1,470 +1,50 @@
-import {
-  sureVerificationRequest,
-  getServersForCountry
-} from "./_lib.js";
+import { getServersForCountry, sureVerificationRequest, quote } from "./_lib.js";
+import { sb } from "./_supabase.js";
 
-const SUPABASE_URL =
-  process.env.SUPABASE_URL ||
-  "https://rfitbmkizfmwfqqskwhy.supabase.co";
-
-const SUPABASE_SERVICE_ROLE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-
-/*
-  Supabase REST helper
-*/
-async function supabaseRequest(path) {
-  if (!SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not configured."
-    );
-  }
-
-  const response = await fetch(
-    `${SUPABASE_URL}/rest/v1/${path}`,
-    {
-      headers: {
-        apikey:
-          SUPABASE_SERVICE_ROLE_KEY,
-
-        Authorization:
-          `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-
-        Accept:
-          "application/json"
-      }
-    }
-  );
-
-  const text =
-    await response.text();
-
-  let data = [];
+export default async function handler(req,res) {
+  if (req.method !== "GET") return res.status(405).json({success:false,error:"Method not allowed"});
+  const countryId=req.query?.countryId;
+  const countryCode=req.query?.countryCode||"";
+  const countryName=req.query?.countryName||"";
+  if (!countryId) return res.status(400).json({success:false,error:"Country is required."});
 
   try {
-    data =
-      text
-        ? JSON.parse(text)
-        : [];
-  } catch {
-    throw new Error(
-      `Supabase returned invalid JSON (HTTP ${response.status}).`
-    );
-  }
+    const servers=getServersForCountry(countryCode||countryName);
+    const map=new Map();
 
-  if (!response.ok) {
-    throw new Error(
-      data?.message ||
-      data?.hint ||
-      data?.details ||
-      `Supabase request failed (HTTP ${response.status}).`
-    );
-  }
-
-  return data;
-}
-
-
-/*
-  Normalize SureVerification service response.
-*/
-function extractServices(data) {
-  if (
-    Array.isArray(data?.services)
-  ) {
-    return data.services;
-  }
-
-  if (
-    Array.isArray(data?.data)
-  ) {
-    return data.data;
-  }
-
-  if (
-    Array.isArray(data)
-  ) {
-    return data;
-  }
-
-  return [];
-}
-
-
-/*
-  Create a stable key for a service.
-*/
-function getServiceKey(service) {
-  const id =
-    service?.id ??
-    service?.serviceId ??
-    service?.service_id ??
-    service?.serviceCountryPriceId ??
-    service?.service_country_price_id;
-
-  const name =
-    service?.name ??
-    service?.serviceName ??
-    service?.service_name ??
-    service?.title ??
-    "";
-
-  return String(
-    id || name
-  ).trim().toLowerCase();
-}
-
-
-/*
-  Load services from one SureVerification server.
-*/
-async function loadServerServices(
-  server,
-  countryId
-) {
-  try {
-    const data =
-      await sureVerificationRequest(
-        `/${server}/services?country_id=${encodeURIComponent(
-          countryId
-        )}`
-      );
-
-    return {
-      server,
-      services:
-        extractServices(data),
-      error: null
-    };
-
-  } catch (error) {
-    console.error(
-      `SureVerification ${server} services error:`,
-      error
-    );
-
-    return {
-      server,
-      services: [],
-      error:
-        error?.message ||
-        "Unable to load services."
-    };
-  }
-}
-
-
-/*
-  Main endpoint
-*/
-export default async function handler(
-  req,
-  res
-) {
-  if (req.method !== "GET") {
-    return res.status(405).json({
-      success: false,
-      error: "Method not allowed"
-    });
-  }
-
-  try {
-    const countryId =
-      req.query?.countryId;
-
-    const requestedServer =
-      req.query?.server;
-
-    if (!countryId) {
-      return res.status(400).json({
-        success: false,
-        error:
-          "countryId is required"
-      });
+    for (const server of servers) {
+      try {
+        const data=await sureVerificationRequest(`/${server}/services?country_id=${quote(countryId)}`);
+        const list=Array.isArray(data?.services)?data.services:Array.isArray(data)?data:Array.isArray(data?.data)?data.data:[];
+        for(const s of list) {
+          const id=s.id??s.service_id??s.serviceId;
+          const name=s.name??s.service_name??s.serviceName??String(id);
+          if(id!=null) {
+            const item=map.get(String(id))||{id,name,servers:[],available_servers:[]};
+            if(!item.servers.includes(server)) item.servers.push(server);
+            if(!item.available_servers.includes(server)) item.available_servers.push(server);
+            map.set(String(id),item);
+          }
+        }
+      } catch(e) { console.error(`services ${server}`,e.message); }
     }
 
-
-    /*
-      If a specific server was requested,
-      use only that server.
-
-      Otherwise check both appropriate
-      servers for the country.
-    */
-    const servers =
-      requestedServer
-        ? [requestedServer]
-        : getServersForCountry(
-            countryId
-          );
-
-
-    /*
-      Ask all applicable servers for their
-      available services.
-    */
-    const results =
-      await Promise.all(
-        servers.map(
-          server =>
-            loadServerServices(
-              server,
-              countryId
-            )
-        )
-      );
-
-
-    /*
-      Load admin-configured selling prices.
-    */
-    let sellingPrices = [];
-
+    const services=[...map.values()];
     try {
-      sellingPrices =
-        await supabaseRequest(
-          `product_prices?country_id=eq.${encodeURIComponent(
-            countryId
-          )}&select=country_id,country_name,service_id,service_name,selling_price`
-        );
-
-    } catch (pricingError) {
-      console.error(
-        "Admin pricing lookup error:",
-        pricingError
-      );
-
-      sellingPrices = [];
-    }
-
-
-    /*
-      Build selling-price lookup.
-    */
-    const priceMap =
-      new Map();
-
-    for (
-      const row of sellingPrices
-    ) {
-      if (!row?.service_id) {
-        continue;
+      const prices=await sb(`product_prices?country_id=eq.${quote(countryId)}&select=country_id,service_id,country_name,service_name,selling_price`);
+      for(const p of prices) {
+        const item=map.get(String(p.service_id));
+        if(item) {
+          item.selling_price=p.selling_price;
+          item.country_name=p.country_name;
+          item.service_name=p.service_name;
+        }
       }
+    } catch(e) { console.error("pricing merge",e.message); }
 
-      priceMap.set(
-        String(
-          row.service_id
-        ),
-        {
-          sellingPrice:
-            Number(
-              row.selling_price
-            ),
-
-          serviceName:
-            row.service_name ||
-            ""
-        }
-      );
-    }
-
-
-    /*
-      Combine services from all servers.
-
-      A service may exist on more than
-      one server, so keep information
-      about every server where it exists.
-    */
-    const serviceMap =
-      new Map();
-
-    for (
-      const result of results
-    ) {
-      for (
-        const service of result.services
-      ) {
-        const serviceId =
-          service?.id ??
-          service?.serviceId ??
-          service?.service_id ??
-          service?.serviceCountryPriceId ??
-          service?.service_country_price_id;
-
-        const serviceName =
-          service?.name ??
-          service?.serviceName ??
-          service?.service_name ??
-          service?.title ??
-          String(
-            serviceId || ""
-          );
-
-        const key =
-          getServiceKey({
-            ...service,
-            id:
-              serviceId,
-            name:
-              serviceName
-          });
-
-        if (!key) {
-          continue;
-        }
-
-
-        if (
-          !serviceMap.has(key)
-        ) {
-          serviceMap.set(
-            key,
-            {
-              ...service,
-
-              id:
-                serviceId,
-
-              name:
-                serviceName,
-
-              serviceName:
-                serviceName,
-
-              servers: [],
-
-              available_servers: []
-            }
-          );
-        }
-
-
-        const existing =
-          serviceMap.get(key);
-
-
-        /*
-          Save each server where
-          this service is available.
-        */
-        if (
-          !existing.servers.includes(
-            result.server
-          )
-        ) {
-          existing.servers.push(
-            result.server
-          );
-        }
-
-
-        if (
-          !existing.available_servers.includes(
-            result.server
-          )
-        ) {
-          existing.available_servers.push(
-            result.server
-          );
-        }
-
-
-        /*
-          Keep the original provider
-          service data available.
-        */
-        existing.server =
-          existing.server ||
-          result.server;
-      }
-    }
-
-
-    /*
-      Apply admin selling prices.
-    */
-    const services =
-      Array.from(
-        serviceMap.values()
-      ).map(service => {
-        const configured =
-          priceMap.get(
-            String(
-              service.id
-            )
-          );
-
-
-        const sellingPrice =
-          configured &&
-          Number.isFinite(
-            configured.sellingPrice
-          ) &&
-          configured.sellingPrice > 0
-            ? configured.sellingPrice
-            : null;
-
-
-        return {
-          ...service,
-
-          selling_price:
-            sellingPrice,
-
-          sellingPrice:
-            sellingPrice,
-
-          provider_price:
-            undefined
-        };
-      });
-
-
-    /*
-      Return the services plus
-      all applicable servers.
-    */
-    return res.status(200).json({
-      success: true,
-
-      countryId,
-
-      servers,
-
-      serverResults:
-        results.map(
-          result => ({
-            server:
-              result.server,
-
-            serviceCount:
-              result.services.length,
-
-            available:
-              result.services.length > 0,
-
-            error:
-              result.error
-          })
-        ),
-
-      services
-    });
-
-  } catch (error) {
-    console.error(
-      "SureVerification services error:",
-      error
-    );
-
-    return res.status(500).json({
-      success: false,
-
-      error:
-        error?.message ||
-        "Unable to load services."
-    });
+    res.status(200).json({success:true,services});
+  } catch(e) {
+    console.error(e);
+    res.status(500).json({success:false,error:e.message||"Unable to load services."});
   }
 }
