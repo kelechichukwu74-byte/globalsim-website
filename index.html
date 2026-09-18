@@ -976,6 +976,32 @@
       padding: 18px;
     }
 
+
+
+    .dashboard-wallet-card { width:100%; max-width:520px; min-height:175px; margin:0 auto 18px; padding:20px; border-radius:18px; color:#fff; background:linear-gradient(135deg,#0f3f8f,#2563eb 55%,#0ea5e9); box-shadow:0 14px 30px rgba(37,99,235,.20); position:relative; overflow:hidden; }
+    .dashboard-wallet-top,.dashboard-wallet-bottom { display:flex; align-items:center; justify-content:space-between; gap:12px; position:relative; z-index:1; }
+    .dashboard-wallet-top { font-size:10px; font-weight:800; letter-spacing:.12em; }
+    .dashboard-wallet-chip,.admin-wallet-chip { width:34px; height:25px; border-radius:6px; background:linear-gradient(135deg,#e5e7eb,#94a3b8); }
+    .dashboard-wallet-label { margin-top:25px; font-size:11px; opacity:.82; position:relative; z-index:1; }
+    .dashboard-wallet-amount { margin-top:4px; font-size:27px; font-weight:850; position:relative; z-index:1; }
+    .dashboard-wallet-bottom { margin-top:15px; font-size:10px; opacity:.86; }
+    .dashboard-add-money { border:0; background:#fff; color:#1d4ed8; border-radius:999px; padding:8px 13px; font-size:11px; font-weight:800; }
+    .dashboard-mini-stats { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .admin-wallet-card { width:100%; max-width:520px; min-height:150px; margin:0 auto 18px; padding:20px; border-radius:18px; color:#fff; background:linear-gradient(135deg,#111827,#334155); display:flex; align-items:center; justify-content:space-between; box-shadow:0 14px 30px rgba(15,23,42,.15); }
+    .admin-wallet-kicker { font-size:10px; letter-spacing:.12em; font-weight:800; color:#cbd5e1; }
+    .admin-wallet-amount { font-size:28px; font-weight:850; margin-top:9px; }
+    .admin-wallet-sub { margin-top:4px; color:#94a3b8; font-size:10px; }
+    .searchable-select-wrap { position:relative; }
+    .searchable-select-wrap > select { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+    .searchable-select-input { width:100%; border:1px solid #dbe2ea; background:#fff; border-radius:10px; padding:12px 38px 12px 13px; color:#111827; outline:none; }
+    .searchable-select-input:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.10); }
+    .searchable-select-arrow { position:absolute; right:13px; top:50%; transform:translateY(-50%); pointer-events:none; color:#64748b; }
+    .searchable-select-list { position:absolute; left:0; right:0; top:calc(100% + 5px); max-height:260px; overflow-y:auto; background:#fff; border:1px solid #dbe2ea; border-radius:11px; box-shadow:0 15px 35px rgba(15,23,42,.15); z-index:3000; display:none; padding:5px; }
+    .searchable-select-wrap.open .searchable-select-list { display:block; }
+    .searchable-select-option { width:100%; border:0; background:transparent; text-align:left; padding:10px 11px; border-radius:8px; font-size:12px; color:#1e293b; }
+    .searchable-select-option:hover,.searchable-select-option.selected { background:#eff6ff; color:#1d4ed8; }
+    .searchable-select-empty { padding:11px; color:#64748b; font-size:12px; }
+
     /* =========================================================
        MOBILE
        ========================================================= */
@@ -1130,6 +1156,8 @@
           <div class="form-group">
             <label for="loginPassword">Password</label>
 
+            <div class="password-wrap">
+
             <input
               id="loginPassword"
               class="form-control"
@@ -1138,6 +1166,10 @@
               required
               placeholder="Enter your password"
             />
+
+            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('loginPassword', this)" aria-label="Show password">👁</button>
+
+          </div>
           </div>
 
           <button
@@ -1217,6 +1249,8 @@
           <div class="form-group">
             <label for="registerPassword">Password</label>
 
+            <div class="password-wrap">
+
             <input
               id="registerPassword"
               class="form-control"
@@ -1226,12 +1260,18 @@
               minlength="6"
               placeholder="At least 6 characters"
             />
+
+            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('registerPassword', this)" aria-label="Show password">👁</button>
+
+          </div>
           </div>
 
           <div class="form-group">
             <label for="registerConfirmPassword">
               Confirm Password
             </label>
+
+            <div class="password-wrap">
 
             <input
               id="registerConfirmPassword"
@@ -1242,6 +1282,10 @@
               minlength="6"
               placeholder="Repeat your password"
             />
+
+            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('registerConfirmPassword', this)" aria-label="Show password">👁</button>
+
+          </div>
           </div>
 
           <label class="checkbox-row">
@@ -1499,87 +1543,28 @@
             </div>
 
 
-            <div class="stats-grid">
+            <div class="dashboard-wallet-card">
 
-              <div class="stat-card">
-
-                <div class="stat-label">
-                  Wallet Balance
-                </div>
-
-                <div
-                  id="dashboardBalance"
-                  class="stat-value"
-                >
-                  ₦0.00
-                </div>
-
-                <div class="stat-sub">
-                  Available funds
-                </div>
-
+              <div class="dashboard-wallet-top">
+                <span>GLOBAL VIRTUAL SIM WEB</span>
+                <span class="dashboard-wallet-chip"></span>
               </div>
 
+              <div class="dashboard-wallet-label">Wallet Balance</div>
+              <div id="dashboardBalance" class="dashboard-wallet-amount">₦0.00</div>
 
-              <div class="stat-card">
-
-                <div class="stat-label">
-                  Active Numbers
-                </div>
-
-                <div
-                  id="dashboardActiveNumbers"
-                  class="stat-value"
-                >
-                  0
-                </div>
-
-                <div class="stat-sub">
-                  Current activations
-                </div>
-
+              <div class="dashboard-wallet-bottom">
+                <span>Available funds</span>
+                <button class="dashboard-add-money" type="button" onclick="navigateTo('wallet')">+ Add Money</button>
               </div>
 
-
-              <div class="stat-card">
-
-                <div class="stat-label">
-                  Total Orders
-                </div>
-
-                <div
-                  id="dashboardOrders"
-                  class="stat-value"
-                >
-                  0
-                </div>
-
-                <div class="stat-sub">
-                  Your orders
-                </div>
-
-              </div>
+            </div>
 
 
-              <div class="stat-card">
-
-                <div class="stat-label">
-                  Transactions
-                </div>
-
-                <div
-                  id="dashboardTransactions"
-                  class="stat-value"
-                >
-                  0
-                </div>
-
-                <div class="stat-sub">
-                  Wallet activity
-                </div>
-
-              </div>
-
+            <div class="stats-grid dashboard-mini-stats">
+              <div class="stat-card"><div class="stat-label">Active Numbers</div><div id="dashboardActiveNumbers" class="stat-value">0</div><div class="stat-sub">Current activations</div></div>
+              <div class="stat-card"><div class="stat-label">Total Orders</div><div id="dashboardOrders" class="stat-value">0</div><div class="stat-sub">Your orders</div></div>
+              <div class="stat-card"><div class="stat-label">Transactions</div><div id="dashboardTransactions" class="stat-value">0</div><div class="stat-sub">Wallet activity</div></div>
             </div>
 
 
@@ -2106,128 +2091,6 @@
 
               </div>
 
-
-              <!-- WITHDRAW -->
-
-              <div class="section-card">
-
-                <div class="section-heading">
-
-                  <div>
-                    <h3>Withdraw Funds</h3>
-                    <p>Request a withdrawal from your wallet.</p>
-                  </div>
-
-                </div>
-
-
-                <form
-                  id="withdrawForm"
-                  onsubmit="submitWithdrawal(event)"
-                >
-
-                  <div class="form-group">
-
-                    <label for="withdrawBank">
-                      Bank
-                    </label>
-
-                    <select
-                      id="withdrawBank"
-                      class="form-control"
-                    >
-
-                      <option value="">
-                        Select bank
-                      </option>
-
-                      <option>Access Bank</option>
-                      <option>Fidelity Bank</option>
-                      <option>First Bank</option>
-                      <option>GTBank</option>
-                      <option>Moniepoint</option>
-                      <option>OPay</option>
-                      <option>PalmPay</option>
-                      <option>Polaris Bank</option>
-                      <option>Stanbic IBTC</option>
-                      <option>UBA</option>
-                      <option>Union Bank</option>
-                      <option>Wema Bank</option>
-                      <option>Zenith Bank</option>
-                      <option>Other</option>
-
-                    </select>
-
-                  </div>
-
-
-                  <div class="form-group">
-
-                    <label for="withdrawAccountNumber">
-                      Account Number
-                    </label>
-
-                    <input
-                      id="withdrawAccountNumber"
-                      class="form-control"
-                      type="text"
-                      inputmode="numeric"
-                      maxlength="10"
-                      placeholder="10-digit account number"
-                    />
-
-                  </div>
-
-
-                  <div class="form-group">
-
-                    <label for="withdrawAccountName">
-                      Account Name
-                    </label>
-
-                    <input
-                      id="withdrawAccountName"
-                      class="form-control"
-                      type="text"
-                      placeholder="Account holder name"
-                    />
-
-                  </div>
-
-
-                  <div class="form-group">
-
-                    <label for="withdrawAmount">
-                      Amount
-                    </label>
-
-                    <input
-                      id="withdrawAmount"
-                      class="form-control"
-                      type="number"
-                      min="1000"
-                      step="0.01"
-                      placeholder="Minimum ₦1,000"
-                    />
-
-                  </div>
-
-
-                  <button
-                    id="withdrawButton"
-                    class="primary-btn full-btn"
-                    type="submit"
-                  >
-                    Request Withdrawal
-                  </button>
-
-                </form>
-
-              </div>
-
-            </div>
-
-
             <!-- TRANSACTIONS -->
 
             <div class="section-card">
@@ -2301,7 +2164,7 @@
               </p>
 
               <a
-                href="mailto:watchandearn.ng@gmail.com"
+                href="mailto:globalsimwebsite@gmail.com"
                 class="primary-btn"
                 style="display:inline-block;text-decoration:none;"
               >
@@ -2452,6 +2315,8 @@
 
 
             <div id="adminContent">
+
+              <div class="admin-wallet-card"><div><div class="admin-wallet-kicker">ADMIN WALLET</div><div id="adminWalletBalance" class="admin-wallet-amount">₦0.00</div><div class="admin-wallet-sub">Platform wallet</div></div><div class="admin-wallet-chip"></div></div>
 
               <div class="stats-grid">
 
@@ -2656,12 +2521,12 @@
               Contact
             </a>
 
-            <a href="mailto:watchandearn.ng@gmail.com">
+            <a href="mailto:globalsimwebsite@gmail.com">
               Email
             </a>
 
-            <a onclick="showLegal('Telegram')">
-              Telegram
+            <a href="https://t.me/GlobalVirtualSimWebSupport" target="_blank" rel="noopener">
+              Follow us on Telegram
             </a>
 
             <a onclick="showLegal('Terms & Conditions')">
@@ -4221,154 +4086,6 @@
        WITHDRAWAL
        ========================================================= */
 
-    async function submitWithdrawal(event) {
-
-      event.preventDefault();
-
-
-      const button =
-        $("withdrawButton");
-
-
-      const bank =
-        $("withdrawBank").value;
-
-
-      const accountNumber =
-        $("withdrawAccountNumber")
-          .value
-          .trim();
-
-
-      const accountName =
-        $("withdrawAccountName")
-          .value
-          .trim();
-
-
-      const amount =
-        Number(
-          $("withdrawAmount").value
-        );
-
-
-      if (!bank) {
-
-        showToast(
-          "Select your bank.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      if (!/^\d{10}$/.test(accountNumber)) {
-
-        showToast(
-          "Enter a valid 10-digit account number.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      if (!accountName) {
-
-        showToast(
-          "Enter the account name.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      if (!amount || amount < 1000) {
-
-        showToast(
-          "Minimum withdrawal is ₦1,000.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      setButtonLoading(
-        button,
-        true,
-        "Submitting..."
-      );
-
-
-      try {
-
-        /*
-          This calls your secure Supabase RPC.
-          The RPC must perform the balance/withdrawal
-          transaction server-side.
-        */
-
-        const {
-          data,
-          error
-        } = await supabaseClient.rpc(
-          "request_withdrawal",
-          {
-            p_bank_name: bank,
-            p_account_number: accountNumber,
-            p_account_name: accountName,
-            p_amount: amount
-          }
-        );
-
-
-        if (error) {
-          throw error;
-        }
-
-
-        showToast(
-          "Withdrawal request submitted successfully.",
-          "success"
-        );
-
-
-        $("withdrawForm").reset();
-
-
-        await loadWalletData();
-
-        await loadDashboard();
-
-
-      } catch (error) {
-
-        console.error(
-          "Withdrawal error:",
-          error
-        );
-
-        showToast(
-          error.message ||
-          "Unable to submit withdrawal request.",
-          "error"
-        );
-
-      } finally {
-
-        setButtonLoading(
-          button,
-          false
-        );
-
-      }
-
-    }
-
-
     function togglePasswordVisibility(inputId, button) {
       const input = $(inputId);
       if (!input) return;
@@ -4739,80 +4456,31 @@
     async function purchaseNumber() {
 
       if (!currentUser) {
-
-        showToast(
-          "Please log in first.",
-          "error"
-        );
-
+        showToast("Please log in first.", "error");
         return;
       }
 
-
-      const countrySelect =
-        $("countrySelect");
-
-
-      const serviceSelect =
-        $("serviceSelect");
-
-
-      const countryId =
-        countrySelect.value;
-
-      const countryOption =
-        countrySelect.options[countrySelect.selectedIndex];
-
-      const countryCode =
-        countryOption?.dataset?.countryCode ||
-        "";
-
-
-      const serviceOption =
-        serviceSelect.options[
-          serviceSelect.selectedIndex
-        ];
-
+      const countrySelect = $("countrySelect");
+      const serviceSelect = $("serviceSelect");
+      const countryId = countrySelect.value;
+      const countryOption = countrySelect.options[countrySelect.selectedIndex];
+      const countryCode = countryOption?.dataset?.countryCode || "";
+      const serviceOption = serviceSelect.options[serviceSelect.selectedIndex];
 
       if (!countryId || !serviceOption?.value) {
-
-        showToast(
-          "Select a country and service first.",
-          "error"
-        );
-
+        showToast("Select a country and service first.", "error");
         return;
       }
 
-
       const countryName =
-        countrySelect
-          .options[
-            countrySelect.selectedIndex
-          ]
-          ?.dataset
-          ?.countryName ||
-        countrySelect
-          .options[
-            countrySelect.selectedIndex
-          ]
-          ?.textContent ||
+        countryOption?.dataset?.countryName ||
+        countryOption?.textContent ||
         "";
 
-
       let serviceData = {};
-
-
       try {
-
-        serviceData =
-          JSON.parse(
-            serviceOption.dataset.raw ||
-            "{}"
-          );
-
+        serviceData = JSON.parse(serviceOption.dataset.raw || "{}");
       } catch (_) {}
-
 
       const serviceCountryPriceId =
         serviceData.serviceCountryPriceId ??
@@ -4820,126 +4488,82 @@
         serviceData.id ??
         serviceOption.value;
 
-
-      const button =
-        $("purchaseButton");
-
-
-      setButtonLoading(
-        button,
-        true,
-        "Processing..."
-      );
-
+      const button = $("purchaseButton");
+      setButtonLoading(button, true, "Processing...");
 
       try {
+        /* Get the CURRENT Supabase access token immediately before purchase. */
+        const { data: sessionData, error: sessionError } =
+          await supabaseClient.auth.getSession();
 
-        /*
-          IMPORTANT:
-          /api/order must remain server-side.
-          Your SUREVERIFICATION_API_KEY must never
-          be placed in this HTML.
-        */
+        if (sessionError) {
+          console.error("Session retrieval error:", sessionError);
+          throw new Error("Your login session is not valid. Please log out and log in again.");
+        }
 
-        const response =
-          await fetch("/api/order", {
+        const accessToken = sessionData?.session?.access_token;
 
-            method: "POST",
+        if (!accessToken) {
+          throw new Error("Your login session is not valid. Please log out and log in again.");
+        }
 
-            headers: {
-              "Content-Type": "application/json"
-            },
+        const response = await fetch("/api/order", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({
+            serviceCountryPriceId,
+            quantity: 1,
+            autoSearchServer: true,
+            countryId,
+            countryCode,
+            countryName,
+            serviceName:
+              serviceData.serviceName ||
+              serviceData.name ||
+              serviceOption.dataset.serviceName ||
+              serviceOption.textContent,
+            availableServers:
+              Array.isArray(serviceData.available_servers)
+                ? serviceData.available_servers
+                : (Array.isArray(serviceData.servers) ? serviceData.servers : [])
+          })
+        });
 
-            body: JSON.stringify({
-
-              serviceCountryPriceId,
-
-              quantity: 1,
-
-              autoSearchServer: true,
-
-              countryId,
-
-              countryCode,
-
-              countryName,
-
-              serviceName:
-                serviceData.serviceName ||
-                serviceData.name ||
-                serviceOption.dataset.serviceName ||
-                serviceOption.textContent,
-
-              availableServers:
-                Array.isArray(serviceData.available_servers)
-                  ? serviceData.available_servers
-                  : (Array.isArray(serviceData.servers) ? serviceData.servers : [])
-
-            })
-
-          });
-
-
-        const result =
-          await response.json()
-            .catch(() => ({}));
-
+        const result = await response.json().catch(() => ({}));
 
         if (!response.ok) {
-
           throw new Error(
             result.message ||
             result.error ||
             "Unable to purchase number."
           );
-
         }
-
-
-        /*
-          Expected provider/server response.
-        */
 
         showToast(
           result.message ||
-          "Number purchase submitted successfully.",
+          "Number purchased successfully.",
           "success"
         );
 
-
         await loadActiveNumbers();
-
         await loadOrderHistory();
-
         await loadWallet();
-
         await loadDashboard();
-
         navigateTo("active");
 
-
       } catch (error) {
-
-        console.error(
-          "Purchase error:",
-          error
-        );
-
+        console.error("Purchase error:", error);
         showToast(
           error.message ||
           "Unable to purchase number.",
           "error"
         );
-
       } finally {
-
-        setButtonLoading(
-          button,
-          false
-        );
-
+        setButtonLoading(button, false);
       }
-
     }
 
 
@@ -5514,6 +5138,9 @@
 
 
       try {
+
+        const adminWallet = await supabaseClient.from("wallets").select("balance").eq("user_id", currentUser?.id || "").maybeSingle();
+        if (adminWallet?.data && $("adminWalletBalance")) $("adminWalletBalance").textContent = formatMoney(adminWallet.data.balance);
 
         await Promise.all([
           loadAdminUsers(),
@@ -6492,7 +6119,31 @@
 
     }
 
-  </script>
+  
+
+    function initSearchableSelect(selectId, placeholder) {
+      const select=document.getElementById(selectId);
+      if(!select || select.dataset.searchEnhanced==='1') return;
+      const wrap=document.createElement('div'); wrap.className='searchable-select-wrap';
+      select.parentNode.insertBefore(wrap,select); wrap.appendChild(select);
+      const input=document.createElement('input'); input.type='text'; input.className='searchable-select-input'; input.placeholder=placeholder; input.autocomplete='off';
+      const arrow=document.createElement('span'); arrow.className='searchable-select-arrow'; arrow.textContent='▾';
+      const list=document.createElement('div'); list.className='searchable-select-list';
+      wrap.append(input,arrow,list); select.dataset.searchEnhanced='1';
+      const opts=()=>Array.from(select.options).filter(o=>o.value);
+      function render(q=''){ const term=q.trim().toLowerCase(); list.innerHTML=''; const found=opts().filter(o=>o.textContent.toLowerCase().includes(term)); if(!found.length){list.innerHTML='<div class="searchable-select-empty">No matches found.</div>';return;} found.forEach(o=>{const b=document.createElement('button');b.type='button';b.className='searchable-select-option'+(o.value===select.value?' selected':'');b.textContent=o.textContent.trim();b.onclick=()=>{select.value=o.value;input.value=o.textContent.trim();wrap.classList.remove('open');select.dispatchEvent(new Event('change',{bubbles:true}));};list.appendChild(b);});}
+      function sync(){const o=select.options[select.selectedIndex];input.value=o&&o.value?o.textContent.trim():'';}
+      input.addEventListener('focus',()=>{render('');wrap.classList.add('open')}); input.addEventListener('input',()=>{render(input.value);wrap.classList.add('open')});
+      select.addEventListener('change',sync); new MutationObserver(()=>{sync();if(wrap.classList.contains('open'))render(input.value)}).observe(select,{childList:true,subtree:true}); sync();
+    }
+    function initGlobalVirtualSimUI(){
+      initSearchableSelect('countrySelect','Search country...'); initSearchableSelect('serviceSelect','Search service...');
+      initSearchableSelect('adminPricingCountry','Search country...'); initSearchableSelect('adminPricingService','Search service...');
+    }
+    document.addEventListener('click',e=>document.querySelectorAll('.searchable-select-wrap.open').forEach(w=>{if(!w.contains(e.target))w.classList.remove('open')}));
+    document.addEventListener('DOMContentLoaded',initGlobalVirtualSimUI);
+
+</script>
 
 </body>
 </html>
