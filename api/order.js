@@ -1,26 +1,19 @@
 import {
   sureVerificationRequest,
-  getServerForCountry,
-  getServersForCountry
+  getServerForCountry
 } from "./_lib.js";
 
 const SUPABASE_URL =
   process.env.SUPABASE_URL ||
   "https://rfitbmkizfmwfqqskwhy.supabase.co";
 
-const SUPABASE_PUBLISHABLE_KEY =
-  process.env.SUPABASE_PUBLISHABLE_KEY ||
-  "sb_publishable_erjKhsDOoyhbjHDExv7Q_gpGcK0C-";
-
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 
-/*
-  =========================================================
-  AUTHENTICATION
-  =========================================================
-*/
+/* =========================================================
+   AUTHENTICATION
+   ========================================================= */
 
 function getBearerToken(req) {
   const header =
@@ -28,11 +21,18 @@ function getBearerToken(req) {
     req.headers?.Authorization ||
     "";
 
-  if (!header.startsWith("Bearer ")) {
+  if (!header) {
     return null;
   }
 
-  return header.slice(7).trim();
+  if (!header.toLowerCase().startsWith("bearer ")) {
+    return null;
+  }
+
+  const token =
+    header.slice(7).trim();
+
+  return token || null;
 }
 
 
@@ -41,18 +41,30 @@ async function getAuthenticatedUser(req) {
     getBearerToken(req);
 
   if (!token) {
+    throw new Error("Unauthorized.");
+  }
+
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error(
-      "Unauthorized."
+      "SUPABASE_SERVICE_ROLE_KEY is not configured."
     );
   }
 
+  /*
+   * Validate the customer's actual Supabase access token.
+   *
+   * The service-role key is used only by this server-side
+   * Vercel function. It is NEVER sent to the browser.
+   */
   const response =
     await fetch(
       `${SUPABASE_URL}/auth/v1/user`,
       {
+        method: "GET",
+
         headers: {
           apikey:
-            SUPABASE_PUBLISHABLE_KEY,
+            SUPABASE_SERVICE_ROLE_KEY,
 
           Authorization:
             `Bearer ${token}`,
@@ -63,30 +75,47 @@ async function getAuthenticatedUser(req) {
       }
     );
 
+  const text =
+    await response.text();
+
+  let data = {};
+
+  try {
+    data =
+      text
+        ? JSON.parse(text)
+        : {};
+  } catch {
+    throw new Error(
+      "Supabase authentication returned invalid data."
+    );
+  }
+
   if (!response.ok) {
+    console.error(
+      "Supabase authentication failed:",
+      response.status,
+      data
+    );
+
     throw new Error(
       "Unauthorized."
     );
   }
 
-  const user =
-    await response.json();
-
-  if (!user?.id) {
+  if (!data?.id) {
     throw new Error(
       "Unauthorized."
     );
   }
 
-  return user;
+  return data;
 }
 
 
-/*
-  =========================================================
-  SUPABASE
-  =========================================================
-*/
+/* =========================================================
+   SUPABASE REST
+   ========================================================= */
 
 async function supabaseRequest(
   path,
@@ -154,11 +183,9 @@ async function supabaseRequest(
 }
 
 
-/*
-  =========================================================
-  HELPERS
-  =========================================================
-*/
+/* =========================================================
+   HELPERS
+   ========================================================= */
 
 function quote(value) {
   return encodeURIComponent(
@@ -168,14 +195,20 @@ function quote(value) {
 
 
 function getProviderPrice(data) {
-  return Number(
+  const value =
     data?.price ??
     data?.data?.price ??
     data?.amount ??
     data?.data?.amount ??
     data?.verification?.price ??
-    data?.verification?.amount
-  );
+    data?.verification?.amount;
+
+  const number =
+    Number(value);
+
+  return Number.isFinite(number)
+    ? number
+    : null;
 }
 
 
@@ -218,11 +251,9 @@ function getPhoneNumber(data) {
 }
 
 
-/*
-  =========================================================
-  WALLET DEBIT
-  =========================================================
-*/
+/* =========================================================
+   WALLET DEBIT
+   ========================================================= */
 
 async function debitWallet(
   userId,
@@ -232,9 +263,7 @@ async function debitWallet(
     Number(amount);
 
   if (
-    !Number.isFinite(
-      requiredAmount
-    ) ||
+    !Number.isFinite(requiredAmount) ||
     requiredAmount <= 0
   ) {
     throw new Error(
@@ -243,18 +272,17 @@ async function debitWallet(
   }
 
   /*
-    Optimistic compare-and-set debit.
-
-    The balance is checked and changed on the server,
-    scoped to the authenticated user.
-
-    The browser can never choose the amount to debit.
-  */
+   * Optimistic compare-and-set.
+   *
+   * The amount is taken from the server-side
+   * admin pricing table, not from the browser.
+   */
   for (
     let attempt = 0;
     attempt < 5;
     attempt++
   ) {
+
     const rows =
       await supabaseRequest(
         `wallets?user_id=eq.${quote(
@@ -307,8 +335,7 @@ async function debitWallet(
           currentBalance
         )}`,
         {
-          method:
-            "PATCH",
+          method: "PATCH",
 
           body:
             JSON.stringify({
@@ -316,7 +343,8 @@ async function debitWallet(
                 newBalance,
 
               updated_at:
-                new Date().toISOString()
+                new Date()
+                  .toISOString()
             })
         }
       );
@@ -340,11 +368,9 @@ async function debitWallet(
 }
 
 
-/*
-  =========================================================
-  WALLET REFUND
-  =========================================================
-*/
+/* =========================================================
+   WALLET REFUND
+   ========================================================= */
 
 async function refundWallet(
   userId,
@@ -367,6 +393,7 @@ async function refundWallet(
     attempt < 5;
     attempt++
   ) {
+
     const rows =
       await supabaseRequest(
         `wallets?user_id=eq.${quote(
@@ -400,8 +427,7 @@ async function refundWallet(
           currentBalance
         )}`,
         {
-          method:
-            "PATCH",
+          method: "PATCH",
 
           body:
             JSON.stringify({
@@ -409,7 +435,8 @@ async function refundWallet(
                 newBalance,
 
               updated_at:
-                new Date().toISOString()
+                new Date()
+                  .toISOString()
             })
         }
       );
@@ -433,11 +460,9 @@ async function refundWallet(
 }
 
 
-/*
-  =========================================================
-  WALLET TRANSACTION HISTORY
-  =========================================================
-*/
+/* =========================================================
+   WALLET TRANSACTION HISTORY
+   ========================================================= */
 
 async function createWalletTransaction({
   userId,
@@ -446,18 +471,19 @@ async function createWalletTransaction({
   description
 }) {
   try {
+
     await supabaseRequest(
       "wallet_transactions",
       {
-        method:
-          "POST",
+        method: "POST",
 
         body:
           JSON.stringify({
             user_id:
               userId,
 
-            amount,
+            amount:
+              amount,
 
             balance_after:
               balanceAfter,
@@ -465,18 +491,19 @@ async function createWalletTransaction({
             type:
               "order",
 
-            description
+            description:
+              description
           })
       }
     );
 
   } catch (error) {
-    /*
-      Do not turn a successful provider purchase
-      into a failed customer purchase merely because
-      transaction-history insertion has a schema problem.
-    */
 
+    /*
+     * Do not turn a successful purchase
+     * into a failed purchase merely because
+     * transaction history has a schema issue.
+     */
     console.error(
       "Wallet transaction history error:",
       error
@@ -485,11 +512,9 @@ async function createWalletTransaction({
 }
 
 
-/*
-  =========================================================
-  CREATE ORDER
-  =========================================================
-*/
+/* =========================================================
+   CREATE ORDER
+   ========================================================= */
 
 async function createOrder(
   userId,
@@ -498,8 +523,7 @@ async function createOrder(
   return await supabaseRequest(
     "orders",
     {
-      method:
-        "POST",
+      method: "POST",
 
       body:
         JSON.stringify({
@@ -542,314 +566,48 @@ async function createOrder(
 }
 
 
-/*
-  =========================================================
-  PROVIDER PURCHASE
-  =========================================================
-*/
+/* =========================================================
+   PURCHASE FROM SUREVERIFICATION
+   ========================================================= */
 
-/*
-  Purchase from one specific SureVerification server.
-*/
 async function purchaseFromServer({
   server,
   countryId,
   serviceId
 }) {
-  try {
-    const providerData =
-      await sureVerificationRequest(
-        `/${server}/purchase?country_id=${quote(
-          countryId
-        )}&service=${quote(
-          serviceId
-        )}`,
-        {
-          method:
-            "POST"
-        }
-      );
-
-    const verification =
-      getVerification(
-        providerData
-      );
-
-    const verificationId =
-      getVerificationId(
-        providerData
-      );
-
-    const phoneNumber =
-      getPhoneNumber(
-        providerData
-      );
-
-    /*
-      A successful provider response must contain
-      both the verification ID and phone number.
-    */
-    if (
-      !verificationId ||
-      !phoneNumber
-    ) {
-      return {
-        success:
-          false,
-
-        server,
-
-        providerData,
-
-        verification,
-
-        verificationId:
-          null,
-
-        phoneNumber:
-          null,
-
-        providerPrice:
-          getProviderPrice(
-            providerData
-          ),
-
-        error:
-          "The provider did not return a valid number."
-      };
+  return await sureVerificationRequest(
+    `/${server}/purchase?country_id=${quote(
+      countryId
+    )}&service=${quote(
+      serviceId
+    )}`,
+    {
+      method: "POST"
     }
-
-    return {
-      success:
-        true,
-
-      server,
-
-      providerData,
-
-      verification,
-
-      verificationId,
-
-      phoneNumber,
-
-      providerPrice:
-        getProviderPrice(
-          providerData
-        ),
-
-      error:
-        null
-    };
-
-  } catch (error) {
-    return {
-      success:
-        false,
-
-      server,
-
-      providerData:
-        null,
-
-      verification:
-        null,
-
-      verificationId:
-        null,
-
-      phoneNumber:
-        null,
-
-      providerPrice:
-        null,
-
-      error:
-        error?.message ||
-        "Unable to purchase from this provider server."
-    };
-  }
-}
-
-
-/*
-  =========================================================
-  MULTI-SERVER PURCHASE
-  =========================================================
-*/
-
-/*
-  Try every applicable SureVerification server.
-
-  USA:
-    usa-server-1
-    usa-server-2
-
-  Other countries:
-    global-server-1
-    global-server-2
-
-  The servers are attempted one at a time.
-*/
-async function purchaseFromAvailableServer({
-  countryId,
-  serviceId,
-  requestedServer
-}) {
-  const servers =
-    requestedServer
-      ? [requestedServer]
-      : getServersForCountry(
-          countryId
-        );
-
-
-  if (
-    !Array.isArray(servers) ||
-    !servers.length
-  ) {
-    throw new Error(
-      "No SureVerification server is available for this country."
-    );
-  }
-
-
-  const attempts = [];
-
-
-  for (
-    const server of servers
-  ) {
-    const result =
-      await purchaseFromServer({
-        server,
-        countryId,
-        serviceId
-      });
-
-
-    attempts.push(
-      {
-        server:
-          result.server,
-
-        success:
-          result.success,
-
-        provider_price:
-          result.providerPrice,
-
-        error:
-          result.error
-      }
-    );
-
-
-    /*
-      Stop immediately when a valid number
-      has been purchased.
-
-      We do NOT call another server after
-      a successful purchase.
-    */
-    if (
-      result.success
-    ) {
-      return {
-        ...result,
-
-        servers,
-
-        attempts
-      };
-    }
-  }
-
-
-  /*
-    None of the servers produced a number.
-  */
-  const meaningfulErrors =
-    attempts
-      .map(
-        attempt =>
-          attempt.error
-      )
-      .filter(Boolean);
-
-
-  /*
-    If one of the provider servers explicitly
-    reports no numbers, give the customer a
-    useful message rather than a generic error.
-  */
-  const noNumberError =
-    meaningfulErrors.find(
-      message => {
-        const value =
-          String(
-            message
-          ).toLowerCase();
-
-        return (
-          value.includes(
-            "no number"
-          ) ||
-          value.includes(
-            "no numbers"
-          ) ||
-          value.includes(
-            "unavailable"
-          ) ||
-          value.includes(
-            "out of stock"
-          ) ||
-          value.includes(
-            "stock"
-          ) ||
-          value.includes(
-            "not available"
-          ) ||
-          value.includes(
-            "no available"
-          )
-        );
-      }
-    );
-
-
-  throw new Error(
-    noNumberError ||
-    "No numbers are currently available for this service/country."
   );
 }
 
 
-/*
-  =========================================================
-  MAIN ORDER ENDPOINT
-  =========================================================
-*/
+/* =========================================================
+   MAIN HANDLER
+   ========================================================= */
 
 export default async function handler(
   req,
   res
 ) {
+
   if (
     req.method !== "POST"
   ) {
     return res.status(405).json({
-      success:
-        false,
-
+      success: false,
       error:
         "Method not allowed"
     });
   }
 
-
-  let user =
-    null;
+  let user = null;
 
   let debited =
     false;
@@ -857,37 +615,38 @@ export default async function handler(
   let debitAmount =
     0;
 
-
   try {
-    /*
-      Authenticate customer.
-    */
+
+    /* -----------------------------------------------------
+       AUTHENTICATE USER
+       ----------------------------------------------------- */
+
     user =
       await getAuthenticatedUser(
         req
       );
 
 
+    /* -----------------------------------------------------
+       READ REQUEST
+       ----------------------------------------------------- */
+
     const body =
       req.body || {};
-
 
     const countryId =
       body.countryId ??
       body.country_id;
-
 
     const countryName =
       body.countryName ??
       body.country_name ??
       "";
 
-
     const serviceId =
       body.serviceCountryPriceId ??
       body.serviceId ??
       body.service_id;
-
 
     const requestedServiceName =
       body.serviceName ??
@@ -895,16 +654,9 @@ export default async function handler(
       "";
 
 
-    const requestedServer =
-      body.server ||
-      null;
-
-
     if (!countryId) {
       return res.status(400).json({
-        success:
-          false,
-
+        success: false,
         error:
           "Country is required."
       });
@@ -913,24 +665,17 @@ export default async function handler(
 
     if (!serviceId) {
       return res.status(400).json({
-        success:
-          false,
-
+        success: false,
         error:
           "Service is required."
       });
     }
 
 
-    /*
-      =====================================================
-      ADMIN SELLING PRICE
-      =====================================================
+    /* -----------------------------------------------------
+       GET ADMIN SELLING PRICE
+       ----------------------------------------------------- */
 
-      The browser cannot choose the amount.
-
-      The price stored in product_prices is authoritative.
-    */
     const pricingRows =
       await supabaseRequest(
         `product_prices?country_id=eq.${quote(
@@ -939,7 +684,6 @@ export default async function handler(
           serviceId
         )}&select=country_id,country_name,service_id,service_name,selling_price&limit=1`
       );
-
 
     const pricing =
       pricingRows?.[0];
@@ -958,8 +702,7 @@ export default async function handler(
       sellingPrice <= 0
     ) {
       return res.status(400).json({
-        success:
-          false,
+        success: false,
 
         error:
           "This country and service is not currently available for purchase."
@@ -970,26 +713,70 @@ export default async function handler(
     const serviceName =
       pricing?.service_name ||
       requestedServiceName ||
-      String(
-        serviceId
-      );
+      String(serviceId);
 
+
+    /* -----------------------------------------------------
+       DETERMINE PROVIDER SERVERS
+       ----------------------------------------------------- */
+
+    const serverList = [];
 
     /*
-      =====================================================
-      WALLET DEBIT
-      =====================================================
+     * For USA use the USA servers.
+     * For other countries use the global servers.
+     *
+     * getServerForCountry()
+     * remains the fallback.
+     */
 
-      Customer pays the configured selling price.
+    if (
+      String(countryId)
+        .toLowerCase()
+        .trim() === "us"
+    ) {
 
-      Provider cost is separate.
-    */
+      serverList.push(
+        "usa-server-1",
+        "usa-server-2"
+      );
+
+    } else {
+
+      serverList.push(
+        "global-server-1",
+        "global-server-2"
+      );
+
+    }
+
+
+    const fallbackServer =
+      getServerForCountry(
+        countryId
+      );
+
+    if (
+      fallbackServer &&
+      !serverList.includes(
+        fallbackServer
+      )
+    ) {
+      serverList.push(
+        fallbackServer
+      );
+    }
+
+
+    /* -----------------------------------------------------
+       DEBIT CUSTOMER WALLET
+       ----------------------------------------------------- */
+
     const debit =
       await debitWallet(
         user.id,
         sellingPrice
       );
-
 
     debited =
       true;
@@ -998,127 +785,194 @@ export default async function handler(
       sellingPrice;
 
 
-    /*
-      =====================================================
-      SUREVERIFICATION
-      =====================================================
+    /* -----------------------------------------------------
+       PURCHASE NUMBER
+       ----------------------------------------------------- */
 
-      Check all applicable servers.
+    let providerData =
+      null;
 
-      USA:
-        usa-server-1
-        usa-server-2
+    let providerServer =
+      null;
 
-      Other countries:
-        global-server-1
-        global-server-2
-    */
-    let providerResult;
+    let lastProviderError =
+      null;
 
 
-    try {
-      providerResult =
-        await purchaseFromAvailableServer({
-          countryId,
-          serviceId,
-          requestedServer
-        });
+    for (
+      const server of serverList
+    ) {
 
-    } catch (providerError) {
-      /*
-        Provider purchase failed on all available
-        servers, so refund the customer.
-      */
       try {
-        await refundWallet(
-          user.id,
-          sellingPrice
-        );
 
-      } catch (refundError) {
+        const result =
+          await purchaseFromServer({
+            server,
+            countryId,
+            serviceId
+          });
+
+        const verification =
+          getVerification(
+            result
+          );
+
+        const verificationId =
+          getVerificationId(
+            result
+          );
+
+        const phoneNumber =
+          getPhoneNumber(
+            result
+          );
+
+
+        /*
+         * A successful response must contain
+         * both a verification ID and number.
+         */
+        if (
+          verificationId &&
+          phoneNumber
+        ) {
+
+          providerData =
+            result;
+
+          providerServer =
+            server;
+
+          break;
+        }
+
+
+        lastProviderError =
+          new Error(
+            "Provider did not return a valid number."
+          );
+
+      } catch (error) {
+
+        lastProviderError =
+          error;
+
         console.error(
-          "Automatic purchase refund failed:",
-          refundError
+          `SureVerification purchase failed on ${server}:`,
+          error
         );
       }
-
-
-      debited =
-        false;
-
-
-      throw new Error(
-        providerError?.message ||
-        "Unable to purchase number from the provider."
-      );
     }
 
 
-    /*
-      =====================================================
-      VERIFY PROVIDER RESPONSE
-      =====================================================
-    */
-
-    const verification =
-      providerResult.verification;
-
-
-    const verificationId =
-      providerResult.verificationId;
-
-
-    const phoneNumber =
-      providerResult.phoneNumber;
-
+    /* -----------------------------------------------------
+       NO NUMBER FOUND
+       ----------------------------------------------------- */
 
     if (
-      !verificationId ||
-      !phoneNumber
+      !providerData ||
+      !providerServer
     ) {
+
       try {
+
         await refundWallet(
           user.id,
           sellingPrice
         );
 
+        debited =
+          false;
+
       } catch (refundError) {
+
         console.error(
-          "Refund after incomplete provider response failed:",
+          "Purchase refund failed:",
           refundError
+        );
+
+        throw new Error(
+          "No number was purchased and the automatic wallet refund could not be completed. Please contact support."
         );
       }
 
 
-      debited =
-        false;
+      const providerMessage =
+        lastProviderError?.message ||
+        "";
+
+      const lowerMessage =
+        String(
+          providerMessage
+        ).toLowerCase();
+
+
+      if (
+        lowerMessage.includes(
+          "no number"
+        ) ||
+        lowerMessage.includes(
+          "no numbers"
+        ) ||
+        lowerMessage.includes(
+          "unavailable"
+        ) ||
+        lowerMessage.includes(
+          "out of stock"
+        ) ||
+        lowerMessage.includes(
+          "stock"
+        ) ||
+        lowerMessage.includes(
+          "no available"
+        )
+      ) {
+
+        throw new Error(
+          "No numbers are currently available for this service/country."
+        );
+      }
 
 
       throw new Error(
-        "The provider did not return a valid number. Your wallet was refunded."
+        "No numbers available for this service/country. Your wallet was refunded."
       );
     }
 
 
-    /*
-      Provider's actual cost.
-    */
+    /* -----------------------------------------------------
+       EXTRACT PURCHASE DETAILS
+       ----------------------------------------------------- */
+
+    const verification =
+      getVerification(
+        providerData
+      );
+
+    const verificationId =
+      getVerificationId(
+        providerData
+      );
+
+    const phoneNumber =
+      getPhoneNumber(
+        providerData
+      );
+
     const providerPrice =
-      Number(
-        providerResult.providerPrice
+      getProviderPrice(
+        providerData
       );
 
 
-    /*
-      =====================================================
-      CREATE ORDER
-      =====================================================
-    */
+    /* -----------------------------------------------------
+       CREATE ORDER
+       ----------------------------------------------------- */
 
     let orderRows;
 
-
     try {
+
       orderRows =
         await createOrder(
           user.id,
@@ -1128,9 +982,7 @@ export default async function handler(
             countryName:
               pricing?.country_name ||
               countryName ||
-              String(
-                countryId
-              ),
+              String(countryId),
 
             serviceId,
 
@@ -1142,15 +994,9 @@ export default async function handler(
 
             sellingPrice,
 
-            providerPrice:
-              Number.isFinite(
-                providerPrice
-              )
-                ? providerPrice
-                : null,
+            providerPrice,
 
-            providerServer:
-              providerResult.server,
+            providerServer,
 
             status:
               verification?.status ||
@@ -1159,48 +1005,42 @@ export default async function handler(
         );
 
     } catch (orderError) {
+
       /*
-        IMPORTANT:
-
-        If the provider already gave us a real number
-        but our database order creation fails, refund
-        the customer.
-
-        The provider number may still exist at the
-        provider, but the customer's wallet will not
-        be charged for an order that we failed to record.
-      */
-
+       * Provider successfully gave us a number,
+       * but our database order creation failed.
+       *
+       * Refund the customer.
+       */
       try {
+
         await refundWallet(
           user.id,
           sellingPrice
         );
 
+        debited =
+          false;
+
       } catch (refundError) {
+
         console.error(
           "Refund after order creation failure failed:",
           refundError
         );
+
+        throw new Error(
+          "The number was received from the provider, but the order could not be saved and the automatic refund failed. Please contact support immediately."
+        );
       }
 
-
-      debited =
-        false;
-
-
-      throw new Error(
-        orderError?.message ||
-        "Unable to save your order. Your wallet was refunded."
-      );
+      throw orderError;
     }
 
 
-    /*
-      =====================================================
-      BALANCE AFTER PURCHASE
-      =====================================================
-    */
+    /* -----------------------------------------------------
+       GET CURRENT WALLET BALANCE
+       ----------------------------------------------------- */
 
     const walletRows =
       await supabaseRequest(
@@ -1217,11 +1057,9 @@ export default async function handler(
       );
 
 
-    /*
-      =====================================================
-      TRANSACTION HISTORY
-      =====================================================
-    */
+    /* -----------------------------------------------------
+       RECORD WALLET TRANSACTION
+       ----------------------------------------------------- */
 
     await createWalletTransaction({
       userId:
@@ -1230,30 +1068,24 @@ export default async function handler(
       amount:
         -sellingPrice,
 
-      balanceAfter,
+      balanceAfter:
+        balanceAfter,
 
       description:
         `Purchase: ${serviceName} ${phoneNumber}`
     });
 
 
-    /*
-      Debit has now been successfully
-      converted into a completed order.
-    */
     debited =
       false;
 
 
-    /*
-      =====================================================
-      SUCCESS
-      =====================================================
-    */
+    /* -----------------------------------------------------
+       SUCCESS
+       ----------------------------------------------------- */
 
     return res.status(200).json({
-      success:
-        true,
+      success: true,
 
       message:
         "Number purchased successfully.",
@@ -1272,85 +1104,53 @@ export default async function handler(
           phoneNumber
       },
 
-      /*
-        Provider server used.
-      */
       provider_server:
-        providerResult.server,
+        providerServer,
 
-      providerServer:
-        providerResult.server,
-
-      /*
-        Actual provider cost.
-      */
       provider_price:
-        Number.isFinite(
-          providerPrice
-        )
-          ? providerPrice
-          : null,
+        providerPrice,
 
-      providerPrice:
-        Number.isFinite(
-          providerPrice
-        )
-          ? providerPrice
-          : null,
-
-      /*
-        Customer selling price.
-      */
       selling_price:
         sellingPrice,
 
       sellingPrice:
         sellingPrice,
 
-      /*
-        Applicable servers that were checked.
-      */
-      servers:
-        providerResult.servers,
-
-      serverAttempts:
-        providerResult.attempts,
-
-      /*
-        Remaining wallet balance.
-      */
       balance:
         balanceAfter
     });
 
 
   } catch (error) {
+
     console.error(
       "Order purchase error:",
       error
     );
 
 
-    /*
-      =====================================================
-      SAFETY REFUND
-      =====================================================
+    /* -----------------------------------------------------
+       SAFETY REFUND
+       ----------------------------------------------------- */
 
-      If an unexpected error happened after the wallet
-      was debited, attempt to refund the customer.
-    */
     if (
       debited &&
       user?.id &&
       debitAmount > 0
     ) {
+
       try {
+
         await refundWallet(
           user.id,
           debitAmount
         );
 
+        debited =
+          false;
+
       } catch (refundError) {
+
         console.error(
           "Safety refund failed:",
           refundError
@@ -1364,10 +1164,10 @@ export default async function handler(
       "Unable to purchase number.";
 
 
-    /*
-      Exact insufficient-balance message
-      requested for the website.
-    */
+    /* -----------------------------------------------------
+       INSUFFICIENT BALANCE
+       ----------------------------------------------------- */
+
     if (
       String(message)
         .toLowerCase()
@@ -1375,9 +1175,9 @@ export default async function handler(
           "insufficient"
         )
     ) {
+
       return res.status(400).json({
-        success:
-          false,
+        success: false,
 
         error:
           "Insufficient wallet balance.",
@@ -1388,52 +1188,36 @@ export default async function handler(
     }
 
 
+    /* -----------------------------------------------------
+       UNAUTHORIZED
+       ----------------------------------------------------- */
+
     if (
       message ===
       "Unauthorized."
     ) {
+
       return res.status(401).json({
-        success:
-          false,
+        success: false,
 
         error:
-          message
+          "Unauthorized."
       });
     }
 
 
-    /*
-      Provider ran out of numbers on all
-      applicable servers.
-    */
-    if (
-      String(message)
-        .toLowerCase()
-        .includes(
-          "no numbers"
-        )
-    ) {
-      return res.status(400).json({
-        success:
-          false,
-
-        error:
-          "No numbers are currently available for this service/country.",
-
-        message:
-          "No numbers are currently available for this service/country."
-      });
-    }
-
+    /* -----------------------------------------------------
+       OTHER ERROR
+       ----------------------------------------------------- */
 
     return res.status(500).json({
-      success:
-        false,
+      success: false,
 
       error:
         message,
 
-      message
+      message:
+        message
     });
   }
 }
