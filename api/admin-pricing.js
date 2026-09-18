@@ -1,242 +1,26 @@
-import {
-  sureVerificationRequest,
-  getServerForCountry
-} from "./_lib.js";
-
-const SUPABASE_URL =
-  "https://rfitbmkizfmwfqqskwhy.supabase.co";
-
-const SUPABASE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-async function supabaseRequest(path, options = {}) {
-  if (!SUPABASE_KEY) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not configured."
-    );
-  }
-
-  const response = await fetch(
-    `${SUPABASE_URL}/rest/v1/${path}`,
-    {
-      ...options,
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": "application/json",
-        Prefer: "return=representation",
-        ...(options.headers || {})
-      }
+import { authUser, sb } from "./_supabase.js";
+function q(v){return encodeURIComponent(String(v??""))}
+async function admin(userId){const r=await sb(`profiles?id=eq.${q(userId)}&select=role&limit=1`);return r?.[0]?.role==="admin";}
+export default async function handler(req,res){
+  try{
+    const u=await authUser(req);
+    if(!(await admin(u.id))) return res.status(403).json({success:false,error:"Admin access required."});
+    if(req.method==="GET"){
+      const rows=await sb("product_prices?select=*&order=country_name.asc,service_name.asc");
+      return res.status(200).json({success:true,prices:rows});
     }
-  );
-
-  const text = await response.text();
-
-  let data = {};
-
-  try {
-    data = text ? JSON.parse(text) : {};
-  } catch {
-    throw new Error(
-      `Supabase returned invalid JSON (HTTP ${response.status}).`
-    );
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      data?.message ||
-      data?.hint ||
-      data?.details ||
-      `Supabase returned HTTP ${response.status}.`
-    );
-  }
-
-  return data;
-}
-
-function getToken(req) {
-  const header =
-    req.headers?.authorization ||
-    req.headers?.Authorization ||
-    "";
-
-  if (!header.startsWith("Bearer ")) {
-    return null;
-  }
-
-  return header.slice(7);
-}
-
-async function verifyAdmin(req) {
-  const token = getToken(req);
-
-  if (!token) {
-    throw new Error("Unauthorized.");
-  }
-
-  const response = await fetch(
-    `${SUPABASE_URL}/auth/v1/user`,
-    {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${token}`
-      }
+    if(req.method==="POST"||req.method==="PATCH"){
+      const b=req.body||{};
+      if(!b.countryId||!b.serviceId) return res.status(400).json({success:false,error:"Country and service are required."});
+      const price=Number(b.sellingPrice);
+      if(!Number.isFinite(price)||price<=0) return res.status(400).json({success:false,error:"Enter a valid selling price."});
+      const row={country_id:b.countryId,country_name:b.countryName||String(b.countryId),service_id:b.serviceId,service_name:b.serviceName||String(b.serviceId),selling_price:price,updated_at:new Date().toISOString()};
+      const existing=await sb(`product_prices?country_id=eq.${q(b.countryId)}&service_id=eq.${q(b.serviceId)}&select=id&limit=1`);
+      const data=existing?.[0]
+        ? await sb(`product_prices?id=eq.${q(existing[0].id)}`,{method:"PATCH",body:JSON.stringify(row)})
+        : await sb("product_prices",{method:"POST",body:JSON.stringify(row)});
+      return res.status(200).json({success:true,message:"Selling price saved successfully.",price:data?.[0]||null});
     }
-  );
-
-  if (!response.ok) {
-    throw new Error("Unauthorized.");
-  }
-
-  const user = await response.json();
-
-  const profiles =
-    await supabaseRequest(
-      `profiles?id=eq.${encodeURIComponent(
-        user.id
-      )}&select=id,role&limit=1`
-    );
-
-  const profile = profiles?.[0];
-
-  if (!profile || profile.role !== "admin") {
-    throw new Error("Administrator access is required.");
-  }
-
-  return user;
-}
-
-export default async function handler(req, res) {
-  try {
-    await verifyAdmin(req);
-
-    if (req.method === "GET") {
-      const rows =
-        await supabaseRequest(
-          "product_prices?select=*&order=updated_at.desc"
-        );
-
-      return res.status(200).json({
-        success: true,
-        prices: rows || []
-      });
-    }
-
-    if (req.method !== "POST") {
-      return res.status(405).json({
-        success: false,
-        error: "Method not allowed"
-      });
-    }
-
-    const {
-      countryId,
-      countryName,
-      serviceId,
-      serviceName,
-      sellingPrice
-    } = req.body || {};
-
-    if (!countryId) {
-      return res.status(400).json({
-        success: false,
-        error: "Country is required."
-      });
-    }
-
-    if (!serviceId) {
-      return res.status(400).json({
-        success: false,
-        error: "Service is required."
-      });
-    }
-
-    const price =
-      Number(sellingPrice);
-
-    if (
-      !Number.isFinite(price) ||
-      price <= 0
-    ) {
-      return res.status(400).json({
-        success: false,
-        error: "Enter a valid selling price."
-      });
-    }
-
-    const existing =
-      await supabaseRequest(
-        `product_prices?country_id=eq.${encodeURIComponent(
-          countryId
-        )}&service_id=eq.${encodeURIComponent(
-          serviceId
-        )}&select=id&limit=1`
-      );
-
-    let result;
-
-    if (existing?.length) {
-      result =
-        await supabaseRequest(
-          `product_prices?id=eq.${encodeURIComponent(
-            existing[0].id
-          )}`,
-          {
-            method: "PATCH",
-            body: JSON.stringify({
-              country_id: countryId,
-              country_name: countryName || "",
-              service_id: serviceId,
-              service_name: serviceName || "",
-              selling_price: price,
-              updated_at: new Date().toISOString()
-            })
-          }
-        );
-    } else {
-      result =
-        await supabaseRequest(
-          "product_prices",
-          {
-            method: "POST",
-            body: JSON.stringify({
-              country_id: countryId,
-              country_name: countryName || "",
-              service_id: serviceId,
-              service_name: serviceName || "",
-              selling_price: price
-            })
-          }
-        );
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Selling price saved successfully.",
-      price: result?.[0] || result
-    });
-
-  } catch (error) {
-    console.error(
-      "Admin pricing error:",
-      error
-    );
-
-    const message =
-      error?.message ||
-      "Unable to manage pricing.";
-
-    const status =
-      message === "Unauthorized."
-        ? 401
-        : message ===
-            "Administrator access is required."
-          ? 403
-          : 500;
-
-    return res.status(status).json({
-      success: false,
-      error: message
-    });
-  }
+    return res.status(405).json({success:false,error:"Method not allowed"});
+  }catch(e){res.status(e.message==="Unauthorized."?401:500).json({success:false,error:e.message||"Admin pricing failed."});}
 }
