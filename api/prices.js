@@ -1,35 +1,28 @@
 import {
   sureVerificationRequest,
-  getServerForCountry
+  getServersForCountry
 } from "./_lib.js";
-
 
 const SUPABASE_URL =
   process.env.SUPABASE_URL ||
   "https://rfitbmkizfmwfqqskwhy.supabase.co";
-
 
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 
 /*
-  -------------------------------------------------------
-  Supabase server request
-  -------------------------------------------------------
+  Supabase REST helper
 */
-
 async function supabaseRequest(
   path,
   options = {}
 ) {
-
   if (!SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error(
       "SUPABASE_SERVICE_ROLE_KEY is not configured."
     );
   }
-
 
   const response =
     await fetch(
@@ -50,149 +43,82 @@ async function supabaseRequest(
           Accept:
             "application/json",
 
-          Prefer:
-            "return=representation",
-
           ...(options.headers || {})
         }
       }
     );
 
-
   const text =
     await response.text();
-
 
   let data = {};
 
   try {
-
     data =
       text
         ? JSON.parse(text)
         : {};
-
   } catch {
-
     throw new Error(
       `Supabase returned invalid JSON (HTTP ${response.status}).`
     );
-
   }
 
-
   if (!response.ok) {
-
     throw new Error(
       data?.message ||
       data?.hint ||
       data?.details ||
       `Supabase request failed (HTTP ${response.status}).`
     );
-
   }
 
-
   return data;
-
 }
 
 
 /*
-  -------------------------------------------------------
-  MAIN PRICE HANDLER
-  -------------------------------------------------------
+  Extract provider price from the
+  different response formats.
 */
+function extractProviderPrice(data) {
+  const candidates = [
+    data?.price,
+    data?.amount,
+    data?.data?.price,
+    data?.data?.amount,
+    data?.providerResponse?.price,
+    data?.providerResponse?.amount
+  ];
 
-export default async function handler(
-  req,
-  res
-) {
-
-  if (
-    req.method !== "GET"
+  for (
+    const candidate of candidates
   ) {
+    const value =
+      Number(candidate);
 
-    return res.status(405).json({
-      success:
-        false,
-
-      error:
-        "Method not allowed"
-    });
-
+    if (
+      Number.isFinite(value) &&
+      value > 0
+    ) {
+      return value;
+    }
   }
 
+  return null;
+}
 
+
+/*
+  Check one SureVerification server.
+*/
+async function checkServerPrice(
+  server,
+  countryId,
+  service
+) {
   try {
-
-    /*
-      ---------------------------------------------------
-      1. Read country and service
-      ---------------------------------------------------
-    */
-
-    const countryId =
-      req.query?.countryId;
-
-
-    const service =
-      req.query?.service;
-
-
-    const requestedServer =
-      req.query?.server;
-
-
-    if (!countryId) {
-
-      return res.status(400).json({
-        success:
-          false,
-
-        error:
-          "countryId is required"
-      });
-
-    }
-
-
-    if (!service) {
-
-      return res.status(400).json({
-        success:
-          false,
-
-        error:
-          "service is required"
-      });
-
-    }
-
-
-    /*
-      ---------------------------------------------------
-      2. Determine SureVerification server
-      ---------------------------------------------------
-    */
-
-    const server =
-      requestedServer ||
-      getServerForCountry(
-        countryId
-      );
-
-
-    /*
-      ---------------------------------------------------
-      3. Get provider price.
-      
-      This is the SureVerification cost.
-      It is NOT the customer's selling price.
-      ---------------------------------------------------
-    */
-
-    const providerData =
+    const data =
       await sureVerificationRequest(
         `/${server}/price?country_id=${encodeURIComponent(
           countryId
@@ -201,56 +127,178 @@ export default async function handler(
         )}`
       );
 
-
     const providerPrice =
-      Number(
-        providerData?.price ??
-        providerData?.data?.price ??
-        providerData?.amount ??
-        providerData?.data?.amount
-      );
+      extractProviderPrice(data);
+
+    return {
+      server,
+
+      available:
+        providerPrice !== null,
+
+      provider_price:
+        providerPrice,
+
+      providerPrice:
+        providerPrice,
+
+      error:
+        providerPrice === null
+          ? "Provider price is unavailable."
+          : null
+    };
+
+  } catch (error) {
+    console.error(
+      `SureVerification ${server} price error:`,
+      error
+    );
+
+    return {
+      server,
+
+      available: false,
+
+      provider_price: null,
+
+      providerPrice: null,
+
+      error:
+        error?.message ||
+        "Unable to load provider price."
+    };
+  }
+}
 
 
-    if (
-      !Number.isFinite(
-        providerPrice
-      ) ||
-      providerPrice <= 0
-    ) {
+/*
+  Main prices endpoint
+*/
+export default async function handler(
+  req,
+  res
+) {
+  if (
+    req.method !== "GET"
+  ) {
+    return res.status(405).json({
+      success: false,
+      error: "Method not allowed"
+    });
+  }
 
+  try {
+    const countryId =
+      req.query?.countryId;
+
+    const service =
+      req.query?.service;
+
+    const requestedServer =
+      req.query?.server;
+
+
+    if (!countryId) {
       return res.status(400).json({
-        success:
-          false,
+        success: false,
 
         error:
-          "Unable to determine the provider price.",
-
-        server,
-
-        countryId,
-
-        service
+          "countryId is required"
       });
+    }
 
+
+    if (!service) {
+      return res.status(400).json({
+        success: false,
+
+        error:
+          "service is required"
+      });
     }
 
 
     /*
-      ---------------------------------------------------
-      4. Look for ADMIN SELLING PRICE
-      ---------------------------------------------------
-    */
+      Use a specific server when requested.
 
-    let sellingPrice =
+      Otherwise check both servers
+      available for the country.
+    */
+    const servers =
+      requestedServer
+        ? [requestedServer]
+        : getServersForCountry(
+            countryId
+          );
+
+
+    /*
+      Check all applicable provider
+      servers at the same time.
+    */
+    const serverResults =
+      await Promise.all(
+        servers.map(
+          server =>
+            checkServerPrice(
+              server,
+              countryId,
+              service
+            )
+        )
+      );
+
+
+    /*
+      Keep only servers that returned
+      a valid provider price.
+    */
+    const availableServers =
+      serverResults
+        .filter(
+          result =>
+            result.available
+        );
+
+
+    /*
+      Sort provider prices from
+      cheapest to most expensive.
+
+      This is ONLY provider cost.
+      It does NOT change the customer's
+      configured selling price.
+    */
+    availableServers.sort(
+      (a, b) =>
+        Number(
+          a.provider_price
+        ) -
+        Number(
+          b.provider_price
+        )
+    );
+
+
+    /*
+      The cheapest available provider
+      server is the first candidate.
+    */
+    const selectedProvider =
+      availableServers[0] ||
       null;
 
+
+    /*
+      Load the admin selling price.
+    */
+    let sellingPrice =
+      null;
 
     let pricing =
       null;
 
-
     try {
-
       const pricingRows =
         await supabaseRequest(
           `product_prices?country_id=eq.${encodeURIComponent(
@@ -260,19 +308,16 @@ export default async function handler(
           )}&select=id,country_id,country_name,service_id,service_name,selling_price&limit=1`
         );
 
-
       pricing =
         pricingRows?.[0] ||
         null;
 
 
       if (pricing) {
-
         const configuredPrice =
           Number(
             pricing.selling_price
           );
-
 
         if (
           Number.isFinite(
@@ -280,95 +325,50 @@ export default async function handler(
           ) &&
           configuredPrice > 0
         ) {
-
           sellingPrice =
             configuredPrice;
-
         }
-
       }
 
-    } catch (
-      pricingError
-    ) {
-
+    } catch (pricingError) {
       console.error(
         "Admin selling price lookup error:",
         pricingError
       );
-
     }
 
 
     /*
-      ---------------------------------------------------
-      5. Do NOT expose provider price as customer price.
-      ---------------------------------------------------
+      Return all provider prices so
+      the purchase endpoint can choose
+      an available provider.
     */
-
-    if (
-      sellingPrice === null
-    ) {
-
-      return res.status(200).json({
-
-        success:
-          true,
-
-        configured:
-          false,
-
-        server,
-
-        countryId,
-
-        service,
-
-        selling_price:
-          null,
-
-        sellingPrice:
-          null,
-
-        /*
-          Provider price is returned separately
-          for internal/admin information.
-        */
-
-        provider_price:
-          providerPrice,
-
-        message:
-          "Selling price has not been configured for this country and service."
-
-      });
-
-    }
-
-
-    /*
-      ---------------------------------------------------
-      6. Return configured admin selling price.
-      ---------------------------------------------------
-    */
-
     return res.status(200).json({
-
-      success:
-        true,
-
-      configured:
-        true,
-
-      server,
+      success: true,
 
       countryId,
 
       service,
 
-      /*
-        This is the price the CUSTOMER pays.
-      */
+      servers,
+
+      serverResults,
+
+      availableServers,
+
+      selectedProvider,
+
+      selectedServer:
+        selectedProvider?.server ||
+        null,
+
+      provider_price:
+        selectedProvider?.provider_price ||
+        null,
+
+      providerPrice:
+        selectedProvider?.providerPrice ||
+        null,
 
       selling_price:
         sellingPrice,
@@ -376,41 +376,24 @@ export default async function handler(
       sellingPrice:
         sellingPrice,
 
-      /*
-        Provider cost kept separate.
-      */
+      configured:
+        sellingPrice !== null,
 
-      provider_price:
-        providerPrice,
-
-      providerPrice:
-        providerPrice,
-
-      pricing:
-        pricing
-
+      pricing
     });
 
-
   } catch (error) {
-
     console.error(
       "SureVerification price error:",
       error
     );
 
-
     return res.status(500).json({
-
-      success:
-        false,
+      success: false,
 
       error:
         error?.message ||
         "Unable to load price."
-
     });
-
   }
-
 }
