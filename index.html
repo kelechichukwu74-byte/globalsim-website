@@ -976,6 +976,17 @@
       padding: 18px;
     }
 
+    .searchable-select-wrap { position:relative; }
+    .searchable-select-wrap > select { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+    .searchable-select-input { width:100%; border:1px solid #dbe2ea; background:#fff; border-radius:10px; padding:12px 38px 12px 13px; color:#111827; outline:none; }
+    .searchable-select-input:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.10); }
+    .searchable-select-arrow { position:absolute; right:13px; top:50%; transform:translateY(-50%); pointer-events:none; color:#64748b; }
+    .searchable-select-list { position:absolute; left:0; right:0; top:calc(100% + 5px); max-height:260px; overflow-y:auto; background:#fff; border:1px solid #dbe2ea; border-radius:11px; box-shadow:0 15px 35px rgba(15,23,42,.15); z-index:3000; display:none; padding:5px; }
+    .searchable-select-wrap.open .searchable-select-list { display:block; }
+    .searchable-select-option { width:100%; border:0; background:transparent; text-align:left; padding:10px 11px; border-radius:8px; font-size:12px; color:#1e293b; }
+    .searchable-select-option:hover,.searchable-select-option.selected { background:#eff6ff; color:#1d4ed8; }
+    .searchable-select-empty { padding:11px; color:#64748b; font-size:12px; }
+
     /* =========================================================
        MOBILE
        ========================================================= */
@@ -1130,6 +1141,7 @@
           <div class="form-group">
             <label for="loginPassword">Password</label>
 
+            <div class="password-wrap">
             <input
               id="loginPassword"
               class="form-control"
@@ -1138,6 +1150,8 @@
               required
               placeholder="Enter your password"
             />
+            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('loginPassword', this)" aria-label="Show password">👁</button>
+            </div>
           </div>
 
           <button
@@ -1217,6 +1231,7 @@
           <div class="form-group">
             <label for="registerPassword">Password</label>
 
+            <div class="password-wrap">
             <input
               id="registerPassword"
               class="form-control"
@@ -1226,6 +1241,8 @@
               minlength="6"
               placeholder="At least 6 characters"
             />
+            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('registerPassword', this)" aria-label="Show password">👁</button>
+            </div>
           </div>
 
           <div class="form-group">
@@ -1233,6 +1250,7 @@
               Confirm Password
             </label>
 
+            <div class="password-wrap">
             <input
               id="registerConfirmPassword"
               class="form-control"
@@ -1242,6 +1260,8 @@
               minlength="6"
               placeholder="Repeat your password"
             />
+            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('registerConfirmPassword', this)" aria-label="Show password">👁</button>
+            </div>
           </div>
 
           <label class="checkbox-row">
@@ -2799,7 +2819,7 @@
       "https://rfitbmkizfmwfqqskwhy.supabase.co";
 
     const SUPABASE_PUBLISHABLE_KEY =
-      "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
+      "sb_publishable_erjKhsDOoyhbHDExv7Q_gpGcK0C-";
 
     const supabaseClient =
       window.supabase.createClient(
@@ -4841,14 +4861,19 @@
           be placed in this HTML.
         */
 
-        const response =
-          await fetch("/api/order", {
+        const accessToken = await getCurrentAccessToken();
+
+        if (!accessToken) {
+          throw new Error("Your login session is not valid. Please log out and log in again.");
+        }
+
+        const response = await fetch("/api/order", {
 
             method: "POST",
 
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${await getCurrentAccessToken()}`
+              Authorization: `Bearer ${accessToken}`
             },
 
             body: JSON.stringify({
@@ -6492,6 +6517,72 @@
       init();
 
     }
+
+
+    function initSearchableSelect(selectId, placeholder) {
+      const select = document.getElementById(selectId);
+      if (!select || select.dataset.searchEnhanced === "1") return;
+      const wrap = document.createElement("div");
+      wrap.className = "searchable-select-wrap";
+      select.parentNode.insertBefore(wrap, select);
+      wrap.appendChild(select);
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "searchable-select-input";
+      input.placeholder = placeholder;
+      input.autocomplete = "off";
+      const arrow = document.createElement("span");
+      arrow.className = "searchable-select-arrow";
+      arrow.textContent = "▾";
+      const list = document.createElement("div");
+      list.className = "searchable-select-list";
+      wrap.append(input, arrow, list);
+      select.dataset.searchEnhanced = "1";
+      const opts = () => Array.from(select.options).filter(o => o.value);
+      function sync() {
+        const o = select.options[select.selectedIndex];
+        input.value = o && o.value ? o.textContent.trim() : "";
+      }
+      function render(query = "") {
+        const term = query.trim().toLowerCase();
+        list.innerHTML = "";
+        const found = opts().filter(o => o.textContent.toLowerCase().includes(term));
+        if (!found.length) { list.innerHTML = '<div class="searchable-select-empty">No matches found.</div>'; return; }
+        found.forEach(o => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "searchable-select-option" + (o.value === select.value ? " selected" : "");
+          b.textContent = o.textContent.trim();
+          b.onclick = () => {
+            select.value = o.value;
+            input.value = o.textContent.trim();
+            wrap.classList.remove("open");
+            select.dispatchEvent(new Event("change", { bubbles:true }));
+          };
+          list.appendChild(b);
+        });
+      }
+      input.addEventListener("focus", () => { render(""); wrap.classList.add("open"); });
+      input.addEventListener("input", () => { render(input.value); wrap.classList.add("open"); });
+      select.addEventListener("change", sync);
+      new MutationObserver(() => { sync(); if (wrap.classList.contains("open")) render(input.value); }).observe(select, { childList:true, subtree:true });
+      sync();
+    }
+
+    function initSearchableControls() {
+      initSearchableSelect("countrySelect", "Search country...");
+      initSearchableSelect("serviceSelect", "Search service...");
+      initSearchableSelect("adminPricingCountry", "Search country...");
+      initSearchableSelect("adminPricingService", "Search service...");
+    }
+
+    document.addEventListener("click", event => {
+      document.querySelectorAll(".searchable-select-wrap.open").forEach(wrap => {
+        if (!wrap.contains(event.target)) wrap.classList.remove("open");
+      });
+    });
+
+    document.addEventListener("DOMContentLoaded", initSearchableControls);
 
   </script>
 
