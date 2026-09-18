@@ -15,39 +15,40 @@ const SUPABASE_PUBLISHABLE_KEY =
   "sb_publishable_erjKhsDOoyhbHDExv7Q_gpGcK0C-";
 
 
+/* =========================================================
+   AUTHENTICATION
+   ========================================================= */
+
 function getBearerToken(req) {
-  const header =
-    req.headers?.authorization ||
-    req.headers?.Authorization ||
+  const headers = req?.headers || {};
+
+  const authorization =
+    headers.authorization ||
+    headers.Authorization ||
     "";
 
-  if (!header.startsWith("Bearer ")) {
-    return null;
+  if (
+    typeof authorization === "string" &&
+    authorization.toLowerCase().startsWith("bearer ")
+  ) {
+    return authorization.slice(7).trim();
   }
 
-  const token = header.slice(7).trim();
-
-  return token || null;
+  return null;
 }
 
 
-/*
-  Authenticate the customer using the actual Supabase
-  access token sent by the browser.
-*/
 async function getAuthenticatedUser(req) {
-  const token = getBearerToken(req);
+  const token =
+    getBearerToken(req);
 
   if (!token) {
-    throw new Error("Unauthorized.");
+    throw new Error(
+      "Unauthorized."
+    );
   }
 
-  /*
-    Use the service-role key only on the server when
-    asking Supabase Auth who owns this access token.
-  */
   const apiKey =
-    SUPABASE_SERVICE_ROLE_KEY ||
     SUPABASE_PUBLISHABLE_KEY;
 
   if (!apiKey) {
@@ -63,9 +64,12 @@ async function getAuthenticatedUser(req) {
         method: "GET",
 
         headers: {
-          apikey: apiKey,
+          apikey:
+            apiKey,
+
           Authorization:
             `Bearer ${token}`,
+
           Accept:
             "application/json"
         }
@@ -83,19 +87,14 @@ async function getAuthenticatedUser(req) {
         ? JSON.parse(text)
         : {};
   } catch {
-    console.error(
-      "Supabase auth returned invalid JSON:",
-      text
-    );
-
     throw new Error(
-      "Supabase authentication failed."
+      "Supabase authentication returned an invalid response."
     );
   }
 
   if (!response.ok) {
     console.error(
-      "Supabase auth verification failed:",
+      "Supabase authentication failed:",
       response.status,
       data
     );
@@ -115,9 +114,10 @@ async function getAuthenticatedUser(req) {
 }
 
 
-/*
-  Server-side Supabase REST helper.
-*/
+/* =========================================================
+   SUPABASE REST
+   ========================================================= */
+
 async function supabaseRequest(
   path,
   options = {}
@@ -133,7 +133,8 @@ async function supabaseRequest(
       `${SUPABASE_URL}/rest/v1/${path}`,
       {
         method:
-          options.method || "GET",
+          options.method ||
+          "GET",
 
         headers: {
           apikey:
@@ -205,9 +206,50 @@ function quote(value) {
 }
 
 
-/*
-  Provider price extraction.
-*/
+/* =========================================================
+   PROVIDER RESPONSE HELPERS
+   ========================================================= */
+
+function getVerification(data) {
+  return (
+    data?.verification ||
+    data?.data?.verification ||
+    data?.data ||
+    data ||
+    {}
+  );
+}
+
+
+function getVerificationId(data) {
+  const verification =
+    getVerification(data);
+
+  return (
+    verification?.request_id ??
+    verification?.requestId ??
+    verification?.verification_id ??
+    verification?.verificationId ??
+    verification?.id ??
+    null
+  );
+}
+
+
+function getPhoneNumber(data) {
+  const verification =
+    getVerification(data);
+
+  return (
+    verification?.number ??
+    verification?.phone_number ??
+    verification?.phoneNumber ??
+    verification?.phone ??
+    null
+  );
+}
+
+
 function getProviderPrice(data) {
   const value =
     data?.price ??
@@ -226,68 +268,22 @@ function getProviderPrice(data) {
 }
 
 
-/*
-  Extract verification object.
-*/
-function getVerification(data) {
-  return (
-    data?.verification ||
-    data?.data?.verification ||
-    data?.data ||
-    data ||
-    {}
-  );
-}
+/* =========================================================
+   WALLET DEBIT
+   ========================================================= */
 
-
-/*
-  Extract provider verification ID.
-*/
-function getVerificationId(data) {
-  const verification =
-    getVerification(data);
-
-  return (
-    verification?.request_id ??
-    verification?.requestId ??
-    verification?.verification_id ??
-    verification?.verificationId ??
-    verification?.id ??
-    null
-  );
-}
-
-
-/*
-  Extract purchased phone number.
-*/
-function getPhoneNumber(data) {
-  const verification =
-    getVerification(data);
-
-  return (
-    verification?.number ??
-    verification?.phone_number ??
-    verification?.phoneNumber ??
-    verification?.phone ??
-    null
-  );
-}
-
-
-/*
-  Debit wallet safely using compare-and-set.
-*/
 async function debitWallet(
   userId,
   amount
 ) {
-  const requiredAmount =
+  const debitAmount =
     Number(amount);
 
   if (
-    !Number.isFinite(requiredAmount) ||
-    requiredAmount <= 0
+    !Number.isFinite(
+      debitAmount
+    ) ||
+    debitAmount <= 0
   ) {
     throw new Error(
       "Invalid purchase amount."
@@ -299,6 +295,7 @@ async function debitWallet(
     attempt < 5;
     attempt++
   ) {
+
     const rows =
       await supabaseRequest(
         `wallets?user_id=eq.${quote(
@@ -332,7 +329,7 @@ async function debitWallet(
 
     if (
       currentBalance <
-      requiredAmount
+      debitAmount
     ) {
       throw new Error(
         "Insufficient wallet balance."
@@ -341,7 +338,7 @@ async function debitWallet(
 
     const newBalance =
       currentBalance -
-      requiredAmount;
+      debitAmount;
 
     const updated =
       await supabaseRequest(
@@ -384,9 +381,10 @@ async function debitWallet(
 }
 
 
-/*
-  Refund wallet.
-*/
+/* =========================================================
+   WALLET REFUND
+   ========================================================= */
+
 async function refundWallet(
   userId,
   amount
@@ -408,6 +406,7 @@ async function refundWallet(
     attempt < 5;
     attempt++
   ) {
+
     const rows =
       await supabaseRequest(
         `wallets?user_id=eq.${quote(
@@ -474,9 +473,10 @@ async function refundWallet(
 }
 
 
-/*
-  Save wallet transaction history.
-*/
+/* =========================================================
+   WALLET TRANSACTION
+   ========================================================= */
+
 async function createWalletTransaction({
   userId,
   amount,
@@ -484,6 +484,7 @@ async function createWalletTransaction({
   description
 }) {
   try {
+
     await supabaseRequest(
       "wallet_transactions",
       {
@@ -509,7 +510,9 @@ async function createWalletTransaction({
           })
       }
     );
+
   } catch (error) {
+
     console.error(
       "Wallet transaction history error:",
       error
@@ -518,10 +521,11 @@ async function createWalletTransaction({
 }
 
 
-/*
-  IMPORTANT:
-  These are the REAL columns from your orders table.
-*/
+/* =========================================================
+   CREATE ORDER
+   ACTUAL DATABASE COLUMNS
+   ========================================================= */
+
 async function createOrder(
   userId,
   order
@@ -569,13 +573,15 @@ async function createOrder(
 }
 
 
-/*
-  Main purchase endpoint.
-*/
+/* =========================================================
+   MAIN ORDER ENDPOINT
+   ========================================================= */
+
 export default async function handler(
   req,
   res
 ) {
+
   if (
     req.method !== "POST"
   ) {
@@ -588,7 +594,8 @@ export default async function handler(
     });
   }
 
-  let user = null;
+  let user =
+    null;
 
   let debited =
     false;
@@ -598,24 +605,24 @@ export default async function handler(
 
   try {
 
-    /*
-      STEP 1
-      Authenticate the actual logged-in user.
-    */
+    /* -----------------------------------------------------
+       1. AUTHENTICATE USER
+       ----------------------------------------------------- */
+
     user =
       await getAuthenticatedUser(
         req
       );
 
 
+    /* -----------------------------------------------------
+       2. REQUEST DATA
+       ----------------------------------------------------- */
+
     const body =
       req.body || {};
 
 
-    /*
-      STEP 2
-      Read country/service information.
-    */
     const countryId =
       body.countryId ??
       body.country_id;
@@ -662,13 +669,10 @@ export default async function handler(
     }
 
 
-    /*
-      STEP 3
-      NEVER trust selling price from browser.
+    /* -----------------------------------------------------
+       3. GET ADMIN SELLING PRICE
+       ----------------------------------------------------- */
 
-      Get the admin-configured selling price
-      from product_prices.
-    */
     const pricingRows =
       await supabaseRequest(
         `product_prices?country_id=eq.${quote(
@@ -713,41 +717,18 @@ export default async function handler(
       );
 
 
-    /*
-      STEP 4
-      Work out which SureVerification servers
-      can serve this country.
-    */
-    const providerServers =
+    /* -----------------------------------------------------
+       4. GET ALL APPLICABLE SUREVERIFICATION SERVERS
+       ----------------------------------------------------- */
+
+    const servers =
       getServersForCountry(
         countryId
       );
 
 
-    /*
-      If frontend requested a particular server,
-      try it first.
-    */
-    const requestedServer =
-      body.server ||
-      body.providerServer ||
-      null;
-
-
-    const servers = [
-      ...(requestedServer
-        ? [requestedServer]
-        : []),
-
-      ...providerServers.filter(
-        server =>
-          server !==
-          requestedServer
-      )
-    ];
-
-
     if (
+      !Array.isArray(servers) ||
       servers.length === 0
     ) {
       throw new Error(
@@ -756,16 +737,14 @@ export default async function handler(
     }
 
 
-    /*
-      STEP 5
-      Debit customer's selling price.
-    */
-    const debit =
-      await debitWallet(
-        user.id,
-        sellingPrice
-      );
+    /* -----------------------------------------------------
+       5. DEBIT WALLET
+       ----------------------------------------------------- */
 
+    await debitWallet(
+      user.id,
+      sellingPrice
+    );
 
     debited =
       true;
@@ -774,10 +753,10 @@ export default async function handler(
       sellingPrice;
 
 
-    /*
-      STEP 6
-      Try the available provider servers.
-    */
+    /* -----------------------------------------------------
+       6. TRY SUREVERIFICATION SERVERS
+       ----------------------------------------------------- */
+
     let providerData =
       null;
 
@@ -791,7 +770,13 @@ export default async function handler(
     for (
       const server of servers
     ) {
+
       try {
+
+        console.log(
+          `Trying SureVerification server: ${server}`
+        );
+
 
         const data =
           await sureVerificationRequest(
@@ -829,6 +814,7 @@ export default async function handler(
           verificationId &&
           phoneNumber
         ) {
+
           providerData =
             data;
 
@@ -847,6 +833,7 @@ export default async function handler(
       } catch (
         providerError
       ) {
+
         console.error(
           `SureVerification ${server} purchase error:`,
           providerError
@@ -858,43 +845,44 @@ export default async function handler(
     }
 
 
-    /*
-      STEP 7
-      If every provider server failed,
-      refund the customer.
-    */
-    if (
-      !providerData
-    ) {
+    /* -----------------------------------------------------
+       7. REFUND IF ALL PROVIDERS FAILED
+       ----------------------------------------------------- */
+
+    if (!providerData) {
+
       try {
+
         await refundWallet(
           user.id,
           sellingPrice
         );
+
+        debited =
+          false;
+
       } catch (
         refundError
       ) {
+
         console.error(
           "Purchase refund failed:",
           refundError
         );
       }
 
-      debited =
-        false;
-
 
       throw new Error(
         lastProviderError?.message ||
-        "No numbers available for this service/country. Try another country or service."
+        "No numbers are currently available for this country and service."
       );
     }
 
 
-    /*
-      STEP 8
-      Extract successful purchase.
-    */
+    /* -----------------------------------------------------
+       8. EXTRACT SUCCESSFUL PURCHASE
+       ----------------------------------------------------- */
+
     const verification =
       getVerification(
         providerData
@@ -917,22 +905,27 @@ export default async function handler(
       !verificationId ||
       !phoneNumber
     ) {
+
       try {
+
         await refundWallet(
           user.id,
           sellingPrice
         );
+
+        debited =
+          false;
+
       } catch (
         refundError
       ) {
+
         console.error(
           "Incomplete purchase refund failed:",
           refundError
         );
       }
 
-      debited =
-        false;
 
       throw new Error(
         "The provider did not return a valid number. Your wallet was refunded."
@@ -940,9 +933,10 @@ export default async function handler(
     }
 
 
-    /*
-      Provider cost.
-    */
+    /* -----------------------------------------------------
+       9. PROVIDER COST
+       ----------------------------------------------------- */
+
     const providerPrice =
       getProviderPrice(
         providerData
@@ -962,10 +956,10 @@ export default async function handler(
       providerCost;
 
 
-    /*
-      STEP 9
-      Save order using the ACTUAL DB schema.
-    */
+    /* -----------------------------------------------------
+       10. SAVE ORDER
+       ----------------------------------------------------- */
+
     const orderRows =
       await createOrder(
         user.id,
@@ -1009,10 +1003,10 @@ export default async function handler(
       );
 
 
-    /*
-      STEP 10
-      Read final wallet balance.
-    */
+    /* -----------------------------------------------------
+       11. READ NEW WALLET BALANCE
+       ----------------------------------------------------- */
+
     const walletRows =
       await supabaseRequest(
         `wallets?user_id=eq.${quote(
@@ -1028,10 +1022,10 @@ export default async function handler(
       );
 
 
-    /*
-      STEP 11
-      Record wallet transaction.
-    */
+    /* -----------------------------------------------------
+       12. SAVE WALLET TRANSACTION
+       ----------------------------------------------------- */
+
     await createWalletTransaction({
       userId:
         user.id,
@@ -1047,15 +1041,16 @@ export default async function handler(
     });
 
 
-    /*
-      Purchase completed.
-      No refund should happen now.
-    */
     debited =
       false;
 
 
+    /* -----------------------------------------------------
+       13. SUCCESS
+       ----------------------------------------------------- */
+
     return res.status(200).json({
+
       success:
         true,
 
@@ -1107,15 +1102,16 @@ export default async function handler(
     );
 
 
-    /*
-      Safety refund if something failed after
-      the wallet was debited.
-    */
+    /* -----------------------------------------------------
+       SAFETY REFUND
+       ----------------------------------------------------- */
+
     if (
       debited &&
       user?.id &&
       debitAmount > 0
     ) {
+
       try {
 
         await refundWallet(
@@ -1130,6 +1126,7 @@ export default async function handler(
       } catch (
         refundError
       ) {
+
         console.error(
           "Safety refund failed:",
           refundError
@@ -1143,13 +1140,40 @@ export default async function handler(
       "Unable to purchase number.";
 
 
+    /* -----------------------------------------------------
+       AUTH ERROR
+       ----------------------------------------------------- */
+
+    if (
+      message ===
+      "Unauthorized."
+    ) {
+
+      return res.status(401).json({
+        success:
+          false,
+
+        error:
+          "Unauthorized.",
+
+        message:
+          "Your login session is not valid. Please log out and log in again."
+      });
+    }
+
+
+    /* -----------------------------------------------------
+       WALLET ERROR
+       ----------------------------------------------------- */
+
     if (
       String(message)
         .toLowerCase()
         .includes(
-          "insufficient wallet"
+          "insufficient"
         )
     ) {
+
       return res.status(400).json({
         success:
           false,
@@ -1163,19 +1187,9 @@ export default async function handler(
     }
 
 
-    if (
-      message ===
-      "Unauthorized."
-    ) {
-      return res.status(401).json({
-        success:
-          false,
-
-        error:
-          "Unauthorized."
-      });
-    }
-
+    /* -----------------------------------------------------
+       PROVIDER / OTHER ERROR
+       ----------------------------------------------------- */
 
     return res.status(500).json({
       success:
