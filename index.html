@@ -2799,7 +2799,7 @@
       "https://rfitbmkizfmwfqqskwhy.supabase.co";
 
     const SUPABASE_PUBLISHABLE_KEY =
-      "sb_publishable_erjKhsDOoyhbHDExv7Q_gpGcK0C-";
+      "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
 
     const supabaseClient =
       window.supabase.createClient(
@@ -4847,7 +4847,8 @@
             method: "POST",
 
             headers: {
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${await getCurrentAccessToken()}`
             },
 
             body: JSON.stringify({
