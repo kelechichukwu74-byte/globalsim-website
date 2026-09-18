@@ -8,7 +8,6 @@
   />
 
   <title>Global Virtual Sim Web</title>
-  <!-- Global Virtual Sim Web — customer service loader v2 -->
 
   <meta
     name="description"
@@ -191,6 +190,36 @@
     .form-control:focus {
       border-color: #2563eb;
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .password-wrap {
+      position: relative;
+    }
+
+    .password-wrap .form-control {
+      padding-right: 44px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 30px;
+      height: 30px;
+      border: 0;
+      background: transparent;
+      color: #64748b;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 7px;
+      padding: 0;
+    }
+
+    .password-toggle:hover {
+      background: #f1f5f9;
+      color: #2563eb;
     }
 
     .checkbox-row {
@@ -832,6 +861,13 @@
       line-height: 1.6;
     }
 
+    .support-actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
     .profile-grid {
       display: grid;
       grid-template-columns: 130px 1fr;
@@ -938,88 +974,6 @@
 
     .modal-body {
       padding: 18px;
-    }
-
-    /* =========================================================
-       COMPACT DASHBOARD WALLET CARD
-       ========================================================= */
-
-    .dashboard-wallet-card {
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      color: #fff;
-      border-radius: 15px;
-      padding: 15px 16px;
-      min-height: 138px;
-      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .dashboard-wallet-card::after {
-      content: "";
-      position: absolute;
-      width: 105px;
-      height: 105px;
-      border-radius: 50%;
-      right: -42px;
-      top: -42px;
-      background: rgba(255,255,255,0.09);
-    }
-
-    .dashboard-wallet-top,
-    .dashboard-wallet-bottom {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      font-size: 10px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .dashboard-wallet-top > span:first-child {
-      font-weight: 800;
-      letter-spacing: .02em;
-    }
-
-    .dashboard-wallet-status {
-      background: rgba(255,255,255,.16);
-      border: 1px solid rgba(255,255,255,.22);
-      padding: 3px 7px;
-      border-radius: 999px;
-      font-weight: 700;
-    }
-
-    .dashboard-wallet-label {
-      margin-top: 20px;
-      font-size: 10px;
-      color: #dbeafe;
-      position: relative;
-      z-index: 1;
-    }
-
-    .dashboard-wallet-amount {
-      margin-top: 3px;
-      font-size: 22px;
-      line-height: 1.1;
-      font-weight: 850;
-      position: relative;
-      z-index: 1;
-    }
-
-    .dashboard-wallet-bottom {
-      margin-top: 12px;
-      color: #dbeafe;
-    }
-
-    @media (max-width: 520px) {
-      .dashboard-wallet-card {
-        min-height: 130px;
-        padding: 14px;
-      }
-      .dashboard-wallet-amount {
-        font-size: 20px;
-      }
     }
 
     /* =========================================================
@@ -1547,17 +1501,23 @@
 
             <div class="stats-grid">
 
-              <div class="dashboard-wallet-card">
-                <div class="dashboard-wallet-top">
-                  <span>Global Virtual Sim</span>
-                  <span class="dashboard-wallet-status">Active</span>
+              <div class="stat-card">
+
+                <div class="stat-label">
+                  Wallet Balance
                 </div>
-                <div class="dashboard-wallet-label">Wallet Balance</div>
-                <div id="dashboardBalance" class="dashboard-wallet-amount">₦0.00</div>
-                <div class="dashboard-wallet-bottom">
-                  <span>Available funds</span>
-                  <span>••••</span>
+
+                <div
+                  id="dashboardBalance"
+                  class="stat-value"
+                >
+                  ₦0.00
                 </div>
+
+                <div class="stat-sub">
+                  Available funds
+                </div>
+
               </div>
 
 
@@ -2145,6 +2105,127 @@
                 </form>
 
               </div>
+
+
+              <!-- WITHDRAW -->
+
+              <div class="section-card">
+
+                <div class="section-heading">
+
+                  <div>
+                    <h3>Withdraw Funds</h3>
+                    <p>Request a withdrawal from your wallet.</p>
+                  </div>
+
+                </div>
+
+
+                <form
+                  id="withdrawForm"
+                  onsubmit="submitWithdrawal(event)"
+                >
+
+                  <div class="form-group">
+
+                    <label for="withdrawBank">
+                      Bank
+                    </label>
+
+                    <select
+                      id="withdrawBank"
+                      class="form-control"
+                    >
+
+                      <option value="">
+                        Select bank
+                      </option>
+
+                      <option>Access Bank</option>
+                      <option>Fidelity Bank</option>
+                      <option>First Bank</option>
+                      <option>GTBank</option>
+                      <option>Moniepoint</option>
+                      <option>OPay</option>
+                      <option>PalmPay</option>
+                      <option>Polaris Bank</option>
+                      <option>Stanbic IBTC</option>
+                      <option>UBA</option>
+                      <option>Union Bank</option>
+                      <option>Wema Bank</option>
+                      <option>Zenith Bank</option>
+                      <option>Other</option>
+
+                    </select>
+
+                  </div>
+
+
+                  <div class="form-group">
+
+                    <label for="withdrawAccountNumber">
+                      Account Number
+                    </label>
+
+                    <input
+                      id="withdrawAccountNumber"
+                      class="form-control"
+                      type="text"
+                      inputmode="numeric"
+                      maxlength="10"
+                      placeholder="10-digit account number"
+                    />
+
+                  </div>
+
+
+                  <div class="form-group">
+
+                    <label for="withdrawAccountName">
+                      Account Name
+                    </label>
+
+                    <input
+                      id="withdrawAccountName"
+                      class="form-control"
+                      type="text"
+                      placeholder="Account holder name"
+                    />
+
+                  </div>
+
+
+                  <div class="form-group">
+
+                    <label for="withdrawAmount">
+                      Amount
+                    </label>
+
+                    <input
+                      id="withdrawAmount"
+                      class="form-control"
+                      type="number"
+                      min="1000"
+                      step="0.01"
+                      placeholder="Minimum ₦1,000"
+                    />
+
+                  </div>
+
+
+                  <button
+                    id="withdrawButton"
+                    class="primary-btn full-btn"
+                    type="submit"
+                  >
+                    Request Withdrawal
+                  </button>
+
+                </form>
+
+              </div>
+
+            </div>
 
 
             <!-- TRANSACTIONS -->
@@ -2735,8 +2816,6 @@
     let currentProfile = null;
     let currentWallet = null;
     let currentServices = [];
-    const serviceCache = {};
-    const serviceRequestCache = {};
     let currentCountries = [];
     let isAdmin = false;
     let currentPage = "home";
@@ -4142,6 +4221,168 @@
        WITHDRAWAL
        ========================================================= */
 
+    async function submitWithdrawal(event) {
+
+      event.preventDefault();
+
+
+      const button =
+        $("withdrawButton");
+
+
+      const bank =
+        $("withdrawBank").value;
+
+
+      const accountNumber =
+        $("withdrawAccountNumber")
+          .value
+          .trim();
+
+
+      const accountName =
+        $("withdrawAccountName")
+          .value
+          .trim();
+
+
+      const amount =
+        Number(
+          $("withdrawAmount").value
+        );
+
+
+      if (!bank) {
+
+        showToast(
+          "Select your bank.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      if (!/^\d{10}$/.test(accountNumber)) {
+
+        showToast(
+          "Enter a valid 10-digit account number.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      if (!accountName) {
+
+        showToast(
+          "Enter the account name.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      if (!amount || amount < 1000) {
+
+        showToast(
+          "Minimum withdrawal is ₦1,000.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      setButtonLoading(
+        button,
+        true,
+        "Submitting..."
+      );
+
+
+      try {
+
+        /*
+          This calls your secure Supabase RPC.
+          The RPC must perform the balance/withdrawal
+          transaction server-side.
+        */
+
+        const {
+          data,
+          error
+        } = await supabaseClient.rpc(
+          "request_withdrawal",
+          {
+            p_bank_name: bank,
+            p_account_number: accountNumber,
+            p_account_name: accountName,
+            p_amount: amount
+          }
+        );
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        showToast(
+          "Withdrawal request submitted successfully.",
+          "success"
+        );
+
+
+        $("withdrawForm").reset();
+
+
+        await loadWalletData();
+
+        await loadDashboard();
+
+
+      } catch (error) {
+
+        console.error(
+          "Withdrawal error:",
+          error
+        );
+
+        showToast(
+          error.message ||
+          "Unable to submit withdrawal request.",
+          "error"
+        );
+
+      } finally {
+
+        setButtonLoading(
+          button,
+          false
+        );
+
+      }
+
+    }
+
+
+    function togglePasswordVisibility(inputId, button) {
+      const input = $(inputId);
+      if (!input) return;
+
+      const showing = input.type === "text";
+      input.type = showing ? "password" : "text";
+      button.textContent = showing ? "👁" : "🙈";
+      button.setAttribute(
+        "aria-label",
+        showing ? "Show password" : "Hide password"
+      );
+    }
+
+
     /* =========================================================
        COUNTRIES
        ========================================================= */
@@ -4222,6 +4463,16 @@
           option.dataset.countryName =
             name;
 
+          option.dataset.countryCode =
+            country.code ??
+            country.countryCode ??
+            country.country_code ??
+            "";
+
+          option.dataset.server =
+            country.server ??
+            "";
+
           select.appendChild(option);
 
         });
@@ -4253,22 +4504,35 @@
        ========================================================= */
 
     async function loadServices() {
+
       const countrySelect =
         $("countrySelect");
+
 
       const serviceSelect =
         $("serviceSelect");
 
+
       const countryId =
         countrySelect.value;
+
+      const countryOption =
+        countrySelect.options[countrySelect.selectedIndex];
+
+      const countryCode =
+        countryOption?.dataset?.countryCode ||
+        "";
 
       serviceSelect.innerHTML =
         '<option value="">Loading services...</option>';
 
+
       $("purchaseButton").disabled =
         true;
 
+
       if (!countryId) {
+
         serviceSelect.innerHTML =
           '<option value="">Select a service</option>';
 
@@ -4277,105 +4541,30 @@
         return;
       }
 
-      const countryOption =
-        countrySelect.options[
-          countrySelect.selectedIndex
-        ];
-
-      const server =
-        countryOption?.dataset?.server ||
-        "";
-
-      const serviceCacheKey =
-        `${countryId}:${server}`;
-
-      if (serviceCache[serviceCacheKey]) {
-        currentServices =
-          serviceCache[serviceCacheKey];
-
-        serviceSelect.innerHTML =
-          '<option value="">Select a service</option>';
-
-        currentServices.forEach(service => {
-          const option =
-            document.createElement("option");
-
-          const id =
-            service.id ??
-            service.serviceId ??
-            service.service_id ??
-            service.serviceCountryPriceId ??
-            service.service_country_price_id;
-
-          const name =
-            service.name ??
-            service.serviceName ??
-            service.service_name ??
-            service.title ??
-            id;
-
-          const price =
-            service.selling_price ??
-            service.sellingPrice ??
-            service.price ??
-            service.amount ??
-            null;
-
-          option.value =
-            id;
-
-          option.textContent =
-            price !== null
-              ? `${name} — ${formatMoney(price)}`
-              : name;
-
-          option.dataset.serviceName =
-            name;
-
-          option.dataset.price =
-            price ?? "";
-
-          option.dataset.raw =
-            JSON.stringify(service);
-
-          serviceSelect.appendChild(option);
-        });
-
-        updatePurchasePreview();
-        return;
-      }
 
       try {
-        let query =
-          `/api/services?countryId=${encodeURIComponent(countryId)}`;
 
-        if (server) {
-          query +=
-            `&server=${encodeURIComponent(server)}`;
+        const serviceQuery =
+          `/api/services?countryId=${encodeURIComponent(countryId)}` +
+          (countryCode
+            ? `&countryCode=${encodeURIComponent(countryCode)}`
+            : "");
+
+        const response =
+          await fetch(serviceQuery);
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            "Unable to load services."
+          );
+
         }
 
-        let request =
-          serviceRequestCache[serviceCacheKey];
-
-        if (!request) {
-          request = fetch(query)
-            .then(async response => {
-              if (!response.ok) {
-                throw new Error(
-                  "Unable to load services."
-                );
-              }
-              return response.json();
-            })
-            .finally(() => {
-              delete serviceRequestCache[serviceCacheKey];
-            });
-
-          serviceRequestCache[serviceCacheKey] = request;
-        }
 
         const result =
-          await request;
+          await response.json();
 
 
         currentServices =
@@ -4387,15 +4576,16 @@
                 []
               );
 
-        serviceCache[serviceCacheKey] =
-          currentServices;
 
         serviceSelect.innerHTML =
           '<option value="">Select a service</option>';
 
+
         currentServices.forEach(service => {
+
           const option =
             document.createElement("option");
+
 
           const id =
             service.id ??
@@ -4404,12 +4594,14 @@
             service.serviceCountryPriceId ??
             service.service_country_price_id;
 
+
           const name =
             service.name ??
             service.serviceName ??
             service.service_name ??
             service.title ??
             id;
+
 
           const price =
             service.selling_price ??
@@ -4418,41 +4610,69 @@
             service.amount ??
             null;
 
+
           option.value =
             id;
 
+
+          const availableServers =
+            Array.isArray(service.available_servers)
+              ? service.available_servers
+              : (Array.isArray(service.servers) ? service.servers : []);
+
+          const portalLabel =
+            availableServers.length > 1
+              ? ` — ${availableServers.length} portals`
+              : "";
+
           option.textContent =
             price !== null
-              ? `${name} — ${formatMoney(price)}`
-              : name;
+              ? `${name}${portalLabel} — ${formatMoney(price)}`
+              : `${name}${portalLabel}`;
+
 
           option.dataset.serviceName =
             name;
 
+
           option.dataset.price =
             price ?? "";
+
+
+          option.dataset.servers =
+            JSON.stringify(availableServers);
 
           option.dataset.raw =
             JSON.stringify(service);
 
+
           serviceSelect.appendChild(option);
+
         });
 
+
         updatePurchasePreview();
+
+
       } catch (error) {
+
         console.error(
           "Services error:",
           error
         );
 
+
         serviceSelect.innerHTML =
           '<option value="">Unable to load services</option>';
+
 
         showToast(
           "Unable to load services.",
           "error"
         );
+
       }
+
     }
 
 
@@ -4540,6 +4760,13 @@
       const countryId =
         countrySelect.value;
 
+      const countryOption =
+        countrySelect.options[countrySelect.selectedIndex];
+
+      const countryCode =
+        countryOption?.dataset?.countryCode ||
+        "";
+
 
       const serviceOption =
         serviceSelect.options[
@@ -4614,23 +4841,13 @@
           be placed in this HTML.
         */
 
-        const token =
-          await getCurrentAccessToken();
-
-        if (!token) {
-          throw new Error(
-            "Your login session has expired. Please log in again."
-          );
-        }
-
         const response =
           await fetch("/api/order", {
 
             method: "POST",
 
             headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`
+              "Content-Type": "application/json"
             },
 
             body: JSON.stringify({
@@ -4643,13 +4860,20 @@
 
               countryId,
 
+              countryCode,
+
               countryName,
 
               serviceName:
                 serviceData.serviceName ||
                 serviceData.name ||
                 serviceOption.dataset.serviceName ||
-                serviceOption.textContent
+                serviceOption.textContent,
+
+              availableServers:
+                Array.isArray(serviceData.available_servers)
+                  ? serviceData.available_servers
+                  : (Array.isArray(serviceData.servers) ? serviceData.servers : [])
 
             })
 
@@ -4663,24 +4887,11 @@
 
         if (!response.ok) {
 
-          if (response.status === 401) {
-            throw new Error(
-              "Your login session has expired. Please log in again."
-            );
-          }
-
-          const purchaseError =
+          throw new Error(
             result.message ||
             result.error ||
-            "Unable to purchase number.";
-
-          if (
-            String(purchaseError).toLowerCase().includes("insufficient")
-          ) {
-            throw new Error("Insufficient wallet balance.");
-          }
-
-          throw new Error(purchaseError);
+            "Unable to purchase number."
+          );
 
         }
 
@@ -4736,291 +4947,136 @@
        ACTIVE NUMBERS
        ========================================================= */
 
-    function activeNumberValue(item) {
-      return item.phone_number || item.phoneNumber || item.number || "—";
-    }
-
-    function activeServiceValue(item) {
-      return item.service || item.service_name || item.serviceName || "—";
-    }
-
-    function activeVerificationId(item) {
-      return item.verification_id || item.verificationId || item.request_id || item.requestId || "";
-    }
-
-    function activeSmsText(item) {
-      const sms = item.sms || item.smsData || item.verification || item;
-      const code =
-        sms?.code ||
-        sms?.otp ||
-        sms?.sms_code ||
-        sms?.verification_code ||
-        sms?.data?.code ||
-        sms?.data?.otp ||
-        sms?.verification?.code ||
-        "";
-
-      const message =
-        sms?.message ||
-        sms?.sms ||
-        sms?.text ||
-        sms?.body ||
-        sms?.data?.message ||
-        sms?.data?.sms ||
-        sms?.data?.text ||
-        "";
-
-      if (code && message) return `Code: ${code} — ${message}`;
-      if (code) return `Code: ${code}`;
-      if (message) return String(message);
-      return "Waiting for incoming SMS...";
-    }
-
-    function activeProviderStatus(item) {
-      return String(item.status || item.provider_status || "active").toLowerCase();
-    }
-
-    function activeCreatedTime(item) {
-      const raw = item.created_at || item.createdAt;
-      const time = raw ? new Date(raw).getTime() : Date.now();
-      return Number.isFinite(time) ? time : Date.now();
-    }
-
-    function activeCanCancel(item) {
-      const status = activeProviderStatus(item);
-      const verificationId = activeVerificationId(item);
-      const elapsed = Date.now() - activeCreatedTime(item);
-      return Boolean(
-        verificationId &&
-        elapsed >= 2 * 60 * 1000 &&
-        !["cancelled", "canceled", "refunded", "completed", "expired", "cancelling"].includes(status)
-      );
-    }
-
-    function activeWaitingText(item) {
-      const elapsed = Date.now() - activeCreatedTime(item);
-      const remaining = Math.max(0, 2 * 60 * 1000 - elapsed);
-      if (remaining <= 0) return "Cancellation available";
-      const seconds = Math.ceil(remaining / 1000);
-      const minutes = Math.floor(seconds / 60);
-      const secs = seconds % 60;
-      return `Cancel available in ${minutes}:${String(secs).padStart(2, "0")}`;
-    }
-
-    async function copyActiveNumber(number) {
-      try {
-        await navigator.clipboard.writeText(String(number));
-        showToast("Number copied.", "success");
-      } catch (error) {
-        console.error("Copy number error:", error);
-        showToast("Unable to copy number.", "error");
-      }
-    }
-
-    async function cancelActiveNumber(verificationId) {
-      if (!verificationId) {
-        showToast("Verification ID is missing.", "error");
-        return;
-      }
-
-      const button = document.querySelector(
-        `[data-cancel-verification="${CSS.escape(String(verificationId))}"]`
-      );
-
-      if (button) {
-        button.disabled = true;
-        button.textContent = "Cancelling...";
-      }
-
-      try {
-        const token = await getCurrentAccessToken();
-
-        if (!token) {
-          throw new Error("Unauthorized.");
-        }
-
-        const response = await fetch("/api/cancel", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            verificationId
-          })
-        });
-
-        const result = await response.json().catch(() => ({}));
-
-        if (!response.ok || result.success === false) {
-          throw new Error(
-            result.error ||
-            result.message ||
-            "Unable to cancel number."
-          );
-        }
-
-        showToast(
-          result.message || "Number cancelled and wallet refunded successfully.",
-          "success"
-        );
-
-        await loadWallet();
-        await loadDashboard();
-        await loadOrderHistory();
-        await loadActiveNumbers();
-
-      } catch (error) {
-        console.error("Cancel number error:", error);
-        showToast(
-          error.message || "Unable to cancel number.",
-          "error"
-        );
-
-        if (button) {
-          button.disabled = false;
-          button.textContent = "Cancel Number";
-        }
-      }
-    }
-
-    function renderActiveNumbers(numbers) {
-      const container = $("activeNumbersContainer");
-
-      if (!numbers.length) {
-        container.innerHTML =
-          '<div class="empty-state">You do not have any active numbers yet.</div>';
-        return;
-      }
-
-      container.innerHTML = numbers.map((item, index) => {
-        const number = activeNumberValue(item);
-        const service = activeServiceValue(item);
-        const verificationId = activeVerificationId(item);
-        const status = activeProviderStatus(item);
-        const smsText = activeSmsText(item);
-        const canCancel = activeCanCancel(item);
-        const waitingText = activeWaitingText(item);
-        const price = Number(item.price ?? item.selling_price ?? item.sellingPrice ?? 0);
-        const created = item.created_at || item.createdAt;
-        const safeVerification = escapeHtml(String(verificationId));
-        const safeNumber = escapeHtml(String(number));
-        const safeService = escapeHtml(String(service));
-        const safeSms = escapeHtml(String(smsText));
-
-        return `
-          <div class="gvs-active-card" data-active-index="${index}">
-            <div class="gvs-active-top">
-              <div>
-                <div class="gvs-active-label">Purchased number</div>
-                <div class="gvs-active-number">${safeNumber}</div>
-                <div class="gvs-active-service">${safeService}</div>
-              </div>
-              <div class="gvs-active-status">
-                ${statusBadge(status)}
-              </div>
-            </div>
-
-            <div class="gvs-active-actions">
-              <button
-                type="button"
-                class="secondary-btn small-btn"
-                onclick="copyActiveNumber(${JSON.stringify(String(number))})"
-              >
-                Copy Number
-              </button>
-            </div>
-
-            <div class="gvs-sms-box">
-              <div class="gvs-sms-title">SMS</div>
-              <div class="gvs-sms-text">${safeSms}</div>
-            </div>
-
-            <div class="gvs-active-meta">
-              <span>${created ? escapeHtml(formatDate(created)) : "Just now"}</span>
-              ${price > 0 ? `<span>${escapeHtml(formatMoney(price))}</span>` : ""}
-            </div>
-
-            <div class="gvs-cancel-area">
-              ${
-                canCancel
-                  ? `
-                    <button
-                      type="button"
-                      class="danger-btn small-btn"
-                      data-cancel-verification="${safeVerification}"
-                      onclick="cancelActiveNumber(${JSON.stringify(String(verificationId))})"
-                    >
-                      Cancel Number
-                    </button>
-                  `
-                  : `
-                    <div class="gvs-cancel-waiting">${escapeHtml(waitingText)}</div>
-                  `
-              }
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
-
     async function loadActiveNumbers() {
-      const container = $("activeNumbersContainer");
+
+      const container =
+        $("activeNumbersContainer");
+
 
       container.innerHTML =
         '<div class="loading">Loading active numbers...</div>';
 
+
       try {
-        const token = await getCurrentAccessToken();
 
-        if (!token) {
-          throw new Error("Unauthorized.");
-        }
+        const response =
+          await fetch("/api/active");
 
-        const response = await fetch("/api/active", {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
 
         if (!response.ok) {
-          const result = await response.json().catch(() => ({}));
+
           throw new Error(
-            result.error || "Unable to load active numbers."
+            "Unable to load active numbers."
           );
+
         }
 
-        const result = await response.json();
-        const numbers = Array.isArray(result)
-          ? result
-          : (
-              result.data ||
-              result.activations ||
-              result.numbers ||
-              []
-            );
 
-        renderActiveNumbers(numbers);
+        const result =
+          await response.json();
+
+
+        const numbers =
+          Array.isArray(result)
+            ? result
+            : (
+                result.data ||
+                result.activations ||
+                result.numbers ||
+                []
+              );
+
+
+        if (!numbers.length) {
+
+          container.innerHTML =
+            '<div class="empty-state">You do not have any active numbers yet.</div>';
+
+          return;
+        }
+
+
+        container.innerHTML = `
+
+          <div class="table-wrapper">
+
+            <table class="data-table">
+
+              <thead>
+
+                <tr>
+                  <th>Number</th>
+                  <th>Service</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                ${numbers.map(item => `
+
+                  <tr>
+
+                    <td>
+                      <strong>
+                        ${escapeHtml(
+                          item.phone_number ||
+                          item.phoneNumber ||
+                          item.number ||
+                          "—"
+                        )}
+                      </strong>
+                    </td>
+
+                    <td>
+                      ${escapeHtml(
+                        item.service ||
+                        item.service_name ||
+                        item.serviceName ||
+                        "—"
+                      )}
+                    </td>
+
+                    <td>
+                      ${statusBadge(
+                        item.status ||
+                        "active"
+                      )}
+                    </td>
+
+                    <td>
+                      ${formatDate(
+                        item.created_at ||
+                        item.createdAt
+                      )}
+                    </td>
+
+                  </tr>
+
+                `).join("")}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        `;
 
       } catch (error) {
-        console.error("Active numbers error:", error);
+
+        console.error(
+          "Active numbers error:",
+          error
+        );
 
         container.innerHTML =
-          `<div class="empty-state">${escapeHtml(error.message || "Unable to load active numbers.")}</div>`;
-      }
-    }
+          '<div class="empty-state">Unable to load active numbers.</div>';
 
-    function startActiveNumberCountdown() {
-      if (window.gvsActiveCountdown) {
-        clearInterval(window.gvsActiveCountdown);
       }
 
-      window.gvsActiveCountdown = setInterval(() => {
-        const page = document.getElementById("page-active");
-        if (!page || page.classList.contains("hidden")) return;
-
-        loadActiveNumbers();
-      }, 15000);
     }
 
 
@@ -5246,42 +5302,8 @@
 
 
     async function getCurrentAccessToken() {
-      let {
-        data,
-        error
-      } = await supabaseClient.auth.getSession();
-
-      if (error) {
-        console.error("Session lookup error:", error);
-      }
-
-      if (data?.session?.access_token) {
-        return data.session.access_token;
-      }
-
-      try {
-        const refreshed =
-          await supabaseClient.auth.refreshSession();
-
-        if (refreshed?.error) {
-          console.error(
-            "Session refresh error:",
-            refreshed.error
-          );
-        }
-
-        return (
-          refreshed?.data?.session?.access_token ||
-          null
-        );
-      } catch (refreshError) {
-        console.error(
-          "Session refresh failed:",
-          refreshError
-        );
-
-        return null;
-      }
+      const { data } = await supabaseClient.auth.getSession();
+      return data?.session?.access_token || null;
     }
 
     async function loadAdminPricing() {
@@ -5451,16 +5473,7 @@
         const data = await response.json();
 
         if (!response.ok || !data?.success) {
-          if (response.status === 401) {
-            throw new Error(
-              "Your login session has expired. Please log in again."
-            );
-          }
-
-          throw new Error(
-            data?.error ||
-            "Unable to save selling price."
-          );
+          throw new Error(data?.error || "Unable to save selling price.");
         }
 
         if (status) status.textContent =
@@ -6479,71 +6492,7 @@
 
     }
 
-    startActiveNumberCountdown();
-
   </script>
-
-
-<style>
-.gvs-active-card{border:1px solid #dbe7f2;border-radius:16px;padding:16px;margin-top:14px;background:#fff;box-shadow:0 8px 24px rgba(20,50,90,.07)}
-.gvs-active-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.gvs-active-label{font-size:12px;color:#718096;margin-bottom:5px}
-.gvs-active-number{font-size:22px;font-weight:800;letter-spacing:.2px;color:#14243a;word-break:break-all}
-.gvs-active-service{font-size:13px;color:#66768c;margin-top:4px}
-.gvs-active-actions{margin-top:13px;display:flex;gap:8px;flex-wrap:wrap}
-.gvs-sms-box{margin-top:14px;padding:13px;border-radius:12px;background:#f5f9fd;border:1px solid #e0ebf5}
-.gvs-sms-title{font-weight:700;font-size:13px;margin-bottom:5px;color:#24364d}
-.gvs-sms-text{font-size:13px;color:#52657d;word-break:break-word}
-.gvs-active-meta{display:flex;justify-content:space-between;gap:10px;margin-top:12px;font-size:12px;color:#7a8a9d}
-.gvs-cancel-area{margin-top:13px;padding-top:13px;border-top:1px solid #edf2f7}
-.gvs-cancel-waiting{font-size:12px;color:#738399}
-.danger-btn{border:0;border-radius:10px;padding:10px 14px;background:#dc3545;color:#fff;font-weight:700;cursor:pointer}
-.danger-btn:disabled{opacity:.6;cursor:not-allowed}
-</style>
-
-<style>
-.gvs-search-wrap{position:relative;width:100%}
-.gvs-search-input{width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #d7e2ee;border-radius:10px;background:#fff;font:inherit;color:#152238;outline:none}
-.gvs-search-input:focus{border-color:#5ba9ff;box-shadow:0 0 0 3px rgba(91,169,255,.12)}
-.gvs-search-list{position:absolute;z-index:9999;left:0;right:0;top:calc(100% + 5px);max-height:280px;overflow:auto;background:#fff;border:1px solid #d7e2ee;border-radius:10px;box-shadow:0 12px 28px rgba(20,50,90,.14);display:none}
-.gvs-search-list.open{display:block}
-.gvs-search-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:0;background:#fff;text-align:left;cursor:pointer;font:inherit;color:#17263b}
-.gvs-search-item:hover,.gvs-search-item.active{background:#eaf5ff}
-.gvs-flag{font-size:21px;line-height:1;width:26px;text-align:center}
-.gvs-service-icon{width:28px;height:28px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;background:#edf5ff;font-size:16px;flex:none}
-.gvs-search-empty{padding:14px;color:#6b7b91;font-size:13px}
-.gvs-hidden-native{display:none!important}
-</style>
-<script>
-(function(){
-const flags={US:"🇺🇸",NG:"🇳🇬",GB:"🇬🇧",CA:"🇨🇦",DE:"🇩🇪",FR:"🇫🇷",IT:"🇮🇹",ES:"🇪🇸",NL:"🇳🇱",BE:"🇧🇪",CH:"🇨🇭",AT:"🇦🇹",SE:"🇸🇪",NO:"🇳🇴",DK:"🇩🇰",FI:"🇫🇮",PL:"🇵🇱",CZ:"🇨🇿",PT:"🇵🇹",IE:"🇮🇪",AU:"🇦🇺",NZ:"🇳🇿",JP:"🇯🇵",KR:"🇰🇷",CN:"🇨🇳",IN:"🇮🇳",ID:"🇮🇩",MY:"🇲🇾",SG:"🇸🇬",PH:"🇵🇭",TH:"🇹🇭",VN:"🇻🇳",AE:"🇦🇪",SA:"🇸🇦",IL:"🇮🇱",TR:"🇹🇷",BR:"🇧🇷",MX:"🇲🇽",AR:"🇦🇷",CL:"🇨🇱",CO:"🇨🇴",PE:"🇵🇪",ZA:"🇿🇦",EG:"🇪🇬",KE:"🇰🇪",GH:"🇬🇭",TZ:"🇹🇿",UG:"🇺🇬",RU:"🇷🇺",UA:"🇺🇦",RO:"🇷🇴",GR:"🇬🇷",HU:"🇭🇺",BG:"🇧🇬"};
-const icon=n=>{n=String(n||"").toLowerCase();if(n.includes("whatsapp"))return"🟢";if(n.includes("telegram"))return"✈️";if(n.includes("instagram"))return"📸";if(n.includes("facebook"))return"🔵";if(n.includes("tiktok"))return"🎵";if(n.includes("google"))return"🔎";if(n.includes("signal"))return"🔐";if(n.includes("discord"))return"🎮";if(n.includes("microsoft"))return"🪟";if(n.includes("twitter")||n==="x")return"𝕏";if(n.includes("snapchat"))return"👻";if(n.includes("uber"))return"🚕";if(n.includes("amazon"))return"🛒";if(n.includes("viber"))return"📞";return"📱"};
-const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-const flag=c=>{let x=String(c?.code||c?.country_code||c?.countryCode||"").toUpperCase();if(flags[x])return flags[x];return/^[A-Z]{2}$/.test(x)?String.fromCodePoint(...[...x].map(a=>127397+a.charCodeAt(0))):"🌐"};
-
-function enhance(sel,type){
-if(!sel||sel.dataset.gvsEnhanced)return;
-sel.dataset.gvsEnhanced="1";sel.classList.add("gvs-hidden-native");
-const wrap=document.createElement("div"),input=document.createElement("input"),list=document.createElement("div");
-wrap.className="gvs-search-wrap";input.className="gvs-search-input";input.type="search";input.autocomplete="off";input.placeholder=type==="country"?"Search country...":"Search service...";
-list.className="gvs-search-list";wrap.append(input,list);sel.parentNode.insertBefore(wrap,sel);
-function items(){
-return [...sel.options].filter(o=>o.value).map(o=>{let raw={};try{raw=JSON.parse(o.dataset.raw||"{}")}catch{};return {...raw,id:o.value,name:o.dataset.countryName||o.dataset.serviceName||o.textContent.trim(),code:o.dataset.countryCode||raw.code||raw.country_code||o.dataset.code||""}});
-}
-function render(){
-let q=input.value.trim().toLowerCase(),arr=items().filter(x=>!q||String(x.name).toLowerCase().includes(q)||String(x.code).toLowerCase().includes(q));
-list.innerHTML=arr.length?arr.map(x=>`<button type="button" class="gvs-search-item" data-id="${esc(x.id)}"><span class="${type==="country"?"gvs-flag":"gvs-service-icon"}">${type==="country"?flag(x):icon(x.name)}</span><span>${esc(x.name)}</span></button>`).join(""):'<div class="gvs-search-empty">No results found.</div>';
-list.classList.add("open");
-list.querySelectorAll("button").forEach(b=>b.onclick=()=>{sel.value=b.dataset.id;sel.dispatchEvent(new Event("change",{bubbles:true}));let x=arr.find(a=>String(a.id)===String(b.dataset.id));if(x)input.value=(type==="country"?flag(x):icon(x.name))+" "+x.name;list.classList.remove("open")});
-}
-input.onfocus=render;input.oninput=render;document.addEventListener("click",e=>{if(!wrap.contains(e.target))list.classList.remove("open")});
-sel.addEventListener("change",()=>{let x=items().find(a=>String(a.id)===String(sel.value));if(x)input.value=(type==="country"?flag(x):icon(x.name))+" "+x.name});
-}
-
-function init(){enhance(document.getElementById("countrySelect"),"country");enhance(document.getElementById("serviceSelect"),"service");enhance(document.getElementById("adminPricingCountry"),"country");enhance(document.getElementById("adminPricingService"),"service")}
-if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
-})();
-</script>
 
 </body>
 </html>
