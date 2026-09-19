@@ -1,12 +1,658 @@
-const SUPABASE_URL = process.env.SUPABASE_URL || "https://rfitbmkizfmwfqqskwhy.supabase.co";
+const SUPABASE_URL =
+  process.env.SUPABASE_URL;
+
 const SUPABASE_PUBLISHABLE_KEY =
   process.env.SUPABASE_ANON_KEY ||
   process.env.SUPABASE_PUBLISHABLE_KEY;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-function token(req){const h=req.headers?.authorization||"";return h.toLowerCase().startsWith("bearer ")?h.slice(7).trim():null;}
-async function auth(req){const t=token(req);if(!t)throw new Error("Unauthorized.");const r=await fetch(`${SUPABASE_URL}/auth/v1/user`,{headers:{apikey:SUPABASE_PUBLISHABLE_KEY,Authorization:`Bearer ${t}`,Accept:"application/json"}});if(!r.ok)throw new Error("Unauthorized.");return await r.json();}
-async function db(path,options={}){if(!SUPABASE_SERVICE_ROLE_KEY)throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");const r=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{...options,headers:{apikey:SUPABASE_SERVICE_ROLE_KEY,Authorization:`Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,Accept:"application/json","Content-Type":"application/json",Prefer:"return=representation",...(options.headers||{})}});const t=await r.text();const d=t?JSON.parse(t):{};if(!r.ok)throw new Error(d?.message||d?.hint||d?.details||`Supabase request failed (HTTP ${r.status})`);return d;}
-export default async function handler(req,res){if(!["GET","POST"].includes(req.method))return res.status(405).json({success:false,error:"Method not allowed"});try{const u=await auth(req);const b=req.body||{};const isAdmin=b.admin===true||req.query?.admin==="true";if(req.method==="GET"){if(isAdmin){const p=await db(`profiles?id=eq.${encodeURIComponent(u.id)}&select=role&limit=1`);if(p?.[0]?.role!=="admin")return res.status(403).json({success:false,error:"Administrator access required."});return res.status(200).json({success:true,deposits:await db("deposits?select=*&order=created_at.desc")});}return res.status(200).json({success:true,deposits:await db(`deposits?user_id=eq.${encodeURIComponent(u.id)}&select=*&order=created_at.desc`)});}
-if(isAdmin){const p=await db(`profiles?id=eq.${encodeURIComponent(u.id)}&select=role&limit=1`);if(p?.[0]?.role!=="admin")return res.status(403).json({success:false,error:"Administrator access required."});const id=b.depositId;const action=b.action;if(!id||!["approve","reject"].includes(action))return res.status(400).json({success:false,error:"Invalid deposit action."});const rows=await db(`deposits?id=eq.${encodeURIComponent(id)}&select=*&limit=1`);const d=rows?.[0];if(!d)return res.status(404).json({success:false,error:"Deposit not found."});if(d.status!=="pending")return res.status(400).json({success:false,error:"Deposit has already been processed."});if(action==="reject"){await db(`deposits?id=eq.${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify({status:"rejected",approved_by:u.id,approved_at:new Date().toISOString(),updated_at:new Date().toISOString()})});return res.status(200).json({success:true,message:"Deposit rejected."});}
-const wallets=await db(`wallets?user_id=eq.${encodeURIComponent(d.user_id)}&select=balance&limit=1`);const w=wallets?.[0];if(!w)return res.status(400).json({success:false,error:"Customer wallet not found."});const newBalance=Number(w.balance||0)+Number(d.amount||0);await db(`wallets?user_id=eq.${encodeURIComponent(d.user_id)}`,{method:"PATCH",body:JSON.stringify({balance:newBalance,updated_at:new Date().toISOString()})});await db("wallet_transactions",{method:"POST",body:JSON.stringify({user_id:d.user_id,amount:Number(d.amount||0),balance_after:newBalance,type:"deposit",description:"OPay deposit approved"})});await db(`deposits?id=eq.${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify({status:"approved",approved_by:u.id,approved_at:new Date().toISOString(),updated_at:new Date().toISOString()})});return res.status(200).json({success:true,message:"Deposit approved and wallet credited."});}
-const amount=Number(b.amount);if(!Number.isFinite(amount)||amount<=0)return res.status(400).json({success:false,error:"Invalid deposit amount."});const data=await db("deposits",{method:"POST",body:JSON.stringify({user_id:u.id,amount,payment_method:b.payment_method||"OPay",payment_reference:b.payment_reference||null,receipt_url:b.receipt_url||null,customer_note:b.customer_note||null,status:"pending"})});return res.status(200).json({success:true,deposit:Array.isArray(data)?data[0]:data});}catch(e){const msg=e?.message||"Unable to process deposit.";return res.status(msg==="Unauthorized."?401:500).json({success:false,error:msg});}}
+
+const SUPABASE_SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+
+/*
+ * Return the Bearer token from the request.
+ */
+function getToken(req) {
+  const authorization =
+    req.headers?.authorization ||
+    req.headers?.Authorization ||
+    "";
+
+  if (
+    !authorization
+      .toLowerCase()
+      .startsWith("bearer ")
+  ) {
+    return null;
+  }
+
+  return authorization
+    .slice(7)
+    .trim();
+}
+
+
+/*
+ * Authenticate the logged-in Supabase user.
+ */
+async function authUser(req) {
+  const token =
+    getToken(req);
+
+  if (!token) {
+    throw new Error("Unauthorized.");
+  }
+
+  if (!SUPABASE_URL) {
+    throw new Error(
+      "SUPABASE_URL is not configured."
+    );
+  }
+
+  if (!SUPABASE_PUBLISHABLE_KEY) {
+    throw new Error(
+      "SUPABASE_ANON_KEY is not configured."
+    );
+  }
+
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/auth/v1/user`,
+      {
+        method: "GET",
+        headers: {
+          apikey:
+            SUPABASE_PUBLISHABLE_KEY,
+          Authorization:
+            `Bearer ${token}`,
+          Accept:
+            "application/json"
+        }
+      }
+    );
+
+  if (!response.ok) {
+    throw new Error("Unauthorized.");
+  }
+
+  const user =
+    await response.json();
+
+  if (!user?.id) {
+    throw new Error("Unauthorized.");
+  }
+
+  return user;
+}
+
+
+/*
+ * Supabase REST helper using the service-role key.
+ *
+ * This is server-side only.
+ */
+async function db(
+  path,
+  options = {}
+) {
+  if (!SUPABASE_URL) {
+    throw new Error(
+      "SUPABASE_URL is not configured."
+    );
+  }
+
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY is not configured."
+    );
+  }
+
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/rest/v1/${path}`,
+      {
+        ...options,
+
+        headers: {
+          apikey:
+            SUPABASE_SERVICE_ROLE_KEY,
+
+          Authorization:
+            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+
+          Accept:
+            "application/json",
+
+          "Content-Type":
+            "application/json",
+
+          Prefer:
+            "return=representation",
+
+          ...(options.headers || {})
+        }
+      }
+    );
+
+  const text =
+    await response.text();
+
+  let data = {};
+
+  try {
+    data =
+      text
+        ? JSON.parse(text)
+        : {};
+  } catch {
+    throw new Error(
+      `Supabase returned invalid JSON (HTTP ${response.status}).`
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+      data?.hint ||
+      data?.details ||
+      `Supabase request failed (HTTP ${response.status}).`
+    );
+  }
+
+  return data;
+}
+
+
+/*
+ * Check whether the authenticated user
+ * is an administrator.
+ */
+async function requireAdmin(user) {
+  const profiles =
+    await db(
+      `profiles?id=eq.${encodeURIComponent(
+        user.id
+      )}&select=role&limit=1`
+    );
+
+  if (
+    profiles?.[0]?.role !==
+    "admin"
+  ) {
+    throw new Error(
+      "Administrator access required."
+    );
+  }
+
+  return true;
+}
+
+
+export default async function handler(
+  req,
+  res
+) {
+  /*
+   * This endpoint supports:
+   *
+   * GET  /api/deposit
+   * GET  /api/deposit?admin=true
+   *
+   * POST /api/deposit
+   *
+   * POST /api/deposit
+   * {
+   *   admin: true,
+   *   depositId: "...",
+   *   action: "approve"
+   * }
+   *
+   * POST /api/deposit
+   * {
+   *   admin: true,
+   *   depositId: "...",
+   *   action: "reject"
+   * }
+   */
+
+  if (
+    !["GET", "POST"].includes(
+      req.method
+    )
+  ) {
+    return res.status(405).json({
+      success: false,
+      error:
+        "Method not allowed."
+    });
+  }
+
+  try {
+    const user =
+      await authUser(req);
+
+    const body =
+      req.body || {};
+
+    const isAdminRequest =
+      body.admin === true ||
+      req.query?.admin === "true";
+
+
+    /* =====================================================
+       GET DEPOSIT REQUESTS
+       ===================================================== */
+
+    if (req.method === "GET") {
+
+      /*
+       * ADMIN:
+       * Return all deposit requests.
+       */
+      if (isAdminRequest) {
+
+        await requireAdmin(
+          user
+        );
+
+        const deposits =
+          await db(
+            "deposits?select=*&order=created_at.desc"
+          );
+
+        return res.status(200).json({
+          success: true,
+          deposits:
+            deposits || []
+        });
+      }
+
+
+      /*
+       * CUSTOMER:
+       * Return only this customer's deposits.
+       */
+      const deposits =
+        await db(
+          `deposits?user_id=eq.${encodeURIComponent(
+            user.id
+          )}&select=*&order=created_at.desc`
+        );
+
+      return res.status(200).json({
+        success: true,
+        deposits:
+          deposits || []
+      });
+    }
+
+
+    /* =====================================================
+       POST — ADMIN APPROVE / REJECT
+       ===================================================== */
+
+    if (isAdminRequest) {
+
+      await requireAdmin(
+        user
+      );
+
+      const depositId =
+        body.depositId;
+
+      const action =
+        body.action;
+
+      if (!depositId) {
+        return res.status(400).json({
+          success: false,
+          error:
+            "Deposit ID is required."
+        });
+      }
+
+      if (
+        !["approve", "reject"]
+          .includes(action)
+      ) {
+        return res.status(400).json({
+          success: false,
+          error:
+            "Invalid deposit action."
+        });
+      }
+
+
+      /*
+       * Find the deposit.
+       */
+      const rows =
+        await db(
+          `deposits?id=eq.${encodeURIComponent(
+            depositId
+          )}&select=*&limit=1`
+        );
+
+      const deposit =
+        rows?.[0];
+
+      if (!deposit) {
+        return res.status(404).json({
+          success: false,
+          error:
+            "Deposit not found."
+        });
+      }
+
+
+      /*
+       * Prevent approving/rejecting the same
+       * deposit twice.
+       */
+      if (
+        deposit.status !==
+        "pending"
+      ) {
+        return res.status(400).json({
+          success: false,
+          error:
+            "Deposit has already been processed."
+        });
+      }
+
+
+      /* =================================================
+         REJECT
+         ================================================= */
+
+      if (
+        action === "reject"
+      ) {
+
+        await db(
+          `deposits?id=eq.${encodeURIComponent(
+            depositId
+          )}`,
+          {
+            method:
+              "PATCH",
+
+            body:
+              JSON.stringify({
+                status:
+                  "rejected",
+
+                approved_by:
+                  user.id,
+
+                approved_at:
+                  new Date().toISOString(),
+
+                updated_at:
+                  new Date().toISOString()
+              })
+          }
+        );
+
+        return res.status(200).json({
+          success: true,
+          message:
+            "Deposit rejected."
+        });
+      }
+
+
+      /* =================================================
+         APPROVE
+         ================================================= */
+
+      const wallets =
+        await db(
+          `wallets?user_id=eq.${encodeURIComponent(
+            deposit.user_id
+          )}&select=*&limit=1`
+        );
+
+      const wallet =
+        wallets?.[0];
+
+      if (!wallet) {
+        return res.status(400).json({
+          success: false,
+          error:
+            "Customer wallet not found."
+        });
+      }
+
+
+      const depositAmount =
+        Number(
+          deposit.amount
+        );
+
+      if (
+        !Number.isFinite(
+          depositAmount
+        ) ||
+        depositAmount <= 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          error:
+            "Invalid deposit amount."
+        });
+      }
+
+
+      const currentBalance =
+        Number(
+          wallet.balance || 0
+        );
+
+      const newBalance =
+        currentBalance +
+        depositAmount;
+
+
+      /*
+       * Credit the customer's wallet.
+       */
+      await db(
+        `wallets?user_id=eq.${encodeURIComponent(
+          deposit.user_id
+        )}`,
+        {
+          method:
+            "PATCH",
+
+          body:
+            JSON.stringify({
+              balance:
+                newBalance,
+
+              updated_at:
+                new Date().toISOString()
+            })
+        }
+      );
+
+
+      /*
+       * Create wallet transaction history.
+       */
+      await db(
+        "wallet_transactions",
+        {
+          method:
+            "POST",
+
+          body:
+            JSON.stringify({
+              user_id:
+                deposit.user_id,
+
+              amount:
+                depositAmount,
+
+              balance_after:
+                newBalance,
+
+              type:
+                "deposit",
+
+              description:
+                "OPay deposit approved"
+            })
+        }
+      );
+
+
+      /*
+       * Mark the deposit as approved.
+       */
+      await db(
+        `deposits?id=eq.${encodeURIComponent(
+          depositId
+        )}`,
+        {
+          method:
+            "PATCH",
+
+          body:
+            JSON.stringify({
+              status:
+                "approved",
+
+              approved_by:
+                user.id,
+
+              approved_at:
+                new Date().toISOString(),
+
+              updated_at:
+                new Date().toISOString()
+            })
+        }
+      );
+
+
+      return res.status(200).json({
+        success: true,
+
+        message:
+          "Deposit approved and wallet credited.",
+
+        balance:
+          newBalance
+      });
+    }
+
+
+    /* =====================================================
+       POST — CUSTOMER CREATES DEPOSIT
+       ===================================================== */
+
+    const amount =
+      Number(body.amount);
+
+    if (
+      !Number.isFinite(amount) ||
+      amount <= 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          "Invalid deposit amount."
+      });
+    }
+
+
+    const deposit =
+      await db(
+        "deposits",
+        {
+          method:
+            "POST",
+
+          body:
+            JSON.stringify({
+              user_id:
+                user.id,
+
+              amount,
+
+              payment_method:
+                body.payment_method ||
+                "OPay",
+
+              payment_reference:
+                body.payment_reference ||
+                null,
+
+              receipt_url:
+                body.receipt_url ||
+                null,
+
+              customer_note:
+                body.customer_note ||
+                null,
+
+              status:
+                "pending"
+            })
+        }
+      );
+
+
+    return res.status(200).json({
+      success: true,
+
+      message:
+        "Deposit request submitted successfully.",
+
+      deposit:
+        Array.isArray(deposit)
+          ? deposit[0]
+          : deposit
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Deposit API error:",
+      error
+    );
+
+    const message =
+      error?.message ||
+      "Unable to process deposit.";
+
+    if (
+      message ===
+      "Unauthorized."
+    ) {
+      return res.status(401).json({
+        success: false,
+        error:
+          message
+      });
+    }
+
+    if (
+      message ===
+      "Administrator access required."
+    ) {
+      return res.status(403).json({
+        success: false,
+        error:
+          message
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error:
+        message
+    });
+  }
+}
