@@ -1,26 +1,10 @@
-import { authUser, sb } from "./_supabase.js";
-function q(v){return encodeURIComponent(String(v??""))}
-async function admin(userId){const r=await sb(`profiles?id=eq.${q(userId)}&select=role&limit=1`);return r?.[0]?.role==="admin";}
-export default async function handler(req,res){
-  try{
-    const u=await authUser(req);
-    if(!(await admin(u.id))) return res.status(403).json({success:false,error:"Admin access required."});
-    if(req.method==="GET"){
-      const rows=await sb("product_prices?select=*&order=country_name.asc,service_name.asc");
-      return res.status(200).json({success:true,prices:rows});
-    }
-    if(req.method==="POST"||req.method==="PATCH"){
-      const b=req.body||{};
-      if(!b.countryId||!b.serviceId) return res.status(400).json({success:false,error:"Country and service are required."});
-      const price=Number(b.sellingPrice);
-      if(!Number.isFinite(price)||price<=0) return res.status(400).json({success:false,error:"Enter a valid selling price."});
-      const row={country_id:b.countryId,country_name:b.countryName||String(b.countryId),service_id:b.serviceId,service_name:b.serviceName||String(b.serviceId),selling_price:price,updated_at:new Date().toISOString()};
-      const existing=await sb(`product_prices?country_id=eq.${q(b.countryId)}&service_id=eq.${q(b.serviceId)}&select=id&limit=1`);
-      const data=existing?.[0]
-        ? await sb(`product_prices?id=eq.${q(existing[0].id)}`,{method:"PATCH",body:JSON.stringify(row)})
-        : await sb("product_prices",{method:"POST",body:JSON.stringify(row)});
-      return res.status(200).json({success:true,message:"Selling price saved successfully.",price:data?.[0]||null});
-    }
-    return res.status(405).json({success:false,error:"Method not allowed"});
-  }catch(e){res.status(e.message==="Unauthorized."?401:500).json({success:false,error:e.message||"Admin pricing failed."});}
-}
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://rfitbmkizfmwfqqskwhy.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY =
+  process.env.SUPABASE_ANON_KEY ||
+  process.env.SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+function token(req){ const h=req.headers?.authorization||""; return h.toLowerCase().startsWith("bearer ")?h.slice(7).trim():null; }
+async function auth(req){ const t=token(req); if(!t) throw new Error("Unauthorized."); const r=await fetch(`${SUPABASE_URL}/auth/v1/user`,{headers:{apikey:SUPABASE_PUBLISHABLE_KEY,Authorization:`Bearer ${t}`,Accept:"application/json"}}); if(!r.ok) throw new Error("Unauthorized."); const u=await r.json(); if(!u?.id) throw new Error("Unauthorized."); return u; }
+async function db(path, options={}){ if(!SUPABASE_SERVICE_ROLE_KEY) throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured."); const r=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{...options,headers:{apikey:SUPABASE_SERVICE_ROLE_KEY,Authorization:`Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,Accept:"application/json","Content-Type":"application/json",Prefer:"return=representation",...(options.headers||{})}}); const text=await r.text(); const d=text?JSON.parse(text):{}; if(!r.ok) throw new Error(d?.message||d?.hint||d?.details||`Supabase request failed (HTTP ${r.status})`); return d; }
+export default async function handler(req,res){ if(!["GET","POST","PATCH"].includes(req.method)) return res.status(405).json({success:false,error:"Method not allowed"}); try{ const u=await auth(req); const profiles=await db(`profiles?id=eq.${encodeURIComponent(u.id)}&select=role&limit=1`); if(profiles?.[0]?.role!=="admin") return res.status(403).json({success:false,error:"Administrator access required."}); if(req.method==="GET") return res.status(200).json({success:true,prices:await db("product_prices?select=*&order=country_name.asc,service_name.asc")}); const b=req.body||{}; const countryId=b.countryId; const serviceId=b.serviceId; const sellingPrice=Number(b.sellingPrice); if(!countryId||!serviceId||!Number.isFinite(sellingPrice)||sellingPrice<=0) return res.status(400).json({success:false,error:"Invalid pricing data."}); const body={country_id:String(countryId),country_name:b.countryName||String(countryId),service_id:String(serviceId),service_name:b.serviceName||String(serviceId),selling_price:sellingPrice,updated_at:new Date().toISOString()}; const existing=await db(`product_prices?country_id=eq.${encodeURIComponent(countryId)}&service_id=eq.${encodeURIComponent(serviceId)}&select=id&limit=1`); let data; if(existing?.[0]?.id){ data=await db(`product_prices?id=eq.${encodeURIComponent(existing[0].id)}`,{method:"PATCH",body:JSON.stringify(body)}); } else { data=await db("product_prices",{method:"POST",body:JSON.stringify(body)}); } return res.status(200).json({success:true,price:Array.isArray(data)?data[0]:data}); }catch(e){ const msg=e?.message||"Unable to process pricing."; return res.status(msg==="Unauthorized."?401:500).json({success:false,error:msg}); } }
