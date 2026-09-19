@@ -109,8 +109,15 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-let supabaseClient=null,currentUser=null,currentProfile=null,currentWallet=null;
-let countries=[],services=[],selectedCountry=null,selectedService=null;
+let supabaseClient = null;
+let supabaseReady = false;
+let currentUser = null;
+let currentProfile = null;
+let currentWallet = null;
+let countries = [];
+let services = [];
+let selectedCountry = null;
+let selectedService = null;
 
 const $=id=>document.getElementById(id);
 const money=v=>"₦"+Number(v||0).toLocaleString("en-NG",{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -118,19 +125,110 @@ function msg(id,text,ok=false){const e=$(id);if(e){e.textContent=text;e.classNam
 function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function toggleEye(id,btn){const e=$(id);if(!e)return;e.type=e.type==="password"?"text":"password";btn.textContent=e.type==="password"?"◉":"◌"}
 function authMode(mode){$("loginForm").classList.toggle("hidden",mode!=="login");$("registerForm").classList.toggle("hidden",mode!=="register");$("loginTab").classList.toggle("active",mode==="login");$("registerTab").classList.toggle("active",mode==="register")}
-async function token(){return (await supabaseClient.auth.getSession()).data.session?.access_token||null}
+async function token(){
+  if (!supabaseClient || !supabaseReady || !supabaseClient.auth) return null;
+  const { data, error } = await supabaseClient.auth.getSession();
+  if (error) { console.error("Supabase session error:", error); return null; }
+  return data?.session?.access_token || null;
+}
 async function api(path,options={}){const t=await token();const headers={"Content-Type":"application/json",...(options.headers||{})};if(t)headers.Authorization=`Bearer ${t}`;const r=await fetch(path,{...options,headers});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||`Request failed (${r.status})`);return d}
 async function boot(){
-  const c=await fetch("/api/config").then(r=>r.json()); if(!c.success)throw new Error(c.error);
-  supabaseClient=window.supabase.createClient(c.supabaseUrl,c.supabasePublishableKey);
-  const s=await supabaseClient.auth.getSession(); if(s.data.session) await signedIn(s.data.session.user);
-  supabaseClient.auth.onAuthStateChange(async(_e,session)=>{if(session)await signedIn(session.user);else showAuth()});
+  try {
+    if (!window.supabase || typeof window.supabase.createClient !== "function") {
+      throw new Error("Supabase library failed to load. Please refresh the page.");
+    }
+
+    const response = await fetch("/api/config", { cache: "no-store" });
+    const config = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(config.error || `Configuration request failed (${response.status})`);
+    }
+
+    if (!config.success) {
+      throw new Error(config.error || "Supabase configuration is missing.");
+    }
+
+    if (!config.supabaseUrl) {
+      throw new Error("SUPABASE_URL is missing from Vercel environment variables.");
+    }
+
+    if (!config.supabasePublishableKey) {
+      throw new Error("SUPABASE_PUBLISHABLE_KEY is missing from Vercel environment variables.");
+    }
+
+    supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey);
+
+    if (!supabaseClient || !supabaseClient.auth) {
+      throw new Error("Supabase client could not be initialized.");
+    }
+
+    supabaseReady = true;
+
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (error) console.error("Supabase session error:", error);
+
+    if (data?.session?.user) await signedIn(data.session.user);
+    else showAuth();
+
+    supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) await signedIn(session.user);
+      else showAuth();
+    });
+  } catch (error) {
+    console.error("Supabase initialization failed:", error);
+    supabaseClient = null;
+    supabaseReady = false;
+    showAuth();
+    msg("loginMsg", error?.message || "Unable to initialize Supabase. Check your Vercel environment variables.");
+  }
 }
 function showAuth(){$("auth").classList.remove("hidden");$("app").classList.add("hidden")}
 async function signedIn(user){currentUser=user;const p=await api("/api/profile").catch(()=>null);currentProfile=p?.profile||null;currentWallet=p?.wallet||{balance:0};$("auth").classList.add("hidden");$("app").classList.remove("hidden");$("userEmail").textContent=user.email||"";$("miniUser").textContent=currentProfile?.full_name||user.email||"";const admin=currentProfile?.role==="admin";$("adminNav").style.display=admin?"block":"none";go("home");refreshHome()}
-async function login(e){e.preventDefault();msg("loginMsg","");try{const {error}=await supabaseClient.auth.signInWithPassword({email:$("loginEmail").value.trim(),password:$("loginPassword").value});if(error)throw error;msg("loginMsg","Login successful.",true)}catch(x){msg("loginMsg",x.message||"Login failed.")}}
-async function register(e){e.preventDefault();msg("regMsg","");if($("regPassword").value!==$("regConfirm").value)return msg("regMsg","Passwords do not match.");try{const {data,error}=await supabaseClient.auth.signUp({email:$("regEmail").value.trim(),password:$("regPassword").value,options:{data:{full_name:$("regName").value.trim(),username:$("regUsername").value.trim()}}});if(error)throw error;if(data.user){await fetch("/api/profile",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId:data.user.id,fullName:$("regName").value.trim(),username:$("regUsername").value.trim(),email:$("regEmail").value.trim()})}).catch(()=>{});msg("regMsg","Account created. You can log in.",true);authMode("login")} }catch(x){msg("regMsg",x.message||"Registration failed.")}}
-async function logout(){await supabaseClient.auth.signOut()}
+async function login(e){
+  e.preventDefault();
+  msg("loginMsg","");
+  if (!supabaseClient || !supabaseReady || !supabaseClient.auth) return msg("loginMsg","Supabase is still loading. Please wait a moment and try again.");
+  const button=e.submitter;
+  if(button){button.disabled=true;button.textContent="Logging in...";}
+  try{
+    const {error}=await supabaseClient.auth.signInWithPassword({email:$("loginEmail").value.trim(),password:$("loginPassword").value});
+    if(error)throw error;
+    msg("loginMsg","Login successful.",true);
+  }catch(x){
+    console.error("Login error:",x);
+    msg("loginMsg",x.message||"Login failed.");
+  }finally{
+    if(button){button.disabled=false;button.textContent="Login";}
+  }
+}
+async function register(e){
+  e.preventDefault();
+  msg("regMsg","");
+  if (!supabaseClient || !supabaseReady || !supabaseClient.auth) return msg("regMsg","Supabase is still loading. Please wait a moment and try again.");
+  if($("regPassword").value!==$("regConfirm").value) return msg("regMsg","Passwords do not match.");
+  const button=e.submitter;
+  if(button){button.disabled=true;button.textContent="Creating account...";}
+  try{
+    const {data,error}=await supabaseClient.auth.signUp({email:$("regEmail").value.trim(),password:$("regPassword").value,options:{data:{full_name:$("regName").value.trim(),username:$("regUsername").value.trim()}}});
+    if(error)throw error;
+    if(data?.user){
+      await fetch("/api/profile",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId:data.user.id,fullName:$("regName").value.trim(),username:$("regUsername").value.trim(),email:$("regEmail").value.trim()})}).catch(error=>console.warn("Profile creation warning:",error));
+      msg("regMsg","Account created. You can log in.",true);
+      authMode("login");
+    }
+  }catch(x){
+    console.error("Registration error:",x);
+    msg("regMsg",x.message||"Registration failed.");
+  }finally{
+    if(button){button.disabled=false;button.textContent="Create Account";}
+  }
+}
+async function logout(){
+  if (!supabaseClient || !supabaseReady || !supabaseClient.auth) { showAuth(); return; }
+  try { await supabaseClient.auth.signOut(); }
+  catch(error){ console.error("Logout error:",error); showAuth(); }
+}
 const titles={home:"Dashboard",buy:"Buy Number",active:"Active Numbers",orders:"Order History",wallet:"Wallet",support:"Support",profile:"Profile",admin:"Admin Dashboard"};
 function go(page){Object.keys(titles).forEach(p=>{const e=$("page-"+p);if(e)e.classList.toggle("hide",p!==page)});document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));$("pageTitle").textContent=titles[page]||"Dashboard";if(page==="buy")loadCountries();if(page==="active")loadOrders("active");if(page==="orders")loadOrders();if(page==="wallet"){loadDeposits();loadTx();}if(page==="profile")loadProfile();if(page==="admin")loadAdmin()}
 async function refreshHome(){try{const p=await api("/api/profile");currentProfile=p.profile;currentWallet=p.wallet||{balance:0};$("homeBalance").textContent=money(currentWallet.balance);const o=await api("/api/orders");const orders=o.orders||[];$("statOrders").textContent=orders.length;$("statActive").textContent=orders.filter(x=>["active","pending"].includes(x.status)).length;const t=await api("/api/transactions");$("statTransactions").textContent=(t.transactions||[]).length}catch(e){}}
