@@ -103,7 +103,7 @@
         </section>
 
       </div>
-      <footer class="footer">© 2026 Global Virtual Sim Web · <a href="https://t.me/GlobalVirtualSimWebSupport" target="_blank">Follow us on Telegram</a></footer>
+      <footer class="footer">© 2026 Global Virtual Sim Web · Owned by KelChuk’s · <a href="https://t.me/GlobalVirtualSimWebSupport" target="_blank" rel="noopener">Follow us on Telegram</a></footer>
     </main>
   </div>
 </section>
@@ -185,7 +185,7 @@ async function boot(){
   }
 }
 function showAuth(){$("auth").classList.remove("hidden");$("app").classList.add("hidden")}
-async function signedIn(user){currentUser=user;const p=await api("/api/profile").catch(()=>null);currentProfile=p?.profile||null;currentWallet=p?.wallet||{balance:0};$("auth").classList.add("hidden");$("app").classList.remove("hidden");$("userEmail").textContent=user.email||"";$("miniUser").textContent=currentProfile?.full_name||user.email||"";const admin=currentProfile?.role==="admin";$("adminNav").style.display=admin?"block":"none";go("home");refreshHome()}
+async function signedIn(user){currentUser=user;const p=await api("/api/profile").catch(()=>null);currentProfile=p?.profile||null;currentWallet=p?.wallet||{balance:0};$("auth").classList.add("hidden");$("app").classList.remove("hidden");$("userEmail").textContent=user.email||"";$("miniUser").textContent=currentProfile?.full_name||user.email||"";const admin=currentProfile?.role==="admin" || user.email?.toLowerCase()==="globalsimwebsite@gmail.com";$("adminNav").style.display=admin?"block":"none";go("home");refreshHome()}
 async function login(e){
   e.preventDefault();
   msg("loginMsg","");
