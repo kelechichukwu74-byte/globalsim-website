@@ -94,9 +94,16 @@
         <section id="page-profile" class="page hide"><div class="card"><h3>Profile</h3><div id="profileBox"></div></div></section>
 
         <section id="page-admin" class="page hide">
-          <div class="card"><h3>Admin — Pricing</h3><p class="muted">Set the customer selling price for each country/service.</p>
-            <div class="grid2"><div class="field"><label>Country ID</label><input id="adminCountryId" class="input"></div><div class="field"><label>Country Name</label><input id="adminCountryName" class="input"></div><div class="field"><label>Service ID</label><input id="adminServiceId" class="input"></div><div class="field"><label>Service Name</label><input id="adminServiceName" class="input"></div><div class="field"><label>Selling Price (₦)</label><input id="adminPrice" class="input" type="number" min="1"></div></div>
-            <button class="primary" onclick="savePrice()">Save Selling Price</button><div id="adminPriceMsg" class="msg"></div>
+          <div class="card"><h3>Admin — Pricing</h3><p class="muted">Choose a country and service from the same lists customers use. Then check the provider price and set your own selling price.</p>
+            <div class="grid2">
+              <div class="field picker"><label>Country</label><input id="adminCountrySearch" class="input search" placeholder="Search country..." autocomplete="off" onclick="adminFilterCountries()" oninput="adminFilterCountries()"><div id="adminCountryList" class="picker-list hidden"></div></div>
+              <div class="field picker"><label>Service</label><input id="adminServiceSearch" class="input search" placeholder="Select a country first" autocomplete="off" disabled onclick="adminFilterServices()" oninput="adminFilterServices()"><div id="adminServiceList" class="picker-list hidden"></div></div>
+              <div class="field"><label>Provider Price</label><input id="adminProviderPrice" class="input" readonly placeholder="Search price after selecting service"></div>
+              <div class="field"><label>Your Selling Price (₦)</label><input id="adminPrice" class="input" type="number" min="1" placeholder="e.g. 3000"></div>
+            </div>
+            <div class="actions" style="margin-top:12px"><button class="secondary" onclick="adminSearchPrice()">Search Provider Price</button><button class="primary" onclick="savePrice()">Save Selling Price</button></div>
+            <input id="adminCountryId" type="hidden"><input id="adminCountryName" type="hidden"><input id="adminServiceId" type="hidden"><input id="adminServiceName" type="hidden">
+            <div id="adminPriceMsg" class="msg"></div>
           </div>
           <div class="card"><h3>Deposit Requests</h3><div id="adminDeposits">Loading...</div></div>
           <div class="card"><h3>Orders</h3><div id="adminOrders">Loading...</div></div>
@@ -249,8 +256,65 @@ async function submitDeposit(){try{const d=await api("/api/deposit",{method:"POS
 async function loadDeposits(){try{const d=await api("/api/deposit");$("depBody").innerHTML=(d.deposits||[]).map(x=>`<tr><td>${escapeHtml(x.created_at||"")}</td><td>${money(x.amount)}</td><td>${escapeHtml(x.status||"")}</td><td>${escapeHtml(x.payment_reference||"")}</td></tr>`).join("")||"<tr><td colspan='4'>No deposits.</td></tr>"}catch(e){}}
 async function loadTx(){try{const d=await api("/api/transactions");$("txBody").innerHTML=(d.transactions||[]).map(x=>`<tr><td>${escapeHtml(x.created_at||"")}</td><td>${escapeHtml(x.description||"")}</td><td>${money(x.amount)}</td><td>${money(x.balance_after)}</td></tr>`).join("")||"<tr><td colspan='4'>No transactions.</td></tr>"}catch(e){}}
 async function loadProfile(){const p=await api("/api/profile");currentProfile=p.profile;currentWallet=p.wallet; $("profileBox").innerHTML=`<p><b>Name:</b> ${escapeHtml(currentProfile?.full_name)}</p><p><b>Email:</b> ${escapeHtml(currentProfile?.email||currentUser?.email)}</p><p><b>Role:</b> ${escapeHtml(currentProfile?.role)}</p>`}
-async function savePrice(){try{const d=await api("/api/admin-pricing",{method:"POST",body:JSON.stringify({countryId:$("adminCountryId").value,countryName:$("adminCountryName").value,serviceId:$("adminServiceId").value,serviceName:$("adminServiceName").value,sellingPrice:Number($("adminPrice").value)})});msg("adminPriceMsg",d.message,true);loadAdmin()}catch(e){msg("adminPriceMsg",e.message)}}
-async function loadAdmin(){try{const d=await api("/api/deposit?admin=true");$("adminDeposits").innerHTML=(d.deposits||[]).filter(x=>x.status==="pending").map(x=>`<div class="card"><b>${money(x.amount)}</b> · ${escapeHtml(x.payment_reference||"")}<div class="actions"><button class="success" onclick="adminDeposit('${x.id}','approve')">Approve</button><button class="danger" onclick="adminDeposit('${x.id}','reject')">Reject</button></div></div>`).join("")||"No pending deposits.";const o=await api("/api/orders");$("adminOrders").innerHTML=`<div class="tablewrap"><table class="table"><tr><th>Service</th><th>Country</th><th>Customer</th><th>Cost</th><th>Sell</th><th>Profit</th></tr>${(o.orders||[]).map(x=>`<tr><td>${escapeHtml(x.service_name)}</td><td>${escapeHtml(x.country_name)}</td><td>${escapeHtml(x.phone_number)}</td><td>${money(x.provider_cost)}</td><td>${money(x.customer_price)}</td><td>${money(x.profit)}</td></tr>`).join("")}</table></div>`}catch(e){$("adminDeposits").textContent=e.message}}
+let adminCountries=[];
+let adminServices=[];
+let adminSelectedCountry=null;
+let adminSelectedService=null;
+async function loadAdminPricing(){
+  try{
+    const d=await fetch("/api/countries").then(r=>r.json());
+    if(!d.success)throw new Error(d.error||"Unable to load countries.");
+    adminCountries=d.countries||[];
+  }catch(e){msg("adminPriceMsg",e.message)}
+}
+function adminFilterCountries(){
+  const q=($("adminCountrySearch").value||"").toLowerCase();
+  const list=$("adminCountryList");
+  const arr=adminCountries.filter(c=>(c.name||"").toLowerCase().includes(q)||(c.code||"").toLowerCase().includes(q)).slice(0,100);
+  list.innerHTML=arr.map(c=>`<button type="button" onclick='adminSelectCountry(${JSON.stringify(c).replace(/'/g,"&#39;")})'>🌐 ${escapeHtml(c.name)} ${c.code?`(${escapeHtml(c.code)})`:""}</button>`).join("")||"<div class='muted' style='padding:12px'>No country found.</div>";
+  list.classList.remove("hidden");
+}
+async function adminSelectCountry(c){
+  adminSelectedCountry=c;adminSelectedService=null;adminServices=[];
+  $("adminCountrySearch").value=c.name||c.id;$("adminCountryList").classList.add("hidden");
+  $("adminCountryId").value=c.id||"";$("adminCountryName").value=c.name||"";
+  $("adminServiceSearch").disabled=true;$("adminServiceSearch").value="";$("adminServiceSearch").placeholder="Loading services...";
+  $("adminServiceList").classList.add("hidden");$("adminProviderPrice").value="";$("adminPrice").value="";
+  try{
+    const d=await fetch(`/api/services?countryId=${encodeURIComponent(c.id)}&countryCode=${encodeURIComponent(c.code||"")}&countryName=${encodeURIComponent(c.name||"")}`).then(r=>r.json());
+    if(!d.success)throw new Error(d.error||"Unable to load services.");
+    adminServices=d.services||[];
+    $("adminServiceSearch").disabled=false;$("adminServiceSearch").placeholder="Search service...";
+    adminFilterServices();
+  }catch(e){$("adminServiceSearch").placeholder="Unable to load services";msg("adminPriceMsg",e.message)}
+}
+function adminFilterServices(){
+  if(!adminSelectedCountry)return;
+  const q=($("adminServiceSearch").value||"").toLowerCase();
+  const list=$("adminServiceList");
+  const arr=adminServices.filter(s=>(s.name||"").toLowerCase().includes(q)||(s.id||"").toLowerCase().includes(q));
+  list.innerHTML=arr.map(s=>`<button type="button" onclick='adminSelectService(${JSON.stringify(s).replace(/'/g,"&#39;")})'>📱 ${escapeHtml(s.name||s.id)}</button>`).join("")||"<div class='muted' style='padding:12px'>No service found.</div>";
+  list.classList.remove("hidden");
+}
+function adminSelectService(s){
+  adminSelectedService=s;
+  $("adminServiceSearch").value=s.name||s.id;$("adminServiceList").classList.add("hidden");
+  $("adminServiceId").value=s.id||"";$("adminServiceName").value=s.name||s.id||"";
+  $("adminProviderPrice").value="Searching...";
+  adminSearchPrice();
+}
+async function adminSearchPrice(){
+  if(!adminSelectedCountry||!adminSelectedService)return msg("adminPriceMsg","Select a country and service first.");
+  try{
+    const d=await fetch(`/api/prices?countryId=${encodeURIComponent(adminSelectedCountry.id)}&service=${encodeURIComponent(adminSelectedService.id)}&countryCode=${encodeURIComponent(adminSelectedCountry.code||"")}&countryName=${encodeURIComponent(adminSelectedCountry.name||"")}`).then(r=>r.json());
+    if(!d.success)throw new Error(d.error||"Unable to search provider price.");
+    const rows=d.servers||[];
+    $("adminProviderPrice").value=d.selected?.providerPrice?money(d.selected.providerPrice):"Price not available";
+    msg("adminPriceMsg",rows.length?rows.map(x=>`${x.server}: ${money(x.providerPrice)}`).join(" · "):"No provider price returned.",true);
+  }catch(e){$("adminProviderPrice").value="";msg("adminPriceMsg",e.message)}
+}
+async function savePrice(){try{if(!adminSelectedCountry||!adminSelectedService)return msg("adminPriceMsg","Select a country and service first.");const d=await api("/api/admin-pricing",{method:"POST",body:JSON.stringify({countryId:$("adminCountryId").value,countryName:$("adminCountryName").value,serviceId:$("adminServiceId").value,serviceName:$("adminServiceName").value,sellingPrice:Number($("adminPrice").value)})});msg("adminPriceMsg",d.message,true);loadAdmin()}catch(e){msg("adminPriceMsg",e.message)}}
+async function loadAdmin(){try{await loadAdminPricing();const d=await api("/api/deposit?admin=true");$("adminDeposits").innerHTML=(d.deposits||[]).filter(x=>x.status==="pending").map(x=>`<div class="card"><b>${money(x.amount)}</b> · ${escapeHtml(x.payment_reference||"")}<div class="muted">${escapeHtml(x.created_at||"")}</div><div class="actions"><button class="success" onclick="adminDeposit('${x.id}','approve')">Approve</button><button class="danger" onclick="adminDeposit('${x.id}','reject')">Reject</button></div></div>`).join("")||"No pending deposits.";const o=await api("/api/orders");$("adminOrders").innerHTML=`<div class="tablewrap"><table class="table"><tr><th>Service</th><th>Country</th><th>Customer</th><th>Cost</th><th>Sell</th><th>Profit</th></tr>${(o.orders||[]).map(x=>`<tr><td>${escapeHtml(x.service_name)}</td><td>${escapeHtml(x.country_name)}</td><td>${escapeHtml(x.phone_number)}</td><td>${money(x.provider_cost)}</td><td>${money(x.customer_price)}</td><td>${money(x.profit)}</td></tr>`).join("")}</table></div>`}catch(e){$("adminDeposits").textContent=e.message}}
 async function adminDeposit(id,action){try{await api("/api/deposit",{method:"POST",body:JSON.stringify({admin:true,depositId:id,action})});loadAdmin()}catch(e){alert(e.message)}}
 document.addEventListener("click",e=>{if(!e.target.closest(".picker"))document.querySelectorAll(".picker-list").forEach(x=>x.classList.add("hidden"))});
 boot().catch(e=>{console.error(e);showAuth()});
