@@ -1,193 +1,189 @@
+<section id="activeNumbersSection">
+  <h2>Active Numbers</h2>
+  <p>Your currently active number activations.</p>
+
+  <button type="button" onclick="loadActiveNumbers()">
+    Refresh
+  </button>
+
+  <div id="activeNumbersList" style="margin-top:20px;"></div>
+</section>
+
+<script>
 async function loadActiveNumbers() {
-  const container = document.getElementById("activeNumbersList");
-  if (!container) {
-    console.error("activeNumbersList container not found.");
-    return;
-  }
-  container.innerHTML = `
-    <div style="padding:20px;text-align:center;">
-      Loading active numbers...
-    </div>
-  `;
+  const list = document.getElementById("activeNumbersList");
+
+  list.innerHTML = "<p>Loading active numbers...</p>";
+
   try {
-    // Get the current Supabase login session
-    const { data: sessionData, error: sessionError } =
-      await supabaseClient.auth.getSession();
-    if (sessionError || !sessionData?.session?.access_token) {
+    const { data, error } = await supabaseClient.auth.getSession();
+
+    if (error || !data.session) {
       throw new Error("Please log in again.");
     }
-    const token = sessionData.session.access_token;
+
     const response = await fetch("/api/sms/active", {
-      method: "GET",
       headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json"
+        Authorization: "Bearer " + data.session.access_token
       }
     });
+
     const result = await response.json();
+
     if (!response.ok || !result.success) {
       throw new Error(
-        result.error ||
-        result.message ||
-        "Unable to load active numbers."
+        result.error || "Unable to load active numbers."
       );
     }
+
     const numbers =
       result.numbers ||
       result.activations ||
       result.data ||
       [];
+
     if (!numbers.length) {
-      container.innerHTML = `
-        <div style="padding:20px;text-align:center;">
-          No active numbers.
-        </div>
-      `;
+      list.innerHTML = "<p>No active numbers.</p>";
       return;
     }
-    container.innerHTML = numbers.map(order => {
+
+    list.innerHTML = numbers.map(order => {
+
       const verificationId =
         order.verification_id ||
-        order.provider_order_id ||
-        "";
+        order.provider_order_id;
+
       const number =
         order.number ||
         order.phone_number ||
         "Unknown";
+
       const service =
         order.service ||
         order.service_name ||
         "Unknown";
+
       const status =
         order.status ||
         "active";
+
       const created =
         order.created_at
           ? new Date(order.created_at).toLocaleString()
           : "—";
+
       return `
         <div
-          class="active-number-card"
-          data-verification-id="${escapeHtml(verificationId)}"
+          class="active-number"
+          data-id="${escapeHtml(verificationId)}"
           style="
             border:1px solid #ddd;
             border-radius:12px;
             padding:16px;
-            margin-bottom:15px;
-            background:#fff;
+            margin:15px 0;
           "
         >
-          <div style="margin-bottom:10px;">
+
+          <div>
             <strong>Number</strong>
-            <div style="font-size:18px;margin-top:4px;">
-              ${escapeHtml(number)}
-            </div>
+            <div>${escapeHtml(number)}</div>
           </div>
-          <div style="margin-bottom:8px;">
-            <strong>Service:</strong>
-            ${escapeHtml(service)}
+
+          <div style="margin-top:8px;">
+            <strong>Service</strong>
+            <div>${escapeHtml(service)}</div>
           </div>
-          <div style="margin-bottom:8px;">
-            <strong>Status:</strong>
-            <span class="number-status">
-              ${escapeHtml(status)}
-            </span>
+
+          <div style="margin-top:8px;">
+            <strong>Status</strong>
+            <div>${escapeHtml(status)}</div>
           </div>
-          <div style="margin-bottom:15px;">
-            <strong>Created:</strong>
-            ${escapeHtml(created)}
+
+          <div style="margin-top:8px;">
+            <strong>Created</strong>
+            <div>${escapeHtml(created)}</div>
           </div>
+
           <div
-            class="sms-result"
+            class="sms-box"
             style="
               display:none;
-              padding:12px;
-              margin-bottom:12px;
+              margin-top:12px;
+              padding:10px;
               border-radius:8px;
-              background:#f5f5f5;
+              background:#f3f3f3;
             "
           ></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+
+          <div
+            style="
+              display:flex;
+              gap:10px;
+              margin-top:15px;
+              flex-wrap:wrap;
+            "
+          >
+
             <button
               type="button"
-              class="check-sms-btn"
-              onclick="checkNumberSMS(this)"
-              style="
-                padding:10px 14px;
-                border:0;
-                border-radius:8px;
-                cursor:pointer;
-              "
+              onclick="checkSMS(this)"
             >
               📩 Check SMS
             </button>
+
             <button
               type="button"
-              class="cancel-number-btn"
-              onclick="cancelActiveNumber(this)"
-              style="
-                padding:10px 14px;
-                border:0;
-                border-radius:8px;
-                cursor:pointer;
-              "
+              onclick="cancelNumber(this)"
             >
               ❌ Cancel Number
             </button>
+
           </div>
+
         </div>
       `;
     }).join("");
+
   } catch (error) {
-    console.error("Active numbers:", error);
-    container.innerHTML = `
-      <div style="padding:20px;text-align:center;">
-        ${escapeHtml(
-          error.message || "Unable to load active numbers."
-        )}
-      </div>
+    console.error(error);
+
+    list.innerHTML = `
+      <p>${escapeHtml(
+        error.message || "Unable to load active numbers."
+      )}</p>
     `;
   }
 }
-/* =========================
-   CHECK SMS
-========================= */
-async function checkNumberSMS(button) {
-  const card = button.closest(".active-number-card");
-  if (!card) return;
-  const verificationId =
-    card.dataset.verificationId;
-  if (!verificationId) {
-    alert("Verification ID is missing.");
-    return;
-  }
-  const resultBox =
-    card.querySelector(".sms-result");
+
+
+async function checkSMS(button) {
+
+  const card = button.closest(".active-number");
+
+  const id = card.dataset.id;
+
+  const box = card.querySelector(".sms-box");
+
   button.disabled = true;
-  button.textContent = "Checking SMS...";
+  button.textContent = "Checking...";
+
   try {
+
     const response = await fetch(
-      `/api/sms/sms?id=${encodeURIComponent(verificationId)}`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json"
-        }
-      }
+      "/api/sms/sms?id=" +
+      encodeURIComponent(id)
     );
+
     const result = await response.json();
+
+    box.style.display = "block";
+
     if (!response.ok || !result.success) {
-      throw new Error(
-        result.error ||
-        result.message ||
-        "Unable to load SMS."
-      );
+      box.textContent =
+        result.error || "Unable to load SMS.";
+      return;
     }
-    resultBox.style.display = "block";
-    /*
-     * Provider responses can have different SMS fields.
-     * Try the common possibilities.
-     */
+
     const sms =
       result.sms ||
       result.message ||
@@ -195,103 +191,102 @@ async function checkNumberSMS(button) {
       result.data?.sms ||
       result.data?.message ||
       result.data?.code;
+
     if (sms) {
-      resultBox.innerHTML = `
-        <strong>📩 SMS Received</strong>
-        <div style="margin-top:6px;">
-          ${escapeHtml(
-            typeof sms === "string"
-              ? sms
-              : JSON.stringify(sms)
-          )}
-        </div>
-      `;
+      box.innerHTML =
+        "<strong>📩 SMS Received</strong><br>" +
+        escapeHtml(
+          typeof sms === "string"
+            ? sms
+            : JSON.stringify(sms)
+        );
     } else {
-      resultBox.innerHTML = `
-        <strong>📩 SMS</strong>
-        <div style="margin-top:6px;">
-          No SMS has arrived yet. Tap "Check SMS" again shortly.
-        </div>
-      `;
+      box.textContent =
+        "No SMS received yet. Tap Check SMS again.";
     }
+
   } catch (error) {
-    resultBox.style.display = "block";
-    resultBox.innerHTML = `
-      <strong>SMS</strong>
-      <div style="margin-top:6px;">
-        ${escapeHtml(
-          error.message || "Unable to load SMS."
-        )}
-      </div>
-    `;
+
+    box.style.display = "block";
+    box.textContent =
+      error.message || "Unable to load SMS.";
+
   } finally {
+
     button.disabled = false;
     button.textContent = "📩 Check SMS";
   }
 }
-/* =========================
-   CANCEL NUMBER
-========================= */
-async function cancelActiveNumber(button) {
-  const card = button.closest(".active-number-card");
-  if (!card) return;
-  const verificationId =
-    card.dataset.verificationId;
-  if (!verificationId) {
-    alert("Verification ID is missing.");
+
+
+async function cancelNumber(button) {
+
+  const card = button.closest(".active-number");
+
+  const id = card.dataset.id;
+
+  if (!confirm(
+    "Are you sure you want to cancel this number?"
+  )) {
     return;
   }
-  const confirmed = confirm(
-    "Are you sure you want to cancel this number? Your wallet will be refunded if the cancellation is accepted."
-  );
-  if (!confirmed) return;
+
   button.disabled = true;
   button.textContent = "Cancelling...";
+
   try {
-    const { data: sessionData, error: sessionError } =
+
+    const { data, error } =
       await supabaseClient.auth.getSession();
-    if (sessionError || !sessionData?.session?.access_token) {
+
+    if (error || !data.session) {
       throw new Error("Please log in again.");
     }
-    const token = sessionData.session.access_token;
-    const response = await fetch("/api/sms/cancel", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        Accept: "application/json"
-      },
-      body: JSON.stringify({
-        verificationId: verificationId
-      })
-    });
+
+    const response = await fetch(
+      "/api/sms/cancel",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization:
+            "Bearer " + data.session.access_token
+        },
+        body: JSON.stringify({
+          verificationId: id
+        })
+      }
+    );
+
     const result = await response.json();
+
     if (!response.ok || !result.success) {
       throw new Error(
         result.error ||
-        result.message ||
         "Unable to cancel number."
       );
     }
+
     alert(
       result.message ||
       "Number cancelled and wallet refunded."
     );
-    // Reload the active numbers.
-    await loadActiveNumbers();
+
+    loadActiveNumbers();
+
   } catch (error) {
-    console.error("Cancel number:", error);
+
     alert(
       error.message ||
       "Unable to cancel number."
     );
+
     button.disabled = false;
     button.textContent = "❌ Cancel Number";
   }
 }
-/* =========================
-   HTML ESCAPE
-========================= */
+
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -300,16 +295,10 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
-/* =========================
-   REFRESH BUTTON
-========================= */
-function refreshActiveNumbers() {
-  loadActiveNumbers();
-}
-/* Load when page is ready */
+
+
 document.addEventListener(
   "DOMContentLoaded",
-  () => {
-    loadActiveNumbers();
-  }
+  loadActiveNumbers
 );
+</script>
