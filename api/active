@@ -1,143 +1,80 @@
-import {
-  sureVerificationRequest
-} from "./_lib.js";
-
-
 const SUPABASE_URL =
   process.env.SUPABASE_URL ||
   "https://rfitbmkizfmwfqqskwhy.supabase.co";
 
-
-const SUPABASE_PUBLISHABLE_KEY =
-  process.env.SUPABASE_PUBLISHABLE_KEY ||
-  "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
-
-
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-
-/*
-  -------------------------------------------------------
-  Get customer access token
-  -------------------------------------------------------
-*/
-
-function getToken(req) {
-
+function getBearerToken(req) {
   const header =
     req.headers?.authorization ||
     req.headers?.Authorization ||
     "";
 
-  if (
-    !header.startsWith("Bearer ")
-  ) {
+  if (!header.toLowerCase().startsWith("bearer ")) {
     return null;
   }
 
-  return header.slice(7);
+  return header.slice(7).trim();
 }
-
-
-/*
-  -------------------------------------------------------
-  Verify logged-in customer
-  -------------------------------------------------------
-*/
 
 async function getAuthenticatedUser(req) {
-
-  const token =
-    getToken(req);
+  const token = getBearerToken(req);
 
   if (!token) {
-    throw new Error(
-      "Unauthorized."
-    );
+    throw new Error("Unauthorized.");
   }
-
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/auth/v1/user`,
-      {
-        headers: {
-          apikey:
-            SUPABASE_PUBLISHABLE_KEY,
-
-          Authorization:
-            `Bearer ${token}`,
-
-          Accept:
-            "application/json"
-        }
-      }
-    );
-
-  if (!response.ok) {
-    throw new Error(
-      "Unauthorized."
-    );
-  }
-
-  return await response.json();
-}
-
-
-/*
-  -------------------------------------------------------
-  Supabase server request
-  -------------------------------------------------------
-*/
-
-async function supabaseRequest(
-  path,
-  options = {}
-) {
 
   if (!SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not configured."
-    );
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
   }
 
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/${path}`,
-      {
-        ...options,
-
-        headers: {
-          apikey:
-            SUPABASE_SERVICE_ROLE_KEY,
-
-          Authorization:
-            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-
-          "Content-Type":
-            "application/json",
-
-          Accept:
-            "application/json",
-
-          Prefer:
-            "return=representation",
-
-          ...(options.headers || {})
-        }
+  const response = await fetch(
+    `${SUPABASE_URL}/auth/v1/user`,
+    {
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json"
       }
-    );
+    }
+  );
 
-  const text =
-    await response.text();
+  if (!response.ok) {
+    throw new Error("Unauthorized.");
+  }
+
+  const user = await response.json();
+
+  if (!user?.id) {
+    throw new Error("Unauthorized.");
+  }
+
+  return user;
+}
+
+async function supabaseRequest(path) {
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
+  }
+
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/${path}`,
+    {
+      method: "GET",
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        Accept: "application/json"
+      }
+    }
+  );
+
+  const text = await response.text();
 
   let data = {};
-
   try {
-    data =
-      text
-        ? JSON.parse(text)
-        : {};
+    data = text ? JSON.parse(text) : {};
   } catch {
     throw new Error(
       `Supabase returned invalid JSON (HTTP ${response.status}).`
@@ -156,238 +93,44 @@ async function supabaseRequest(
   return data;
 }
 
-
-/*
-  -------------------------------------------------------
-  MAIN ACTIVE NUMBERS HANDLER
-  -------------------------------------------------------
-*/
-
-export default async function handler(
-  req,
-  res
-) {
-
-  if (
-    req.method !== "GET"
-  ) {
-
+export default async function handler(req, res) {
+  if (req.method !== "GET") {
     return res.status(405).json({
-      success:
-        false,
-
-      error:
-        "Method not allowed"
+      success: false,
+      error: "Method not allowed"
     });
-
   }
 
-
   try {
+    const user = await getAuthenticatedUser(req);
 
-    /*
-      ---------------------------------------------------
-      1. Verify the logged-in customer
-      ---------------------------------------------------
-    */
-
-    const user =
-      await getAuthenticatedUser(
-        req
-      );
-
-
-    /*
-      ---------------------------------------------------
-      2. Get this customer's orders only
-      ---------------------------------------------------
-    */
-
-    const orders =
-      await supabaseRequest(
-        `orders?user_id=eq.${encodeURIComponent(
-          user.id
-        )}&select=*&order=created_at.desc`
-      );
-
-
-    /*
-      ---------------------------------------------------
-      3. Keep only numbers that are still active.
-      Cancelled/refunded orders are excluded.
-      ---------------------------------------------------
-    */
-
-    const activeOrders =
-      Array.isArray(orders)
-        ? orders.filter(
-            order => {
-
-              const status =
-                String(
-                  order?.status || ""
-                ).toLowerCase();
-
-
-              return (
-                status !== "cancelled" &&
-                status !== "canceled" &&
-                status !== "refunded" &&
-                status !== "completed" &&
-                status !== "expired"
-              );
-
-            }
-          )
-        : [];
-
-
-    /*
-      ---------------------------------------------------
-      4. Check current SMS status from SureVerification.
-      ---------------------------------------------------
-    */
-
-    const numbers =
-      await Promise.all(
-        activeOrders.map(
-          async order => {
-
-            let smsData = null;
-
-            let providerStatus =
-              order.status ||
-              "active";
-
-
-            const verificationId =
-              order.verification_id;
-
-
-            if (
-              verificationId
-            ) {
-
-              try {
-
-                smsData =
-                  await sureVerificationRequest(
-                    `/verifications/sms/${encodeURIComponent(
-                      verificationId
-                    )}`
-                  );
-
-
-                /*
-                  Try to detect provider status.
-                */
-
-                const detectedStatus =
-                  smsData?.status ||
-                  smsData?.data?.status ||
-                  smsData?.verification?.status;
-
-
-                if (
-                  detectedStatus
-                ) {
-
-                  providerStatus =
-                    detectedStatus;
-
-                }
-
-              } catch (
-                smsError
-              ) {
-
-                /*
-                  SMS may still be pending.
-                  Do not remove the number merely
-                  because the SMS endpoint has no SMS yet.
-                */
-
-                console.log(
-                  "SMS status pending:",
-                  verificationId
-                );
-
-              }
-
-            }
-
-
-            return {
-
-              ...order,
-
-              status:
-                providerStatus,
-
-              verification_id:
-                verificationId,
-
-              sms:
-                smsData
-
-            };
-
-          }
-        )
-      );
-
-
-    /*
-      ---------------------------------------------------
-      5. Return active numbers
-      ---------------------------------------------------
-    */
-
-    return res.status(200).json({
-
-      success:
-        true,
-
-      numbers,
-
-      data:
-        numbers
-
-    });
-
-
-  } catch (error) {
-
-    console.error(
-      "Active numbers error:",
-      error
+    const orders = await supabaseRequest(
+      `orders?user_id=eq.${encodeURIComponent(
+        user.id
+      )}&select=id,country_id,country_name,service_id,service_name,verification_id,phone_number,selling_price,price,provider_price,status,created_at&order=created_at.desc`
     );
 
+    const activeNumbers = (orders || []).filter((order) =>
+      ["active", "pending"].includes(
+        String(order.status || "").toLowerCase()
+      )
+    );
 
+    return res.status(200).json({
+      success: true,
+      numbers: activeNumbers,
+      orders: activeNumbers
+    });
+  } catch (error) {
     const message =
       error?.message ||
       "Unable to load active numbers.";
 
-
-    const status =
-      message === "Unauthorized."
-        ? 401
-        : 500;
-
-
-    return res.status(status).json({
-
-      success:
-        false,
-
-      error:
-        message,
-
-      numbers:
-        []
-
+    return res.status(
+      message === "Unauthorized." ? 401 : 500
+    ).json({
+      success: false,
+      error: message
     });
-
   }
-
 }
