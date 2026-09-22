@@ -4893,7 +4893,6 @@
 
       try {
 
-        // Use the existing Supabase session from this index.
         const accessToken =
           await getCurrentAccessToken();
 
@@ -4901,7 +4900,6 @@
           throw new Error("Please log in again.");
         }
 
-        // This project uses /api/active (NOT /api/sms/active).
         const response =
           await fetch("/api/active", {
             method: "GET",
@@ -4922,7 +4920,7 @@
           );
         }
 
-        const numbers =
+        let numbers =
           Array.isArray(result)
             ? result
             : (
@@ -4931,6 +4929,58 @@
                 result.data ||
                 []
               );
+
+        /*
+          Some provider responses can return a nested object.
+          Normalize that response before rendering so JavaScript
+          never prints "[object Object]" in the customer UI.
+        */
+        if (!Array.isArray(numbers)) {
+          if (Array.isArray(numbers?.data)) {
+            numbers = numbers.data;
+          } else if (Array.isArray(numbers?.numbers)) {
+            numbers = numbers.numbers;
+          } else if (Array.isArray(numbers?.activations)) {
+            numbers = numbers.activations;
+          } else if (numbers && typeof numbers === "object") {
+            numbers = [numbers];
+          } else {
+            numbers = [];
+          }
+        }
+
+        function activeValue(value, fallback = "—") {
+          if (
+            value === null ||
+            value === undefined ||
+            value === ""
+          ) {
+            return fallback;
+          }
+
+          if (
+            typeof value === "string" ||
+            typeof value === "number"
+          ) {
+            return String(value);
+          }
+
+          if (typeof value === "object") {
+
+            return (
+              value.phone_number ??
+              value.phoneNumber ??
+              value.number ??
+              value.phone ??
+              value.value ??
+              value.name ??
+              value.code ??
+              fallback
+            ).toString();
+          }
+
+          return String(value);
+        }
 
         if (!numbers.length) {
           container.innerHTML =
@@ -4954,43 +5004,64 @@
               </thead>
 
               <tbody>
-                ${numbers.map(item => `
-                  <tr>
-                    <td>
-                      <strong>
-                        ${escapeHtml(
-                          item.phone_number ||
-                          item.phoneNumber ||
-                          item.number ||
-                          "—"
-                        )}
-                      </strong>
-                    </td>
 
-                    <td>
-                      ${escapeHtml(
-                        item.service ||
-                        item.service_name ||
-                        item.serviceName ||
-                        "—"
-                      )}
-                    </td>
+                ${numbers.map(item => {
 
-                    <td>
-                      ${statusBadge(
-                        item.status ||
-                        "active"
-                      )}
-                    </td>
+                  const number =
+                    activeValue(
+                      item?.phone_number ??
+                      item?.phoneNumber ??
+                      item?.number ??
+                      item?.phone
+                    );
 
-                    <td>
-                      ${formatDate(
-                        item.created_at ||
-                        item.createdAt
-                      )}
-                    </td>
-                  </tr>
-                `).join("")}
+                  const service =
+                    activeValue(
+                      item?.service_name ??
+                      item?.serviceName ??
+                      item?.service ??
+                      item?.name
+                    );
+
+                  const status =
+                    activeValue(
+                      item?.status,
+                      "active"
+                    );
+
+                  const created =
+                    item?.created_at ??
+                    item?.createdAt ??
+                    null;
+
+                  return `
+
+                    <tr>
+
+                      <td>
+                        <strong>
+                          ${escapeHtml(number)}
+                        </strong>
+                      </td>
+
+                      <td>
+                        ${escapeHtml(service)}
+                      </td>
+
+                      <td>
+                        ${statusBadge(status)}
+                      </td>
+
+                      <td>
+                        ${formatDate(created)}
+                      </td>
+
+                    </tr>
+
+                  `;
+
+                }).join("")}
+
               </tbody>
 
             </table>
