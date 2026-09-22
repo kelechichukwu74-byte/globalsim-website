@@ -26,9 +26,7 @@ async function getAuthenticatedUser(req) {
   }
 
   if (!SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not configured."
-    );
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
   }
 
   const response = await fetch(
@@ -62,8 +60,7 @@ async function supabaseRequest(path) {
       method: "GET",
       headers: {
         apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization:
-          `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         Accept: "application/json"
       }
     }
@@ -105,11 +102,7 @@ export default async function handler(req, res) {
     const user = await getAuthenticatedUser(req);
 
     const orders = await supabaseRequest(
-      `orders?user_id=eq.${encodeURIComponent(user.id)}` +
-      `&select=id,provider_order_id,service_country_price_id,` +
-      `service_name,country_name,customer_price,provider_cost,` +
-      `profit,status,phone_number,created_at` +
-      `&order=created_at.desc`
+      `orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,provider_order_id,service_country_price_id,service_name,country_name,customer_price,provider_cost,profit,status,phone_number,created_at&order=created_at.desc`
     );
 
     const terminalStatuses = new Set([
@@ -121,95 +114,45 @@ export default async function handler(req, res) {
       "rejected"
     ]);
 
-    const activeNumbers = (
-      Array.isArray(orders) ? orders : []
-    )
-      .filter(order => {
+    const activeNumbers = (Array.isArray(orders) ? orders : [])
+      .filter((order) => {
         const status =
-          String(order?.status || "active")
-            .toLowerCase();
+          String(order?.status || "active").toLowerCase();
 
         return !terminalStatuses.has(status);
       })
-      .map(order => ({
-        id: order.id,
+      .map((order) => ({
+        ...order,
 
-        // Provider ID needed by SMS and Cancel APIs
         verification_id:
           order.provider_order_id,
 
-        provider_order_id:
-          order.provider_order_id,
-
-        // Number
-        number:
-          order.phone_number,
-
-        phone_number:
-          order.phone_number,
-
-        // Service
-        service:
-          order.service_name,
-
-        service_name:
-          order.service_name,
-
-        country:
-          order.country_name,
-
-        country_name:
-          order.country_name,
-
-        // Status
-        status:
-          order.status || "active",
-
-        // Price
         selling_price:
           order.customer_price,
 
-        customer_price:
-          order.customer_price,
+        number:
+          order.phone_number,
 
-        // Date
-        created_at:
-          order.created_at
+        service:
+          order.service_name
       }));
 
     return res.status(200).json({
       success: true,
-
       numbers: activeNumbers,
-
       activations: activeNumbers,
-
-      data: activeNumbers,
-
-      /*
-       * These URLs are supplied to the frontend so it
-       * knows exactly which API handles each action.
-       */
-      actions: {
-        sms: "/api/sms/sms",
-        cancel: "/api/sms/cancel"
-      }
+      data: activeNumbers
     });
 
   } catch (error) {
-    console.error(
-      "Active numbers error:",
-      error
-    );
+    console.error("Active numbers error:", error);
 
     const message =
       error?.message ||
       "Unable to load active numbers.";
 
     return res.status(
-      message === "Unauthorized."
-        ? 401
-        : 500
+      message === "Unauthorized." ? 401 : 500
     ).json({
       success: false,
       error: message,
