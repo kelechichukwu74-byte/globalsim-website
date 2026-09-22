@@ -4900,90 +4900,81 @@
       const container =
         $("activeNumbersContainer");
 
-
       container.innerHTML =
         '<div class="loading">Loading active numbers...</div>';
 
+      if (!currentUser) {
+        container.innerHTML =
+          '<div class="empty-state">Please log in first.</div>';
+        return;
+      }
 
       try {
 
-        const accessToken =
-          await getCurrentAccessToken();
-
-        if (!accessToken) {
-          throw new Error("Unauthorized.");
-        }
-
-        const response =
-          await fetch("/api/active", {
-            headers: {
-              Authorization: `Bearer ${accessToken}`
-            },
-            cache: "no-store"
+        /*
+         * Load the customer's own orders directly through Supabase.
+         * The orders table already has an RLS policy allowing a user
+         * to read orders where user_id = auth.uid(). This avoids the
+         * failing /api/active route and uses the same data shown in
+         * Order History.
+         */
+        const {
+          data: orders,
+          error
+        } = await supabaseClient
+          .from("orders")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .order("created_at", {
+            ascending: false
           });
 
-
-        if (!response.ok) {
-
-          const errorBody =
-            await response.json().catch(() => ({}));
-
+        if (error) {
+          console.error("Active numbers Supabase error:", error);
           throw new Error(
-            errorBody?.error ||
-            errorBody?.message ||
-            `Active numbers request failed (HTTP ${response.status}).`
+            error.message ||
+            "Unable to load active numbers."
           );
-
         }
 
+        const terminalStatuses = new Set([
+          "failed",
+          "cancelled",
+          "canceled",
+          "expired",
+          "refunded",
+          "rejected"
+        ]);
 
-        const result =
-          await response.json();
+        const numbers = (orders || []).filter(order => {
+          const status =
+            String(order?.status || "active").toLowerCase();
 
-
-        const numbers =
-          Array.isArray(result)
-            ? result
-            : (
-                result.data ||
-                result.activations ||
-                result.numbers ||
-                []
-              );
-
+          return !terminalStatuses.has(status);
+        });
 
         if (!numbers.length) {
-
           container.innerHTML =
             '<div class="empty-state">You do not have any active numbers yet.</div>';
-
           return;
         }
 
+        window.globalSimActiveNumbers = numbers;
 
         container.innerHTML = `
-
           <div class="table-wrapper">
-
             <table class="data-table">
-
               <thead>
-
                 <tr>
                   <th>Number</th>
                   <th>Service</th>
                   <th>Status</th>
                   <th>Created</th>
                 </tr>
-
               </thead>
-
               <tbody>
-
                 ${numbers.map(item => `
-
                   <tr>
-
                     <td>
                       <strong>
                         ${escapeHtml(
@@ -4994,56 +4985,39 @@
                         )}
                       </strong>
                     </td>
-
                     <td>
                       ${escapeHtml(
-                        item.service ||
                         item.service_name ||
+                        item.service ||
                         item.serviceName ||
                         "—"
                       )}
                     </td>
-
                     <td>
-                      ${statusBadge(
-                        item.status ||
-                        "active"
-                      )}
+                      ${statusBadge(item.status || "active")}
                     </td>
-
                     <td>
                       ${formatDate(
                         item.created_at ||
                         item.createdAt
                       )}
                     </td>
-
                   </tr>
-
                 `).join("")}
-
               </tbody>
-
             </table>
-
           </div>
-
         `;
 
       } catch (error) {
-
-        console.error(
-          "Active numbers error:",
-          error
-        );
-
-        container.innerHTML =
-          '<div class="empty-state">Unable to load active numbers.</div>';
-
+        console.error("Active numbers error:", error);
+        container.innerHTML = `
+          <div class="empty-state">
+            ${escapeHtml(error?.message || "Unable to load active numbers.")}
+          </div>
+        `;
       }
-
     }
-
 
     /* =========================================================
        ORDER HISTORY
