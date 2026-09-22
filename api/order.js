@@ -8,7 +8,7 @@ const SUPABASE_URL =
   "https://rfitbmkizfmwfqqskwhy.supabase.co";
 
 const SUPABASE_PUBLISHABLE_KEY =
-  "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
+  "sb_publishable_erjKhsDOoyhbHDExv7Q_gpGcK0C-";
 
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -420,10 +420,20 @@ export default async function handler(req, res) {
       requestedServiceName ||
       String(serviceId);
 
-    const servers =
-      body.server
-        ? [body.server]
-        : getServersForCountry(countryName);
+    // Connect all applicable provider portals. For US we try Server 2 first
+    // (the known US WhatsApp supplier), then Server 1, then both global
+    // portals. For other countries we use both global portals.
+    const servers = isUsaCountry(countryId)
+      ? [
+          "usa-server-2",
+          "usa-server-1",
+          "global-server-1",
+          "global-server-2"
+        ]
+      : [
+          "global-server-1",
+          "global-server-2"
+        ];
 
     /*
      * Debit the customer's configured selling price BEFORE calling the
@@ -445,16 +455,24 @@ export default async function handler(req, res) {
 
     for (const server of servers) {
       try {
-        /* Get the provider cost before purchase so the order record never
-           receives a null provider_cost value. */
-        const priceData = await sureVerificationRequest(
-          `/${server}/price?country_id=${quote(countryId)}&service=${quote(serviceId)}`
-        );
-
-        const candidateProviderPrice = getProviderPrice(priceData);
-
-        if (!Number.isFinite(candidateProviderPrice) || candidateProviderPrice <= 0) {
-          throw new Error("Provider price is unavailable for this portal.");
+        // Price is useful for profit tracking, but it must NOT block a
+        // real number purchase. Some portals may return a valid service but
+        // not expose /price for that service. In that case we still try the
+        // purchase and store provider_price as null if necessary.
+        let candidateProviderPrice = null;
+        try {
+          const priceData = await sureVerificationRequest(
+            `/${server}/price?country_id=${quote(countryId)}&service=${quote(serviceId)}`
+          );
+          const parsedProviderPrice = getProviderPrice(priceData);
+          if (Number.isFinite(parsedProviderPrice) && parsedProviderPrice > 0) {
+            candidateProviderPrice = parsedProviderPrice;
+          }
+        } catch (priceError) {
+          console.warn(
+            `Provider price unavailable on ${server}; continuing to purchase:`,
+            priceError?.message || priceError
+          );
         }
 
         const candidate = await sureVerificationRequest(
