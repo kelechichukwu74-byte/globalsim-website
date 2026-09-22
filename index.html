@@ -1627,9 +1627,18 @@
 
                   <div class="form-group">
 
-                    <label for="countrySelect">
+                    <label for="countrySearch">
                       Country
                     </label>
+
+                    <input
+                      id="countrySearch"
+                      type="search"
+                      class="form-control"
+                      placeholder="Search country..."
+                      autocomplete="off"
+                      oninput="filterCustomerCountries()"
+                    />
 
                     <select
                       id="countrySelect"
@@ -1648,9 +1657,19 @@
 
                   <div class="form-group">
 
-                    <label for="serviceSelect">
+                    <label for="serviceSearch">
                       Service
                     </label>
+
+                    <input
+                      id="serviceSearch"
+                      type="search"
+                      class="form-control"
+                      placeholder="Search service..."
+                      autocomplete="off"
+                      disabled
+                      oninput="filterCustomerServices()"
+                    />
 
                     <select
                       id="serviceSelect"
@@ -2477,12 +2496,14 @@
                 <div class="grid-2">
                   <div class="form-group">
                     <label for="adminPricingCountry">Country</label>
+                    <input id="adminPricingCountrySearch" type="search" class="form-control" placeholder="Search country..." autocomplete="off" oninput="filterAdminPricingCountries()">
                     <select id="adminPricingCountry" class="form-control" onchange="loadAdminPricingServices()">
                       <option value="">Select a country</option>
                     </select>
                   </div>
                   <div class="form-group">
                     <label for="adminPricingService">Service</label>
+                    <input id="adminPricingServiceSearch" type="search" class="form-control" placeholder="Search service..." autocomplete="off" disabled oninput="filterAdminPricingServices()">
                     <select id="adminPricingService" class="form-control">
                       <option value="">Select a service</option>
                     </select>
@@ -4330,6 +4351,70 @@
 
 
     /* =========================================================
+       CUSTOMER SEARCH
+       ========================================================= */
+
+    let customerCountriesCache = [];
+    let customerServicesCache = [];
+
+    function filterCustomerCountries() {
+      const q = ($("countrySearch")?.value || "").trim().toLowerCase();
+      const select = $("countrySelect");
+      if (!select) return;
+      const current = select.value;
+      const list = customerCountriesCache.filter(c =>
+        String(c.name || c.countryName || c.country_name || "").toLowerCase().includes(q) ||
+        String(c.code || c.countryCode || c.country_code || "").toLowerCase().includes(q)
+      );
+      select.innerHTML = '<option value="">Select a country</option>';
+      list.forEach(country => {
+        const option = document.createElement("option");
+        const id = country.id ?? country.countryId ?? country.country_id;
+        const name = country.name ?? country.countryName ?? country.country_name ?? id;
+        option.value = id;
+        option.textContent = name;
+        option.dataset.countryName = name;
+        option.dataset.countryCode = country.code ?? country.countryCode ?? country.country_code ?? "";
+        option.dataset.server = country.server ?? "";
+        select.appendChild(option);
+      });
+      if (current && list.some(c => String(c.id ?? c.countryId ?? c.country_id) === String(current))) {
+        select.value = current;
+      }
+    }
+
+    function filterCustomerServices() {
+      const q = ($("serviceSearch")?.value || "").trim().toLowerCase();
+      const select = $("serviceSelect");
+      if (!select) return;
+      const current = select.value;
+      const list = customerServicesCache.filter(s =>
+        String(s.name || s.serviceName || s.service_name || s.title || "").toLowerCase().includes(q) ||
+        String(s.id || s.serviceId || s.service_id || "").toLowerCase().includes(q)
+      );
+      select.innerHTML = '<option value="">Select a service</option>';
+      list.forEach(service => {
+        const option = document.createElement("option");
+        const id = service.id ?? service.serviceId ?? service.service_id ?? service.serviceCountryPriceId ?? service.service_country_price_id;
+        const name = service.name ?? service.serviceName ?? service.service_name ?? service.title ?? id;
+        const price = service.selling_price ?? service.sellingPrice ?? service.price ?? service.amount ?? null;
+        const availableServers = Array.isArray(service.available_servers) ? service.available_servers : (Array.isArray(service.servers) ? service.servers : []);
+        option.value = id;
+        option.textContent = price !== null ? `${name} — ${formatMoney(price)}` : name;
+        option.dataset.serviceName = name;
+        option.dataset.price = price ?? "";
+        option.dataset.servers = JSON.stringify(availableServers);
+        option.dataset.raw = JSON.stringify(service);
+        select.appendChild(option);
+      });
+      if (current && list.some(s => String(s.id ?? s.serviceId ?? s.service_id ?? s.serviceCountryPriceId ?? s.service_country_price_id) === String(current))) {
+        select.value = current;
+      }
+      updatePurchasePreview();
+    }
+
+
+    /* =========================================================
        COUNTRIES
        ========================================================= */
 
@@ -4375,6 +4460,9 @@
                 result.countries ||
                 []
               );
+
+        customerCountriesCache = currentCountries;
+        $("countrySearch").disabled = false;
 
 
         select.innerHTML =
@@ -4481,6 +4569,10 @@
 
       if (!countryId) {
 
+        customerServicesCache = [];
+        $("serviceSearch").disabled = true;
+        $("serviceSearch").value = "";
+
         serviceSelect.innerHTML =
           '<option value="">Select a service</option>';
 
@@ -4499,7 +4591,9 @@
             : "");
 
         const response =
-          await fetch(serviceQuery);
+          await fetch(`${serviceQuery}${serviceQuery.includes("?") ? "&" : "?"}_=${Date.now()}`, {
+            cache: "no-store"
+          });
 
 
         if (!response.ok) {
@@ -4523,6 +4617,9 @@
                 result.services ||
                 []
               );
+
+        customerServicesCache = currentServices;
+        $("serviceSearch").disabled = false;
 
 
         serviceSelect.innerHTML =
@@ -5254,6 +5351,37 @@
       return data?.session?.access_token || null;
     }
 
+    let adminPricingCountriesCache = [];
+    let adminPricingServicesCache = [];
+
+    function filterAdminPricingCountries() {
+      const q = ($("adminPricingCountrySearch")?.value || "").toLowerCase();
+      const select = $("adminPricingCountry");
+      if (!select) return;
+      const current = select.value;
+      const list = adminPricingCountriesCache.filter(c =>
+        String(c.name || "").toLowerCase().includes(q) ||
+        String(c.code || "").toLowerCase().includes(q)
+      );
+      select.innerHTML = '<option value="">Select a country</option>' + list.map(country => `
+        <option value="${escapeHtml(String(country.id))}" data-name="${escapeHtml(country.name || "")}" data-code="${escapeHtml(country.code || "")}" data-server="${escapeHtml(country.server || "")}">${escapeHtml(country.name || String(country.id))}</option>`).join("");
+      if (current && list.some(c => String(c.id) === String(current))) select.value = current;
+    }
+
+    function filterAdminPricingServices() {
+      const q = ($("adminPricingServiceSearch")?.value || "").toLowerCase();
+      const select = $("adminPricingService");
+      if (!select) return;
+      const current = select.value;
+      const list = adminPricingServicesCache.filter(s =>
+        String(s.name || "").toLowerCase().includes(q) ||
+        String(s.id || "").toLowerCase().includes(q)
+      );
+      select.innerHTML = '<option value="">Select a service</option>' + list.map(service => `
+        <option value="${escapeHtml(String(service.id))}" data-name="${escapeHtml(service.name || "")}">${escapeHtml(service.name || String(service.id))}</option>`).join("");
+      if (current && list.some(s => String(s.id) === String(current))) select.value = current;
+    }
+
     async function loadAdminPricing() {
       const countrySelect = $("adminPricingCountry");
       const serviceSelect = $("adminPricingService");
@@ -5266,9 +5394,10 @@
         const countriesData = await countriesResponse.json();
 
         if (countriesData?.success) {
+          adminPricingCountriesCache = countriesData.countries || [];
           countrySelect.innerHTML =
             '<option value="">Select a country</option>' +
-            (countriesData.countries || []).map(country => `
+            adminPricingCountriesCache.map(country => `
               <option value="${escapeHtml(String(country.id))}"
                 data-name="${escapeHtml(country.name || "")}"
                 data-code="${escapeHtml(country.code || "")}"
@@ -5335,6 +5464,9 @@
         '<option value="">Loading services...</option>';
 
       if (!countryId) {
+        adminPricingServicesCache = [];
+        $("adminPricingServiceSearch").disabled = true;
+        $("adminPricingServiceSearch").value = "";
         serviceSelect.innerHTML =
           '<option value="">Select a service</option>';
         return;
@@ -5352,9 +5484,11 @@
           throw new Error(data?.error || "Unable to load services.");
         }
 
+        adminPricingServicesCache = data.services || [];
+        $("adminPricingServiceSearch").disabled = false;
         serviceSelect.innerHTML =
           '<option value="">Select a service</option>' +
-          (data.services || []).map(service => `
+          adminPricingServicesCache.map(service => `
             <option value="${escapeHtml(String(service.id))}"
               data-name="${escapeHtml(service.name || "")}">
               ${escapeHtml(service.name || String(service.id))}
@@ -5463,7 +5597,7 @@
 
       try {
 
-        await Promise.all([
+        await Promise.allSettled([
           loadAdminUsers(),
           loadAdminOrders(),
           loadAdminDeposits(),
