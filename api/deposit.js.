@@ -1,82 +1,129 @@
+// api/deposit.js
+
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY =
+
+const SUPABASE_SERVICE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const SUPABASE_ANON_KEY =
+  process.env.SUPABASE_ANON_KEY ||
+  process.env.SUPABASE_PUBLISHABLE_KEY;
+
+
+/* =========================================================
+   BASIC RESPONSE HELPERS
+   ========================================================= */
 
 function json(res, status, data) {
   return res.status(status).json(data);
 }
 
-async function supabase(path, options = {}) {
-  if (!SUPABASE_URL) {
-    throw new Error("SUPABASE_URL is not configured.");
-  }
 
-  if (!SUPABASE_SERVICE_ROLE_KEY) {
+/* =========================================================
+   SUPABASE REST REQUEST
+   ========================================================= */
+
+async function supabase(path, options = {}) {
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
     throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not configured."
+      "Supabase server configuration is missing."
     );
   }
 
   const response = await fetch(
     `${SUPABASE_URL}/rest/v1/${path}`,
     {
-      ...options,
+      method: options.method || "GET",
+
       headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization:
-          `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        apikey: SUPABASE_SERVICE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
         "Content-Type": "application/json",
         Accept: "application/json",
-        Prefer: "return=representation",
+        Prefer:
+          options.prefer ||
+          "return=representation",
+
         ...(options.headers || {})
-      }
+      },
+
+      ...(options.body !== undefined
+        ? {
+            body:
+              typeof options.body === "string"
+                ? options.body
+                : JSON.stringify(options.body)
+          }
+        : {})
     }
   );
 
   const text = await response.text();
 
-  let data = {};
+  let data = null;
 
   try {
-    data = text ? JSON.parse(text) : {};
+    data = text ? JSON.parse(text) : null;
   } catch {
-    throw new Error(
-      `Supabase returned invalid JSON (HTTP ${response.status}).`
-    );
+    data = null;
   }
 
   if (!response.ok) {
-    throw new Error(
+
+    const message =
       data?.message ||
+      data?.error_description ||
       data?.hint ||
       data?.details ||
-      `Supabase request failed (HTTP ${response.status}).`
-    );
+      `Supabase request failed (${response.status}).`;
+
+    const error = new Error(message);
+
+    error.status = response.status;
+
+    throw error;
   }
 
   return data;
 }
 
-async function getAuthenticatedUser(req) {
-  const auth =
-    req.headers.authorization ||
-    req.headers.Authorization ||
+
+/* =========================================================
+   AUTHENTICATE CURRENT USER
+   ========================================================= */
+
+async function getAuthUser(req) {
+
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error(
+      "Supabase authentication configuration is missing."
+    );
+  }
+
+  const authorization =
+    req.headers?.authorization ||
+    req.headers?.Authorization ||
     "";
 
-  if (!auth.startsWith("Bearer ")) {
+  if (!authorization.startsWith("Bearer ")) {
     throw new Error("Unauthorized.");
   }
 
-  const token = auth.slice(7).trim();
+  const token =
+    authorization.substring(7).trim();
+
+  if (!token) {
+    throw new Error("Unauthorized.");
+  }
 
   const response = await fetch(
     `${SUPABASE_URL}/auth/v1/user`,
     {
+      method: "GET",
+
       headers: {
-        apikey:
-          process.env.SUPABASE_ANON_KEY ||
-          process.env.SUPABASE_PUBLISHABLE_KEY ||
-          "",
+        apikey: SUPABASE_ANON_KEY,
         Authorization: `Bearer ${token}`,
         Accept: "application/json"
       }
@@ -96,277 +143,765 @@ async function getAuthenticatedUser(req) {
   return user;
 }
 
-async function isAdmin(userId) {
-  const rows = await supabase(
-    `profiles?id=eq.${encodeURIComponent(userId)}` +
-    `&select=id,role&limit=1`
+
+/* =========================================================
+   CHECK ADMIN
+   ========================================================= */
+
+async function requireAdmin(req) {
+
+  const user = await getAuthUser(req);
+
+  const profiles = await supabase(
+    `profiles?id=eq.${encodeURIComponent(user.id)}&select=id,role&limit=1`
   );
 
-  return rows?.[0]?.role === "admin";
+  const profile =
+    Array.isArray(profiles)
+      ? profiles[0]
+      : null;
+
+  if (
+    !profile ||
+    String(profile.role || "").toLowerCase() !== "admin"
+  ) {
+    throw new Error("Admin access required.");
+  }
+
+  return user;
 }
 
-export default async function handler(req, res) {
-  try {
-    /*
-      GET /api/deposit?admin=true
-      Admin deposit requests
-    */
-    if (
-      req.method === "GET" &&
-      String(req.query?.admin || "") === "true"
-    ) {
-      const user = await getAuthenticatedUser(req);
 
-      if (!(await isAdmin(user.id))) {
-        return json(res, 403, {
-          success: false,
-          error: "Admin access required."
-        });
+/* =========================================================
+   NORMALIZE DEPOSIT
+   ========================================================= */
+
+function normalizeDeposit(row) {
+
+  return {
+    ...row,
+
+    // Your actual database column is "reference".
+    // The frontend currently expects "payment_reference".
+    payment_reference:
+      row.reference || "",
+
+    // Keep these names available to the existing dashboard.
+    paymentReference:
+      row.reference || "",
+
+    admin_note:
+      row.admin_note || "",
+
+    reviewed_at:
+      row.reviewed_at || null
+  };
+}
+
+
+/* =========================================================
+   GET DEPOSITS
+   ========================================================= */
+
+async function getDeposits(req, res) {
+
+  const admin =
+    String(req.query?.admin || "").toLowerCase() === "true";
+
+  if (admin) {
+
+    await requireAdmin(req);
+
+    const deposits = await supabase(
+      "deposits?select=*&order=created_at.desc"
+    );
+
+    return json(res, 200, {
+      success: true,
+
+      deposits: Array.isArray(deposits)
+        ? deposits.map(normalizeDeposit)
+        : []
+    });
+  }
+
+
+  /*
+     CUSTOMER:
+     Only return the logged-in user's deposits.
+  */
+
+  const user = await getAuthUser(req);
+
+  const deposits = await supabase(
+    `deposits?user_id=eq.${encodeURIComponent(user.id)}&select=*&order=created_at.desc`
+  );
+
+  return json(res, 200, {
+    success: true,
+
+    deposits: Array.isArray(deposits)
+      ? deposits.map(normalizeDeposit)
+      : []
+  });
+}
+
+
+/* =========================================================
+   GET CURRENT WALLET
+   ========================================================= */
+
+async function getWallet(userId) {
+
+  const wallets = await supabase(
+    `wallets?user_id=eq.${encodeURIComponent(userId)}&select=*&limit=1`
+  );
+
+  if (Array.isArray(wallets) && wallets.length) {
+    return wallets[0];
+  }
+
+  return null;
+}
+
+
+/* =========================================================
+   CREATE WALLET IF NEEDED
+   ========================================================= */
+
+async function createWallet(userId) {
+
+  const created = await supabase(
+    "wallets",
+    {
+      method: "POST",
+
+      body: {
+        user_id: userId,
+        balance: 0
       }
+    }
+  );
 
-      const deposits = await supabase(
-        "deposits?select=*&order=created_at.desc"
+  return Array.isArray(created)
+    ? created[0]
+    : created;
+}
+
+
+/* =========================================================
+   UPDATE WALLET
+   ========================================================= */
+
+async function updateWallet(
+  userId,
+  newBalance
+) {
+
+  const updated = await supabase(
+    `wallets?user_id=eq.${encodeURIComponent(userId)}`,
+    {
+      method: "PATCH",
+
+      body: {
+        balance: newBalance,
+        updated_at: new Date().toISOString()
+      }
+    }
+  );
+
+  if (
+    !Array.isArray(updated) ||
+    !updated.length
+  ) {
+    throw new Error(
+      "Unable to update customer wallet."
+    );
+  }
+
+  return updated[0];
+}
+
+
+/* =========================================================
+   FIND EXISTING DEPOSIT TRANSACTION
+   ========================================================= */
+
+async function findDepositTransaction(
+  userId,
+  depositId
+) {
+
+  /*
+     The existing wallet_transactions table in your project
+     already uses "description".
+  */
+
+  const description =
+    `Deposit #${depositId}`;
+
+  const rows = await supabase(
+    `wallet_transactions?user_id=eq.${encodeURIComponent(userId)}&description=eq.${encodeURIComponent(description)}&select=*&limit=1`
+  );
+
+  return Array.isArray(rows)
+    ? rows[0] || null
+    : null;
+}
+
+
+/* =========================================================
+   ADD WALLET TRANSACTION
+   ========================================================= */
+
+async function addWalletTransaction({
+  userId,
+  amount,
+  balanceAfter,
+  depositId
+}) {
+
+  const description =
+    `Deposit #${depositId}`;
+
+  /*
+     First check whether this deposit has already
+     produced a wallet transaction.
+
+     This prevents double-crediting if the admin
+     clicks Approve more than once.
+  */
+
+  const existing =
+    await findDepositTransaction(
+      userId,
+      depositId
+    );
+
+  if (existing) {
+    return existing;
+  }
+
+
+  const transactions = await supabase(
+    "wallet_transactions",
+    {
+      method: "POST",
+
+      body: {
+        user_id: userId,
+        amount: amount,
+        balance_after: balanceAfter,
+        type: "deposit",
+        description: description
+      }
+    }
+  );
+
+  return Array.isArray(transactions)
+    ? transactions[0]
+    : transactions;
+}
+
+
+/* =========================================================
+   APPROVE DEPOSIT
+   ========================================================= */
+
+async function approveDeposit(
+  deposit,
+  adminUser
+) {
+
+  const depositId =
+    deposit.id;
+
+  const userId =
+    deposit.user_id;
+
+  const amount =
+    Number(deposit.amount);
+
+
+  if (!userId) {
+    throw new Error(
+      "This deposit has no customer."
+    );
+  }
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error(
+      "Invalid deposit amount."
+    );
+  }
+
+
+  /*
+     If the deposit is already approved,
+     do not credit it again.
+  */
+
+  if (
+    String(deposit.status || "").toLowerCase() ===
+    "approved"
+  ) {
+
+    return {
+      alreadyApproved: true,
+      balance: null
+    };
+  }
+
+
+  /*
+     If a wallet transaction already exists for this
+     deposit, it means the money was already credited.
+  */
+
+  const existingTransaction =
+    await findDepositTransaction(
+      userId,
+      depositId
+    );
+
+  if (existingTransaction) {
+
+    await supabase(
+      `deposits?id=eq.${encodeURIComponent(depositId)}`,
+      {
+        method: "PATCH",
+
+        body: {
+          status: "approved",
+          admin_note: "Approved",
+          reviewed_at:
+            new Date().toISOString()
+        }
+      }
+    );
+
+    return {
+      alreadyApproved: true,
+      balance:
+        existingTransaction.balance_after
+    };
+  }
+
+
+  /*
+     Get customer's wallet.
+  */
+
+  let wallet =
+    await getWallet(userId);
+
+
+  /*
+     Create wallet if customer doesn't have one.
+  */
+
+  if (!wallet) {
+
+    wallet =
+      await createWallet(userId);
+  }
+
+
+  const oldBalance =
+    Number(wallet?.balance || 0);
+
+  const newBalance =
+    oldBalance + amount;
+
+
+  /*
+     Update wallet.
+  */
+
+  await updateWallet(
+    userId,
+    newBalance
+  );
+
+
+  /*
+     Record wallet transaction.
+  */
+
+  await addWalletTransaction({
+    userId,
+    amount,
+    balanceAfter: newBalance,
+    depositId
+  });
+
+
+  /*
+     Finally mark deposit approved.
+  */
+
+  await supabase(
+    `deposits?id=eq.${encodeURIComponent(depositId)}`,
+    {
+      method: "PATCH",
+
+      body: {
+        status: "approved",
+        admin_note: "Approved",
+        reviewed_at:
+          new Date().toISOString()
+      }
+    }
+  );
+
+
+  return {
+    alreadyApproved: false,
+    balance: newBalance
+  };
+}
+
+
+/* =========================================================
+   REJECT DEPOSIT
+   ========================================================= */
+
+async function rejectDeposit(
+  deposit
+) {
+
+  const depositId =
+    deposit.id;
+
+
+  /*
+     Do nothing if it has already been processed.
+  */
+
+  const currentStatus =
+    String(
+      deposit.status || ""
+    ).toLowerCase();
+
+  if (
+    currentStatus === "approved" ||
+    currentStatus === "rejected"
+  ) {
+
+    return {
+      alreadyProcessed: true
+    };
+  }
+
+
+  await supabase(
+    `deposits?id=eq.${encodeURIComponent(depositId)}`,
+    {
+      method: "PATCH",
+
+      body: {
+        status: "rejected",
+        admin_note: "Rejected",
+        reviewed_at:
+          new Date().toISOString()
+      }
+    }
+  );
+
+
+  return {
+    alreadyProcessed: false
+  };
+}
+
+
+/* =========================================================
+   ADMIN ACTION
+   ========================================================= */
+
+async function adminAction(
+  req,
+  res
+) {
+
+  const adminUser =
+    await requireAdmin(req);
+
+  const body =
+    typeof req.body === "string"
+      ? JSON.parse(req.body || "{}")
+      : (req.body || {});
+
+
+  const depositId =
+    body.depositId;
+
+  const action =
+    String(
+      body.action || ""
+    ).toLowerCase();
+
+
+  if (!depositId) {
+    return json(res, 400, {
+      success: false,
+      error: "depositId is required."
+    });
+  }
+
+
+  if (
+    action !== "approve" &&
+    action !== "reject"
+  ) {
+
+    return json(res, 400, {
+      success: false,
+      error:
+        "Action must be approve or reject."
+    });
+  }
+
+
+  /*
+     Get the deposit directly from Supabase.
+  */
+
+  const rows = await supabase(
+    `deposits?id=eq.${encodeURIComponent(depositId)}&select=*&limit=1`
+  );
+
+
+  if (
+    !Array.isArray(rows) ||
+    !rows.length
+  ) {
+
+    return json(res, 404, {
+      success: false,
+      error: "Deposit request not found."
+    });
+  }
+
+
+  const deposit =
+    rows[0];
+
+
+  /*
+     APPROVE
+  */
+
+  if (action === "approve") {
+
+    const result =
+      await approveDeposit(
+        deposit,
+        adminUser
       );
 
-      return json(res, 200, {
-        success: true,
-        deposits
-      });
+    return json(res, 200, {
+      success: true,
+      message:
+        result.alreadyApproved
+          ? "Deposit was already approved."
+          : "Deposit approved successfully.",
+      balance:
+        result.balance
+    });
+  }
+
+
+  /*
+     REJECT
+  */
+
+  if (action === "reject") {
+
+    const result =
+      await rejectDeposit(
+        deposit
+      );
+
+    return json(res, 200, {
+      success: true,
+
+      message:
+        result.alreadyProcessed
+          ? "Deposit was already processed."
+          : "Deposit rejected successfully."
+    });
+  }
+}
+
+
+/* =========================================================
+   CUSTOMER CREATE DEPOSIT
+   ========================================================= */
+
+async function createDeposit(
+  req,
+  res
+) {
+
+  const user =
+    await getAuthUser(req);
+
+  const body =
+    typeof req.body === "string"
+      ? JSON.parse(req.body || "{}")
+      : (req.body || {});
+
+
+  const amount =
+    Number(body.amount);
+
+
+  if (
+    !Number.isFinite(amount) ||
+    amount <= 0
+  ) {
+
+    return json(res, 400, {
+      success: false,
+      error:
+        "Enter a valid deposit amount."
+    });
+  }
+
+
+  const paymentMethod =
+    String(
+      body.payment_method ||
+      body.paymentMethod ||
+      "OPay"
+    ).trim();
+
+
+  const reference =
+    String(
+      body.reference ||
+      body.payment_reference ||
+      body.paymentReference ||
+      ""
+    ).trim();
+
+
+  const customerNote =
+    String(
+      body.customer_note ||
+      body.customerNote ||
+      ""
+    ).trim();
+
+
+  /*
+     Your actual deposits table uses:
+       reference
+       status
+       admin_note
+       reviewed_at
+  */
+
+  const deposit =
+    await supabase(
+      "deposits",
+      {
+        method: "POST",
+
+        body: {
+          user_id: user.id,
+          amount: amount,
+          payment_method:
+            paymentMethod,
+          reference:
+            reference || null,
+          status: "pending",
+          admin_note:
+            customerNote || null
+        }
+      }
+    );
+
+
+  return json(res, 200, {
+    success: true,
+
+    message:
+      "Deposit request submitted successfully.",
+
+    deposit:
+      Array.isArray(deposit)
+        ? deposit[0]
+        : deposit
+  });
+}
+
+
+/* =========================================================
+   MAIN VERCEL HANDLER
+   ========================================================= */
+
+export default async function handler(
+  req,
+  res
+) {
+
+  try {
+
+    if (req.method === "GET") {
+      return await getDeposits(
+        req,
+        res
+      );
     }
 
-    /*
-      POST /api/deposit
-      Customer creates a pending deposit.
-    */
+
     if (req.method === "POST") {
-      const user = await getAuthenticatedUser(req);
+
+      /*
+         Admin request:
+         {
+           admin: true,
+           depositId: "...",
+           action: "approve"
+         }
+      */
 
       const body =
         typeof req.body === "string"
           ? JSON.parse(req.body || "{}")
           : (req.body || {});
 
-      /*
-        Admin approve/reject
-      */
-      if (body.admin === true) {
-        if (!(await isAdmin(user.id))) {
-          return json(res, 403, {
-            success: false,
-            error: "Admin access required."
-          });
-        }
 
-        const depositId = body.depositId;
-        const action = String(body.action || "")
-          .toLowerCase();
+      if (
+        body.admin === true ||
+        body.admin === "true" ||
+        body.depositId
+      ) {
 
-        if (!depositId) {
-          return json(res, 400, {
-            success: false,
-            error: "depositId is required."
-          });
-        }
-
-        if (!["approve", "reject"].includes(action)) {
-          return json(res, 400, {
-            success: false,
-            error:
-              "Action must be approve or reject."
-          });
-        }
-
-        const rows = await supabase(
-          `deposits?id=eq.${encodeURIComponent(depositId)}` +
-          `&select=*`
+        return await adminAction(
+          req,
+          res
         );
-
-        const deposit = rows?.[0];
-
-        if (!deposit) {
-          return json(res, 404, {
-            success: false,
-            error: "Deposit request not found."
-          });
-        }
-
-        if (deposit.status !== "pending") {
-          return json(res, 400, {
-            success: false,
-            error:
-              `This deposit is already ${deposit.status}.`
-          });
-        }
-
-        if (action === "reject") {
-          const updated = await supabase(
-            `deposits?id=eq.${encodeURIComponent(depositId)}`,
-            {
-              method: "PATCH",
-              body: JSON.stringify({
-                status: "rejected",
-                approved_by: user.id,
-                approved_at:
-                  new Date().toISOString(),
-                updated_at:
-                  new Date().toISOString()
-              })
-            }
-          );
-
-          return json(res, 200, {
-            success: true,
-            message: "Deposit rejected.",
-            deposit: updated?.[0] || null
-          });
-        }
-
-        const amount =
-          Number(deposit.amount);
-
-        if (!Number.isFinite(amount) || amount <= 0) {
-          return json(res, 400, {
-            success: false,
-            error: "Invalid deposit amount."
-          });
-        }
-
-        const walletRows = await supabase(
-          `wallets?user_id=eq.${encodeURIComponent(deposit.user_id)}` +
-          `&select=*&limit=1`
-        );
-
-        let wallet = walletRows?.[0];
-
-        if (!wallet) {
-          const created = await supabase(
-            "wallets",
-            {
-              method: "POST",
-              body: JSON.stringify({
-                user_id: deposit.user_id,
-                balance: amount,
-                updated_at:
-                  new Date().toISOString()
-              })
-            }
-          );
-
-          wallet = created?.[0];
-        } else {
-          const currentBalance =
-            Number(wallet.balance || 0);
-
-          const newBalance =
-            currentBalance + amount;
-
-          const updated = await supabase(
-            `wallets?user_id=eq.${encodeURIComponent(deposit.user_id)}`,
-            {
-              method: "PATCH",
-              body: JSON.stringify({
-                balance: newBalance,
-                updated_at:
-                  new Date().toISOString()
-              })
-            }
-          );
-
-          wallet = updated?.[0] || {
-            ...wallet,
-            balance: newBalance
-          };
-        }
-
-        const balanceAfter =
-          Number(wallet?.balance || amount);
-
-        await supabase(
-          "wallet_transactions",
-          {
-            method: "POST",
-            body: JSON.stringify({
-              user_id: deposit.user_id,
-              amount,
-              balance_after: balanceAfter,
-              type: "deposit",
-              description:
-                "Deposit approved by admin"
-            })
-          }
-        );
-
-        const updatedDeposit =
-          await supabase(
-            `deposits?id=eq.${encodeURIComponent(depositId)}`,
-            {
-              method: "PATCH",
-              body: JSON.stringify({
-                status: "approved",
-                approved_by: user.id,
-                approved_at:
-                  new Date().toISOString(),
-                updated_at:
-                  new Date().toISOString()
-              })
-            }
-          );
-
-        return json(res, 200, {
-          success: true,
-          message: "Deposit approved successfully.",
-          deposit:
-            updatedDeposit?.[0] || null
-        });
       }
 
+
       /*
-        Customer deposit request
+         Normal customer deposit.
       */
-      const amount = Number(body.amount);
 
-      if (!Number.isFinite(amount) || amount <= 0) {
-        return json(res, 400, {
-          success: false,
-          error: "Enter a valid deposit amount."
-        });
-      }
-
-      const created = await supabase(
-        "deposits",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            user_id: user.id,
-            amount,
-            payment_method:
-              body.payment_method ||
-              body.paymentMethod ||
-              "OPay",
-            payment_reference:
-              body.payment_reference ||
-              body.paymentReference ||
-              null,
-            receipt_url:
-              body.receipt_url ||
-              body.receiptUrl ||
-              null,
-            customer_note:
-              body.customer_note ||
-              body.customerNote ||
-              null,
-            status: "pending"
-          })
-        }
+      return await createDeposit(
+        req,
+        res
       );
-
-      return json(res, 201, {
-        success: true,
-        message:
-          "Deposit submitted successfully. It is now pending admin review.",
-        deposit: created?.[0] || null
-      });
     }
+
+
+    res.setHeader(
+      "Allow",
+      "GET, POST"
+    );
 
     return json(res, 405, {
       success: false,
@@ -374,9 +909,19 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error("deposit.js error:", error);
 
-    return json(res, 500, {
+    console.error(
+      "DEPOSIT API ERROR:",
+      error
+    );
+
+    const status =
+      Number(error.status) >= 400 &&
+      Number(error.status) < 600
+        ? Number(error.status)
+        : 500;
+
+    return json(res, status, {
       success: false,
       error:
         error.message ||
