@@ -4952,54 +4952,49 @@
       const container =
         $("activeNumbersContainer");
 
+
       container.innerHTML =
         '<div class="loading">Loading active numbers...</div>';
 
+
       try {
 
-        const {
-          data: sessionData,
-          error: sessionError
-        } = await supabaseClient.auth.getSession();
+        const response =
+          await fetch("/api/active");
 
-        if (sessionError || !sessionData?.session?.access_token) {
-          throw new Error("Please log in again.");
-        }
 
-        const response = await fetch(
-          "/api/sms/active",
-          {
-            method: "GET",
-            headers: {
-              Authorization:
-                "Bearer " + sessionData.session.access_token,
-              Accept: "application/json"
-            }
-          }
-        );
+        if (!response.ok) {
 
-        const result =
-          await response.json().catch(() => ({}));
-
-        if (!response.ok || !result.success) {
           throw new Error(
-            result.error ||
-            result.message ||
             "Unable to load active numbers."
           );
+
         }
+
+
+        const result =
+          await response.json();
+
 
         const numbers =
-          result.numbers ||
-          result.activations ||
-          result.data ||
-          [];
+          Array.isArray(result)
+            ? result
+            : (
+                result.data ||
+                result.activations ||
+                result.numbers ||
+                []
+              );
 
-        if (!Array.isArray(numbers) || !numbers.length) {
+
+        if (!numbers.length) {
+
           container.innerHTML =
             '<div class="empty-state">You do not have any active numbers yet.</div>';
+
           return;
         }
+
 
         container.innerHTML = `
 
@@ -5014,111 +5009,53 @@
                   <th>Service</th>
                   <th>Status</th>
                   <th>Created</th>
-                  <th>Actions</th>
                 </tr>
 
               </thead>
 
               <tbody>
 
-                ${numbers.map(item => {
+                ${numbers.map(item => `
 
-                  const verificationId =
-                    item.verification_id ||
-                    item.provider_order_id ||
-                    item.id ||
-                    "";
+                  <tr>
 
-                  const number =
-                    item.phone_number ||
-                    item.phoneNumber ||
-                    item.number ||
-                    "—";
-
-                  const service =
-                    item.service ||
-                    item.service_name ||
-                    item.serviceName ||
-                    "—";
-
-                  const status =
-                    item.status ||
-                    "active";
-
-                  return `
-
-                    <tr>
-
-                      <td>
-                        <strong>${escapeHtml(number)}</strong>
-                      </td>
-
-                      <td>
-                        ${escapeHtml(service)}
-                      </td>
-
-                      <td>
-                        ${statusBadge(status)}
-                      </td>
-
-                      <td>
-                        ${formatDate(
-                          item.created_at ||
-                          item.createdAt
+                    <td>
+                      <strong>
+                        ${escapeHtml(
+                          item.phone_number ||
+                          item.phoneNumber ||
+                          item.number ||
+                          "—"
                         )}
-                      </td>
+                      </strong>
+                    </td>
 
-                      <td>
+                    <td>
+                      ${escapeHtml(
+                        item.service ||
+                        item.service_name ||
+                        item.serviceName ||
+                        "—"
+                      )}
+                    </td>
 
-                        <div style="display:flex;gap:7px;flex-wrap:wrap;min-width:250px;">
+                    <td>
+                      ${statusBadge(
+                        item.status ||
+                        "active"
+                      )}
+                    </td>
 
-                          <button
-                            type="button"
-                            class="secondary-btn small-btn"
-                            onclick="copyActiveNumber(${JSON.stringify(String(number))})"
-                          >
-                            📋 Copy Number
-                          </button>
+                    <td>
+                      ${formatDate(
+                        item.created_at ||
+                        item.createdAt
+                      )}
+                    </td>
 
-                          <button
-                            type="button"
-                            class="primary-btn small-btn"
-                            onclick="checkActiveSMS(${JSON.stringify(String(verificationId))}, this)"
-                          >
-                            📩 Check SMS
-                          </button>
+                  </tr>
 
-                          <button
-                            type="button"
-                            class="secondary-btn small-btn"
-                            onclick="copyActiveSMS(${JSON.stringify(String(verificationId))})"
-                          >
-                            📋 Copy SMS
-                          </button>
-
-                          <button
-                            type="button"
-                            class="danger-btn small-btn"
-                            onclick="cancelActiveNumber(${JSON.stringify(String(verificationId))}, this)"
-                          >
-                            ❌ Cancel Number
-                          </button>
-
-                        </div>
-
-                        <div
-                          id="active-sms-${escapeHtml(String(verificationId))}"
-                          class="notice"
-                          style="display:none;margin-top:9px;"
-                        ></div>
-
-                      </td>
-
-                    </tr>
-
-                  `;
-
-                }).join("")}
+                `).join("")}
 
               </tbody>
 
@@ -5135,297 +5072,8 @@
           error
         );
 
-        container.innerHTML = `
-          <div class="empty-state">
-            ${escapeHtml(
-              error.message ||
-              "Unable to load active numbers."
-            )}
-          </div>
-        `;
-
-      }
-
-    }
-
-
-    async function copyActiveNumber(number) {
-
-      try {
-
-        await navigator.clipboard.writeText(
-          String(number || "")
-        );
-
-        showToast(
-          "Number copied.",
-          "success"
-        );
-
-      } catch (error) {
-
-        showToast(
-          "Unable to copy number.",
-          "error"
-        );
-
-      }
-
-    }
-
-
-    async function checkActiveSMS(verificationId, button) {
-
-      if (!verificationId) {
-        showToast(
-          "Verification ID is missing.",
-          "error"
-        );
-        return;
-      }
-
-      const box = $(
-        "active-sms-" + verificationId
-      );
-
-      if (!box) return;
-
-      const originalText =
-        button?.textContent ||
-        "📩 Check SMS";
-
-      if (button) {
-        button.disabled = true;
-        button.textContent = "Checking...";
-      }
-
-      box.style.display = "block";
-      box.innerHTML =
-        '<div class="loading" style="padding:8px">Checking for SMS...</div>';
-
-      try {
-
-        const response = await fetch(
-          "/api/sms/sms?id=" +
-          encodeURIComponent(verificationId),
-          {
-            method: "GET",
-            headers: {
-              Accept: "application/json"
-            }
-          }
-        );
-
-        const result =
-          await response.json().catch(() => ({}));
-
-        if (!response.ok || !result.success) {
-          throw new Error(
-            result.error ||
-            result.message ||
-            "Unable to load SMS."
-          );
-        }
-
-        const sms =
-          result.sms ||
-          result.message ||
-          result.code ||
-          result.data?.sms ||
-          result.data?.message ||
-          result.data?.code ||
-          null;
-
-        if (!sms) {
-          box.dataset.sms = "";
-          box.innerHTML = `
-            <div>
-              <strong>📩 SMS</strong>
-              <div style="margin-top:5px;">
-                No SMS received yet. Tap Check SMS again shortly.
-              </div>
-            </div>
-          `;
-          return;
-        }
-
-        const smsText =
-          typeof sms === "string"
-            ? sms
-            : JSON.stringify(sms);
-
-        box.dataset.sms = smsText;
-
-        box.innerHTML = `
-          <div>
-            <strong>📩 SMS Received</strong>
-            <div style="margin-top:5px;word-break:break-word;">
-              ${escapeHtml(smsText)}
-            </div>
-          </div>
-        `;
-
-        showToast(
-          "SMS received.",
-          "success"
-        );
-
-      } catch (error) {
-
-        console.error(
-          "Check SMS error:",
-          error
-        );
-
-        box.innerHTML = `
-          <div class="empty-state" style="padding:8px;">
-            ${escapeHtml(
-              error.message ||
-              "Unable to load SMS."
-            )}
-          </div>
-        `;
-
-      } finally {
-
-        if (button) {
-          button.disabled = false;
-          button.textContent = originalText;
-        }
-
-      }
-
-    }
-
-
-    async function copyActiveSMS(verificationId) {
-
-      const box = $(
-        "active-sms-" + verificationId
-      );
-
-      const sms =
-        box?.dataset?.sms || "";
-
-      if (!sms) {
-        showToast(
-          "Check SMS first. There is no SMS to copy yet.",
-          "warning"
-        );
-        return;
-      }
-
-      try {
-
-        await navigator.clipboard.writeText(sms);
-
-        showToast(
-          "SMS copied.",
-          "success"
-        );
-
-      } catch (error) {
-
-        showToast(
-          "Unable to copy SMS.",
-          "error"
-        );
-
-      }
-
-    }
-
-
-    async function cancelActiveNumber(verificationId, button) {
-
-      if (!verificationId) {
-        showToast(
-          "Verification ID is missing.",
-          "error"
-        );
-        return;
-      }
-
-      if (!confirm(
-        "Are you sure you want to cancel this number? Your wallet will be refunded if the cancellation is accepted."
-      )) {
-        return;
-      }
-
-      const originalText =
-        button?.textContent ||
-        "❌ Cancel Number";
-
-      if (button) {
-        button.disabled = true;
-        button.textContent = "Cancelling...";
-      }
-
-      try {
-
-        const {
-          data: sessionData,
-          error: sessionError
-        } = await supabaseClient.auth.getSession();
-
-        if (sessionError || !sessionData?.session?.access_token) {
-          throw new Error("Please log in again.");
-        }
-
-        const response = await fetch(
-          "/api/sms/cancel",
-          {
-            method: "POST",
-            headers: {
-              Authorization:
-                "Bearer " + sessionData.session.access_token,
-              "Content-Type": "application/json",
-              Accept: "application/json"
-            },
-            body: JSON.stringify({
-              verificationId: verificationId
-            })
-          }
-        );
-
-        const result =
-          await response.json().catch(() => ({}));
-
-        if (!response.ok || !result.success) {
-          throw new Error(
-            result.error ||
-            result.message ||
-            "Unable to cancel number."
-          );
-        }
-
-        showToast(
-          result.message ||
-          "Number cancelled and wallet refunded.",
-          "success"
-        );
-
-        await loadActiveNumbers();
-        await loadWallet();
-        await loadDashboard();
-
-      } catch (error) {
-
-        console.error(
-          "Cancel number error:",
-          error
-        );
-
-        showToast(
-          error.message ||
-          "Unable to cancel number.",
-          "error"
-        );
-
-        if (button) {
-          button.disabled = false;
-          button.textContent = originalText;
-        }
+        container.innerHTML =
+          '<div class="empty-state">Unable to load active numbers.</div>';
 
       }
 
