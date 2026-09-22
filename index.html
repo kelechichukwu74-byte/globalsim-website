@@ -1627,9 +1627,18 @@
 
                   <div class="form-group">
 
-                    <label for="countrySelect">
+                    <label for="countrySearch">
                       Country
                     </label>
+
+                    <input
+                      id="countrySearch"
+                      type="search"
+                      class="form-control"
+                      placeholder="Search country..."
+                      autocomplete="off"
+                      oninput="filterCustomerCountries()"
+                    />
 
                     <select
                       id="countrySelect"
@@ -1648,9 +1657,19 @@
 
                   <div class="form-group">
 
-                    <label for="serviceSelect">
+                    <label for="serviceSearch">
                       Service
                     </label>
+
+                    <input
+                      id="serviceSearch"
+                      type="search"
+                      class="form-control"
+                      placeholder="Search service..."
+                      autocomplete="off"
+                      disabled
+                      oninput="filterCustomerServices()"
+                    />
 
                     <select
                       id="serviceSelect"
@@ -1967,6 +1986,10 @@
 
                   </div>
 
+                  <div class="payment-note" style="margin-top:14px; padding:12px 14px; border-radius:10px; background:#f3f7ff;">
+                    <strong>Quick verification:</strong> After making your deposit, message our WhatsApp number <strong>09136540119</strong> for faster deposit approval.
+                  </div>
+
                 </div>
 
 
@@ -2054,127 +2077,6 @@
                 </form>
 
               </div>
-
-
-              <!-- WITHDRAW -->
-
-              <div class="section-card">
-
-                <div class="section-heading">
-
-                  <div>
-                    <h3>Withdraw Funds</h3>
-                    <p>Request a withdrawal from your wallet.</p>
-                  </div>
-
-                </div>
-
-
-                <form
-                  id="withdrawForm"
-                  onsubmit="submitWithdrawal(event)"
-                >
-
-                  <div class="form-group">
-
-                    <label for="withdrawBank">
-                      Bank
-                    </label>
-
-                    <select
-                      id="withdrawBank"
-                      class="form-control"
-                    >
-
-                      <option value="">
-                        Select bank
-                      </option>
-
-                      <option>Access Bank</option>
-                      <option>Fidelity Bank</option>
-                      <option>First Bank</option>
-                      <option>GTBank</option>
-                      <option>Moniepoint</option>
-                      <option>OPay</option>
-                      <option>PalmPay</option>
-                      <option>Polaris Bank</option>
-                      <option>Stanbic IBTC</option>
-                      <option>UBA</option>
-                      <option>Union Bank</option>
-                      <option>Wema Bank</option>
-                      <option>Zenith Bank</option>
-                      <option>Other</option>
-
-                    </select>
-
-                  </div>
-
-
-                  <div class="form-group">
-
-                    <label for="withdrawAccountNumber">
-                      Account Number
-                    </label>
-
-                    <input
-                      id="withdrawAccountNumber"
-                      class="form-control"
-                      type="text"
-                      inputmode="numeric"
-                      maxlength="10"
-                      placeholder="10-digit account number"
-                    />
-
-                  </div>
-
-
-                  <div class="form-group">
-
-                    <label for="withdrawAccountName">
-                      Account Name
-                    </label>
-
-                    <input
-                      id="withdrawAccountName"
-                      class="form-control"
-                      type="text"
-                      placeholder="Account holder name"
-                    />
-
-                  </div>
-
-
-                  <div class="form-group">
-
-                    <label for="withdrawAmount">
-                      Amount
-                    </label>
-
-                    <input
-                      id="withdrawAmount"
-                      class="form-control"
-                      type="number"
-                      min="1000"
-                      step="0.01"
-                      placeholder="Minimum ₦1,000"
-                    />
-
-                  </div>
-
-
-                  <button
-                    id="withdrawButton"
-                    class="primary-btn full-btn"
-                    type="submit"
-                  >
-                    Request Withdrawal
-                  </button>
-
-                </form>
-
-              </div>
-
-            </div>
 
 
             <!-- TRANSACTIONS -->
@@ -2477,12 +2379,14 @@
                 <div class="grid-2">
                   <div class="form-group">
                     <label for="adminPricingCountry">Country</label>
+                    <input id="adminPricingCountrySearch" type="search" class="form-control" placeholder="Search country..." autocomplete="off" oninput="filterAdminPricingCountries()">
                     <select id="adminPricingCountry" class="form-control" onchange="loadAdminPricingServices()">
                       <option value="">Select a country</option>
                     </select>
                   </div>
                   <div class="form-group">
                     <label for="adminPricingService">Service</label>
+                    <input id="adminPricingServiceSearch" type="search" class="form-control" placeholder="Search service..." autocomplete="off" disabled oninput="filterAdminPricingServices()">
                     <select id="adminPricingService" class="form-control">
                       <option value="">Select a service</option>
                     </select>
@@ -4330,6 +4234,70 @@
 
 
     /* =========================================================
+       CUSTOMER SEARCH
+       ========================================================= */
+
+    let customerCountriesCache = [];
+    let customerServicesCache = [];
+
+    function filterCustomerCountries() {
+      const q = ($("countrySearch")?.value || "").trim().toLowerCase();
+      const select = $("countrySelect");
+      if (!select) return;
+      const current = select.value;
+      const list = customerCountriesCache.filter(c =>
+        String(c.name || c.countryName || c.country_name || "").toLowerCase().includes(q) ||
+        String(c.code || c.countryCode || c.country_code || "").toLowerCase().includes(q)
+      );
+      select.innerHTML = '<option value="">Select a country</option>';
+      list.forEach(country => {
+        const option = document.createElement("option");
+        const id = country.id ?? country.countryId ?? country.country_id;
+        const name = country.name ?? country.countryName ?? country.country_name ?? id;
+        option.value = id;
+        option.textContent = name;
+        option.dataset.countryName = name;
+        option.dataset.countryCode = country.code ?? country.countryCode ?? country.country_code ?? "";
+        option.dataset.server = country.server ?? "";
+        select.appendChild(option);
+      });
+      if (current && list.some(c => String(c.id ?? c.countryId ?? c.country_id) === String(current))) {
+        select.value = current;
+      }
+    }
+
+    function filterCustomerServices() {
+      const q = ($("serviceSearch")?.value || "").trim().toLowerCase();
+      const select = $("serviceSelect");
+      if (!select) return;
+      const current = select.value;
+      const list = customerServicesCache.filter(s =>
+        String(s.name || s.serviceName || s.service_name || s.title || "").toLowerCase().includes(q) ||
+        String(s.id || s.serviceId || s.service_id || "").toLowerCase().includes(q)
+      );
+      select.innerHTML = '<option value="">Select a service</option>';
+      list.forEach(service => {
+        const option = document.createElement("option");
+        const id = service.id ?? service.serviceId ?? service.service_id ?? service.serviceCountryPriceId ?? service.service_country_price_id;
+        const name = service.name ?? service.serviceName ?? service.service_name ?? service.title ?? id;
+        const price = service.selling_price ?? service.sellingPrice ?? service.price ?? service.amount ?? null;
+        const availableServers = Array.isArray(service.available_servers) ? service.available_servers : (Array.isArray(service.servers) ? service.servers : []);
+        option.value = id;
+        option.textContent = price !== null ? `${name} — ${formatMoney(price)}` : name;
+        option.dataset.serviceName = name;
+        option.dataset.price = price ?? "";
+        option.dataset.servers = JSON.stringify(availableServers);
+        option.dataset.raw = JSON.stringify(service);
+        select.appendChild(option);
+      });
+      if (current && list.some(s => String(s.id ?? s.serviceId ?? s.service_id ?? s.serviceCountryPriceId ?? s.service_country_price_id) === String(current))) {
+        select.value = current;
+      }
+      updatePurchasePreview();
+    }
+
+
+    /* =========================================================
        COUNTRIES
        ========================================================= */
 
@@ -4375,6 +4343,9 @@
                 result.countries ||
                 []
               );
+
+        customerCountriesCache = currentCountries;
+        $("countrySearch").disabled = false;
 
 
         select.innerHTML =
@@ -4481,6 +4452,10 @@
 
       if (!countryId) {
 
+        customerServicesCache = [];
+        $("serviceSearch").disabled = true;
+        $("serviceSearch").value = "";
+
         serviceSelect.innerHTML =
           '<option value="">Select a service</option>';
 
@@ -4499,7 +4474,9 @@
             : "");
 
         const response =
-          await fetch(serviceQuery);
+          await fetch(`${serviceQuery}${serviceQuery.includes("?") ? "&" : "?"}_=${Date.now()}`, {
+            cache: "no-store"
+          });
 
 
         if (!response.ok) {
@@ -4523,6 +4500,9 @@
                 result.services ||
                 []
               );
+
+        customerServicesCache = currentServices;
+        $("serviceSearch").disabled = false;
 
 
         serviceSelect.innerHTML =
@@ -4789,13 +4769,21 @@
           be placed in this HTML.
         */
 
+        const accessToken =
+          await getCurrentAccessToken();
+
+        if (!accessToken) {
+          throw new Error("Unauthorized.");
+        }
+
         const response =
           await fetch("/api/order", {
 
             method: "POST",
 
             headers: {
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`
             },
 
             body: JSON.stringify({
@@ -4903,55 +4891,46 @@
       container.innerHTML =
         '<div class="loading">Loading active numbers...</div>';
 
-      if (!currentUser) {
-        container.innerHTML =
-          '<div class="empty-state">Please log in first.</div>';
-        return;
-      }
-
       try {
 
-        /*
-         * Load the customer's own orders directly through Supabase.
-         * The orders table already has an RLS policy allowing a user
-         * to read orders where user_id = auth.uid(). This avoids the
-         * failing /api/active route and uses the same data shown in
-         * Order History.
-         */
-        const {
-          data: orders,
-          error
-        } = await supabaseClient
-          .from("orders")
-          .select("*")
-          .eq("user_id", currentUser.id)
-          .order("created_at", {
-            ascending: false
+        // Use the existing Supabase session from this index.
+        const accessToken =
+          await getCurrentAccessToken();
+
+        if (!accessToken) {
+          throw new Error("Please log in again.");
+        }
+
+        // This project uses /api/active (NOT /api/sms/active).
+        const response =
+          await fetch("/api/active", {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              Accept: "application/json"
+            }
           });
 
-        if (error) {
-          console.error("Active numbers Supabase error:", error);
+        const result =
+          await response.json().catch(() => ({}));
+
+        if (!response.ok || result?.success === false) {
           throw new Error(
-            error.message ||
+            result?.error ||
+            result?.message ||
             "Unable to load active numbers."
           );
         }
 
-        const terminalStatuses = new Set([
-          "failed",
-          "cancelled",
-          "canceled",
-          "expired",
-          "refunded",
-          "rejected"
-        ]);
-
-        const numbers = (orders || []).filter(order => {
-          const status =
-            String(order?.status || "active").toLowerCase();
-
-          return !terminalStatuses.has(status);
-        });
+        const numbers =
+          Array.isArray(result)
+            ? result
+            : (
+                result.numbers ||
+                result.activations ||
+                result.data ||
+                []
+              );
 
         if (!numbers.length) {
           container.innerHTML =
@@ -4959,11 +4938,12 @@
           return;
         }
 
-        window.globalSimActiveNumbers = numbers;
-
         container.innerHTML = `
+
           <div class="table-wrapper">
+
             <table class="data-table">
+
               <thead>
                 <tr>
                   <th>Number</th>
@@ -4972,6 +4952,7 @@
                   <th>Created</th>
                 </tr>
               </thead>
+
               <tbody>
                 ${numbers.map(item => `
                   <tr>
@@ -4985,17 +4966,23 @@
                         )}
                       </strong>
                     </td>
+
                     <td>
                       ${escapeHtml(
-                        item.service_name ||
                         item.service ||
+                        item.service_name ||
                         item.serviceName ||
                         "—"
                       )}
                     </td>
+
                     <td>
-                      ${statusBadge(item.status || "active")}
+                      ${statusBadge(
+                        item.status ||
+                        "active"
+                      )}
                     </td>
+
                     <td>
                       ${formatDate(
                         item.created_at ||
@@ -5005,19 +4992,30 @@
                   </tr>
                 `).join("")}
               </tbody>
+
             </table>
+
           </div>
+
         `;
 
       } catch (error) {
-        console.error("Active numbers error:", error);
-        container.innerHTML = `
-          <div class="empty-state">
-            ${escapeHtml(error?.message || "Unable to load active numbers.")}
-          </div>
-        `;
+
+        console.error(
+          "Active numbers error:",
+          error
+        );
+
+        container.innerHTML =
+          `<div class="empty-state">${escapeHtml(
+            error?.message ||
+            "Unable to load active numbers."
+          )}</div>`;
+
       }
+
     }
+
 
     /* =========================================================
        ORDER HISTORY
@@ -5245,6 +5243,37 @@
       return data?.session?.access_token || null;
     }
 
+    let adminPricingCountriesCache = [];
+    let adminPricingServicesCache = [];
+
+    function filterAdminPricingCountries() {
+      const q = ($("adminPricingCountrySearch")?.value || "").toLowerCase();
+      const select = $("adminPricingCountry");
+      if (!select) return;
+      const current = select.value;
+      const list = adminPricingCountriesCache.filter(c =>
+        String(c.name || "").toLowerCase().includes(q) ||
+        String(c.code || "").toLowerCase().includes(q)
+      );
+      select.innerHTML = '<option value="">Select a country</option>' + list.map(country => `
+        <option value="${escapeHtml(String(country.id))}" data-name="${escapeHtml(country.name || "")}" data-code="${escapeHtml(country.code || "")}" data-server="${escapeHtml(country.server || "")}">${escapeHtml(country.name || String(country.id))}</option>`).join("");
+      if (current && list.some(c => String(c.id) === String(current))) select.value = current;
+    }
+
+    function filterAdminPricingServices() {
+      const q = ($("adminPricingServiceSearch")?.value || "").toLowerCase();
+      const select = $("adminPricingService");
+      if (!select) return;
+      const current = select.value;
+      const list = adminPricingServicesCache.filter(s =>
+        String(s.name || "").toLowerCase().includes(q) ||
+        String(s.id || "").toLowerCase().includes(q)
+      );
+      select.innerHTML = '<option value="">Select a service</option>' + list.map(service => `
+        <option value="${escapeHtml(String(service.id))}" data-name="${escapeHtml(service.name || "")}">${escapeHtml(service.name || String(service.id))}</option>`).join("");
+      if (current && list.some(s => String(s.id) === String(current))) select.value = current;
+    }
+
     async function loadAdminPricing() {
       const countrySelect = $("adminPricingCountry");
       const serviceSelect = $("adminPricingService");
@@ -5257,9 +5286,10 @@
         const countriesData = await countriesResponse.json();
 
         if (countriesData?.success) {
+          adminPricingCountriesCache = countriesData.countries || [];
           countrySelect.innerHTML =
             '<option value="">Select a country</option>' +
-            (countriesData.countries || []).map(country => `
+            adminPricingCountriesCache.map(country => `
               <option value="${escapeHtml(String(country.id))}"
                 data-name="${escapeHtml(country.name || "")}"
                 data-code="${escapeHtml(country.code || "")}"
@@ -5326,6 +5356,9 @@
         '<option value="">Loading services...</option>';
 
       if (!countryId) {
+        adminPricingServicesCache = [];
+        $("adminPricingServiceSearch").disabled = true;
+        $("adminPricingServiceSearch").value = "";
         serviceSelect.innerHTML =
           '<option value="">Select a service</option>';
         return;
@@ -5343,9 +5376,11 @@
           throw new Error(data?.error || "Unable to load services.");
         }
 
+        adminPricingServicesCache = data.services || [];
+        $("adminPricingServiceSearch").disabled = false;
         serviceSelect.innerHTML =
           '<option value="">Select a service</option>' +
-          (data.services || []).map(service => `
+          adminPricingServicesCache.map(service => `
             <option value="${escapeHtml(String(service.id))}"
               data-name="${escapeHtml(service.name || "")}">
               ${escapeHtml(service.name || String(service.id))}
@@ -5454,7 +5489,7 @@
 
       try {
 
-        await Promise.all([
+        await Promise.allSettled([
           loadAdminUsers(),
           loadAdminOrders(),
           loadAdminDeposits(),
