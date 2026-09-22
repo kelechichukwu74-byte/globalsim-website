@@ -2079,127 +2079,6 @@
               </div>
 
 
-              <!-- WITHDRAW -->
-
-              <div class="section-card">
-
-                <div class="section-heading">
-
-                  <div>
-                    <h3>Withdraw Funds</h3>
-                    <p>Request a withdrawal from your wallet.</p>
-                  </div>
-
-                </div>
-
-
-                <form
-                  id="withdrawForm"
-                  onsubmit="submitWithdrawal(event)"
-                >
-
-                  <div class="form-group">
-
-                    <label for="withdrawBank">
-                      Bank
-                    </label>
-
-                    <select
-                      id="withdrawBank"
-                      class="form-control"
-                    >
-
-                      <option value="">
-                        Select bank
-                      </option>
-
-                      <option>Access Bank</option>
-                      <option>Fidelity Bank</option>
-                      <option>First Bank</option>
-                      <option>GTBank</option>
-                      <option>Moniepoint</option>
-                      <option>OPay</option>
-                      <option>PalmPay</option>
-                      <option>Polaris Bank</option>
-                      <option>Stanbic IBTC</option>
-                      <option>UBA</option>
-                      <option>Union Bank</option>
-                      <option>Wema Bank</option>
-                      <option>Zenith Bank</option>
-                      <option>Other</option>
-
-                    </select>
-
-                  </div>
-
-
-                  <div class="form-group">
-
-                    <label for="withdrawAccountNumber">
-                      Account Number
-                    </label>
-
-                    <input
-                      id="withdrawAccountNumber"
-                      class="form-control"
-                      type="text"
-                      inputmode="numeric"
-                      maxlength="10"
-                      placeholder="10-digit account number"
-                    />
-
-                  </div>
-
-
-                  <div class="form-group">
-
-                    <label for="withdrawAccountName">
-                      Account Name
-                    </label>
-
-                    <input
-                      id="withdrawAccountName"
-                      class="form-control"
-                      type="text"
-                      placeholder="Account holder name"
-                    />
-
-                  </div>
-
-
-                  <div class="form-group">
-
-                    <label for="withdrawAmount">
-                      Amount
-                    </label>
-
-                    <input
-                      id="withdrawAmount"
-                      class="form-control"
-                      type="number"
-                      min="1000"
-                      step="0.01"
-                      placeholder="Minimum ₦1,000"
-                    />
-
-                  </div>
-
-
-                  <button
-                    id="withdrawButton"
-                    class="primary-btn full-btn"
-                    type="submit"
-                  >
-                    Request Withdrawal
-                  </button>
-
-                </form>
-
-              </div>
-
-            </div>
-
-
             <!-- TRANSACTIONS -->
 
             <div class="section-card">
@@ -4890,13 +4769,21 @@
           be placed in this HTML.
         */
 
+        const accessToken =
+          await getCurrentAccessToken();
+
+        if (!accessToken) {
+          throw new Error("Unauthorized.");
+        }
+
         const response =
           await fetch("/api/order", {
 
             method: "POST",
 
             headers: {
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`
             },
 
             body: JSON.stringify({
