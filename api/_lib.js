@@ -1,8 +1,8 @@
 const BASE_URL = "https://sureverifications.com/api/v1";
 
 export const SURE_VERIFICATION_SERVERS = {
-  global: ["global-server-1", "global-server-2"],
-  usa: ["usa-server-1", "usa-server-2"]
+  usa: ["usa-server-2", "usa-server-1", "global-server-1", "global-server-2"],
+  global: ["global-server-1", "global-server-2"]
 };
 
 export function isUsaCountry(country) {
