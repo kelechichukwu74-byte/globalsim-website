@@ -31,7 +31,6 @@ function getBearerToken(req) {
 
 
 async function getAuthenticatedUser(req) {
-
   const token =
     getBearerToken(req);
 
@@ -44,13 +43,6 @@ async function getAuthenticatedUser(req) {
       "SUPABASE_SERVICE_ROLE_KEY is not configured."
     );
   }
-
-  /*
-   * Validate the customer's actual Supabase access token.
-   *
-   * The service-role key is used only as the project API key.
-   * The customer's bearer token is still what identifies the user.
-   */
 
   const response =
     await fetch(
@@ -116,7 +108,6 @@ async function supabaseRequest(
   path,
   options = {}
 ) {
-
   if (!SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error(
       "SUPABASE_SERVICE_ROLE_KEY is not configured."
@@ -194,7 +185,6 @@ function isUSCountry(
   countryCode,
   countryName
 ) {
-
   const code =
     String(countryCode || "")
       .trim()
@@ -214,26 +204,15 @@ function isUSCountry(
 }
 
 
-/*
- * All four SureVerification portals are supported.
- *
- * US:
- *   Server 2
- *   Server 1
- *   Global 1
- *   Global 2
- *
- * Other countries:
- *   Global 1
- *   Global 2
- */
+/* =========================================================
+   PROVIDER SERVERS
+   ========================================================= */
 
 function getProviderServers(
   countryCode,
   countryName,
   availableServers
 ) {
-
   const preferred =
     isUSCountry(
       countryCode,
@@ -250,7 +229,6 @@ function getProviderServers(
           "global-server-2"
         ];
 
-
   const supplied =
     Array.isArray(availableServers)
       ? availableServers
@@ -260,18 +238,10 @@ function getProviderServers(
           .filter(Boolean)
       : [];
 
-
-  /*
-   * If the service catalog supplied provider
-   * information, respect it, but never lose the
-   * normal fallback portals.
-   */
-
   const combined = [
     ...supplied,
     ...preferred
   ];
-
 
   return [
     ...new Set(
@@ -289,7 +259,6 @@ function getProviderServers(
    ========================================================= */
 
 function getProviderPrice(data) {
-
   const price =
     Number(
       data?.price ??
@@ -300,7 +269,8 @@ function getProviderPrice(data) {
       data?.verification?.amount
     );
 
-  return Number.isFinite(price)
+  return Number.isFinite(price) &&
+    price >= 0
     ? price
     : null;
 }
@@ -311,7 +281,6 @@ function getProviderPrice(data) {
    ========================================================= */
 
 function getVerification(data) {
-
   return (
     data?.verification ||
     data?.data?.verification ||
@@ -322,7 +291,6 @@ function getVerification(data) {
 
 
 function getVerificationId(data) {
-
   const verification =
     getVerification(data);
 
@@ -338,7 +306,6 @@ function getVerificationId(data) {
 
 
 function getPhoneNumber(data) {
-
   const verification =
     getVerification(data);
 
@@ -360,7 +327,6 @@ async function debitWallet(
   userId,
   amount
 ) {
-
   const requiredAmount =
     Number(amount);
 
@@ -373,13 +339,11 @@ async function debitWallet(
     );
   }
 
-
   for (
     let attempt = 0;
     attempt < 5;
     attempt++
   ) {
-
     const rows =
       await supabaseRequest(
         `wallets?user_id=eq.${quote(
@@ -387,10 +351,8 @@ async function debitWallet(
         )}&select=user_id,balance&limit=1`
       );
 
-
     const wallet =
       rows?.[0];
-
 
     if (!wallet) {
       throw new Error(
@@ -398,12 +360,10 @@ async function debitWallet(
       );
     }
 
-
     const currentBalance =
       Number(
         wallet.balance || 0
       );
-
 
     if (
       !Number.isFinite(
@@ -415,7 +375,6 @@ async function debitWallet(
       );
     }
 
-
     if (
       currentBalance <
       requiredAmount
@@ -425,11 +384,9 @@ async function debitWallet(
       );
     }
 
-
     const newBalance =
       currentBalance -
       requiredAmount;
-
 
     const updated =
       await supabaseRequest(
@@ -451,12 +408,10 @@ async function debitWallet(
         }
       );
 
-
     if (
       Array.isArray(updated) &&
       updated.length > 0
     ) {
-
       return {
         previousBalance:
           currentBalance,
@@ -465,7 +420,6 @@ async function debitWallet(
       };
     }
   }
-
 
   throw new Error(
     "Wallet is being updated by another transaction. Please try again."
@@ -481,7 +435,6 @@ async function refundWallet(
   userId,
   amount
 ) {
-
   const refundAmount =
     Number(amount);
 
@@ -492,13 +445,11 @@ async function refundWallet(
     return null;
   }
 
-
   for (
     let attempt = 0;
     attempt < 5;
     attempt++
   ) {
-
     const rows =
       await supabaseRequest(
         `wallets?user_id=eq.${quote(
@@ -506,10 +457,8 @@ async function refundWallet(
         )}&select=user_id,balance&limit=1`
       );
 
-
     const wallet =
       rows?.[0];
-
 
     if (!wallet) {
       throw new Error(
@@ -517,17 +466,14 @@ async function refundWallet(
       );
     }
 
-
     const currentBalance =
       Number(
         wallet.balance || 0
       );
 
-
     const newBalance =
       currentBalance +
       refundAmount;
-
 
     const updated =
       await supabaseRequest(
@@ -549,12 +495,10 @@ async function refundWallet(
         }
       );
 
-
     if (
       Array.isArray(updated) &&
       updated.length > 0
     ) {
-
       return {
         previousBalance:
           currentBalance,
@@ -563,7 +507,6 @@ async function refundWallet(
       };
     }
   }
-
 
   throw new Error(
     "Unable to complete wallet refund automatically."
@@ -581,9 +524,7 @@ async function createWalletTransaction({
   balanceAfter,
   description
 }) {
-
   try {
-
     await supabaseRequest(
       "wallet_transactions",
       {
@@ -607,9 +548,7 @@ async function createWalletTransaction({
         })
       }
     );
-
   } catch (error) {
-
     console.error(
       "Wallet transaction history error:",
       error
@@ -626,14 +565,12 @@ async function createOrder(
   userId,
   order
 ) {
-
   return await supabaseRequest(
     "orders",
     {
       method: "POST",
 
       body: JSON.stringify({
-
         user_id:
           userId,
 
@@ -649,8 +586,17 @@ async function createOrder(
         country_name:
           order.countryName,
 
+        /*
+         * IMPORTANT:
+         * orders.provider_cost is NOT NULL.
+         * Therefore this value is ALWAYS a number.
+         */
         provider_cost:
-          order.providerPrice,
+          Number.isFinite(
+            order.providerPrice
+          )
+            ? order.providerPrice
+            : 0,
 
         customer_price:
           order.sellingPrice,
@@ -661,7 +607,7 @@ async function createOrder(
           )
             ? order.sellingPrice -
               order.providerPrice
-            : null,
+            : order.sellingPrice,
 
         status:
           order.status ||
@@ -683,9 +629,7 @@ export default async function handler(
   req,
   res
 ) {
-
   if (req.method !== "POST") {
-
     return res.status(405).json({
       success: false,
       error:
@@ -693,11 +637,9 @@ export default async function handler(
     });
   }
 
-
   let user = null;
   let debited = false;
   let debitAmount = 0;
-
 
   try {
 
@@ -745,7 +687,6 @@ export default async function handler(
 
 
     if (!countryId) {
-
       return res.status(400).json({
         success: false,
         error:
@@ -755,7 +696,6 @@ export default async function handler(
 
 
     if (!serviceId) {
-
       return res.status(400).json({
         success: false,
         error:
@@ -794,7 +734,6 @@ export default async function handler(
       ) ||
       sellingPrice <= 0
     ) {
-
       return res.status(400).json({
         success: false,
         error:
@@ -860,10 +799,13 @@ export default async function handler(
       try {
 
         /*
-         * Provider price is optional.
-         * A missing provider price must NOT prevent
-         * the actual number purchase.
+         * Check provider price.
+         * This is optional and will not block purchase.
          */
+
+        let serverProviderPrice =
+          null;
+
 
         try {
 
@@ -887,10 +829,10 @@ export default async function handler(
             Number.isFinite(
               parsedPrice
             ) &&
-            parsedPrice > 0
+            parsedPrice >= 0
           ) {
 
-            providerPrice =
+            serverProviderPrice =
               parsedPrice;
           }
 
@@ -944,6 +886,46 @@ export default async function handler(
 
           selectedServer =
             server;
+
+          /*
+           * Some provider purchase responses also
+           * contain the provider price.
+           * Use it when the /price endpoint did not.
+           */
+
+          const purchasePrice =
+            getProviderPrice(
+              candidate
+            );
+
+
+          if (
+            Number.isFinite(
+              purchasePrice
+            ) &&
+            purchasePrice >= 0
+          ) {
+            providerPrice =
+              purchasePrice;
+          } else if (
+            Number.isFinite(
+              serverProviderPrice
+            ) &&
+            serverProviderPrice >= 0
+          ) {
+            providerPrice =
+              serverProviderPrice;
+          } else {
+            /*
+             * The database requires provider_cost
+             * to be NOT NULL.
+             *
+             * 0 means the provider did not return
+             * a readable provider cost.
+             */
+            providerPrice =
+              0;
+          }
 
           break;
         }
@@ -1053,6 +1035,21 @@ export default async function handler(
 
 
     /* -----------------------------------------
+       FINAL PROVIDER COST SAFETY CHECK
+       ----------------------------------------- */
+
+    if (
+      !Number.isFinite(
+        providerPrice
+      ) ||
+      providerPrice < 0
+    ) {
+      providerPrice =
+        0;
+    }
+
+
+    /* -----------------------------------------
        SAVE ORDER
        ----------------------------------------- */
 
@@ -1152,11 +1149,7 @@ export default async function handler(
       },
 
       provider_price:
-        Number.isFinite(
-          providerPrice
-        )
-          ? providerPrice
-          : null,
+        providerPrice,
 
       selling_price:
         sellingPrice,
