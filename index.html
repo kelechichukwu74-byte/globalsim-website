@@ -540,6 +540,19 @@
       margin-bottom: 20px;
     }
 
+    .dashboard-atm-card { position: relative; overflow: hidden; min-height: 150px; border-radius: 18px; padding: 18px; color: #fff; background: linear-gradient(135deg,#2563eb 0%,#1d4ed8 55%,#0f3fae 100%); box-shadow: 0 14px 30px rgba(37,99,235,.22); margin-bottom:18px; }
+    .dashboard-atm-card::before,.dashboard-atm-card::after { content:""; position:absolute; border-radius:50%; background:rgba(255,255,255,.08); pointer-events:none; }
+    .dashboard-atm-card::before { width:170px; height:170px; right:-75px; top:-85px; }
+    .dashboard-atm-card::after { width:110px; height:110px; left:-55px; bottom:-65px; }
+    .dashboard-atm-top,.dashboard-atm-bottom { position:relative; z-index:1; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .dashboard-atm-brand { font-size:12px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+    .dashboard-atm-chip { width:34px; height:25px; border-radius:6px; background:linear-gradient(135deg,#f8fafc,#cbd5e1); position:relative; box-shadow:inset 0 0 0 1px rgba(15,23,42,.12); }
+    .dashboard-atm-chip::after { content:""; position:absolute; inset:5px 7px; border:1px solid rgba(15,23,42,.25); border-radius:4px; }
+    .dashboard-atm-label { position:relative; z-index:1; margin-top:20px; color:#dbeafe; font-size:10px; }
+    .dashboard-atm-amount { position:relative; z-index:1; margin-top:4px; font-size:27px; line-height:1.1; font-weight:800; letter-spacing:-.02em; }
+    .dashboard-atm-bottom { margin-top:18px; color:#dbeafe; font-size:10px; }
+    .dashboard-atm-status { padding:4px 8px; border-radius:999px; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.22); color:#fff; font-weight:700; }
+
     .stat-card {
       background: #fff;
       border: 1px solid #e5e7eb;
@@ -1499,87 +1512,23 @@
             </div>
 
 
+            <div class="dashboard-atm-card">
+              <div class="dashboard-atm-top">
+                <span class="dashboard-atm-brand">Global Virtual Sim</span>
+                <div class="dashboard-atm-chip"></div>
+              </div>
+              <div class="dashboard-atm-label">Available Wallet Balance</div>
+              <div id="dashboardBalance" class="dashboard-atm-amount">₦0.00</div>
+              <div class="dashboard-atm-bottom">
+                <span>Wallet</span>
+                <span class="dashboard-atm-status">Active</span>
+              </div>
+            </div>
+
             <div class="stats-grid">
-
-              <div class="stat-card">
-
-                <div class="stat-label">
-                  Wallet Balance
-                </div>
-
-                <div
-                  id="dashboardBalance"
-                  class="stat-value"
-                >
-                  ₦0.00
-                </div>
-
-                <div class="stat-sub">
-                  Available funds
-                </div>
-
-              </div>
-
-
-              <div class="stat-card">
-
-                <div class="stat-label">
-                  Active Numbers
-                </div>
-
-                <div
-                  id="dashboardActiveNumbers"
-                  class="stat-value"
-                >
-                  0
-                </div>
-
-                <div class="stat-sub">
-                  Current activations
-                </div>
-
-              </div>
-
-
-              <div class="stat-card">
-
-                <div class="stat-label">
-                  Total Orders
-                </div>
-
-                <div
-                  id="dashboardOrders"
-                  class="stat-value"
-                >
-                  0
-                </div>
-
-                <div class="stat-sub">
-                  Your orders
-                </div>
-
-              </div>
-
-
-              <div class="stat-card">
-
-                <div class="stat-label">
-                  Transactions
-                </div>
-
-                <div
-                  id="dashboardTransactions"
-                  class="stat-value"
-                >
-                  0
-                </div>
-
-                <div class="stat-sub">
-                  Wallet activity
-                </div>
-
-              </div>
-
+              <div class="stat-card"><div class="stat-label">Active Numbers</div><div id="dashboardActiveNumbers" class="stat-value">0</div><div class="stat-sub">Current activations</div></div>
+              <div class="stat-card"><div class="stat-label">Total Orders</div><div id="dashboardOrders" class="stat-value">0</div><div class="stat-sub">Your orders</div></div>
+              <div class="stat-card"><div class="stat-label">Transactions</div><div id="dashboardTransactions" class="stat-value">0</div><div class="stat-sub">Wallet activity</div></div>
             </div>
 
 
@@ -2300,13 +2249,10 @@
                 order or another website issue, contact our support team.
               </p>
 
-              <a
-                href="mailto:watchandearn.ng@gmail.com"
-                class="primary-btn"
-                style="display:inline-block;text-decoration:none;"
-              >
-                Email Support
-              </a>
+              <div class="support-actions">
+                <a href="mailto:watchandearn.ng@gmail.com" class="primary-btn" style="display:inline-block;text-decoration:none;">Email Support</a>
+                <a href="https://t.me/GlobalVirtualSimWebSupport" target="_blank" rel="noopener noreferrer" class="secondary-btn" style="display:inline-block;text-decoration:none;">Follow us on Telegram</a>
+              </div>
 
             </div>
 
@@ -4410,17 +4356,15 @@
           await fetch("/api/countries");
 
 
-        if (!response.ok) {
-
-          throw new Error(
-            "Unable to load countries."
-          );
-
-        }
-
-
         const result =
-          await response.json();
+          await response.json().catch(() => ({}));
+
+        if (!response.ok || result?.success === false) {
+          throw new Error(
+            result?.error ||
+            `Unable to load countries (HTTP ${response.status}).`
+          );
+        }
 
 
         currentCountries =
@@ -4436,6 +4380,11 @@
         select.innerHTML =
           '<option value="">Select a country</option>';
 
+
+        if (!currentCountries.length) {
+          select.innerHTML = '<option value="">No countries available</option>';
+          throw new Error("No countries were returned by SureVerification.");
+        }
 
         currentCountries.forEach(country => {
 
@@ -4486,11 +4435,10 @@
         );
 
         select.innerHTML =
-          '<option value="">Unable to load countries</option>';
-
+          `<option value="">${escapeHtml(error?.message || "Unable to load countries")}</option>`;
 
         showToast(
-          "Unable to load countries.",
+          error?.message || "Unable to load countries.",
           "error"
         );
 
@@ -4952,73 +4900,81 @@
       const container =
         $("activeNumbersContainer");
 
-
       container.innerHTML =
         '<div class="loading">Loading active numbers...</div>';
 
+      if (!currentUser) {
+        container.innerHTML =
+          '<div class="empty-state">Please log in first.</div>';
+        return;
+      }
 
       try {
 
-        const response =
-          await fetch("/api/active");
+        /*
+         * Load the customer's own orders directly through Supabase.
+         * The orders table already has an RLS policy allowing a user
+         * to read orders where user_id = auth.uid(). This avoids the
+         * failing /api/active route and uses the same data shown in
+         * Order History.
+         */
+        const {
+          data: orders,
+          error
+        } = await supabaseClient
+          .from("orders")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .order("created_at", {
+            ascending: false
+          });
 
-
-        if (!response.ok) {
-
+        if (error) {
+          console.error("Active numbers Supabase error:", error);
           throw new Error(
+            error.message ||
             "Unable to load active numbers."
           );
-
         }
 
+        const terminalStatuses = new Set([
+          "failed",
+          "cancelled",
+          "canceled",
+          "expired",
+          "refunded",
+          "rejected"
+        ]);
 
-        const result =
-          await response.json();
+        const numbers = (orders || []).filter(order => {
+          const status =
+            String(order?.status || "active").toLowerCase();
 
-
-        const numbers =
-          Array.isArray(result)
-            ? result
-            : (
-                result.data ||
-                result.activations ||
-                result.numbers ||
-                []
-              );
-
+          return !terminalStatuses.has(status);
+        });
 
         if (!numbers.length) {
-
           container.innerHTML =
             '<div class="empty-state">You do not have any active numbers yet.</div>';
-
           return;
         }
 
+        window.globalSimActiveNumbers = numbers;
 
         container.innerHTML = `
-
           <div class="table-wrapper">
-
             <table class="data-table">
-
               <thead>
-
                 <tr>
                   <th>Number</th>
                   <th>Service</th>
                   <th>Status</th>
                   <th>Created</th>
                 </tr>
-
               </thead>
-
               <tbody>
-
                 ${numbers.map(item => `
-
                   <tr>
-
                     <td>
                       <strong>
                         ${escapeHtml(
@@ -5029,56 +4985,39 @@
                         )}
                       </strong>
                     </td>
-
                     <td>
                       ${escapeHtml(
-                        item.service ||
                         item.service_name ||
+                        item.service ||
                         item.serviceName ||
                         "—"
                       )}
                     </td>
-
                     <td>
-                      ${statusBadge(
-                        item.status ||
-                        "active"
-                      )}
+                      ${statusBadge(item.status || "active")}
                     </td>
-
                     <td>
                       ${formatDate(
                         item.created_at ||
                         item.createdAt
                       )}
                     </td>
-
                   </tr>
-
                 `).join("")}
-
               </tbody>
-
             </table>
-
           </div>
-
         `;
 
       } catch (error) {
-
-        console.error(
-          "Active numbers error:",
-          error
-        );
-
-        container.innerHTML =
-          '<div class="empty-state">Unable to load active numbers.</div>';
-
+        console.error("Active numbers error:", error);
+        container.innerHTML = `
+          <div class="empty-state">
+            ${escapeHtml(error?.message || "Unable to load active numbers.")}
+          </div>
+        `;
       }
-
     }
-
 
     /* =========================================================
        ORDER HISTORY
