@@ -4895,8 +4895,20 @@
 
       try {
 
+        const accessToken =
+          await getCurrentAccessToken();
+
+        if (!accessToken) {
+          throw new Error("Unauthorized.");
+        }
+
         const response =
-          await fetch("/api/active");
+          await fetch("/api/active", {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            },
+            cache: "no-store"
+          });
 
 
         if (!response.ok) {
@@ -5492,8 +5504,11 @@
           loadAdminUsers(),
           loadAdminOrders(),
           loadAdminDeposits(),
-          loadAdminPricing()
+          loadAdminPricing(),
+          loadAdminCustomerCount()
         ]);
+
+        startAdminCustomerCountAutoRefresh();
 
       } catch (error) {
 
@@ -5509,6 +5524,53 @@
 
       }
 
+    }
+
+
+    /* =========================================================
+       ADMIN CUSTOMER COUNT
+       ========================================================= */
+
+    let adminCustomerCountTimer = null;
+
+    async function loadAdminCustomerCount() {
+
+      if (!isAdmin) return;
+
+      const countElement = $("adminUsersCount");
+
+      if (!countElement) return;
+
+      try {
+
+        const { data, error } =
+          await supabaseClient.rpc("get_customer_count");
+
+        if (error) {
+          console.error("Customer count error:", error);
+          return;
+        }
+
+        countElement.textContent =
+          Number.isFinite(Number(data)) ? Number(data) : 0;
+
+      } catch (error) {
+
+        console.error("Customer count error:", error);
+
+      }
+    }
+
+    function startAdminCustomerCountAutoRefresh() {
+
+      if (adminCustomerCountTimer) return;
+
+      adminCustomerCountTimer =
+        window.setInterval(() => {
+          if (isAdmin && currentPage === "admin") {
+            loadAdminCustomerCount();
+          }
+        }, 10000);
     }
 
 
@@ -5546,10 +5608,6 @@
 
         return;
       }
-
-
-      $("adminUsersCount").textContent =
-        data?.length || 0;
 
 
       if (!data?.length) {
