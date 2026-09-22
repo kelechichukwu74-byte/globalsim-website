@@ -69,6 +69,7 @@ async function supabaseRequest(path) {
   const text = await response.text();
 
   let data = {};
+
   try {
     data = text ? JSON.parse(text) : {};
   } catch {
@@ -100,21 +101,10 @@ export default async function handler(req, res) {
   try {
     const user = await getAuthenticatedUser(req);
 
-    /*
-     * IMPORTANT:
-     * The orders table stores the provider verification/request ID as
-     * provider_order_id and the customer's price as customer_price.
-     * Do not request columns such as verification_id or price here because
-     * they are not part of this orders schema.
-     */
     const orders = await supabaseRequest(
       `orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,provider_order_id,service_country_price_id,service_name,country_name,customer_price,provider_cost,profit,status,phone_number,created_at&order=created_at.desc`
     );
 
-    /*
-     * Keep purchased numbers visible until they reach a terminal state.
-     * Provider responses can use several successful/active status names.
-     */
     const terminalStatuses = new Set([
       "failed",
       "cancelled",
@@ -126,7 +116,9 @@ export default async function handler(req, res) {
 
     const activeNumbers = (Array.isArray(orders) ? orders : [])
       .filter((order) => {
-        const status = String(order?.status || "active").toLowerCase();
+        const status =
+          String(order?.status || "active").toLowerCase();
+
         return !terminalStatuses.has(status);
       })
       .map((order) => ({
@@ -143,6 +135,7 @@ export default async function handler(req, res) {
       activations: activeNumbers,
       data: activeNumbers
     });
+
   } catch (error) {
     console.error("Active numbers error:", error);
 
