@@ -8,8 +8,7 @@ const SUPABASE_URL =
   "https://rfitbmkizfmwfqqskwhy.supabase.co";
 
 const SUPABASE_PUBLISHABLE_KEY =
-  process.env.SUPABASE_ANON_KEY ||
-  process.env.SUPABASE_PUBLISHABLE_KEY;
+  "sb_publishable_erjKhsDOoyhbHDExv7Q_gpGcK0C-";
 
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
