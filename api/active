@@ -1,304 +1,219 @@
-<section id="activeNumbersSection">
-  <h2>Active Numbers</h2>
-  <p>Your currently active number activations.</p>
+const SUPABASE_URL =
+  process.env.SUPABASE_URL ||
+  "https://rfitbmkizfmwfqqskwhy.supabase.co";
 
-  <button type="button" onclick="loadActiveNumbers()">
-    Refresh
-  </button>
+const SUPABASE_SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  <div id="activeNumbersList" style="margin-top:20px;"></div>
-</section>
+function getBearerToken(req) {
+  const header =
+    req.headers?.authorization ||
+    req.headers?.Authorization ||
+    "";
 
-<script>
-async function loadActiveNumbers() {
-  const list = document.getElementById("activeNumbersList");
+  if (!header.toLowerCase().startsWith("bearer ")) {
+    return null;
+  }
 
-  list.innerHTML = "<p>Loading active numbers...</p>";
+  return header.slice(7).trim();
+}
+
+async function getAuthenticatedUser(req) {
+  const token = getBearerToken(req);
+
+  if (!token) {
+    throw new Error("Unauthorized.");
+  }
+
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY is not configured."
+    );
+  }
+
+  const response = await fetch(
+    `${SUPABASE_URL}/auth/v1/user`,
+    {
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json"
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Unauthorized.");
+  }
+
+  const user = await response.json();
+
+  if (!user?.id) {
+    throw new Error("Unauthorized.");
+  }
+
+  return user;
+}
+
+async function supabaseRequest(path) {
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/${path}`,
+    {
+      method: "GET",
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization:
+          `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        Accept: "application/json"
+      }
+    }
+  );
+
+  const text = await response.text();
+
+  let data = {};
 
   try {
-    const { data, error } = await supabaseClient.auth.getSession();
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error(
+      `Supabase returned invalid JSON (HTTP ${response.status}).`
+    );
+  }
 
-    if (error || !data.session) {
-      throw new Error("Please log in again.");
-    }
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+      data?.hint ||
+      data?.details ||
+      `Supabase request failed (HTTP ${response.status}).`
+    );
+  }
 
-    const response = await fetch("/api/sms/active", {
-      headers: {
-        Authorization: "Bearer " + data.session.access_token
+  return data;
+}
+
+export default async function handler(req, res) {
+  if (req.method !== "GET") {
+    return res.status(405).json({
+      success: false,
+      error: "Method not allowed"
+    });
+  }
+
+  try {
+    const user = await getAuthenticatedUser(req);
+
+    const orders = await supabaseRequest(
+      `orders?user_id=eq.${encodeURIComponent(user.id)}` +
+      `&select=id,provider_order_id,service_country_price_id,` +
+      `service_name,country_name,customer_price,provider_cost,` +
+      `profit,status,phone_number,created_at` +
+      `&order=created_at.desc`
+    );
+
+    const terminalStatuses = new Set([
+      "failed",
+      "cancelled",
+      "canceled",
+      "expired",
+      "refunded",
+      "rejected"
+    ]);
+
+    const activeNumbers = (
+      Array.isArray(orders) ? orders : []
+    )
+      .filter(order => {
+        const status =
+          String(order?.status || "active")
+            .toLowerCase();
+
+        return !terminalStatuses.has(status);
+      })
+      .map(order => ({
+        id: order.id,
+
+        // Provider ID needed by SMS and Cancel APIs
+        verification_id:
+          order.provider_order_id,
+
+        provider_order_id:
+          order.provider_order_id,
+
+        // Number
+        number:
+          order.phone_number,
+
+        phone_number:
+          order.phone_number,
+
+        // Service
+        service:
+          order.service_name,
+
+        service_name:
+          order.service_name,
+
+        country:
+          order.country_name,
+
+        country_name:
+          order.country_name,
+
+        // Status
+        status:
+          order.status || "active",
+
+        // Price
+        selling_price:
+          order.customer_price,
+
+        customer_price:
+          order.customer_price,
+
+        // Date
+        created_at:
+          order.created_at
+      }));
+
+    return res.status(200).json({
+      success: true,
+
+      numbers: activeNumbers,
+
+      activations: activeNumbers,
+
+      data: activeNumbers,
+
+      /*
+       * These URLs are supplied to the frontend so it
+       * knows exactly which API handles each action.
+       */
+      actions: {
+        sms: "/api/sms/sms",
+        cancel: "/api/sms/cancel"
       }
     });
 
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      throw new Error(
-        result.error || "Unable to load active numbers."
-      );
-    }
-
-    const numbers =
-      result.numbers ||
-      result.activations ||
-      result.data ||
-      [];
-
-    if (!numbers.length) {
-      list.innerHTML = "<p>No active numbers.</p>";
-      return;
-    }
-
-    list.innerHTML = numbers.map(order => {
-
-      const verificationId =
-        order.verification_id ||
-        order.provider_order_id;
-
-      const number =
-        order.number ||
-        order.phone_number ||
-        "Unknown";
-
-      const service =
-        order.service ||
-        order.service_name ||
-        "Unknown";
-
-      const status =
-        order.status ||
-        "active";
-
-      const created =
-        order.created_at
-          ? new Date(order.created_at).toLocaleString()
-          : "—";
-
-      return `
-        <div
-          class="active-number"
-          data-id="${escapeHtml(verificationId)}"
-          style="
-            border:1px solid #ddd;
-            border-radius:12px;
-            padding:16px;
-            margin:15px 0;
-          "
-        >
-
-          <div>
-            <strong>Number</strong>
-            <div>${escapeHtml(number)}</div>
-          </div>
-
-          <div style="margin-top:8px;">
-            <strong>Service</strong>
-            <div>${escapeHtml(service)}</div>
-          </div>
-
-          <div style="margin-top:8px;">
-            <strong>Status</strong>
-            <div>${escapeHtml(status)}</div>
-          </div>
-
-          <div style="margin-top:8px;">
-            <strong>Created</strong>
-            <div>${escapeHtml(created)}</div>
-          </div>
-
-          <div
-            class="sms-box"
-            style="
-              display:none;
-              margin-top:12px;
-              padding:10px;
-              border-radius:8px;
-              background:#f3f3f3;
-            "
-          ></div>
-
-          <div
-            style="
-              display:flex;
-              gap:10px;
-              margin-top:15px;
-              flex-wrap:wrap;
-            "
-          >
-
-            <button
-              type="button"
-              onclick="checkSMS(this)"
-            >
-              📩 Check SMS
-            </button>
-
-            <button
-              type="button"
-              onclick="cancelNumber(this)"
-            >
-              ❌ Cancel Number
-            </button>
-
-          </div>
-
-        </div>
-      `;
-    }).join("");
-
   } catch (error) {
-    console.error(error);
-
-    list.innerHTML = `
-      <p>${escapeHtml(
-        error.message || "Unable to load active numbers."
-      )}</p>
-    `;
-  }
-}
-
-
-async function checkSMS(button) {
-
-  const card = button.closest(".active-number");
-
-  const id = card.dataset.id;
-
-  const box = card.querySelector(".sms-box");
-
-  button.disabled = true;
-  button.textContent = "Checking...";
-
-  try {
-
-    const response = await fetch(
-      "/api/sms/sms?id=" +
-      encodeURIComponent(id)
+    console.error(
+      "Active numbers error:",
+      error
     );
 
-    const result = await response.json();
+    const message =
+      error?.message ||
+      "Unable to load active numbers.";
 
-    box.style.display = "block";
-
-    if (!response.ok || !result.success) {
-      box.textContent =
-        result.error || "Unable to load SMS.";
-      return;
-    }
-
-    const sms =
-      result.sms ||
-      result.message ||
-      result.code ||
-      result.data?.sms ||
-      result.data?.message ||
-      result.data?.code;
-
-    if (sms) {
-      box.innerHTML =
-        "<strong>📩 SMS Received</strong><br>" +
-        escapeHtml(
-          typeof sms === "string"
-            ? sms
-            : JSON.stringify(sms)
-        );
-    } else {
-      box.textContent =
-        "No SMS received yet. Tap Check SMS again.";
-    }
-
-  } catch (error) {
-
-    box.style.display = "block";
-    box.textContent =
-      error.message || "Unable to load SMS.";
-
-  } finally {
-
-    button.disabled = false;
-    button.textContent = "📩 Check SMS";
+    return res.status(
+      message === "Unauthorized."
+        ? 401
+        : 500
+    ).json({
+      success: false,
+      error: message,
+      message
+    });
   }
 }
-
-
-async function cancelNumber(button) {
-
-  const card = button.closest(".active-number");
-
-  const id = card.dataset.id;
-
-  if (!confirm(
-    "Are you sure you want to cancel this number?"
-  )) {
-    return;
-  }
-
-  button.disabled = true;
-  button.textContent = "Cancelling...";
-
-  try {
-
-    const { data, error } =
-      await supabaseClient.auth.getSession();
-
-    if (error || !data.session) {
-      throw new Error("Please log in again.");
-    }
-
-    const response = await fetch(
-      "/api/sms/cancel",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization:
-            "Bearer " + data.session.access_token
-        },
-        body: JSON.stringify({
-          verificationId: id
-        })
-      }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      throw new Error(
-        result.error ||
-        "Unable to cancel number."
-      );
-    }
-
-    alert(
-      result.message ||
-      "Number cancelled and wallet refunded."
-    );
-
-    loadActiveNumbers();
-
-  } catch (error) {
-
-    alert(
-      error.message ||
-      "Unable to cancel number."
-    );
-
-    button.disabled = false;
-    button.textContent = "❌ Cancel Number";
-  }
-}
-
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-
-document.addEventListener(
-  "DOMContentLoaded",
-  loadActiveNumbers
-);
-</script>
