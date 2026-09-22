@@ -1,323 +1,6535 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Global Virtual Sim Web</title>
-<meta name="description" content="Buy legitimate virtual numbers and manage your wallet.">
-<style>
-*{box-sizing:border-box}body{margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#f5f8ff;color:#0f172a}button,input,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
-:root{--blue:#2563eb;--blue2:#1d4ed8;--line:#e5e7eb;--muted:#64748b}
-#auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#eff6ff,#f8fbff)}.auth-card{width:min(440px,100%);background:#fff;border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 20px 60px #1e3a8a18}.brand{text-align:center;margin-bottom:20px}.logo{width:58px;height:58px;border-radius:16px;background:var(--blue);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:24px}.brand h1{font-size:22px;margin:10px 0 4px}.brand p{margin:0;color:var(--muted);font-size:13px}.tabs{display:grid;grid-template-columns:1fr 1fr;background:#f1f5f9;padding:4px;border-radius:10px;margin-bottom:18px}.tabs button{border:0;background:transparent;padding:10px;border-radius:8px;font-weight:700;color:#64748b}.tabs button.active{background:#fff;color:var(--blue);box-shadow:0 2px 8px #0001}.field{margin-bottom:13px}.field label{display:block;font-size:12px;font-weight:800;margin-bottom:6px}.input-wrap{position:relative}.input{width:100%;border:1px solid #dbe2ea;border-radius:10px;padding:11px 12px;outline:0}.input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #2563eb18}.input-wrap .input{padding-right:44px}.eye{position:absolute;right:7px;top:50%;transform:translateY(-50%);border:0;background:transparent;width:34px;height:34px;color:#64748b}.primary{border:0;border-radius:10px;background:var(--blue);color:#fff;font-weight:800;padding:11px 15px}.full{width:100%}.msg{font-size:12px;margin:10px 0}.error{color:#b91c1c}.ok{color:#15803d}
-#app{min-height:100vh}.shell{display:flex;min-height:100vh}.side{position:fixed;inset:0 auto 0 0;width:235px;background:#0f172a;color:#fff;padding:18px 12px;overflow:auto}.side .brandline{font-weight:900;padding:10px 8px 18px;border-bottom:1px solid #ffffff12}.nav{margin-top:15px}.nav button{width:100%;border:0;background:transparent;color:#cbd5e1;text-align:left;padding:11px 12px;border-radius:9px;margin:2px 0;font-weight:700}.nav button.active,.nav button:hover{background:var(--blue);color:#fff}.main{margin-left:235px;width:calc(100% - 235px);min-height:100vh}.top{height:68px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:5}.top h2{font-size:17px;margin:0}.content{padding:22px}.page{display:block}.page.hide{display:none}.balance-card{width:min(100%,430px);background:linear-gradient(135deg,#2563eb,#1e40af);color:#fff;border-radius:16px;padding:18px;box-shadow:0 12px 28px #2563eb2a;margin-bottom:18px}.balance-card small{opacity:.8}.balance-card strong{display:block;font-size:29px;margin:6px 0 12px}.balance-row{display:flex;justify-content:space-between;align-items:center}.pill{font-size:10px;padding:4px 8px;border-radius:999px;background:#ffffff22}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:18px}.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:17px;margin-bottom:15px}.stat b{font-size:22px;display:block;margin-top:6px}.muted{color:var(--muted);font-size:12px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:15px}.row{display:flex;gap:9px;align-items:center}.search{width:100%;border:1px solid #dbe2ea;border-radius:10px;padding:11px}.picker{position:relative}.picker-list{position:absolute;left:0;right:0;top:100%;z-index:20;background:#fff;border:1px solid var(--line);border-radius:10px;max-height:240px;overflow:auto;box-shadow:0 12px 30px #0002}.picker-list button{display:block;width:100%;border:0;background:#fff;text-align:left;padding:10px 12px}.picker-list button:hover{background:#eff6ff}.service-icon,.flag{display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;margin-right:7px}.service-item{display:flex;align-items:center}.actions{display:flex;gap:8px;flex-wrap:wrap}.secondary{border:0;border-radius:10px;padding:10px 13px;background:#eef2ff;color:var(--blue);font-weight:800}.danger{border:0;border-radius:10px;padding:10px 13px;background:#fee2e2;color:#b91c1c;font-weight:800}.success{border:0;border-radius:10px;padding:10px 13px;background:#dcfce7;color:#166534;font-weight:800}.tablewrap{overflow:auto}.table{width:100%;border-collapse:collapse;min-width:620px}.table th,.table td{text-align:left;padding:10px;border-bottom:1px solid #edf2f7;font-size:12px}.table th{color:#64748b;background:#f8fafc}.notice{background:#eff6ff;border:1px solid #bfdbfe;padding:13px;border-radius:11px;font-size:12px}.footer{text-align:center;color:#64748b;font-size:11px;padding:24px}.admin-only{display:none}.menu-btn{display:none;border:0;background:#eef2ff;color:var(--blue);font-size:22px;width:40px;height:40px;border-radius:10px}.side-overlay{display:none;position:fixed;inset:0;background:#0006;z-index:19}.side.open{width:235px;padding:18px 12px;box-shadow:12px 0 30px #0003;z-index:20}.side.open + .side-overlay{display:block}
-@media(max-width:850px){.side{width:0;padding:0;overflow:hidden}.main{margin-left:0;width:100%}.stats{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}.content{padding:15px}.top{padding:0 15px}.menu-btn{display:inline-flex;align-items:center;justify-content:center}.top-left{display:flex;align-items:center;gap:10px}}
-</style>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+  />
+
+  <title>Global Virtual Sim Web</title>
+
+  <meta
+    name="description"
+    content="Buy legitimate virtual numbers and communication services through Global Virtual Sim Web."
+  />
+
+  <meta name="theme-color" content="#2563eb" />
+
+  <link rel="stylesheet" href="/styles.css" />
+
+  <style>
+    /* =========================================================
+       GLOBAL SAFETY / DISPLAY FIXES
+       ========================================================= */
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+    }
+
+    body {
+      background: #f5f7fb;
+      color: #111827;
+      font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* =========================================================
+       AUTH
+       ========================================================= */
+
+    #auth {
+      min-height: 100vh;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background:
+        radial-gradient(
+          circle at top left,
+          rgba(37, 99, 235, 0.14),
+          transparent 35%
+        ),
+        #f5f7fb;
+    }
+
+    .auth-wrapper {
+      width: 100%;
+      max-width: 460px;
+    }
+
+    .brand-center {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .brand-logo {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #2563eb;
+      color: #fff;
+      font-size: 27px;
+      font-weight: 800;
+      box-shadow: 0 15px 35px rgba(37, 99, 235, 0.25);
+      margin-bottom: 12px;
+    }
+
+    .brand-center h1 {
+      margin: 0;
+      font-size: 25px;
+      font-weight: 800;
+    }
+
+    .brand-center p {
+      margin: 7px 0 0;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .auth-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 25px;
+      box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+    }
+
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+      background: #f1f5f9;
+      border-radius: 11px;
+      padding: 5px;
+      margin-bottom: 22px;
+    }
+
+    .auth-tab {
+      border: 0;
+      background: transparent;
+      padding: 11px;
+      border-radius: 8px;
+      font-weight: 700;
+      color: #64748b;
+    }
+
+    .auth-tab.active {
+      background: #fff;
+      color: #2563eb;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+    }
+
+    .auth-form h2 {
+      margin: 0 0 6px;
+      font-size: 21px;
+    }
+
+    .auth-form > p {
+      color: #64748b;
+      font-size: 14px;
+      margin: 0 0 20px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 7px;
+      color: #334155;
+    }
+
+    .form-control {
+      width: 100%;
+      border: 1px solid #dbe2ea;
+      background: #fff;
+      border-radius: 10px;
+      padding: 12px 13px;
+      outline: none;
+      color: #111827;
+      transition: 0.2s ease;
+    }
+
+    .form-control:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .checkbox-row {
+      display: flex;
+      gap: 9px;
+      align-items: flex-start;
+      margin: 14px 0 18px;
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .checkbox-row input {
+      margin-top: 3px;
+    }
+
+    .primary-btn,
+    .secondary-btn,
+    .danger-btn,
+    .success-btn {
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 15px;
+      font-weight: 700;
+      transition: 0.2s ease;
+    }
+
+    .primary-btn {
+      background: #2563eb;
+      color: white;
+    }
+
+    .primary-btn:hover {
+      background: #1d4ed8;
+    }
+
+    .secondary-btn {
+      background: #eef2ff;
+      color: #2563eb;
+    }
+
+    .success-btn {
+      background: #16a34a;
+      color: #fff;
+    }
+
+    .danger-btn {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .full-btn {
+      width: 100%;
+    }
+
+    .small-btn {
+      padding: 8px 11px;
+      font-size: 12px;
+    }
+
+    /* =========================================================
+       APP LAYOUT
+       ========================================================= */
+
+    #app {
+      min-height: 100vh;
+      width: 100%;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: flex;
+      width: 100%;
+    }
+
+    .sidebar {
+      width: 250px;
+      min-width: 250px;
+      background: #0f172a;
+      color: white;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+
+    .sidebar-brand {
+      padding: 22px 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .sidebar-brand-row {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .sidebar-brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 11px;
+      background: #2563eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+    }
+
+    .sidebar-brand strong {
+      font-size: 15px;
+      display: block;
+    }
+
+    .sidebar-brand small {
+      display: block;
+      color: #94a3b8;
+      margin-top: 2px;
+      font-size: 11px;
+    }
+
+    .nav-section {
+      padding: 17px 12px 7px;
+      color: #64748b;
+      text-transform: uppercase;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+
+    .nav-list {
+      padding: 0 10px 15px;
+    }
+
+    .nav-btn {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: #cbd5e1;
+      text-align: left;
+      padding: 11px 12px;
+      border-radius: 9px;
+      margin-bottom: 3px;
+      font-weight: 600;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+    }
+
+    .nav-btn.active {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .sidebar-bottom {
+      padding: 15px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .user-mini {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #1e40af;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 800;
+    }
+
+    .user-mini-text {
+      min-width: 0;
+    }
+
+    .user-mini-text strong {
+      display: block;
+      color: #fff;
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .user-mini-text span {
+      display: block;
+      color: #94a3b8;
+      font-size: 10px;
+      margin-top: 2px;
+    }
+
+    .logout-btn {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: transparent;
+      color: #cbd5e1;
+      border-radius: 8px;
+      padding: 9px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    /* =========================================================
+       MAIN
+       ========================================================= */
+
+    .main {
+      margin-left: 250px;
+      width: calc(100% - 250px);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      min-height: 70px;
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 25px;
+      position: sticky;
+      top: 0;
+      z-index: 500;
+    }
+
+    .topbar-title {
+      min-width: 0;
+    }
+
+    .topbar-title h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .topbar-title p {
+      margin: 3px 0 0;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .mobile-menu {
+      display: none;
+      border: 0;
+      background: #eff6ff;
+      color: #2563eb;
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-right: 10px;
+    }
+
+    .content {
+      flex: 1;
+      padding: 25px;
+      width: 100%;
+    }
+
+    /*
+      IMPORTANT:
+      Do not use generic ".page { display:none }".
+      JavaScript controls visibility with .page.hidden.
+    */
+    .page {
+      display: block;
+      width: 100%;
+    }
+
+    .page.hidden {
+      display: none !important;
+    }
+
+    /* =========================================================
+       CARDS / DASHBOARD
+       ========================================================= */
+
+    .welcome-card {
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      color: #fff;
+      border-radius: 17px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 15px 35px rgba(37, 99, 235, 0.18);
+    }
+
+    .welcome-card h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .welcome-card p {
+      margin: 7px 0 0;
+      color: #dbeafe;
+      font-size: 13px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 18px;
+      min-width: 0;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 800;
+      margin-top: 8px;
+      color: #0f172a;
+      word-break: break-word;
+    }
+
+    .stat-sub {
+      margin-top: 5px;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .section-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 19px;
+      margin-bottom: 18px;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .section-heading h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .section-heading p {
+      margin: 4px 0 0;
+      color: #64748b;
+      font-size: 12px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    /* =========================================================
+       BUY NUMBER
+       ========================================================= */
+
+    .product-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 18px;
+    }
+
+    .product-card h3 {
+      margin: 0 0 6px;
+      font-size: 15px;
+    }
+
+    .product-card p {
+      margin: 0 0 14px;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .price-preview {
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 13px;
+      margin: 12px 0;
+    }
+
+    .price-preview-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 7px;
+      font-size: 12px;
+    }
+
+    .price-preview-row:last-child {
+      margin-bottom: 0;
+      padding-top: 8px;
+      border-top: 1px solid #e2e8f0;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    /* =========================================================
+       TABLES
+       ========================================================= */
+
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 650px;
+    }
+
+    .data-table th {
+      text-align: left;
+      background: #f8fafc;
+      color: #64748b;
+      font-size: 11px;
+      padding: 11px 12px;
+      white-space: nowrap;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .data-table td {
+      padding: 12px;
+      border-bottom: 1px solid #edf2f7;
+      font-size: 12px;
+      vertical-align: middle;
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    /* =========================================================
+       BADGES
+       ========================================================= */
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: capitalize;
+    }
+
+    .badge-success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge-info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .badge-neutral {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    /* =========================================================
+       WALLET
+       ========================================================= */
+
+    .wallet-balance {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: white;
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .wallet-balance small {
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    .wallet-balance .amount {
+      font-size: 32px;
+      font-weight: 800;
+      margin-top: 7px;
+    }
+
+    .payment-info {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .payment-info h4 {
+      margin: 0 0 10px;
+      color: #1e40af;
+    }
+
+    .payment-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      padding: 6px 0;
+      font-size: 13px;
+    }
+
+    .payment-row span:first-child {
+      color: #64748b;
+    }
+
+    .payment-row strong {
+      color: #0f172a;
+    }
+
+    /* =========================================================
+       ALERTS
+       ========================================================= */
+
+    #toast-container {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 5000;
+      width: min(360px, calc(100vw - 36px));
+    }
+
+    .toast {
+      background: #0f172a;
+      color: white;
+      padding: 13px 15px;
+      border-radius: 10px;
+      margin-top: 8px;
+      font-size: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+    }
+
+    .toast.success {
+      background: #166534;
+    }
+
+    .toast.error {
+      background: #991b1b;
+    }
+
+    .toast.warning {
+      background: #92400e;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 35px 20px;
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 25px;
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    /* =========================================================
+       SUPPORT / PROFILE
+       ========================================================= */
+
+    .support-box {
+      text-align: center;
+      padding: 30px 20px;
+    }
+
+    .support-icon {
+      width: 55px;
+      height: 55px;
+      margin: 0 auto 13px;
+      border-radius: 50%;
+      background: #eff6ff;
+      color: #2563eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .support-box h3 {
+      margin: 0 0 7px;
+    }
+
+    .support-box p {
+      margin: 0 auto 15px;
+      color: #64748b;
+      max-width: 500px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      gap: 15px;
+      padding: 12px 0;
+      border-bottom: 1px solid #edf2f7;
+    }
+
+    .profile-grid:last-child {
+      border-bottom: 0;
+    }
+
+    .profile-grid span {
+      color: #64748b;
+      font-size: 12px;
+    }
+
+    .profile-grid strong {
+      font-size: 13px;
+      word-break: break-word;
+    }
+
+    /* =========================================================
+       FOOTER
+       ========================================================= */
+
+    .site-footer {
+      padding: 25px;
+      background: #fff;
+      border-top: 1px solid #e5e7eb;
+      text-align: center;
+      color: #64748b;
+      font-size: 11px;
+      line-height: 1.7;
+    }
+
+    .footer-brand {
+      font-weight: 800;
+      color: #334155;
+      margin-bottom: 3px;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      margin-top: 10px;
+    }
+
+    .footer-links a {
+      color: #2563eb;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .footer-links a:hover {
+      text-decoration: underline;
+    }
+
+    /* =========================================================
+       MODAL
+       ========================================================= */
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      z-index: 4000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 520px;
+      background: #fff;
+      border-radius: 15px;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 16px 18px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .modal-close {
+      border: 0;
+      background: transparent;
+      font-size: 22px;
+      color: #64748b;
+    }
+
+    .modal-body {
+      padding: 18px;
+    }
+
+    /* =========================================================
+       MOBILE
+       ========================================================= */
+
+    @media (max-width: 1000px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 800px) {
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.2s ease;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main {
+        margin-left: 0;
+        width: 100%;
+      }
+
+      .mobile-menu {
+        display: inline-block;
+      }
+
+      .topbar {
+        padding: 0 15px;
+      }
+
+      .content {
+        padding: 15px;
+      }
+
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .site-footer {
+        padding: 20px 15px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .welcome-card h1 {
+        font-size: 20px;
+      }
+
+      .stat-value {
+        font-size: 22px;
+      }
+
+      .auth-card {
+        padding: 20px;
+      }
+
+      .payment-row {
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .profile-grid {
+        grid-template-columns: 1fr;
+        gap: 3px;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<section id="auth">
-  <div class="auth-card">
-    <div class="brand"><div class="logo">GV</div><h1>Global Virtual Sim Web</h1><p>Secure virtual number marketplace</p></div>
-    <div class="tabs"><button id="loginTab" class="active" onclick="authMode('login')">Login</button><button id="registerTab" onclick="authMode('register')">Register</button></div>
-    <form id="loginForm" onsubmit="login(event)">
-      <div class="field"><label>Email</label><input id="loginEmail" class="input" type="email" required></div>
-      <div class="field"><label>Password</label><div class="input-wrap"><input id="loginPassword" class="input" type="password" required><button type="button" class="eye" onclick="toggleEye('loginPassword',this)">◉</button></div></div>
-      <button class="primary full">Login</button><div id="loginMsg" class="msg"></div>
-    </form>
-    <form id="registerForm" class="hidden" onsubmit="register(event)">
-      <div class="field"><label>Full Name</label><input id="regName" class="input" required></div>
-      <div class="field"><label>Username</label><input id="regUsername" class="input" required></div>
-      <div class="field"><label>Email</label><input id="regEmail" class="input" type="email" required></div>
-      <div class="field"><label>Password</label><div class="input-wrap"><input id="regPassword" class="input" type="password" required><button type="button" class="eye" onclick="toggleEye('regPassword',this)">◉</button></div></div>
-      <div class="field"><label>Confirm Password</label><div class="input-wrap"><input id="regConfirm" class="input" type="password" required><button type="button" class="eye" onclick="toggleEye('regConfirm',this)">◉</button></div></div>
-      <label class="muted"><input type="checkbox" required> I agree to the Terms & Conditions.</label>
-      <button class="primary full" style="margin-top:14px">Create Account</button><div id="regMsg" class="msg"></div>
-    </form>
-  </div>
-</section>
 
-<section id="app" class="hidden">
-  <div class="shell">
-    <aside id="sideMenu" class="side">
-      <div class="brandline">Global Virtual Sim Web</div>
-      <nav class="nav">
-        <button data-page="home" onclick="go('home')">🏠 Dashboard</button>
-        <button data-page="buy" onclick="go('buy')">📱 Buy Number</button>
-        <button data-page="active" onclick="go('active')">🟢 Active Numbers</button>
-        <button data-page="orders" onclick="go('orders')">🧾 Order History</button>
-        <button data-page="wallet" onclick="go('wallet')">💳 Wallet</button>
-        <button data-page="support" onclick="go('support')">💬 Support</button>
-        <button data-page="profile" onclick="go('profile')">👤 Profile</button>
-        <button id="adminNav" class="admin-only" data-page="admin" onclick="go('admin')">⚙️ Admin</button>
-      </nav>
-      <div style="position:absolute;bottom:15px;left:12px;right:12px"><div id="miniUser" class="muted" style="color:#94a3b8;margin-bottom:8px"></div><button class="secondary full" onclick="logout()">Logout</button></div>
-    </aside>
-    <div id="sideOverlay" class="side-overlay" onclick="closeMenu()"></div>
-    <main class="main">
-      <header class="top"><div class="top-left"><button class="menu-btn" aria-label="Open menu" onclick="toggleMenu()">☰</button><h2 id="pageTitle">Dashboard</h2></div><span id="userEmail" class="muted"></span></header>
-      <div class="content">
+  <!-- =========================================================
+       TOASTS
+       ========================================================= -->
 
-        <section id="page-home" class="page">
-          <div class="balance-card"><div class="balance-row"><small>Wallet Balance</small><span class="pill">Active</span></div><strong id="homeBalance">₦0.00</strong><button class="secondary" onclick="go('wallet')">+ Add Money</button></div>
-          <div class="stats"><div class="card stat"><span class="muted">Active Numbers</span><b id="statActive">0</b></div><div class="card stat"><span class="muted">Total Orders</span><b id="statOrders">0</b></div><div class="card stat"><span class="muted">Transactions</span><b id="statTransactions">0</b></div></div>
-          <div class="card"><h3>Quick Actions</h3><div class="actions"><button class="primary" onclick="go('buy')">Buy Number</button><button class="secondary" onclick="go('wallet')">Add Money</button><button class="secondary" onclick="go('support')">Support</button></div></div>
-        </section>
+  <div id="toast-container"></div>
 
-        <section id="page-buy" class="page hide">
-          <div class="card"><h3>Buy Number</h3><p class="muted">Choose a country and service. Search both lists quickly.</p>
-            <div class="grid2">
-              <div class="field"><label>Country</label><div class="picker"><input id="countrySearch" class="search" placeholder="Search country..." autocomplete="off" oninput="filterCountries()"><div id="countryList" class="picker-list hidden"></div></div></div>
-              <div class="field"><label>Service</label><div class="picker"><input id="serviceSearch" class="search" placeholder="Search service..." autocomplete="off" disabled oninput="filterServices()"><div id="serviceList" class="picker-list hidden"></div></div></div>
-            </div>
-            <div id="buyPreview" class="notice">Select a country and service.</div>
-            <div style="margin-top:14px"><button id="purchaseBtn" class="primary" disabled onclick="purchase()">Purchase Number</button></div>
-            <div id="buyMsg" class="msg"></div>
+  <!-- =========================================================
+       AUTHENTICATION
+       ========================================================= -->
+
+  <section id="auth">
+
+    <div class="auth-wrapper">
+
+      <div class="brand-center">
+        <div class="brand-logo">G</div>
+        <h1>Global Virtual Sim Web</h1>
+        <p>Virtual numbers & communication services</p>
+      </div>
+
+      <div class="auth-card">
+
+        <div class="auth-tabs">
+          <button
+            id="loginTab"
+            class="auth-tab active"
+            type="button"
+            onclick="setAuthMode('login')"
+          >
+            Login
+          </button>
+
+          <button
+            id="registerTab"
+            class="auth-tab"
+            type="button"
+            onclick="setAuthMode('register')"
+          >
+            Create Account
+          </button>
+        </div>
+
+        <!-- LOGIN -->
+
+        <form
+          id="loginForm"
+          class="auth-form"
+          onsubmit="handleLogin(event)"
+        >
+
+          <h2>Welcome back</h2>
+
+          <p>
+            Login to manage your virtual numbers and wallet.
+          </p>
+
+          <div class="form-group">
+            <label for="loginEmail">Email Address</label>
+
+            <input
+              id="loginEmail"
+              class="form-control"
+              type="email"
+              autocomplete="email"
+              required
+              placeholder="you@example.com"
+            />
           </div>
-          <div class="card"><h3>Current Purchase</h3><div id="currentPurchase" class="muted">No active number.</div></div>
-        </section>
 
-        <section id="page-active" class="page hide"><div class="card"><h3>Active Numbers</h3><div id="activeList" class="muted">Loading...</div></div></section>
-        <section id="page-orders" class="page hide"><div class="card"><h3>Order History</h3><div class="tablewrap"><table class="table"><thead><tr><th>Date</th><th>Service</th><th>Country</th><th>Number</th><th>Price</th><th>Status</th></tr></thead><tbody id="ordersBody"></tbody></table></div></div></section>
+          <div class="form-group">
+            <label for="loginPassword">Password</label>
 
-        <section id="page-wallet" class="page hide">
-          <div class="card"><h3>Add Money</h3><div class="notice"><b>OPay</b><br>Account: <b>9136540119</b><br>Name: <b>Kelechi James</b><br><br>After payment, submit your receipt/reference below. For faster confirmation, WhatsApp <b>09136540119</b>.</div>
-            <div class="grid2" style="margin-top:14px"><div class="field"><label>Amount</label><input id="depAmount" class="input" type="number" min="1"></div><div class="field"><label>Payment Reference</label><input id="depRef" class="input" placeholder="Optional"></div></div>
-            <div class="field"><label>Receipt URL</label><input id="depReceipt" class="input" placeholder="Paste image/file link"></div>
-            <div class="field"><label>Note</label><textarea id="depNote" class="input" rows="3" placeholder="Optional note"></textarea></div>
-            <button class="primary" onclick="submitDeposit()">Submit Deposit</button><div id="depMsg" class="msg"></div>
+            <input
+              id="loginPassword"
+              class="form-control"
+              type="password"
+              autocomplete="current-password"
+              required
+              placeholder="Enter your password"
+            />
           </div>
-          <div class="card"><h3>Deposit History</h3><div class="tablewrap"><table class="table"><thead><tr><th>Date</th><th>Amount</th><th>Status</th><th>Reference</th></tr></thead><tbody id="depBody"></tbody></table></div></div>
-          <div class="card"><h3>Wallet Transactions</h3><div class="tablewrap"><table class="table"><thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Balance</th></tr></thead><tbody id="txBody"></tbody></table></div></div>
-        </section>
 
-        <section id="page-support" class="page hide"><div class="card"><h3>Support</h3><p class="muted">Need help with a deposit, number, SMS or account?</p><div class="actions"><a class="primary" href="https://t.me/GlobalVirtualSimWebSupport" target="_blank" rel="noopener">Telegram Support</a><a class="secondary" href="mailto:globalsimwebsite@gmail.com">Email Support</a></div></div></section>
+          <button
+            id="loginButton"
+            class="primary-btn full-btn"
+            type="submit"
+          >
+            Login
+          </button>
 
-        <section id="page-profile" class="page hide"><div class="card"><h3>Profile</h3><div id="profileBox"></div></div></section>
+        </form>
 
-        <section id="page-admin" class="page hide">
-          <div class="card"><h3>Admin — Pricing</h3><p class="muted">Choose a country and service from the same lists customers use. Then check the provider price and set your own selling price.</p>
-            <div class="grid2">
-              <div class="field picker"><label>Country</label><input id="adminCountrySearch" class="input search" placeholder="Search country..." autocomplete="off" onclick="adminFilterCountries()" oninput="adminFilterCountries()"><div id="adminCountryList" class="picker-list hidden"></div></div>
-              <div class="field picker"><label>Service</label><input id="adminServiceSearch" class="input search" placeholder="Select a country first" autocomplete="off" disabled onclick="adminFilterServices()" oninput="adminFilterServices()"><div id="adminServiceList" class="picker-list hidden"></div></div>
-              <div class="field"><label>Provider Price</label><input id="adminProviderPrice" class="input" readonly placeholder="Search price after selecting service"></div>
-              <div class="field"><label>Your Selling Price (₦)</label><input id="adminPrice" class="input" type="number" min="1" placeholder="e.g. 3000"></div>
-            </div>
-            <div class="actions" style="margin-top:12px"><button class="secondary" onclick="adminSearchPrice()">Search Provider Price</button><button class="primary" onclick="savePrice()">Save Selling Price</button></div>
-            <input id="adminCountryId" type="hidden"><input id="adminCountryName" type="hidden"><input id="adminServiceId" type="hidden"><input id="adminServiceName" type="hidden">
-            <div id="adminPriceMsg" class="msg"></div>
+        <!-- REGISTER -->
+
+        <form
+          id="registerForm"
+          class="auth-form hidden"
+          onsubmit="handleRegister(event)"
+        >
+
+          <h2>Create your account</h2>
+
+          <p>
+            Create your Global Virtual Sim Web account.
+          </p>
+
+          <div class="form-group">
+            <label for="registerFullName">Full Name</label>
+
+            <input
+              id="registerFullName"
+              class="form-control"
+              type="text"
+              autocomplete="name"
+              required
+              placeholder="Your full name"
+            />
           </div>
-          <div class="card"><h3>Deposit Requests</h3><div id="adminDeposits">Loading...</div></div>
-          <div class="card"><h3>Orders</h3><div id="adminOrders">Loading...</div></div>
-        </section>
+
+          <div class="form-group">
+            <label for="registerUsername">Username</label>
+
+            <input
+              id="registerUsername"
+              class="form-control"
+              type="text"
+              autocomplete="username"
+              required
+              placeholder="Choose a username"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="registerReferral">Referral Code (Optional)</label>
+
+            <input
+              id="registerReferral"
+              class="form-control"
+              type="text"
+              placeholder="Referral code"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="registerEmail">Email Address</label>
+
+            <input
+              id="registerEmail"
+              class="form-control"
+              type="email"
+              autocomplete="email"
+              required
+              placeholder="you@example.com"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="registerPassword">Password</label>
+
+            <input
+              id="registerPassword"
+              class="form-control"
+              type="password"
+              autocomplete="new-password"
+              required
+              minlength="6"
+              placeholder="At least 6 characters"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="registerConfirmPassword">
+              Confirm Password
+            </label>
+
+            <input
+              id="registerConfirmPassword"
+              class="form-control"
+              type="password"
+              autocomplete="new-password"
+              required
+              minlength="6"
+              placeholder="Repeat your password"
+            />
+          </div>
+
+          <label class="checkbox-row">
+            <input
+              id="registerTerms"
+              type="checkbox"
+              required
+            />
+
+            <span>
+              I agree to the Terms & Conditions and Acceptable Use Policy.
+            </span>
+          </label>
+
+          <button
+            id="registerButton"
+            class="primary-btn full-btn"
+            type="submit"
+          >
+            Create Account
+          </button>
+
+        </form>
 
       </div>
-      <footer class="footer">© 2026 Global Virtual Sim Web · Owned by KelChuk’s · <a href="https://t.me/GlobalVirtualSimWebSupport" target="_blank" rel="noopener">Follow us on Telegram</a></footer>
-    </main>
+
+    </div>
+
+  </section>
+
+
+  <!-- =========================================================
+       MAIN APPLICATION
+       ========================================================= -->
+
+  <section id="app" class="hidden">
+
+    <div class="app-shell">
+
+      <!-- SIDEBAR -->
+
+      <aside id="sidebar" class="sidebar">
+
+        <div class="sidebar-brand">
+
+          <div class="sidebar-brand-row">
+
+            <div class="sidebar-brand-icon">
+              G
+            </div>
+
+            <div>
+              <strong>Global Virtual Sim</strong>
+              <small>Web</small>
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="nav-section">
+          Main
+        </div>
+
+        <div class="nav-list">
+
+          <button
+            class="nav-btn active"
+            data-page="home"
+            onclick="navigateTo('home')"
+          >
+            🏠
+            <span>Dashboard</span>
+          </button>
+
+          <button
+            class="nav-btn"
+            data-page="buy"
+            onclick="navigateTo('buy')"
+          >
+            📱
+            <span>Buy Number</span>
+          </button>
+
+          <button
+            class="nav-btn"
+            data-page="active"
+            onclick="navigateTo('active')"
+          >
+            📞
+            <span>Active Numbers</span>
+          </button>
+
+          <button
+            class="nav-btn"
+            data-page="orders"
+            onclick="navigateTo('orders')"
+          >
+            🧾
+            <span>Order History</span>
+          </button>
+
+          <button
+            class="nav-btn"
+            data-page="wallet"
+            onclick="navigateTo('wallet')"
+          >
+            💳
+            <span>Wallet</span>
+          </button>
+
+        </div>
+
+
+        <div class="nav-section">
+          Account
+        </div>
+
+        <div class="nav-list">
+
+          <button
+            class="nav-btn"
+            data-page="support"
+            onclick="navigateTo('support')"
+          >
+            💬
+            <span>Support</span>
+          </button>
+
+          <button
+            class="nav-btn"
+            data-page="profile"
+            onclick="navigateTo('profile')"
+          >
+            👤
+            <span>Profile</span>
+          </button>
+
+          <button
+            id="adminNavButton"
+            class="nav-btn hidden"
+            data-page="admin"
+            onclick="navigateTo('admin')"
+          >
+            ⚙️
+            <span>Admin Dashboard</span>
+          </button>
+
+        </div>
+
+
+        <div class="sidebar-bottom">
+
+          <div class="user-mini">
+
+            <div
+              id="sidebarAvatar"
+              class="avatar"
+            >
+              U
+            </div>
+
+            <div class="user-mini-text">
+
+              <strong id="sidebarName">
+                User
+              </strong>
+
+              <span id="sidebarEmail">
+                -
+              </span>
+
+            </div>
+
+          </div>
+
+          <button
+            class="logout-btn"
+            type="button"
+            onclick="handleLogout()"
+          >
+            Logout
+          </button>
+
+        </div>
+
+      </aside>
+
+
+      <!-- MAIN -->
+
+      <main class="main">
+
+        <header class="topbar">
+
+          <div style="display:flex;align-items:center;min-width:0;">
+
+            <button
+              id="mobileMenuButton"
+              class="mobile-menu"
+              type="button"
+              onclick="toggleSidebar()"
+            >
+              ☰
+            </button>
+
+            <div class="topbar-title">
+
+              <h2 id="pageTitle">
+                Dashboard
+              </h2>
+
+              <p id="pageSubtitle">
+                Overview of your account
+              </p>
+
+            </div>
+
+          </div>
+
+          <div>
+            <span
+              id="topbarBalance"
+              class="badge badge-info"
+            >
+              ₦0.00
+            </span>
+          </div>
+
+        </header>
+
+
+        <div class="content">
+
+          <!-- =================================================
+               HOME / DASHBOARD
+               ================================================= -->
+
+          <section
+            id="page-home"
+            class="page"
+          >
+
+            <div class="gvs-wallet-hero">
+              <div class="gvs-wallet-hero-top">
+                <div>
+                  <div class="gvs-wallet-label">Wallet Balance</div>
+                  <div id="gvsHeroBalance" class="gvs-wallet-amount">₦0.00</div>
+                </div>
+                <span class="gvs-active-pill">● Active</span>
+              </div>
+
+              <div class="gvs-wallet-hero-bottom">
+                <div class="gvs-wallet-subtitle">
+                  Available for virtual number purchases
+                </div>
+                <button
+                  type="button"
+                  class="gvs-add-money-btn"
+                  onclick="navigateTo('wallet')"
+                >
+                  <span class="gvs-plus">+</span>
+                  Add Money
+                </button>
+              </div>
+            </div>
+
+            <div class="welcome-card">
+
+              <h1>
+                Welcome, <span id="welcomeName">User</span>
+              </h1>
+
+              <p>
+                Manage your virtual numbers, orders and wallet from one place.
+              </p>
+
+            </div>
+
+
+            <div class="stats-grid">
+
+              <div class="stat-card">
+
+                <div class="stat-label">
+                  Wallet Balance
+                </div>
+
+                <div
+                  id="dashboardBalance"
+                  class="stat-value"
+                >
+                  ₦0.00
+                </div>
+
+                <div class="stat-sub">
+                  Available funds
+                </div>
+
+              </div>
+
+
+              <div class="stat-card">
+
+                <div class="stat-label">
+                  Active Numbers
+                </div>
+
+                <div
+                  id="dashboardActiveNumbers"
+                  class="stat-value"
+                >
+                  0
+                </div>
+
+                <div class="stat-sub">
+                  Current activations
+                </div>
+
+              </div>
+
+
+              <div class="stat-card">
+
+                <div class="stat-label">
+                  Total Orders
+                </div>
+
+                <div
+                  id="dashboardOrders"
+                  class="stat-value"
+                >
+                  0
+                </div>
+
+                <div class="stat-sub">
+                  Your orders
+                </div>
+
+              </div>
+
+
+              <div class="stat-card">
+
+                <div class="stat-label">
+                  Transactions
+                </div>
+
+                <div
+                  id="dashboardTransactions"
+                  class="stat-value"
+                >
+                  0
+                </div>
+
+                <div class="stat-sub">
+                  Wallet activity
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <div class="grid-2">
+
+              <div class="section-card">
+
+                <div class="section-heading">
+
+                  <div>
+                    <h3>Quick Actions</h3>
+                    <p>Common account actions</p>
+                  </div>
+
+                </div>
+
+                <div style="display:grid;gap:9px;">
+
+                  <button
+                    class="primary-btn"
+                    onclick="navigateTo('buy')"
+                  >
+                    📱 Buy a Number
+                  </button>
+
+                  <button
+                    class="secondary-btn"
+                    onclick="navigateTo('wallet')"
+                  >
+                    💳 Fund Wallet
+                  </button>
+
+                  <button
+                    class="secondary-btn"
+                    onclick="navigateTo('orders')"
+                  >
+                    🧾 View Orders
+                  </button>
+
+                </div>
+
+              </div>
+
+
+              <div class="section-card">
+
+                <div class="section-heading">
+
+                  <div>
+                    <h3>Recent Activity</h3>
+                    <p>Your latest wallet transactions</p>
+                  </div>
+
+                </div>
+
+                <div
+                  id="recentActivity"
+                  class="empty-state"
+                >
+                  No recent activity.
+                </div>
+
+              </div>
+
+            </div>
+
+          </section>
+
+
+          <!-- =================================================
+               BUY NUMBER
+               ================================================= -->
+
+          <section
+            id="page-buy"
+            class="page hidden"
+          >
+
+            <div class="section-card">
+
+              <div class="section-heading">
+
+                <div>
+                  <h3>Buy Virtual Number</h3>
+                  <p>
+                    Select a country and an available communication service.
+                  </p>
+                </div>
+
+              </div>
+
+
+              <div class="grid-2">
+
+                <div>
+
+                  <div class="form-group">
+
+                    <label for="countrySelect">
+                      Country
+                    </label>
+
+                    <select
+                      id="countrySelect"
+                      class="form-control"
+                      onchange="loadServices()"
+                    >
+
+                      <option value="">
+                        Select a country
+                      </option>
+
+                    </select>
+
+                  </div>
+
+
+                  <div class="form-group">
+
+                    <label for="serviceSelect">
+                      Service
+                    </label>
+
+                    <select
+                      id="serviceSelect"
+                      class="form-control"
+                      onchange="updatePurchasePreview()"
+                    >
+
+                      <option value="">
+                        Select a service
+                      </option>
+
+                    </select>
+
+                  </div>
+
+                </div>
+
+
+                <div class="product-card">
+
+                  <h3>
+                    Order Preview
+                  </h3>
+
+                  <p>
+                    Review the selected number before placing your order.
+                  </p>
+
+                  <div class="price-preview">
+
+                    <div class="price-preview-row">
+
+                      <span>
+                        Country
+                      </span>
+
+                      <strong id="previewCountry">
+                        —
+                      </strong>
+
+                    </div>
+
+                    <div class="price-preview-row">
+
+                      <span>
+                        Service
+                      </span>
+
+                      <strong id="previewService">
+                        —
+                      </strong>
+
+                    </div>
+
+                    <div class="price-preview-row">
+
+                      <span>
+                        Price
+                      </span>
+
+                      <strong id="previewPrice">
+                        —
+                      </strong>
+
+                    </div>
+
+                  </div>
+
+                  <button
+                    id="purchaseButton"
+                    class="primary-btn full-btn"
+                    type="button"
+                    onclick="purchaseNumber()"
+                    disabled
+                  >
+                    Purchase Number
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <div class="section-card">
+
+              <div class="section-heading">
+
+                <div>
+                  <h3>How it works</h3>
+                  <p>Simple and transparent</p>
+                </div>
+
+              </div>
+
+              <div class="grid-3">
+
+                <div class="product-card">
+                  <h3>1. Fund Wallet</h3>
+                  <p>
+                    Add funds to your account using the available payment method.
+                  </p>
+                </div>
+
+                <div class="product-card">
+                  <h3>2. Select Number</h3>
+                  <p>
+                    Choose an available country and legitimate communication service.
+                  </p>
+                </div>
+
+                <div class="product-card">
+                  <h3>3. Receive Service</h3>
+                  <p>
+                    Your purchased activation will appear under Active Numbers.
+                  </p>
+                </div>
+
+              </div>
+
+            </div>
+
+          </section>
+
+
+          <!-- =================================================
+               ACTIVE NUMBERS
+               ================================================= -->
+
+          <section
+            id="page-active"
+            class="page hidden"
+          >
+
+            <div class="section-card">
+
+              <div class="section-heading">
+
+                <div>
+                  <h3>Active Numbers</h3>
+                  <p>Your currently active number activations.</p>
+                </div>
+
+                <button
+                  class="secondary-btn small-btn"
+                  onclick="loadActiveNumbers()"
+                >
+                  Refresh
+                </button>
+
+              </div>
+
+              <div
+                id="activeNumbersContainer"
+                class="loading"
+              >
+                Loading active numbers...
+              </div>
+
+            </div>
+
+          </section>
+
+
+          <!-- =================================================
+               ORDER HISTORY
+               ================================================= -->
+
+          <section
+            id="page-orders"
+            class="page hidden"
+          >
+
+            <div class="section-card">
+
+              <div class="section-heading">
+
+                <div>
+                  <h3>Order History</h3>
+                  <p>Your previous purchases.</p>
+                </div>
+
+                <button
+                  class="secondary-btn small-btn"
+                  onclick="loadOrderHistory()"
+                >
+                  Refresh
+                </button>
+
+              </div>
+
+              <div
+                id="orderHistoryContainer"
+                class="loading"
+              >
+                Loading orders...
+              </div>
+
+            </div>
+
+          </section>
+
+
+          <!-- =================================================
+               WALLET
+               ================================================= -->
+
+          <section
+            id="page-wallet"
+            class="page hidden"
+          >
+
+            <div class="grid-2">
+
+              <div class="wallet-balance">
+
+                <small>
+                  Available Wallet Balance
+                </small>
+
+                <div
+                  id="walletPageBalance"
+                  class="amount"
+                >
+                  ₦0.00
+                </div>
+
+                <div style="margin-top:15px;color:#94a3b8;font-size:12px;">
+                  Use your wallet balance for eligible purchases.
+                </div>
+
+              </div>
+
+
+              <div class="section-card">
+
+                <div class="section-heading">
+
+                  <div>
+                    <h3>Deposit Status</h3>
+                    <p>Manual deposits are reviewed by an administrator.</p>
+                  </div>
+
+                </div>
+
+                <p
+                  style="font-size:13px;color:#64748b;line-height:1.6;margin:0;"
+                >
+                  After making your transfer, submit the amount and receipt.
+                  Your wallet will be credited after the deposit is approved.
+                </p>
+
+              </div>
+
+            </div>
+
+
+            <div class="grid-2">
+
+              <!-- DEPOSIT -->
+
+              <div class="section-card">
+
+                <div class="section-heading">
+
+                  <div>
+                    <h3>Fund Wallet</h3>
+                    <p>Manual OPay deposit</p>
+                  </div>
+
+                </div>
+
+
+                <div class="payment-info">
+
+                  <h4>
+                    OPay Payment Details
+                  </h4>
+
+                  <div class="payment-row">
+
+                    <span>
+                      Account Number
+                    </span>
+
+                    <strong>
+                      9136540119
+                    </strong>
+
+                  </div>
+
+                  <div class="payment-row">
+
+                    <span>
+                      Account Name
+                    </span>
+
+                    <strong>
+                      Kelechi James
+                    </strong>
+
+                  </div>
+
+                  <div class="payment-row">
+
+                    <span>
+                      Payment Method
+                    </span>
+
+                    <strong>
+                      OPay
+                    </strong>
+
+                  </div>
+
+                </div>
+
+                <div class="gvs-whatsapp-notice">
+                  <strong>⚡ Faster approval</strong>
+                  <span>
+                    After submitting your deposit, send your payment receipt on WhatsApp:
+                    <a href="https://wa.me/2349136540119" target="_blank" rel="noopener">
+                      09136540119
+                    </a>
+                  </span>
+                </div>
+
+
+                <form
+                  id="depositForm"
+                  onsubmit="submitDeposit(event)"
+                >
+
+                  <div class="form-group">
+
+                    <label for="depositAmount">
+                      Amount
+                    </label>
+
+                    <input
+                      id="depositAmount"
+                      class="form-control"
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      required
+                      placeholder="Enter amount"
+                    />
+
+                  </div>
+
+
+                  <div class="form-group">
+
+                    <label for="depositReference">
+                      Transfer Reference (Optional)
+                    </label>
+
+                    <input
+                      id="depositReference"
+                      class="form-control"
+                      type="text"
+                      placeholder="Payment reference"
+                    />
+
+                  </div>
+
+
+                  <div class="form-group">
+
+                    <label for="depositNote">
+                      Note (Optional)
+                    </label>
+
+                    <textarea
+                      id="depositNote"
+                      class="form-control"
+                      rows="3"
+                      placeholder="Additional information"
+                    ></textarea>
+
+                  </div>
+
+
+                  <div class="form-group">
+
+                    <label for="depositReceipt">
+                      Payment Receipt
+                    </label>
+
+                    <input
+                      id="depositReceipt"
+                      class="form-control"
+                      type="file"
+                      accept="image/*,.pdf"
+                      required
+                    />
+
+                  </div>
+
+
+                  <button
+                    id="depositButton"
+                    class="primary-btn full-btn"
+                    type="submit"
+                  >
+                    Submit Deposit
+                  </button>
+
+                </form>
+
+              </div>
+
+              <!-- TRANSACTIONS -->
+
+            <div class="section-card">
+
+              <div class="section-heading">
+
+                <div>
+                  <h3>Transaction History</h3>
+                  <p>Your wallet activity.</p>
+                </div>
+
+              </div>
+
+              <div
+                id="walletTransactionsContainer"
+                class="loading"
+              >
+                Loading transactions...
+              </div>
+
+            </div>
+
+
+            <!-- DEPOSITS -->
+
+            <div class="section-card">
+
+              <div class="section-heading">
+
+                <div>
+                  <h3>Deposit History</h3>
+                  <p>Previous wallet funding requests.</p>
+                </div>
+
+              </div>
+
+              <div
+                id="depositHistoryContainer"
+                class="loading"
+              >
+                Loading deposits...
+              </div>
+
+            </div>
+
+          </section>
+
+
+          <!-- =================================================
+               SUPPORT
+               ================================================= -->
+
+          <section
+            id="page-support"
+            class="page hidden"
+          >
+
+            <div class="section-card support-box">
+
+              <div class="support-icon">
+                💬
+              </div>
+
+              <h3>
+                Global Virtual Sim Web Support
+              </h3>
+
+              <p>
+                If you need help with your account, wallet deposit,
+                order or another website issue, contact our support team.
+              </p>
+
+              <a
+                href="mailto:watchandearn.ng@gmail.com"
+                class="primary-btn"
+                style="display:inline-block;text-decoration:none;"
+              >
+                Email Support
+              </a>
+
+            </div>
+
+
+            <div class="grid-3">
+
+              <div class="product-card">
+                <h3>Wallet Help</h3>
+                <p>
+                  Contact support if your approved deposit does not appear
+                  correctly in your wallet.
+                </p>
+              </div>
+
+              <div class="product-card">
+                <h3>Order Help</h3>
+                <p>
+                  Provide your order reference when reporting an order issue.
+                </p>
+              </div>
+
+              <div class="product-card">
+                <h3>Account Help</h3>
+                <p>
+                  Never share your password with support or another user.
+                </p>
+              </div>
+
+            </div>
+
+          </section>
+
+
+          <!-- =================================================
+               PROFILE
+               ================================================= -->
+
+          <section
+            id="page-profile"
+            class="page hidden"
+          >
+
+            <div class="section-card">
+
+              <div class="section-heading">
+
+                <div>
+                  <h3>My Profile</h3>
+                  <p>Your account information.</p>
+                </div>
+
+              </div>
+
+
+              <div class="profile-grid">
+
+                <span>
+                  Full Name
+                </span>
+
+                <strong id="profileFullName">
+                  —
+                </strong>
+
+              </div>
+
+
+              <div class="profile-grid">
+
+                <span>
+                  Username
+                </span>
+
+                <strong id="profileUsername">
+                  —
+                </strong>
+
+              </div>
+
+
+              <div class="profile-grid">
+
+                <span>
+                  Email
+                </span>
+
+                <strong id="profileEmail">
+                  —
+                </strong>
+
+              </div>
+
+
+              <div class="profile-grid">
+
+                <span>
+                  Account Role
+                </span>
+
+                <strong id="profileRole">
+                  Customer
+                </strong>
+
+              </div>
+
+
+              <div class="profile-grid">
+
+                <span>
+                  Referral Code
+                </span>
+
+                <strong id="profileReferral">
+                  —
+                </strong>
+
+              </div>
+
+            </div>
+
+          </section>
+
+
+          <!-- =================================================
+               ADMIN
+               ================================================= -->
+
+          <section
+            id="page-admin"
+            class="page hidden"
+          >
+
+            <div
+              id="adminAccessDenied"
+              class="section-card hidden"
+            >
+
+              <div class="empty-state">
+                Administrator access is required.
+              </div>
+
+            </div>
+
+
+            <div id="adminContent">
+
+              <div class="stats-grid">
+
+                <div class="stat-card">
+
+                  <div class="stat-label">
+                    Orders
+                  </div>
+
+                  <div
+                    id="adminOrdersCount"
+                    class="stat-value"
+                  >
+                    0
+                  </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                  <div class="stat-label">
+                    Deposits
+                  </div>
+
+                  <div
+                    id="adminDepositsCount"
+                    class="stat-value"
+                  >
+                    0
+                  </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                  <div class="stat-label">
+                    Pending Deposits
+                  </div>
+
+                  <div
+                    id="adminPendingCount"
+                    class="stat-value"
+                  >
+                    0
+                  </div>
+
+                </div>
+
+              </div>
+
+
+              <div class="section-card">
+
+                <div class="section-heading">
+
+                  <div>
+                    <h3>Pending Deposit Requests</h3>
+                    <p>
+                      Review customer payment receipts before crediting wallets.
+                    </p>
+                  </div>
+
+                  <button
+                    class="secondary-btn small-btn"
+                    onclick="loadAdmin()"
+                  >
+                    Refresh
+                  </button>
+
+                </div>
+
+
+                <div
+                  id="adminDepositsContainer"
+                  class="loading"
+                >
+                  Loading deposit requests...
+                </div>
+
+              </div>
+
+
+              <div class="section-card">
+
+                <div class="section-heading">
+
+                  <div>
+                    <h3>Recent Orders</h3>
+                    <p>Customer order records.</p>
+                  </div>
+
+                </div>
+
+                <div
+                  id="adminOrdersContainer"
+                  class="loading"
+                >
+                  Loading orders...
+                </div>
+
+              </div>
+
+
+              <div class="section-card">
+
+                <div class="section-heading">
+
+                  <div>
+                    <h3>Customers</h3>
+                    <p>Registered customer accounts.</p>
+                  </div>
+
+                </div>
+
+                <div
+                  id="adminUsersContainer"
+                  class="loading"
+                >
+                  Loading users...
+                </div>
+
+              </div>
+
+            </div>
+
+          </section>
+
+        </div>
+
+
+        <!-- FOOTER -->
+
+        <footer class="site-footer">
+
+          <div class="footer-brand">
+            © 2026 Global Virtual Sim Web. All rights reserved.
+          </div>
+
+          <div>
+            Owned by KelChuk’s.
+          </div>
+
+          <div class="footer-links">
+
+            <a onclick="showLegal('Support')">
+              Support
+            </a>
+
+            <a onclick="showLegal('Contact')">
+              Contact
+            </a>
+
+            <a href="mailto:watchandearn.ng@gmail.com">
+              Email
+            </a>
+
+            <a onclick="showLegal('Telegram')">
+              Telegram
+            </a>
+
+            <a onclick="showLegal('Terms & Conditions')">
+              Terms & Conditions
+            </a>
+
+            <a onclick="showLegal('Privacy Policy')">
+              Privacy Policy
+            </a>
+
+            <a onclick="showLegal('Refund Policy')">
+              Refund Policy
+            </a>
+
+            <a onclick="showLegal('Acceptable Use Policy')">
+              Acceptable Use Policy
+            </a>
+
+            <a
+              id="footerAdminLink"
+              class="hidden"
+              onclick="navigateTo('admin')"
+            >
+              Admin Dashboard
+            </a>
+
+          </div>
+
+        </footer>
+
+      </main>
+
+    </div>
+
+  </section>
+
+
+  <!-- =========================================================
+       RECEIPT MODAL
+       ========================================================= -->
+
+  <div
+    id="receiptModal"
+    class="modal-backdrop hidden"
+    onclick="closeReceiptModal(event)"
+  >
+
+    <div
+      class="modal"
+      onclick="event.stopPropagation()"
+    >
+
+      <div class="modal-header">
+
+        <h3>
+          Deposit Receipt
+        </h3>
+
+        <button
+          class="modal-close"
+          onclick="closeReceiptModal()"
+        >
+          ×
+        </button>
+
+      </div>
+
+      <div
+        id="receiptModalBody"
+        class="modal-body"
+      >
+        Loading receipt...
+      </div>
+
+    </div>
+
   </div>
-</section>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-let supabaseClient = null;
-let supabaseReady = false;
-let currentUser = null;
-let currentProfile = null;
-let currentWallet = null;
-let countries = [];
-let services = [];
-let selectedCountry = null;
-let selectedService = null;
 
-const $=id=>document.getElementById(id);
-const money=v=>"₦"+Number(v||0).toLocaleString("en-NG",{minimumFractionDigits:2,maximumFractionDigits:2});
-function msg(id,text,ok=false){const e=$(id);if(e){e.textContent=text;e.className="msg "+(ok?"ok":"error")}}
-function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
-function toggleEye(id,btn){const e=$(id);if(!e)return;e.type=e.type==="password"?"text":"password";btn.textContent=e.type==="password"?"◉":"◌"}
-function authMode(mode){$("loginForm").classList.toggle("hidden",mode!=="login");$("registerForm").classList.toggle("hidden",mode!=="register");$("loginTab").classList.toggle("active",mode==="login");$("registerTab").classList.toggle("active",mode==="register")}
-async function token(){
-  if (!supabaseClient || !supabaseReady || !supabaseClient.auth) return null;
-  const { data, error } = await supabaseClient.auth.getSession();
-  if (error) { console.error("Supabase session error:", error); return null; }
-  return data?.session?.access_token || null;
-}
-async function api(path,options={}){const t=await token();const headers={"Content-Type":"application/json",...(options.headers||{})};if(t)headers.Authorization=`Bearer ${t}`;const r=await fetch(path,{...options,headers});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||`Request failed (${r.status})`);return d}
-async function boot(){
-  try {
-    if (!window.supabase || typeof window.supabase.createClient !== "function") {
-      throw new Error("Supabase library failed to load. Please refresh the page.");
+  <!-- =========================================================
+       LEGAL MODAL
+       ========================================================= -->
+
+  <div
+    id="legalModal"
+    class="modal-backdrop hidden"
+    onclick="closeLegalModal(event)"
+  >
+
+    <div
+      class="modal"
+      onclick="event.stopPropagation()"
+    >
+
+      <div class="modal-header">
+
+        <h3 id="legalTitle">
+          Information
+        </h3>
+
+        <button
+          class="modal-close"
+          onclick="closeLegalModal()"
+        >
+          ×
+        </button>
+
+      </div>
+
+      <div
+        id="legalBody"
+        class="modal-body"
+      >
+        Information.
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================================================
+       SUPABASE
+       ========================================================= -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+  <script>
+    /* =========================================================
+       SUPABASE CONFIG
+       ========================================================= */
+
+    const SUPABASE_URL =
+      "https://rfitbmkizfmwfqqskwhy.supabase.co";
+
+    const SUPABASE_PUBLISHABLE_KEY =
+      "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
+
+    const supabaseClient =
+      window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+      );
+
+
+    /* =========================================================
+       GLOBAL STATE
+       ========================================================= */
+
+    let currentUser = null;
+    let currentProfile = null;
+    let currentWallet = null;
+    let currentServices = [];
+    let currentCountries = [];
+    let isAdmin = false;
+    let currentPage = "home";
+
+
+    /* =========================================================
+       HELPERS
+       ========================================================= */
+
+    function $(id) {
+      return document.getElementById(id);
     }
 
-    const response = await fetch("/api/config", { cache: "no-store" });
-    const config = await response.json().catch(() => ({}));
 
-    if (!response.ok) {
-      throw new Error(config.error || `Configuration request failed (${response.status})`);
+    function escapeHtml(value) {
+      if (value === null || value === undefined) {
+        return "";
+      }
+
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
     }
 
-    if (!config.success) {
-      throw new Error(config.error || "Supabase configuration is missing.");
+
+    function formatMoney(value) {
+      const amount = Number(value || 0);
+
+      return "₦" + amount.toLocaleString("en-NG", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
     }
 
-    if (!config.supabaseUrl) {
-      throw new Error("SUPABASE_URL is missing from Vercel environment variables.");
+
+    function formatDate(value) {
+      if (!value) return "—";
+
+      const date = new Date(value);
+
+      if (Number.isNaN(date.getTime())) {
+        return "—";
+      }
+
+      return date.toLocaleString("en-NG", {
+        dateStyle: "medium",
+        timeStyle: "short"
+      });
     }
 
-    if (!config.supabasePublishableKey) {
-      throw new Error("SUPABASE_PUBLISHABLE_KEY is missing from Vercel environment variables.");
+
+    function showToast(message, type = "") {
+      const container = $("toast-container");
+
+      const toast = document.createElement("div");
+
+      toast.className =
+        "toast" + (type ? " " + type : "");
+
+      toast.textContent = message;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.remove();
+      }, 4500);
     }
 
-    supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey);
 
-    if (!supabaseClient || !supabaseClient.auth) {
-      throw new Error("Supabase client could not be initialized.");
+    function setButtonLoading(button, loading, loadingText) {
+      if (!button) return;
+
+      if (loading) {
+        button.dataset.originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = loadingText || "Please wait...";
+      } else {
+        button.disabled = false;
+
+        if (button.dataset.originalText) {
+          button.textContent = button.dataset.originalText;
+        }
+      }
     }
 
-    supabaseReady = true;
 
-    const { data, error } = await supabaseClient.auth.getSession();
-    if (error) console.error("Supabase session error:", error);
+    /* =========================================================
+       AUTH MODE
+       ========================================================= */
 
-    if (data?.session?.user) await signedIn(data.session.user);
-    else showAuth();
+    function setAuthMode(mode) {
 
-    supabaseClient.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) await signedIn(session.user);
-      else showAuth();
-    });
-  } catch (error) {
-    console.error("Supabase initialization failed:", error);
-    supabaseClient = null;
-    supabaseReady = false;
-    showAuth();
-    msg("loginMsg", error?.message || "Unable to initialize Supabase. Check your Vercel environment variables.");
-  }
-}
-function showAuth(){$("auth").classList.remove("hidden");$("app").classList.add("hidden")}
-async function signedIn(user){currentUser=user;const p=await api("/api/profile").catch(()=>null);currentProfile=p?.profile||null;currentWallet=p?.wallet||{balance:0};$("auth").classList.add("hidden");$("app").classList.remove("hidden");$("userEmail").textContent=user.email||"";$("miniUser").textContent=currentProfile?.full_name||user.email||"";const admin=currentProfile?.role==="admin" || user.email?.toLowerCase()==="globalsimwebsite@gmail.com";$("adminNav").style.display=admin?"block":"none";go("home");refreshHome()}
-async function login(e){
-  e.preventDefault();
-  msg("loginMsg","");
-  if (!supabaseClient || !supabaseReady || !supabaseClient.auth) return msg("loginMsg","Supabase is still loading. Please wait a moment and try again.");
-  const button=e.submitter;
-  if(button){button.disabled=true;button.textContent="Logging in...";}
-  try{
-    const {error}=await supabaseClient.auth.signInWithPassword({email:$("loginEmail").value.trim(),password:$("loginPassword").value});
-    if(error)throw error;
-    msg("loginMsg","Login successful.",true);
-  }catch(x){
-    console.error("Login error:",x);
-    msg("loginMsg",x.message||"Login failed.");
-  }finally{
-    if(button){button.disabled=false;button.textContent="Login";}
-  }
-}
-async function register(e){
-  e.preventDefault();
-  msg("regMsg","");
-  if (!supabaseClient || !supabaseReady || !supabaseClient.auth) return msg("regMsg","Supabase is still loading. Please wait a moment and try again.");
-  if($("regPassword").value!==$("regConfirm").value) return msg("regMsg","Passwords do not match.");
-  const button=e.submitter;
-  if(button){button.disabled=true;button.textContent="Creating account...";}
-  try{
-    const {data,error}=await supabaseClient.auth.signUp({email:$("regEmail").value.trim(),password:$("regPassword").value,options:{data:{full_name:$("regName").value.trim(),username:$("regUsername").value.trim()}}});
-    if(error)throw error;
-    if(data?.user){
-      await fetch("/api/profile",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId:data.user.id,fullName:$("regName").value.trim(),username:$("regUsername").value.trim(),email:$("regEmail").value.trim()})}).catch(error=>console.warn("Profile creation warning:",error));
-      msg("regMsg","Account created. You can log in.",true);
-      authMode("login");
+      const loginForm = $("loginForm");
+      const registerForm = $("registerForm");
+
+      const loginTab = $("loginTab");
+      const registerTab = $("registerTab");
+
+      if (mode === "register") {
+
+        loginForm.classList.add("hidden");
+        registerForm.classList.remove("hidden");
+
+        loginTab.classList.remove("active");
+        registerTab.classList.add("active");
+
+      } else {
+
+        registerForm.classList.add("hidden");
+        loginForm.classList.remove("hidden");
+
+        registerTab.classList.remove("active");
+        loginTab.classList.add("active");
+
+      }
     }
-  }catch(x){
-    console.error("Registration error:",x);
-    msg("regMsg",x.message||"Registration failed.");
-  }finally{
-    if(button){button.disabled=false;button.textContent="Create Account";}
-  }
-}
-async function logout(){
-  if (!supabaseClient || !supabaseReady || !supabaseClient.auth) { showAuth(); return; }
-  try { await supabaseClient.auth.signOut(); }
-  catch(error){ console.error("Logout error:",error); showAuth(); }
-}
-function toggleMenu(){$("sideMenu").classList.toggle("open")}
-function closeMenu(){$("sideMenu").classList.remove("open")}
-const titles={home:"Dashboard",buy:"Buy Number",active:"Active Numbers",orders:"Order History",wallet:"Wallet",support:"Support",profile:"Profile",admin:"Admin Dashboard"};
-function go(page){closeMenu();Object.keys(titles).forEach(p=>{const e=$("page-"+p);if(e)e.classList.toggle("hide",p!==page)});document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));$("pageTitle").textContent=titles[page]||"Dashboard";if(page==="buy")loadCountries();if(page==="active")loadOrders("active");if(page==="orders")loadOrders();if(page==="wallet"){loadDeposits();loadTx();}if(page==="profile")loadProfile();if(page==="admin")loadAdmin()}
-async function refreshHome(){try{const p=await api("/api/profile");currentProfile=p.profile;currentWallet=p.wallet||{balance:0};$("homeBalance").textContent=money(currentWallet.balance);const o=await api("/api/orders");const orders=o.orders||[];$("statOrders").textContent=orders.length;$("statActive").textContent=orders.filter(x=>["active","pending"].includes(x.status)).length;const t=await api("/api/transactions");$("statTransactions").textContent=(t.transactions||[]).length}catch(e){}}
-async function loadCountries(){try{const d=await fetch("/api/countries").then(r=>r.json());countries=d.countries||[];filterCountries();$("countrySearch").disabled=false}catch(e){msg("buyMsg",e.message)}}
-function filterCountries(){const q=$("countrySearch").value.toLowerCase();const list=$("countryList");const arr=countries.filter(c=>(c.name||"").toLowerCase().includes(q)||(c.code||"").toLowerCase().includes(q)).slice(0,80);list.innerHTML=arr.map(c=>`<button type="button" onclick='selectCountry(${JSON.stringify(c).replace(/'/g,"&#39;")})'>🌐 ${escapeHtml(c.name)} ${c.code?`(${escapeHtml(c.code)})`:""}</button>`).join("")||"<div class='muted' style='padding:12px'>No country found.</div>";list.classList.remove("hidden")}
-async function selectCountry(c){selectedCountry=c;$("countrySearch").value=c.name;$("countryList").classList.add("hidden");$("serviceSearch").disabled=true;$("serviceSearch").value="";selectedService=null;services=[];try{const d=await fetch(`/api/services?countryId=${encodeURIComponent(c.id)}&countryCode=${encodeURIComponent(c.code||"")}&countryName=${encodeURIComponent(c.name||"")}`).then(r=>r.json());if(!d.success)throw new Error(d.error);services=d.services||[];$("serviceSearch").disabled=false;filterServices()}catch(e){msg("buyMsg",e.message)}}
-function filterServices(){const q=$("serviceSearch").value.toLowerCase();const list=$("serviceList");const arr=services.filter(s=>(s.name||"").toLowerCase().includes(q)||(s.id||"").toLowerCase().includes(q));list.innerHTML=arr.map(s=>`<button type="button" onclick='selectService(${JSON.stringify(s).replace(/'/g,"&#39;")})'>📱 ${escapeHtml(s.name||s.id)} ${s.selling_price?`— ${money(s.selling_price)}`:""}</button>`).join("")||"<div class='muted' style='padding:12px'>No service found.</div>";list.classList.remove("hidden")}
-function selectService(s){selectedService=s;$("serviceSearch").value=s.name||s.id;$("serviceList").classList.add("hidden");$("buyPreview").innerHTML=`<b>${escapeHtml(s.name||s.id)}</b><br>Country: ${escapeHtml(selectedCountry?.name||"")}<br>Price: <b>${s.selling_price?money(s.selling_price):"Price not configured"}</b>`;$("purchaseBtn").disabled=!(Number(s.selling_price)>0)}
-async function purchase(){if(!selectedCountry||!selectedService)return;const b=$("purchaseBtn");b.disabled=true;b.textContent="Purchasing...";msg("buyMsg","");try{const d=await api("/api/order",{method:"POST",body:JSON.stringify({countryId:selectedCountry.id,countryCode:selectedCountry.code,countryName:selectedCountry.name,serviceCountryPriceId:selectedService.id,serviceName:selectedService.name,availableServers:selectedService.available_servers||selectedService.servers||[]})});msg("buyMsg",d.message||"Number purchased successfully.",true);renderPurchase(d);refreshHome()}catch(e){msg("buyMsg",e.message||"Purchase failed.")}finally{b.disabled=false;b.textContent="Purchase Number"}}
-function renderPurchase(d){const v=d.verification||{};$("currentPurchase").innerHTML=`<div class="notice"><b>${escapeHtml(v.number||"")}</b><br>Service: ${escapeHtml(selectedService?.name||v.service||"")}<br><span id="smsText">Waiting for SMS...</span><div class="actions" style="margin-top:10px"><button class="secondary" onclick='navigator.clipboard.writeText(${JSON.stringify(v.number||"")})'>Copy Number</button><button class="danger" onclick='cancelNumber(${JSON.stringify(v.request_id||v.id||"")})'>Cancel Number</button></div></div>`;localStorage.setItem("gvs_current",JSON.stringify({id:v.request_id||v.id,number:v.number,expires:Date.now()+120000}));pollSms(v.request_id||v.id)}
-async function pollSms(id){if(!id)return;for(let i=0;i<60;i++){try{const d=await api(`/api/sms?id=${encodeURIComponent(id)}`);const text=d?.sms||d?.message||d?.data?.sms||d?.data?.message;if(text){$("smsText").textContent=text;return}}catch(e){}await new Promise(r=>setTimeout(r,5000))}}
-async function cancelNumber(id){const item=JSON.parse(localStorage.getItem("gvs_current")||"null");if(item?.expires>Date.now())return msg("buyMsg","Cancellation is available after the 2-minute waiting period.");try{await api("/api/cancel",{method:"POST",body:JSON.stringify({verificationId:id})});localStorage.removeItem("gvs_current");$("currentPurchase").textContent="Number cancelled. Refund will be processed if the provider confirms cancellation.";refreshHome()}catch(e){msg("buyMsg",e.message)}}
-async function loadOrders(filter){try{const d=await api("/api/orders");let rows=d.orders||[];if(filter)rows=rows.filter(x=>["active","pending"].includes(x.status));$("ordersBody").innerHTML=rows.map(o=>`<tr><td>${escapeHtml(o.created_at||"")}</td><td>${escapeHtml(o.service_name||"")}</td><td>${escapeHtml(o.country_name||"")}</td><td>${escapeHtml(o.phone_number||"")}</td><td>${money(o.customer_price)}</td><td>${escapeHtml(o.status||"")}</td></tr>`).join("")||"<tr><td colspan='6'>No orders.</td></tr>";$("activeList").innerHTML=filter?(rows.map(o=>`<div class="card"><b>${escapeHtml(o.phone_number||"")}</b><div class="muted">${escapeHtml(o.service_name||"")} · ${escapeHtml(o.status||"")}</div></div>`).join("")||"No active numbers."): $("activeList").innerHTML}catch(e){}}
-async function submitDeposit(){try{const d=await api("/api/deposit",{method:"POST",body:JSON.stringify({amount:Number($("depAmount").value),paymentReference:$("depRef").value,receiptUrl:$("depReceipt").value,customerNote:$("depNote").value})});msg("depMsg","Deposit submitted for approval.",true);loadDeposits()}catch(e){msg("depMsg",e.message)}}
-async function loadDeposits(){try{const d=await api("/api/deposit");$("depBody").innerHTML=(d.deposits||[]).map(x=>`<tr><td>${escapeHtml(x.created_at||"")}</td><td>${money(x.amount)}</td><td>${escapeHtml(x.status||"")}</td><td>${escapeHtml(x.payment_reference||"")}</td></tr>`).join("")||"<tr><td colspan='4'>No deposits.</td></tr>"}catch(e){}}
-async function loadTx(){try{const d=await api("/api/transactions");$("txBody").innerHTML=(d.transactions||[]).map(x=>`<tr><td>${escapeHtml(x.created_at||"")}</td><td>${escapeHtml(x.description||"")}</td><td>${money(x.amount)}</td><td>${money(x.balance_after)}</td></tr>`).join("")||"<tr><td colspan='4'>No transactions.</td></tr>"}catch(e){}}
-async function loadProfile(){const p=await api("/api/profile");currentProfile=p.profile;currentWallet=p.wallet; $("profileBox").innerHTML=`<p><b>Name:</b> ${escapeHtml(currentProfile?.full_name)}</p><p><b>Email:</b> ${escapeHtml(currentProfile?.email||currentUser?.email)}</p><p><b>Role:</b> ${escapeHtml(currentProfile?.role)}</p>`}
-let adminCountries=[];
-let adminServices=[];
-let adminSelectedCountry=null;
-let adminSelectedService=null;
-async function loadAdminPricing(){
-  try{
-    const d=await fetch("/api/countries").then(r=>r.json());
-    if(!d.success)throw new Error(d.error||"Unable to load countries.");
-    adminCountries=d.countries||[];
-  }catch(e){msg("adminPriceMsg",e.message)}
-}
-function adminFilterCountries(){
-  const q=($("adminCountrySearch").value||"").toLowerCase();
-  const list=$("adminCountryList");
-  const arr=adminCountries.filter(c=>(c.name||"").toLowerCase().includes(q)||(c.code||"").toLowerCase().includes(q)).slice(0,100);
-  list.innerHTML=arr.map(c=>`<button type="button" onclick='adminSelectCountry(${JSON.stringify(c).replace(/'/g,"&#39;")})'>🌐 ${escapeHtml(c.name)} ${c.code?`(${escapeHtml(c.code)})`:""}</button>`).join("")||"<div class='muted' style='padding:12px'>No country found.</div>";
-  list.classList.remove("hidden");
-}
-async function adminSelectCountry(c){
-  adminSelectedCountry=c;adminSelectedService=null;adminServices=[];
-  $("adminCountrySearch").value=c.name||c.id;$("adminCountryList").classList.add("hidden");
-  $("adminCountryId").value=c.id||"";$("adminCountryName").value=c.name||"";
-  $("adminServiceSearch").disabled=true;$("adminServiceSearch").value="";$("adminServiceSearch").placeholder="Loading services...";
-  $("adminServiceList").classList.add("hidden");$("adminProviderPrice").value="";$("adminPrice").value="";
-  try{
-    const d=await fetch(`/api/services?countryId=${encodeURIComponent(c.id)}&countryCode=${encodeURIComponent(c.code||"")}&countryName=${encodeURIComponent(c.name||"")}`).then(r=>r.json());
-    if(!d.success)throw new Error(d.error||"Unable to load services.");
-    adminServices=d.services||[];
-    $("adminServiceSearch").disabled=false;$("adminServiceSearch").placeholder="Search service...";
-    adminFilterServices();
-  }catch(e){$("adminServiceSearch").placeholder="Unable to load services";msg("adminPriceMsg",e.message)}
-}
-function adminFilterServices(){
-  if(!adminSelectedCountry)return;
-  const q=($("adminServiceSearch").value||"").toLowerCase();
-  const list=$("adminServiceList");
-  const arr=adminServices.filter(s=>(s.name||"").toLowerCase().includes(q)||(s.id||"").toLowerCase().includes(q));
-  list.innerHTML=arr.map(s=>`<button type="button" onclick='adminSelectService(${JSON.stringify(s).replace(/'/g,"&#39;")})'>📱 ${escapeHtml(s.name||s.id)}</button>`).join("")||"<div class='muted' style='padding:12px'>No service found.</div>";
-  list.classList.remove("hidden");
-}
-function adminSelectService(s){
-  adminSelectedService=s;
-  $("adminServiceSearch").value=s.name||s.id;$("adminServiceList").classList.add("hidden");
-  $("adminServiceId").value=s.id||"";$("adminServiceName").value=s.name||s.id||"";
-  $("adminProviderPrice").value="Searching...";
-  adminSearchPrice();
-}
-async function adminSearchPrice(){
-  if(!adminSelectedCountry||!adminSelectedService)return msg("adminPriceMsg","Select a country and service first.");
-  try{
-    const d=await fetch(`/api/prices?countryId=${encodeURIComponent(adminSelectedCountry.id)}&service=${encodeURIComponent(adminSelectedService.id)}&countryCode=${encodeURIComponent(adminSelectedCountry.code||"")}&countryName=${encodeURIComponent(adminSelectedCountry.name||"")}`).then(r=>r.json());
-    if(!d.success)throw new Error(d.error||"Unable to search provider price.");
-    const rows=d.servers||[];
-    $("adminProviderPrice").value=d.selected?.providerPrice?money(d.selected.providerPrice):"Price not available";
-    msg("adminPriceMsg",rows.length?rows.map(x=>`${x.server}: ${money(x.providerPrice)}`).join(" · "):"No provider price returned.",true);
-  }catch(e){$("adminProviderPrice").value="";msg("adminPriceMsg",e.message)}
-}
-async function savePrice(){try{if(!adminSelectedCountry||!adminSelectedService)return msg("adminPriceMsg","Select a country and service first.");const d=await api("/api/admin-pricing",{method:"POST",body:JSON.stringify({countryId:$("adminCountryId").value,countryName:$("adminCountryName").value,serviceId:$("adminServiceId").value,serviceName:$("adminServiceName").value,sellingPrice:Number($("adminPrice").value)})});msg("adminPriceMsg",d.message,true);loadAdmin()}catch(e){msg("adminPriceMsg",e.message)}}
-async function loadAdmin(){try{await loadAdminPricing();const d=await api("/api/deposit?admin=true");$("adminDeposits").innerHTML=(d.deposits||[]).filter(x=>x.status==="pending").map(x=>`<div class="card"><b>${money(x.amount)}</b> · ${escapeHtml(x.payment_reference||"")}<div class="muted">${escapeHtml(x.created_at||"")}</div><div class="actions"><button class="success" onclick="adminDeposit('${x.id}','approve')">Approve</button><button class="danger" onclick="adminDeposit('${x.id}','reject')">Reject</button></div></div>`).join("")||"No pending deposits.";const o=await api("/api/orders");$("adminOrders").innerHTML=`<div class="tablewrap"><table class="table"><tr><th>Service</th><th>Country</th><th>Customer</th><th>Cost</th><th>Sell</th><th>Profit</th></tr>${(o.orders||[]).map(x=>`<tr><td>${escapeHtml(x.service_name)}</td><td>${escapeHtml(x.country_name)}</td><td>${escapeHtml(x.phone_number)}</td><td>${money(x.provider_cost)}</td><td>${money(x.customer_price)}</td><td>${money(x.profit)}</td></tr>`).join("")}</table></div>`}catch(e){$("adminDeposits").textContent=e.message}}
-async function adminDeposit(id,action){try{await api("/api/deposit",{method:"POST",body:JSON.stringify({admin:true,depositId:id,action})});loadAdmin()}catch(e){alert(e.message)}}
-document.addEventListener("click",e=>{if(!e.target.closest(".picker"))document.querySelectorAll(".picker-list").forEach(x=>x.classList.add("hidden"))});
-boot().catch(e=>{console.error(e);showAuth()});
-</script>
+
+
+    /* =========================================================
+       REGISTER
+       ========================================================= */
+
+    async function handleRegister(event) {
+
+      event.preventDefault();
+
+      const button = $("registerButton");
+
+      const fullName =
+        $("registerFullName").value.trim();
+
+      const username =
+        $("registerUsername").value.trim();
+
+      const referralCode =
+        $("registerReferral").value.trim();
+
+      const email =
+        $("registerEmail").value.trim();
+
+      const password =
+        $("registerPassword").value;
+
+      const confirmPassword =
+        $("registerConfirmPassword").value;
+
+      if (password !== confirmPassword) {
+
+        showToast(
+          "Passwords do not match.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      setButtonLoading(
+        button,
+        true,
+        "Creating account..."
+      );
+
+
+      try {
+
+        const {
+          data,
+          error
+        } = await supabaseClient.auth.signUp({
+
+          email,
+          password,
+
+          options: {
+            data: {
+              full_name: fullName,
+              username: username,
+              referral_code: referralCode
+            }
+          }
+
+        });
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        /*
+          Email confirmation has been disabled in Supabase.
+          If the account is immediately authenticated, open the app.
+          Otherwise return to login.
+        */
+
+        if (data?.session) {
+
+          currentUser = data.session.user;
+
+          await loadAuthenticatedUser();
+
+        } else {
+
+          showToast(
+            "Account created successfully. You can now log in.",
+            "success"
+          );
+
+          $("registerForm").reset();
+
+          setAuthMode("login");
+
+          $("loginEmail").value = email;
+
+        }
+
+      } catch (error) {
+
+        console.error("Registration error:", error);
+
+        showToast(
+          error.message || "Unable to create account.",
+          "error"
+        );
+
+      } finally {
+
+        setButtonLoading(
+          button,
+          false
+        );
+
+      }
+    }
+
+
+    /* =========================================================
+       LOGIN
+       ========================================================= */
+
+    async function handleLogin(event) {
+
+      event.preventDefault();
+
+      const button = $("loginButton");
+
+      const email =
+        $("loginEmail").value.trim();
+
+      const password =
+        $("loginPassword").value;
+
+
+      setButtonLoading(
+        button,
+        true,
+        "Logging in..."
+      );
+
+
+      try {
+
+        const {
+          data,
+          error
+        } = await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        currentUser =
+          data?.user || null;
+
+
+        await loadAuthenticatedUser();
+
+
+      } catch (error) {
+
+        console.error("Login error:", error);
+
+        showToast(
+          error.message || "Unable to log in.",
+          "error"
+        );
+
+      } finally {
+
+        setButtonLoading(
+          button,
+          false
+        );
+
+      }
+    }
+
+
+    /* =========================================================
+       LOAD AUTHENTICATED USER
+       ========================================================= */
+
+    async function loadAuthenticatedUser() {
+
+      try {
+
+        const {
+          data,
+          error
+        } = await supabaseClient.auth.getUser();
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        if (!data?.user) {
+
+          showAuth();
+
+          return;
+        }
+
+
+        currentUser = data.user;
+
+
+        /*
+          IMPORTANT DISPLAY FIX:
+          Hide authentication and show the complete app shell
+          before loading dashboard data.
+        */
+
+        $("auth").classList.add("hidden");
+        $("app").classList.remove("hidden");
+
+
+        await loadProfile();
+
+        await checkAdmin();
+
+        updateUserInterface();
+
+        navigateTo("home");
+
+        await loadDashboard();
+
+
+      } catch (error) {
+
+        console.error(
+          "loadAuthenticatedUser error:",
+          error
+        );
+
+        showToast(
+          error.message ||
+          "Unable to load your account.",
+          "error"
+        );
+
+        showAuth();
+
+      }
+    }
+
+
+    function showAuth() {
+
+      $("app").classList.add("hidden");
+      $("auth").classList.remove("hidden");
+
+      currentUser = null;
+      currentProfile = null;
+      currentWallet = null;
+      isAdmin = false;
+
+    }
+
+
+    /* =========================================================
+       PROFILE
+       ========================================================= */
+
+    async function loadProfile() {
+
+      if (!currentUser) return;
+
+
+      const {
+        data,
+        error
+      } = await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id", currentUser.id)
+        .maybeSingle();
+
+
+      if (error) {
+
+        console.error(
+          "Profile load error:",
+          error
+        );
+
+        /*
+          The account can still use auth even if
+          the profile row has not been created.
+        */
+
+        currentProfile = {
+          id: currentUser.id,
+          email: currentUser.email,
+          role: "customer"
+        };
+
+        return;
+      }
+
+
+      currentProfile =
+        data || {
+          id: currentUser.id,
+          email: currentUser.email,
+          role: "customer"
+        };
+
+    }
+
+
+    function updateUserInterface() {
+
+      const email =
+        currentUser?.email || "—";
+
+      const fullName =
+        currentProfile?.full_name ||
+        currentUser?.user_metadata?.full_name ||
+        currentProfile?.username ||
+        "User";
+
+      const username =
+        currentProfile?.username ||
+        currentUser?.user_metadata?.username ||
+        "—";
+
+
+      $("welcomeName").textContent =
+        fullName.split(" ")[0] || "User";
+
+
+      $("sidebarName").textContent =
+        fullName;
+
+
+      $("sidebarEmail").textContent =
+        email;
+
+
+      $("sidebarAvatar").textContent =
+        String(fullName).charAt(0).toUpperCase();
+
+
+      $("profileFullName").textContent =
+        fullName;
+
+
+      $("profileUsername").textContent =
+        username;
+
+
+      $("profileEmail").textContent =
+        email;
+
+
+      $("profileRole").textContent =
+        currentProfile?.role || "customer";
+
+
+      $("profileReferral").textContent =
+        currentProfile?.referral_code ||
+        currentUser?.user_metadata?.referral_code ||
+        "—";
+
+    }
+
+
+    /* =========================================================
+       ADMIN CHECK
+       ========================================================= */
+
+    async function checkAdmin() {
+
+      isAdmin = false;
+
+
+      if (!currentUser) {
+        return false;
+      }
+
+
+      try {
+
+        const {
+          data,
+          error
+        } = await supabaseClient.rpc(
+          "is_admin"
+        );
+
+
+        if (!error) {
+          isAdmin = data === true;
+        }
+
+      } catch (error) {
+
+        console.warn(
+          "Admin RPC unavailable:",
+          error
+        );
+
+      }
+
+
+      /*
+        Fallback to profile role.
+      */
+
+      if (
+        currentProfile?.role === "admin"
+      ) {
+        isAdmin = true;
+      }
+
+
+      if (isAdmin) {
+
+        $("adminNavButton").classList.remove("hidden");
+        $("footerAdminLink").classList.remove("hidden");
+
+      } else {
+
+        $("adminNavButton").classList.add("hidden");
+        $("footerAdminLink").classList.add("hidden");
+
+      }
+
+
+      return isAdmin;
+    }
+
+
+    /* =========================================================
+       NAVIGATION
+       ========================================================= */
+
+    function navigateTo(page) {
+
+      if (!currentUser) {
+        return;
+      }
+
+
+      if (
+        page === "admin" &&
+        !isAdmin
+      ) {
+
+        showToast(
+          "Administrator access required.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      const pages =
+        document.querySelectorAll(".page");
+
+
+      pages.forEach(section => {
+
+        section.classList.add("hidden");
+
+      });
+
+
+      const target =
+        $("page-" + page);
+
+
+      if (!target) {
+
+        console.error(
+          "Page not found:",
+          page
+        );
+
+        return;
+      }
+
+
+      target.classList.remove("hidden");
+
+
+      document
+        .querySelectorAll(".nav-btn")
+        .forEach(button => {
+
+          button.classList.remove("active");
+
+        });
+
+
+      const navButton =
+        document.querySelector(
+          `.nav-btn[data-page="${page}"]`
+        );
+
+
+      if (navButton) {
+        navButton.classList.add("active");
+      }
+
+
+      const titles = {
+
+        home: [
+          "Dashboard",
+          "Overview of your account"
+        ],
+
+        buy: [
+          "Buy Number",
+          "Choose an available virtual number"
+        ],
+
+        active: [
+          "Active Numbers",
+          "Manage your active activations"
+        ],
+
+        orders: [
+          "Order History",
+          "Review your previous orders"
+        ],
+
+        wallet: [
+          "Wallet",
+          "Manage your funds and transactions"
+        ],
+
+        support: [
+          "Support",
+          "Get help with your account"
+        ],
+
+        profile: [
+          "Profile",
+          "Manage your account information"
+        ],
+
+        admin: [
+          "Admin Dashboard",
+          "Manage deposits, users and orders"
+        ]
+
+      };
+
+
+      const title =
+        titles[page] || titles.home;
+
+
+      $("pageTitle").textContent =
+        title[0];
+
+
+      $("pageSubtitle").textContent =
+        title[1];
+
+
+      currentPage = page;
+
+
+      /*
+        Close mobile sidebar after navigation.
+      */
+
+      $("sidebar").classList.remove("open");
+
+
+      /*
+        Load page-specific data.
+      */
+
+      if (page === "home") {
+        loadDashboard();
+      }
+
+      if (page === "buy") {
+        loadCountries();
+      }
+
+      if (page === "active") {
+        loadActiveNumbers();
+      }
+
+      if (page === "orders") {
+        loadOrderHistory();
+      }
+
+      if (page === "wallet") {
+        loadWalletData();
+      }
+
+      if (page === "profile") {
+        loadProfilePage();
+      }
+
+      if (page === "admin") {
+        loadAdmin();
+      }
+
+    }
+
+
+    /* =========================================================
+       SIDEBAR MOBILE
+       ========================================================= */
+
+    function toggleSidebar() {
+
+      $("sidebar").classList.toggle("open");
+
+    }
+
+
+    /* =========================================================
+       DASHBOARD
+       ========================================================= */
+
+    async function loadDashboard() {
+
+      if (!currentUser) return;
+
+
+      try {
+
+        await loadWallet();
+
+
+        const {
+          data: orders,
+          error: ordersError
+        } = await supabaseClient
+          .from("orders")
+          .select("id,status")
+          .eq("user_id", currentUser.id);
+
+
+        if (ordersError) {
+          console.error(ordersError);
+        }
+
+
+        const {
+          data: transactions,
+          error: txError
+        } = await supabaseClient
+          .from("wallet_transactions")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .order("created_at", {
+            ascending: false
+          })
+          .limit(8);
+
+
+        if (txError) {
+          console.error(txError);
+        }
+
+
+        const orderList =
+          orders || [];
+
+
+        const txList =
+          transactions || [];
+
+
+        const activeCount =
+          orderList.filter(order =>
+            ["active", "pending"].includes(
+              String(order.status || "").toLowerCase()
+            )
+          ).length;
+
+
+        $("dashboardOrders").textContent =
+          orderList.length;
+
+
+        $("dashboardActiveNumbers").textContent =
+          activeCount;
+
+
+        $("dashboardTransactions").textContent =
+          txList.length;
+
+
+        renderRecentActivity(txList);
+
+
+      } catch (error) {
+
+        console.error(
+          "Dashboard error:",
+          error
+        );
+
+      }
+
+    }
+
+
+    function renderRecentActivity(transactions) {
+
+      const container =
+        $("recentActivity");
+
+
+      if (!transactions.length) {
+
+        container.innerHTML =
+          "No recent activity.";
+
+        return;
+      }
+
+
+      container.innerHTML =
+        transactions
+          .slice(0, 5)
+          .map(tx => {
+
+            const positive =
+              Number(tx.amount) >= 0;
+
+
+            return `
+              <div
+                style="
+                  display:flex;
+                  justify-content:space-between;
+                  gap:12px;
+                  padding:9px 0;
+                  border-bottom:1px solid #edf2f7;
+                  text-align:left;
+                "
+              >
+
+                <div>
+
+                  <strong
+                    style="
+                      display:block;
+                      font-size:12px;
+                      color:#334155;
+                    "
+                  >
+                    ${escapeHtml(
+                      tx.description ||
+                      tx.type ||
+                      "Transaction"
+                    )}
+                  </strong>
+
+                  <span
+                    style="
+                      display:block;
+                      font-size:10px;
+                      color:#94a3b8;
+                      margin-top:3px;
+                    "
+                  >
+                    ${formatDate(tx.created_at)}
+                  </span>
+
+                </div>
+
+                <strong
+                  style="
+                    white-space:nowrap;
+                    color:${positive ? "#16a34a" : "#dc2626"};
+                  "
+                >
+                  ${positive ? "+" : ""}
+                  ${formatMoney(tx.amount)}
+                </strong>
+
+              </div>
+            `;
+
+          })
+          .join("");
+
+    }
+
+
+    /* =========================================================
+       WALLET
+       ========================================================= */
+
+    async function loadWallet() {
+
+      if (!currentUser) return;
+
+
+      const {
+        data,
+        error
+      } = await supabaseClient
+        .from("wallets")
+        .select("*")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
+
+
+      if (error) {
+
+        console.error(
+          "Wallet error:",
+          error
+        );
+
+        currentWallet = {
+          balance: 0
+        };
+
+      } else {
+
+        currentWallet =
+          data || {
+            balance: 0
+          };
+
+      }
+
+
+      const balance =
+        Number(currentWallet.balance || 0);
+
+
+      $("dashboardBalance").textContent =
+        formatMoney(balance);
+
+
+      $("walletPageBalance").textContent =
+        formatMoney(balance);
+
+
+      $("topbarBalance").textContent =
+        formatMoney(balance);
+
+    }
+
+
+    async function loadWalletData() {
+
+      await loadWallet();
+
+      await loadWalletTransactions();
+
+      await loadDepositHistory();
+
+    }
+
+
+    async function loadWalletTransactions() {
+
+      const container =
+        $("walletTransactionsContainer");
+
+
+      container.innerHTML =
+        '<div class="loading">Loading transactions...</div>';
+
+
+      const {
+        data,
+        error
+      } = await supabaseClient
+        .from("wallet_transactions")
+        .select("*")
+        .eq("user_id", currentUser.id)
+        .order("created_at", {
+          ascending: false
+        });
+
+
+      if (error) {
+
+        console.error(error);
+
+        container.innerHTML =
+          '<div class="empty-state">Unable to load transactions.</div>';
+
+        return;
+      }
+
+
+      if (!data?.length) {
+
+        container.innerHTML =
+          '<div class="empty-state">No wallet transactions yet.</div>';
+
+        return;
+      }
+
+
+      container.innerHTML = `
+
+        <div class="table-wrapper">
+
+          <table class="data-table">
+
+            <thead>
+
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Balance After</th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              ${data.map(tx => {
+
+                const amount =
+                  Number(tx.amount || 0);
+
+                return `
+
+                  <tr>
+
+                    <td>
+                      ${formatDate(tx.created_at)}
+                    </td>
+
+                    <td>
+                      <span class="badge badge-neutral">
+                        ${escapeHtml(tx.type || "transaction")}
+                      </span>
+                    </td>
+
+                    <td>
+                      ${escapeHtml(
+                        tx.description || "—"
+                      )}
+                    </td>
+
+                    <td>
+                      <strong>
+                        ${amount >= 0 ? "+" : ""}
+                        ${formatMoney(amount)}
+                      </strong>
+                    </td>
+
+                    <td>
+                      ${formatMoney(
+                        tx.balance_after
+                      )}
+                    </td>
+
+                  </tr>
+
+                `;
+
+              }).join("")}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      `;
+
+    }
+
+
+    async function loadDepositHistory() {
+
+      const container =
+        $("depositHistoryContainer");
+
+
+      container.innerHTML =
+        '<div class="loading">Loading deposits...</div>';
+
+
+      const {
+        data,
+        error
+      } = await supabaseClient
+        .from("deposits")
+        .select("*")
+        .eq("user_id", currentUser.id)
+        .order("created_at", {
+          ascending: false
+        });
+
+
+      if (error) {
+
+        console.error(error);
+
+        container.innerHTML =
+          '<div class="empty-state">Unable to load deposit history.</div>';
+
+        return;
+      }
+
+
+      if (!data?.length) {
+
+        container.innerHTML =
+          '<div class="empty-state">No deposits submitted yet.</div>';
+
+        return;
+      }
+
+
+      container.innerHTML = `
+
+        <div class="table-wrapper">
+
+          <table class="data-table">
+
+            <thead>
+
+              <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Reference</th>
+                <th>Status</th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              ${data.map(deposit => `
+
+                <tr>
+
+                  <td>
+                    ${formatDate(
+                      deposit.created_at
+                    )}
+                  </td>
+
+                  <td>
+                    <strong>
+                      ${formatMoney(
+                        deposit.amount
+                      )}
+                    </strong>
+                  </td>
+
+                  <td>
+                    ${escapeHtml(
+                      deposit.payment_method || "OPay"
+                    )}
+                  </td>
+
+                  <td>
+                    ${escapeHtml(
+                      deposit.payment_reference || "—"
+                    )}
+                  </td>
+
+                  <td>
+                    ${statusBadge(
+                      deposit.status
+                    )}
+                  </td>
+
+                </tr>
+
+              `).join("")}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      `;
+
+    }
+
+
+    /* =========================================================
+       DEPOSIT
+       ========================================================= */
+
+    async function submitDeposit(event) {
+
+      event.preventDefault();
+
+
+      if (!currentUser) {
+
+        showToast(
+          "Please log in first.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      const button =
+        $("depositButton");
+
+
+      const amount =
+        Number(
+          $("depositAmount").value
+        );
+
+
+      const reference =
+        $("depositReference").value.trim();
+
+
+      const note =
+        $("depositNote").value.trim();
+
+
+      const receipt =
+        $("depositReceipt").files[0];
+
+
+      if (!amount || amount <= 0) {
+
+        showToast(
+          "Enter a valid deposit amount.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      if (!receipt) {
+
+        showToast(
+          "Please upload your payment receipt.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      setButtonLoading(
+        button,
+        true,
+        "Submitting..."
+      );
+
+
+      try {
+
+        /*
+          Upload the receipt into the user's own folder.
+        */
+
+        const extension =
+          receipt.name.includes(".")
+            ? receipt.name.split(".").pop()
+            : "file";
+
+
+        const filePath =
+          `${currentUser.id}/${crypto.randomUUID()}.${extension}`;
+
+
+        const {
+          error: uploadError
+        } = await supabaseClient.storage
+          .from("deposit-receipts")
+          .upload(
+            filePath,
+            receipt,
+            {
+              upsert: false,
+              contentType: receipt.type
+            }
+          );
+
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+
+        /*
+          Create pending deposit record.
+        */
+
+        const {
+          error: depositError
+        } = await supabaseClient
+          .from("deposits")
+          .insert({
+
+            user_id: currentUser.id,
+
+            amount,
+
+            payment_method: "OPay",
+
+            payment_reference:
+              reference || null,
+
+            receipt_url:
+              filePath,
+
+            customer_note:
+              note || null,
+
+            status: "pending"
+
+          });
+
+
+        if (depositError) {
+          throw depositError;
+        }
+
+
+        $("depositForm").reset();
+
+
+        showToast(
+          "Deposit submitted successfully. It is now pending admin review.",
+          "success"
+        );
+
+
+        await loadDepositHistory();
+
+
+      } catch (error) {
+
+        console.error(
+          "Deposit error:",
+          error
+        );
+
+        showToast(
+          error.message ||
+          "Unable to submit deposit.",
+          "error"
+        );
+
+      } finally {
+
+        setButtonLoading(
+          button,
+          false
+        );
+
+      }
+
+    }
+
+    /* =========================================================
+       COUNTRIES
+       ========================================================= */
+
+    async function loadCountries() {
+
+      const select =
+        $("countrySelect");
+
+
+      if (
+        select.options.length > 1
+      ) {
+        return;
+      }
+
+
+      select.innerHTML =
+        '<option value="">Loading countries...</option>';
+
+
+      try {
+
+        const response =
+          await fetch("/api/countries");
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            "Unable to load countries."
+          );
+
+        }
+
+
+        const result =
+          await response.json();
+
+
+        currentCountries =
+          Array.isArray(result)
+            ? result
+            : (
+                result.data ||
+                result.countries ||
+                []
+              );
+
+
+        select.innerHTML =
+          '<option value="">Select a country</option>';
+
+
+        currentCountries.forEach(country => {
+
+          const option =
+            document.createElement("option");
+
+
+          const id =
+            country.id ??
+            country.countryId ??
+            country.country_id;
+
+
+          const name =
+            country.name ??
+            country.countryName ??
+            country.country_name ??
+            id;
+
+          const code =
+            country.code ??
+            country.country_code ??
+            country.countryCode ??
+            "";
+
+          option.value = id;
+
+          option.textContent = name;
+
+          option.dataset.countryName =
+            name;
+
+          option.dataset.countryCode =
+            code;
+
+          option.dataset.server =
+            country.server ||
+            (
+              String(code).toUpperCase() === "US"
+                ? "usa-server-1"
+                : "global-server-1"
+            );
+
+          select.appendChild(option);
+
+        });
+
+
+      } catch (error) {
+
+        console.error(
+          "Countries error:",
+          error
+        );
+
+        select.innerHTML =
+          '<option value="">Unable to load countries</option>';
+
+
+        showToast(
+          "Unable to load countries.",
+          "error"
+        );
+
+      }
+
+    }
+
+
+    /* =========================================================
+       SERVICES
+       ========================================================= */
+
+    async function loadServices() {
+
+      const countrySelect =
+        $("countrySelect");
+
+
+      const serviceSelect =
+        $("serviceSelect");
+
+
+      const countryId =
+        countrySelect.value;
+
+      const countryOption =
+        countrySelect.options[
+          countrySelect.selectedIndex
+        ];
+
+      const server =
+        countryOption?.dataset?.server ||
+        "global-server-1";
+
+
+      serviceSelect.innerHTML =
+        '<option value="">Loading services...</option>';
+
+
+      $("purchaseButton").disabled =
+        true;
+
+
+      if (!countryId) {
+
+        serviceSelect.innerHTML =
+          '<option value="">Select a service</option>';
+
+        updatePurchasePreview();
+
+        return;
+      }
+
+
+      try {
+
+        const response =
+          await fetch(
+            `/api/services?countryId=${encodeURIComponent(countryId)}&server=${encodeURIComponent(server)}`
+          );
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            "Unable to load services."
+          );
+
+        }
+
+
+        const result =
+          await response.json();
+
+
+        currentServices =
+          Array.isArray(result)
+            ? result
+            : (
+                result.data ||
+                result.services ||
+                []
+              );
+
+
+        serviceSelect.innerHTML =
+          '<option value="">Select a service</option>';
+
+
+        currentServices.forEach(service => {
+
+          const option =
+            document.createElement("option");
+
+
+          const id =
+            service.id ??
+            service.serviceId ??
+            service.service_id ??
+            service.serviceCountryPriceId ??
+            service.service_country_price_id;
+
+
+          const name =
+            service.name ??
+            service.serviceName ??
+            service.service_name ??
+            service.title ??
+            id;
+
+
+          const price =
+            service.selling_price ??
+            service.sellingPrice ??
+            service.price ??
+            service.amount ??
+            null;
+
+
+          option.value =
+            id;
+
+
+          option.textContent =
+            price !== null
+              ? `${name} — ${formatMoney(price)}`
+              : name;
+
+
+          option.dataset.serviceName =
+            name;
+
+
+          option.dataset.price =
+            price ?? "";
+
+
+          option.dataset.raw =
+            JSON.stringify(service);
+
+
+          serviceSelect.appendChild(option);
+
+        });
+
+
+        updatePurchasePreview();
+
+
+      } catch (error) {
+
+        console.error(
+          "Services error:",
+          error
+        );
+
+
+        serviceSelect.innerHTML =
+          '<option value="">Unable to load services</option>';
+
+
+        showToast(
+          "Unable to load services.",
+          "error"
+        );
+
+      }
+
+    }
+
+
+    /* =========================================================
+       PURCHASE PREVIEW
+       ========================================================= */
+
+    function updatePurchasePreview() {
+
+      const countrySelect =
+        $("countrySelect");
+
+
+      const serviceSelect =
+        $("serviceSelect");
+
+
+      const countryOption =
+        countrySelect.options[
+          countrySelect.selectedIndex
+        ];
+
+
+      const serviceOption =
+        serviceSelect.options[
+          serviceSelect.selectedIndex
+        ];
+
+
+      $("previewCountry").textContent =
+        countryOption?.dataset?.countryName ||
+        countryOption?.textContent ||
+        "—";
+
+
+      $("previewService").textContent =
+        serviceOption?.dataset?.serviceName ||
+        serviceOption?.textContent ||
+        "—";
+
+
+      const price =
+        serviceOption?.dataset?.price;
+
+
+      $("previewPrice").textContent =
+        price !== undefined &&
+        price !== ""
+          ? formatMoney(price)
+          : "—";
+
+
+      $("purchaseButton").disabled =
+        !countrySelect.value ||
+        !serviceSelect.value;
+
+    }
+
+
+    /* =========================================================
+       PURCHASE NUMBER
+       ========================================================= */
+
+    async function purchaseNumber() {
+
+      if (!currentUser) {
+
+        showToast(
+          "Please log in first.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      const countrySelect =
+        $("countrySelect");
+
+
+      const serviceSelect =
+        $("serviceSelect");
+
+
+      const countryId =
+        countrySelect.value;
+
+
+      const serviceOption =
+        serviceSelect.options[
+          serviceSelect.selectedIndex
+        ];
+
+
+      if (!countryId || !serviceOption?.value) {
+
+        showToast(
+          "Select a country and service first.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      const countryName =
+        countrySelect
+          .options[
+            countrySelect.selectedIndex
+          ]
+          ?.dataset
+          ?.countryName ||
+        countrySelect
+          .options[
+            countrySelect.selectedIndex
+          ]
+          ?.textContent ||
+        "";
+
+
+      let serviceData = {};
+
+
+      try {
+
+        serviceData =
+          JSON.parse(
+            serviceOption.dataset.raw ||
+            "{}"
+          );
+
+      } catch (_) {}
+
+
+      const serviceCountryPriceId =
+        serviceData.serviceCountryPriceId ??
+        serviceData.service_country_price_id ??
+        serviceData.id ??
+        serviceOption.value;
+
+
+      const button =
+        $("purchaseButton");
+
+
+      setButtonLoading(
+        button,
+        true,
+        "Processing..."
+      );
+
+
+      try {
+
+        /*
+          IMPORTANT:
+          /api/order must remain server-side.
+          Your SUREVERIFICATION_API_KEY must never
+          be placed in this HTML.
+        */
+
+        const sessionResult =
+          await supabaseClient.auth.getSession();
+
+        const accessToken =
+          sessionResult?.data?.session?.access_token;
+
+        if (!accessToken) {
+          throw new Error(
+            "Your session has expired. Please log in again."
+          );
+        }
+
+        const response =
+          await fetch("/api/order", {
+
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${accessToken}`
+            },
+
+            body: JSON.stringify({
+
+              serviceCountryPriceId,
+
+              quantity: 1,
+
+              autoSearchServer: true,
+
+              countryId,
+
+              countryName,
+
+              serviceName:
+                serviceData.serviceName ||
+                serviceData.name ||
+                serviceOption.dataset.serviceName ||
+                serviceOption.textContent
+
+            })
+
+          });
+
+
+        const result =
+          await response.json()
+            .catch(() => ({}));
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            result.message ||
+            result.error ||
+            "Unable to purchase number."
+          );
+
+        }
+
+
+        /*
+          Expected provider/server response.
+        */
+
+        showToast(
+          result.message ||
+          "Number purchase submitted successfully.",
+          "success"
+        );
+
+
+        await loadActiveNumbers();
+
+        await loadOrderHistory();
+
+        await loadWallet();
+
+        await loadDashboard();
+
+        navigateTo("active");
+
+
+      } catch (error) {
+
+        console.error(
+          "Purchase error:",
+          error
+        );
+
+        showToast(
+          error.message ||
+          "Unable to purchase number.",
+          "error"
+        );
+
+      } finally {
+
+        setButtonLoading(
+          button,
+          false
+        );
+
+      }
+
+    }
+
+
+    /* =========================================================
+       ACTIVE NUMBERS
+       ========================================================= */
+
+    async function loadActiveNumbers() {
+
+      const container =
+        $("activeNumbersContainer");
+
+
+      container.innerHTML =
+        '<div class="loading">Loading active numbers...</div>';
+
+
+      try {
+
+        const response =
+          await fetch("/api/active");
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            "Unable to load active numbers."
+          );
+
+        }
+
+
+        const result =
+          await response.json();
+
+
+        const numbers =
+          Array.isArray(result)
+            ? result
+            : (
+                result.data ||
+                result.activations ||
+                result.numbers ||
+                []
+              );
+
+
+        if (!numbers.length) {
+
+          container.innerHTML =
+            '<div class="empty-state">You do not have any active numbers yet.</div>';
+
+          return;
+        }
+
+
+        container.innerHTML = `
+
+          <div class="table-wrapper">
+
+            <table class="data-table">
+
+              <thead>
+
+                <tr>
+                  <th>Number</th>
+                  <th>Service</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                ${numbers.map(item => `
+
+                  <tr>
+
+                    <td>
+                      <strong>
+                        ${escapeHtml(
+                          item.phone_number ||
+                          item.phoneNumber ||
+                          item.number ||
+                          "—"
+                        )}
+                      </strong>
+                    </td>
+
+                    <td>
+                      ${escapeHtml(
+                        item.service ||
+                        item.service_name ||
+                        item.serviceName ||
+                        "—"
+                      )}
+                    </td>
+
+                    <td>
+                      ${statusBadge(
+                        item.status ||
+                        "active"
+                      )}
+                    </td>
+
+                    <td>
+                      ${formatDate(
+                        item.created_at ||
+                        item.createdAt
+                      )}
+                    </td>
+
+                  </tr>
+
+                `).join("")}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        `;
+
+      } catch (error) {
+
+        console.error(
+          "Active numbers error:",
+          error
+        );
+
+        container.innerHTML =
+          '<div class="empty-state">Unable to load active numbers.</div>';
+
+      }
+
+    }
+
+
+    /* =========================================================
+       ORDER HISTORY
+       ========================================================= */
+
+    async function loadOrderHistory() {
+
+      const container =
+        $("orderHistoryContainer");
+
+
+      container.innerHTML =
+        '<div class="loading">Loading orders...</div>';
+
+
+      if (!currentUser) {
+        return;
+      }
+
+
+      const {
+        data,
+        error
+      } = await supabaseClient
+        .from("orders")
+        .select("*")
+        .eq("user_id", currentUser.id)
+        .order("created_at", {
+          ascending: false
+        });
+
+
+      if (error) {
+
+        console.error(
+          "Order history error:",
+          error
+        );
+
+        container.innerHTML =
+          '<div class="empty-state">Unable to load order history.</div>';
+
+        return;
+      }
+
+
+      if (!data?.length) {
+
+        container.innerHTML =
+          '<div class="empty-state">No orders yet.</div>';
+
+        return;
+      }
+
+
+      container.innerHTML = `
+
+        <div class="table-wrapper">
+
+          <table class="data-table">
+
+            <thead>
+
+              <tr>
+                <th>Date</th>
+                <th>Country</th>
+                <th>Service</th>
+                <th>Number</th>
+                <th>Price</th>
+                <th>Status</th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              ${data.map(order => `
+
+                <tr>
+
+                  <td>
+                    ${formatDate(
+                      order.created_at
+                    )}
+                  </td>
+
+                  <td>
+                    ${escapeHtml(
+                      order.country_name ||
+                      "—"
+                    )}
+                  </td>
+
+                  <td>
+                    ${escapeHtml(
+                      order.service_name ||
+                      "—"
+                    )}
+                  </td>
+
+                  <td>
+                    ${escapeHtml(
+                      order.phone_number ||
+                      "—"
+                    )}
+                  </td>
+
+                  <td>
+                    ${formatMoney(
+                      order.selling_price
+                    )}
+                  </td>
+
+                  <td>
+                    ${statusBadge(
+                      order.status
+                    )}
+                  </td>
+
+                </tr>
+
+              `).join("")}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      `;
+
+    }
+
+
+    /* =========================================================
+       STATUS BADGE
+       ========================================================= */
+
+    function statusBadge(status) {
+
+      const normalized =
+        String(status || "unknown")
+          .toLowerCase();
+
+
+      let className =
+        "badge-neutral";
+
+
+      if (
+        [
+          "approved",
+          "success",
+          "completed",
+          "active",
+          "paid"
+        ].includes(normalized)
+      ) {
+
+        className =
+          "badge-success";
+
+      } else if (
+        [
+          "pending",
+          "processing"
+        ].includes(normalized)
+      ) {
+
+        className =
+          "badge-warning";
+
+      } else if (
+        [
+          "rejected",
+          "failed",
+          "cancelled",
+          "expired",
+          "refunded"
+        ].includes(normalized)
+      ) {
+
+        className =
+          "badge-danger";
+
+      } else if (
+        normalized === "info"
+      ) {
+
+        className =
+          "badge-info";
+
+      }
+
+
+      return `
+        <span class="badge ${className}">
+          ${escapeHtml(normalized)}
+        </span>
+      `;
+
+    }
+
+
+    /* =========================================================
+       PROFILE PAGE
+       ========================================================= */
+
+    async function loadProfilePage() {
+
+      await loadProfile();
+
+      updateUserInterface();
+
+    }
+
+
+    /* =========================================================
+       ADMIN DASHBOARD
+       ========================================================= */
+
+    async function loadAdmin() {
+
+      if (!isAdmin) {
+
+        $("adminContent")
+          .classList.add("hidden");
+
+        $("adminAccessDenied")
+          .classList.remove("hidden");
+
+        return;
+      }
+
+
+      $("adminAccessDenied")
+        .classList.add("hidden");
+
+
+      $("adminContent")
+        .classList.remove("hidden");
+
+
+      try {
+
+        await Promise.all([
+          loadAdminUsers(),
+          loadAdminOrders(),
+          loadAdminDeposits()
+        ]);
+
+      } catch (error) {
+
+        console.error(
+          "Admin load error:",
+          error
+        );
+
+        showToast(
+          "Unable to load some admin data.",
+          "error"
+        );
+
+      }
+
+    }
+
+
+    /* =========================================================
+       ADMIN USERS
+       ========================================================= */
+
+    async function loadAdminUsers() {
+
+      const container =
+        $("adminUsersContainer");
+
+
+      container.innerHTML =
+        '<div class="loading">Loading users...</div>';
+
+
+      const {
+        data,
+        error
+      } = await supabaseClient
+        .from("profiles")
+        .select("*")
+        .order("created_at", {
+          ascending: false
+        });
+
+
+      if (error) {
+
+        console.error(error);
+
+        container.innerHTML =
+          '<div class="empty-state">Unable to load users.</div>';
+
+        return;
+      }
+
+
+      $("adminUsersCount").textContent =
+        data?.length || 0;
+
+
+      if (!data?.length) {
+
+        container.innerHTML =
+          '<div class="empty-state">No users found.</div>';
+
+        return;
+      }
+
+
+      container.innerHTML = `
+
+        <div class="table-wrapper">
+
+          <table class="data-table">
+
+            <thead>
+
+              <tr>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Created</th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              ${data.map(user => `
+
+                <tr>
+
+                  <td>
+                    ${escapeHtml(
+                      user.full_name ||
+                      "—"
+                    )}
+                  </td>
+
+                  <td>
+                    ${escapeHtml(
+                      user.username ||
+                      "—"
+                    )}
+                  </td>
+
+                  <td>
+                    ${escapeHtml(
+                      user.email ||
+                      "—"
+                    )}
+                  </td>
+
+                  <td>
+                    ${statusBadge(
+                      user.role ||
+                      "customer"
+                    )}
+                  </td>
+
+                  <td>
+                    ${formatDate(
+                      user.created_at
+                    )}
+                  </td>
+
+                </tr>
+
+              `).join("")}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      `;
+
+    }
+
+
+    /* =========================================================
+       ADMIN ORDERS
+       ========================================================= */
+
+    async function loadAdminOrders() {
+
+      const container =
+        $("adminOrdersContainer");
+
+
+      container.innerHTML =
+        '<div class="loading">Loading orders...</div>';
+
+
+      const {
+        data,
+        error
+      } = await supabaseClient
+        .from("orders")
+        .select("*")
+        .order("created_at", {
+          ascending: false
+        })
+        .limit(100);
+
+
+      if (error) {
+
+        console.error(error);
+
+        container.innerHTML =
+          '<div class="empty-state">Unable to load orders.</div>';
+
+        return;
+      }
+
+
+      $("adminOrdersCount").textContent =
+        data?.length || 0;
+
+
+      if (!data?.length) {
+
+        container.innerHTML =
+          '<div class="empty-state">No orders found.</div>';
+
+        return;
+      }
+
+
+      container.innerHTML = `
+
+        <div class="table-wrapper">
+
+          <table class="data-table">
+
+            <thead>
+
+              <tr>
+                <th>Date</th>
+                <th>User ID</th>
+                <th>Country</th>
+                <th>Service</th>
+                <th>Number</th>
+                <th>Price</th>
+                <th>Status</th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              ${data.map(order => `
+
+                <tr>
+
+                  <td>
+                    ${formatDate(
+                      order.created_at
+                    )}
+                  </td>
+
+                  <td>
+                    <small>
+                      ${escapeHtml(
+                        order.user_id
+                      )}
+                    </small>
+                  </td>
+
+                  <td>
+                    ${escapeHtml(
+                      order.country_name ||
+                      "—"
+                    )}
+                  </td>
+
+                  <td>
+                    ${escapeHtml(
+                      order.service_name ||
+                      "—"
+                    )}
+                  </td>
+
+                  <td>
+                    ${escapeHtml(
+                      order.phone_number ||
+                      "—"
+                    )}
+                  </td>
+
+                  <td>
+                    ${formatMoney(
+                      order.selling_price
+                    )}
+                  </td>
+
+                  <td>
+                    ${statusBadge(
+                      order.status
+                    )}
+                  </td>
+
+                </tr>
+
+              `).join("")}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      `;
+
+    }
+
+
+    /* =========================================================
+       ADMIN DEPOSITS
+       ========================================================= */
+
+    async function loadAdminDeposits() {
+
+      const container =
+        $("adminDepositsContainer");
+
+
+      container.innerHTML =
+        '<div class="loading">Loading deposit requests...</div>';
+
+
+      const {
+        data,
+        error
+      } = await supabaseClient
+        .from("deposits")
+        .select("*")
+        .order("created_at", {
+          ascending: false
+        })
+        .limit(100);
+
+
+      if (error) {
+
+        console.error(error);
+
+        container.innerHTML =
+          '<div class="empty-state">Unable to load deposits.</div>';
+
+        return;
+      }
+
+
+      const deposits =
+        data || [];
+
+
+      $("adminDepositsCount").textContent =
+        deposits.length;
+
+
+      $("adminPendingCount").textContent =
+        deposits.filter(
+          d => d.status === "pending"
+        ).length;
+
+
+      if (!deposits.length) {
+
+        container.innerHTML =
+          '<div class="empty-state">No deposit requests found.</div>';
+
+        return;
+      }
+
+
+      container.innerHTML = `
+
+        <div class="table-wrapper">
+
+          <table class="data-table">
+
+            <thead>
+
+              <tr>
+                <th>Date</th>
+                <th>User</th>
+                <th>Amount</th>
+                <th>Reference</th>
+                <th>Status</th>
+                <th>Receipt</th>
+                <th>Action</th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              ${deposits.map(deposit => `
+
+                <tr>
+
+                  <td>
+                    ${formatDate(
+                      deposit.created_at
+                    )}
+                  </td>
+
+                  <td>
+                    <small>
+                      ${escapeHtml(
+                        deposit.user_id
+                      )}
+                    </small>
+                  </td>
+
+                  <td>
+                    <strong>
+                      ${formatMoney(
+                        deposit.amount
+                      )}
+                    </strong>
+                  </td>
+
+                  <td>
+                    ${escapeHtml(
+                      deposit.payment_reference ||
+                      "—"
+                    )}
+                  </td>
+
+                  <td>
+                    ${statusBadge(
+                      deposit.status
+                    )}
+                  </td>
+
+                  <td>
+
+                    ${
+                      deposit.receipt_url
+                        ? `
+                          <button
+                            class="secondary-btn small-btn"
+                            onclick="viewReceipt('${escapeHtml(
+                              deposit.receipt_url
+                            )}')"
+                          >
+                            View
+                          </button>
+                        `
+                        : "—"
+                    }
+
+                  </td>
+
+                  <td>
+
+                    ${
+                      deposit.status === "pending"
+                        ? `
+                          <div
+                            style="
+                              display:flex;
+                              gap:6px;
+                              flex-wrap:wrap;
+                            "
+                          >
+
+                            <button
+                              class="success-btn small-btn"
+                              onclick="processDeposit(
+                                '${deposit.id}',
+                                'approve'
+                              )"
+                            >
+                              Approve
+                            </button>
+
+                            <button
+                              class="danger-btn small-btn"
+                              onclick="processDeposit(
+                                '${deposit.id}',
+                                'reject'
+                              )"
+                            >
+                              Reject
+                            </button>
+
+                          </div>
+                        `
+                        : "Processed"
+                    }
+
+                  </td>
+
+                </tr>
+
+              `).join("")}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      `;
+
+    }
+
+
+    /* =========================================================
+       ADMIN PROCESS DEPOSIT
+       ========================================================= */
+
+    async function processDeposit(
+      depositId,
+      action
+    ) {
+
+      if (!isAdmin) {
+
+        showToast(
+          "Administrator access required.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      let note = null;
+
+
+      if (action === "reject") {
+
+        note =
+          prompt(
+            "Enter a reason for rejecting this deposit (optional):"
+          );
+
+      } else {
+
+        note =
+          prompt(
+            "Enter an admin note (optional):"
+          );
+
+      }
+
+
+      if (
+        !confirm(
+          action === "approve"
+            ? "Approve this deposit and credit the customer's wallet?"
+            : "Reject this deposit?"
+        )
+      ) {
+
+        return;
+      }
+
+
+      try {
+
+        const functionName =
+          action === "approve"
+            ? "approve_deposit"
+            : "reject_deposit";
+
+
+        const {
+          data,
+          error
+        } = await supabaseClient.rpc(
+          functionName,
+          {
+            p_deposit_id: depositId,
+            p_admin_note: note || null
+          }
+        );
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        showToast(
+          action === "approve"
+            ? "Deposit approved and wallet credited."
+            : "Deposit rejected.",
+          "success"
+        );
+
+
+        await loadAdmin();
+
+
+      } catch (error) {
+
+        console.error(
+          "Deposit processing error:",
+          error
+        );
+
+        showToast(
+          error.message ||
+          "Unable to process deposit.",
+          "error"
+        );
+
+      }
+
+    }
+
+
+    /* =========================================================
+       RECEIPT VIEWER
+       ========================================================= */
+
+    async function viewReceipt(path) {
+
+      $("receiptModal").classList.remove("hidden");
+
+      $("receiptModalBody").innerHTML =
+        '<div class="loading">Opening receipt...</div>';
+
+
+      try {
+
+        const {
+          data,
+          error
+        } = await supabaseClient.storage
+          .from("deposit-receipts")
+          .createSignedUrl(
+            path,
+            300
+          );
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        if (!data?.signedUrl) {
+          throw new Error("Receipt unavailable.");
+        }
+
+
+        const url =
+          data.signedUrl;
+
+
+        const lower =
+          path.toLowerCase();
+
+
+        if (
+          lower.endsWith(".pdf")
+        ) {
+
+          $("receiptModalBody").innerHTML = `
+
+            <a
+              href="${url}"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="primary-btn"
+              style="display:inline-block;text-decoration:none;"
+            >
+              Open Receipt
+            </a>
+
+          `;
+
+        } else {
+
+          $("receiptModalBody").innerHTML = `
+
+            <img
+              src="${url}"
+              alt="Deposit receipt"
+              style="
+                display:block;
+                max-width:100%;
+                max-height:70vh;
+                margin:auto;
+                border-radius:8px;
+              "
+            />
+
+          `;
+
+        }
+
+      } catch (error) {
+
+        console.error(
+          "Receipt error:",
+          error
+        );
+
+        $("receiptModalBody").innerHTML =
+          '<div class="empty-state">Unable to open receipt.</div>';
+
+      }
+
+    }
+
+
+    function closeReceiptModal(event) {
+
+      if (
+        event &&
+        event.target !== $("receiptModal")
+      ) {
+        return;
+      }
+
+
+      $("receiptModal")
+        .classList.add("hidden");
+
+    }
+
+
+    /* =========================================================
+       LEGAL / FOOTER
+       ========================================================= */
+
+    function showLegal(title) {
+
+      $("legalTitle").textContent =
+        title;
+
+
+      const content = {
+
+        "Support": `
+          <p>
+            For support, contact the Global Virtual Sim Web support team
+            through the available support channel.
+          </p>
+          <p>
+            Email:
+            <strong>watchandearn.ng@gmail.com</strong>
+          </p>
+        `,
+
+        "Contact": `
+          <p>
+            For account, payment or service enquiries, contact support.
+          </p>
+          <p>
+            Email:
+            <strong>watchandearn.ng@gmail.com</strong>
+          </p>
+        `,
+
+        "Telegram": `
+          <p>
+            Our Telegram support/contact details will be published here
+            when the official Telegram channel is ready.
+          </p>
+        `,
+
+        "Terms & Conditions": `
+          <p>
+            By using Global Virtual Sim Web, you agree to use the service
+            lawfully and responsibly.
+          </p>
+
+          <p>
+            Customers are responsible for ensuring that their use of
+            purchased communication services complies with applicable laws,
+            provider rules and the terms of the services they use.
+          </p>
+        `,
+
+        "Privacy Policy": `
+          <p>
+            Global Virtual Sim Web may process account, order, wallet and
+            payment-submission information necessary to operate the service.
+          </p>
+
+          <p>
+            Passwords and secret API credentials should never be shared
+            with other users.
+          </p>
+        `,
+
+        "Refund Policy": `
+          <p>
+            Refund requests are reviewed according to the status of the
+            relevant order or transaction and the applicable provider rules.
+          </p>
+
+          <p>
+            Contact support with your order reference when requesting help
+            with a transaction.
+          </p>
+        `,
+
+        "Acceptable Use Policy": `
+          <p>
+            Global Virtual Sim Web services must only be used for lawful,
+            legitimate communication purposes.
+          </p>
+
+          <p>
+            Fraud, impersonation, harassment, abuse of communication
+            networks, or attempts to bypass security and verification
+            systems are prohibited.
+          </p>
+        `
+
+      };
+
+
+      $("legalBody").innerHTML =
+        content[title] ||
+        "<p>Information unavailable.</p>";
+
+
+      $("legalModal")
+        .classList.remove("hidden");
+
+    }
+
+
+    function closeLegalModal(event) {
+
+      if (
+        event &&
+        event.target !== $("legalModal")
+      ) {
+        return;
+      }
+
+
+      $("legalModal")
+        .classList.add("hidden");
+
+    }
+
+
+    /* =========================================================
+       LOGOUT
+       ========================================================= */
+
+    async function handleLogout() {
+
+      try {
+
+        await supabaseClient.auth.signOut();
+
+      } catch (error) {
+
+        console.error(
+          "Logout error:",
+          error
+        );
+
+      }
+
+
+      showAuth();
+
+      setAuthMode("login");
+
+      showToast(
+        "You have been logged out.",
+        "success"
+      );
+
+    }
+
+
+    /* =========================================================
+       AUTH STATE LISTENER
+       ========================================================= */
+
+    supabaseClient.auth.onAuthStateChange(
+      async (event, session) => {
+
+        console.log(
+          "Auth state:",
+          event
+        );
+
+
+        if (
+          session?.user &&
+          !currentUser
+        ) {
+
+          currentUser =
+            session.user;
+
+
+          /*
+            Delay slightly so Supabase has finished
+            its auth-state transition before database
+            queries begin.
+          */
+
+          setTimeout(
+            () => loadAuthenticatedUser(),
+            0
+          );
+
+        }
+
+
+        if (
+          !session &&
+          event === "SIGNED_OUT"
+        ) {
+
+          showAuth();
+
+        }
+
+      }
+    );
+
+
+    /* =========================================================
+       INITIALIZATION
+       ========================================================= */
+
+    async function init() {
+
+      try {
+
+        setAuthMode("login");
+
+
+        const {
+          data,
+          error
+        } = await supabaseClient.auth.getSession();
+
+
+        if (error) {
+
+          console.error(
+            "Session error:",
+            error
+          );
+
+          showAuth();
+
+          return;
+        }
+
+
+        if (data?.session?.user) {
+
+          currentUser =
+            data.session.user;
+
+
+          await loadAuthenticatedUser();
+
+        } else {
+
+          showAuth();
+
+        }
+
+      } catch (error) {
+
+        console.error(
+          "Initialization error:",
+          error
+        );
+
+        showAuth();
+
+      }
+
+    }
+
+
+    /*
+      Start application only after DOM is ready.
+      This also prevents the "only footer appears"
+      situation caused by page initialization timing.
+    */
+
+    if (
+      document.readyState === "loading"
+    ) {
+
+      document.addEventListener(
+        "DOMContentLoaded",
+        init
+      );
+
+    } else {
+
+      init();
+
+    }
+
+  </script>
+
+  <style>
+    /* =========================================================
+       GLOBALSIM UPDATED UI
+       ========================================================= */
+
+    .gvs-wallet-hero {
+      background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+      color: #fff;
+      border-radius: 20px;
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 16px 35px rgba(37, 99, 235, 0.20);
+    }
+
+    .gvs-wallet-hero-top,
+    .gvs-wallet-hero-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .gvs-wallet-hero-bottom {
+      margin-top: 22px;
+    }
+
+    .gvs-wallet-label {
+      font-size: 12px;
+      font-weight: 700;
+      opacity: .88;
+      margin-bottom: 7px;
+    }
+
+    .gvs-wallet-amount {
+      font-size: clamp(30px, 7vw, 44px);
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: -1px;
+    }
+
+    .gvs-active-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,.18);
+      border: 1px solid rgba(255,255,255,.28);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .gvs-wallet-subtitle {
+      font-size: 12px;
+      color: rgba(255,255,255,.86);
+    }
+
+    .gvs-add-money-btn {
+      border: 0;
+      border-radius: 12px;
+      background: #fff;
+      color: #1d4ed8;
+      padding: 11px 15px;
+      font-weight: 800;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      box-shadow: 0 8px 20px rgba(15,23,42,.14);
+    }
+
+    .gvs-plus {
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .gvs-whatsapp-notice {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin: 0 0 16px;
+      color: #1e3a8a;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .gvs-whatsapp-notice a {
+      color: #1d4ed8;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .gvs-search-select {
+      position: relative;
+      width: 100%;
+    }
+
+    .gvs-search-select-input {
+      width: 100%;
+      border: 1px solid #dbe3ef;
+      border-radius: 10px;
+      padding: 12px 38px 12px 12px;
+      background: #fff;
+      color: #0f172a;
+      outline: none;
+    }
+
+    .gvs-search-select-input:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+    }
+
+    .gvs-search-select-arrow {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      pointer-events: none;
+      color: #64748b;
+    }
+
+    .gvs-search-select-menu {
+      position: absolute;
+      z-index: 1500;
+      left: 0;
+      right: 0;
+      top: calc(100% + 5px);
+      max-height: 260px;
+      overflow-y: auto;
+      background: #fff;
+      border: 1px solid #dbe3ef;
+      border-radius: 12px;
+      box-shadow: 0 16px 35px rgba(15,23,42,.14);
+      padding: 5px;
+      display: none;
+    }
+
+    .gvs-search-select.open .gvs-search-select-menu {
+      display: block;
+    }
+
+    .gvs-search-option {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      padding: 10px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: #0f172a;
+      font-size: 12px;
+    }
+
+    .gvs-search-option:hover {
+      background: #eff6ff;
+    }
+
+    .gvs-option-icon {
+      width: 24px;
+      text-align: center;
+      font-size: 16px;
+      flex: 0 0 24px;
+    }
+
+    .gvs-option-text {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .gvs-option-text strong {
+      display: block;
+      font-size: 12px;
+    }
+
+    .gvs-option-text small {
+      display: block;
+      color: #64748b;
+      margin-top: 2px;
+      font-size: 10px;
+    }
+
+    .gvs-native-select-hidden {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    .gvs-password-wrap {
+      position: relative;
+    }
+
+    .gvs-password-wrap .form-control {
+      padding-right: 44px;
+    }
+
+    .gvs-password-toggle {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 0;
+      background: transparent;
+      color: #64748b;
+      padding: 5px;
+      line-height: 1;
+      font-size: 17px;
+    }
+
+    @media (max-width: 600px) {
+      .gvs-wallet-hero-top,
+      .gvs-wallet-hero-bottom {
+        align-items: flex-start;
+      }
+
+      .gvs-wallet-hero-bottom {
+        flex-direction: column;
+      }
+
+      .gvs-add-money-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+
+  <script>
+    /* =========================================================
+       GLOBALSIM UPDATED BEHAVIOUR
+       ========================================================= */
+
+    (function () {
+      "use strict";
+
+      function gvs$(id) {
+        return document.getElementById(id);
+      }
+
+      function gvsEscape(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function gvsFlag(code) {
+        const value = String(code || "").trim().toUpperCase();
+        if (!/^[A-Z]{2}$/.test(value)) return "🌐";
+        return [...value].map(c =>
+          String.fromCodePoint(127397 + c.charCodeAt(0))
+        ).join("");
+      }
+
+      function gvsServiceIcon(name) {
+        const value = String(name || "").toLowerCase();
+
+        if (value.includes("whatsapp")) return "🟢";
+        if (value.includes("telegram")) return "✈️";
+        if (value.includes("signal")) return "🔵";
+        if (value.includes("facebook")) return "🔷";
+        if (value.includes("instagram")) return "📸";
+        if (value.includes("google")) return "🔴";
+        if (value.includes("tiktok")) return "🎵";
+        if (value.includes("discord")) return "💬";
+        if (value.includes("twitter") || value.includes("x.com")) return "𝕏";
+        return "📱";
+      }
+
+      function addPasswordToggle(input) {
+        if (!input || input.dataset.gvsPasswordReady === "1") return;
+
+        input.dataset.gvsPasswordReady = "1";
+
+        const wrap = document.createElement("div");
+        wrap.className = "gvs-password-wrap";
+
+        input.parentNode.insertBefore(wrap, input);
+        wrap.appendChild(input);
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "gvs-password-toggle";
+        button.setAttribute("aria-label", "Show password");
+        button.textContent = "👁";
+
+        button.addEventListener("click", function () {
+          const visible = input.type === "text";
+          input.type = visible ? "password" : "text";
+          button.textContent = visible ? "👁" : "🙈";
+          button.setAttribute(
+            "aria-label",
+            visible ? "Show password" : "Hide password"
+          );
+        });
+
+        wrap.appendChild(button);
+      }
+
+      function setupPasswordToggles() {
+        document
+          .querySelectorAll('input[type="password"]')
+          .forEach(addPasswordToggle);
+      }
+
+      function renderSearchableSelect(select, kind) {
+        if (!select || select.dataset.gvsSearchReady === "1") return;
+
+        select.dataset.gvsSearchReady = "1";
+        select.classList.add("gvs-native-select-hidden");
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "gvs-search-select";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "gvs-search-select-input";
+        input.autocomplete = "off";
+        input.placeholder =
+          kind === "country"
+            ? "Search country..."
+            : "Search service...";
+
+        const arrow = document.createElement("span");
+        arrow.className = "gvs-search-select-arrow";
+        arrow.textContent = "⌄";
+
+        const menu = document.createElement("div");
+        menu.className = "gvs-search-select-menu";
+
+        select.parentNode.insertBefore(wrapper, select);
+        wrapper.appendChild(input);
+        wrapper.appendChild(arrow);
+        wrapper.appendChild(menu);
+
+        function optionData(option) {
+          const value = option.value;
+          const label = option.textContent.trim();
+
+          if (kind === "country") {
+            return {
+              value,
+              label,
+              icon: gvsFlag(option.dataset.countryCode),
+              sub: ""
+            };
+          }
+
+          let name = option.dataset.serviceName || label;
+          let price = option.dataset.price || "";
+
+          return {
+            value,
+            label,
+            icon: gvsServiceIcon(name),
+            sub: price ? formatMoney(price) : ""
+          };
+        }
+
+        function refresh(query) {
+          const q = String(query || "").toLowerCase().trim();
+          menu.innerHTML = "";
+
+          const options = Array.from(select.options)
+            .filter(option => option.value)
+            .map(optionData)
+            .filter(item =>
+              !q ||
+              item.label.toLowerCase().includes(q) ||
+              item.sub.toLowerCase().includes(q)
+            );
+
+          if (!options.length) {
+            menu.innerHTML =
+              '<div class="empty-state" style="padding:18px;">No matches found.</div>';
+            return;
+          }
+
+          options.forEach(item => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "gvs-search-option";
+
+            button.innerHTML =
+              '<span class="gvs-option-icon">' +
+              gvsEscape(item.icon) +
+              '</span>' +
+              '<span class="gvs-option-text">' +
+              '<strong>' + gvsEscape(item.label) + '</strong>' +
+              (item.sub
+                ? '<small>' + gvsEscape(item.sub) + '</small>'
+                : '') +
+              '</span>';
+
+            button.addEventListener("click", function () {
+              select.value = item.value;
+              input.value =
+                select.options[select.selectedIndex]?.textContent.trim() ||
+                item.label;
+
+              wrapper.classList.remove("open");
+
+              select.dispatchEvent(
+                new Event("change", { bubbles: true })
+              );
+            });
+
+            menu.appendChild(button);
+          });
+        }
+
+        input.addEventListener("focus", function () {
+          refresh(input.value);
+          wrapper.classList.add("open");
+        });
+
+        input.addEventListener("input", function () {
+          refresh(input.value);
+          wrapper.classList.add("open");
+        });
+
+        document.addEventListener("click", function (event) {
+          if (!wrapper.contains(event.target)) {
+            wrapper.classList.remove("open");
+          }
+        });
+
+        select.addEventListener("change", function () {
+          const selected =
+            select.options[select.selectedIndex];
+
+          input.value =
+            selected && selected.value
+              ? selected.textContent.trim()
+              : "";
+
+          refresh("");
+        });
+
+        refresh("");
+      }
+
+      function setupSearchableSelects() {
+        renderSearchableSelect(gvs$("countrySelect"), "country");
+        renderSearchableSelect(gvs$("serviceSelect"), "service");
+      }
+
+      function removeWithdrawals() {
+        document
+          .querySelectorAll(
+            '#withdrawForm, [id^="withdraw"], [for^="withdraw"]'
+          )
+          .forEach(element => {
+            const parent =
+              element.closest(".section-card");
+
+            if (parent) {
+              parent.remove();
+            } else {
+              element.remove();
+            }
+          });
+
+        document
+          .querySelectorAll(
+            '[onclick*="submitWithdrawal"]'
+          )
+          .forEach(element => element.remove());
+      }
+
+      function addOpayNotice() {
+        if (document.getElementById("gvsOpayNotice")) return;
+
+        const walletPage = gvs$("page-wallet");
+        if (!walletPage) return;
+
+        const notice = document.createElement("div");
+        notice.id = "gvsOpayNotice";
+        notice.className = "gvs-whatsapp-notice";
+
+        notice.innerHTML =
+          "<strong>⚡ Faster approval</strong>" +
+          "<span>After your OPay transfer, send the receipt on WhatsApp: " +
+          '<a href="https://wa.me/2349136540119" target="_blank" rel="noopener">09136540119</a>' +
+          "</span>";
+
+        const firstCard =
+          walletPage.querySelector(".section-card");
+
+        if (firstCard) {
+          firstCard.parentNode.insertBefore(
+            notice,
+            firstCard
+          );
+        }
+      }
+
+      function updateHeroBalance() {
+        const source =
+          gvs$("dashboardBalance") ||
+          gvs$("walletPageBalance");
+
+        const target =
+          gvs$("gvsHeroBalance");
+
+        if (!source || !target) return;
+
+        target.textContent =
+          source.textContent || "₦0.00";
+      }
+
+      function observeBalance() {
+        const nodes = [
+          gvs$("dashboardBalance"),
+          gvs$("walletPageBalance")
+        ];
+
+        nodes.forEach(node => {
+          if (!node) return;
+
+          new MutationObserver(updateHeroBalance)
+            .observe(node, {
+              childList: true,
+              characterData: true,
+              subtree: true
+            });
+        });
+
+        updateHeroBalance();
+      }
+
+      function improvePurchaseErrorHandling() {
+        const originalToast =
+          window.showToast;
+
+        if (typeof originalToast !== "function") return;
+
+        window.showToast = function (message, type) {
+          if (
+            type === "error" &&
+            (
+              String(message || "").toLowerCase().includes("purchase") ||
+              String(message || "").toLowerCase().includes("number")
+            )
+          ) {
+            message = "Unable to purchase number.";
+          }
+
+          return originalToast(message, type);
+        };
+      }
+
+      function initUpdatedUI() {
+        removeWithdrawals();
+        setupPasswordToggles();
+        setupSearchableSelects();
+        addOpayNotice();
+        observeBalance();
+        improvePurchaseErrorHandling();
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener(
+          "DOMContentLoaded",
+          initUpdatedUI
+        );
+      } else {
+        initUpdatedUI();
+      }
+    })();
+  </script>
+
 </body>
 </html>
