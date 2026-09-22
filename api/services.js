@@ -106,18 +106,15 @@ export default async function handler(req, res) {
       });
     }
 
-    const requestedServer = req.query?.server;
     const requestedCode = clean(req.query?.countryCode);
     const isUS = requestedCode === "us" || requestedCode === "usa";
 
-    // Load the provider portals that can supply numbers for the country.
-    // For US, include the two USA portals plus both global portals.
-    // For every other country, include both global portals.
-    const servers = requestedServer
-      ? [requestedServer]
-      : isUS
-        ? ["usa-server-1", "usa-server-2", "global-server-1", "global-server-2"]
-        : ["global-server-1", "global-server-2"];
+    // Always connect to every provider portal that can serve this country.
+    // Do not trust the single server attached to /api/countries: it is only a
+    // default and must not prevent the other portals from being discovered.
+    const servers = isUS
+      ? ["usa-server-1", "usa-server-2", "global-server-1", "global-server-2"]
+      : ["global-server-1", "global-server-2"];
 
     const results = await Promise.all(
       [...new Set(servers)].map(server => getProviderServices(server, countryId))
@@ -212,7 +209,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      server: requestedServer || (isUS ? "multi-provider" : "global-provider"),
+      server: isUS ? "multi-provider" : "global-provider",
       services
     });
   } catch (error) {
