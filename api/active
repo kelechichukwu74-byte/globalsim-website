@@ -1,161 +1,315 @@
-const SUPABASE_URL =
-  process.env.SUPABASE_URL ||
-  "https://rfitbmkizfmwfqqskwhy.supabase.co";
-
-const SUPABASE_SERVICE_ROLE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-function getBearerToken(req) {
-  const header =
-    req.headers?.authorization ||
-    req.headers?.Authorization ||
-    "";
-
-  if (!header.toLowerCase().startsWith("bearer ")) {
-    return null;
+async function loadActiveNumbers() {
+  const container = document.getElementById("activeNumbersList");
+  if (!container) {
+    console.error("activeNumbersList container not found.");
+    return;
   }
-
-  return header.slice(7).trim();
-}
-
-async function getAuthenticatedUser(req) {
-  const token = getBearerToken(req);
-
-  if (!token) {
-    throw new Error("Unauthorized.");
-  }
-
-  if (!SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
-  }
-
-  const response = await fetch(
-    `${SUPABASE_URL}/auth/v1/user`,
-    {
+  container.innerHTML = `
+    <div style="padding:20px;text-align:center;">
+      Loading active numbers...
+    </div>
+  `;
+  try {
+    // Get the current Supabase login session
+    const { data: sessionData, error: sessionError } =
+      await supabaseClient.auth.getSession();
+    if (sessionError || !sessionData?.session?.access_token) {
+      throw new Error("Please log in again.");
+    }
+    const token = sessionData.session.access_token;
+    const response = await fetch("/api/sms/active", {
+      method: "GET",
       headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
         Authorization: `Bearer ${token}`,
         Accept: "application/json"
       }
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Unauthorized.");
-  }
-
-  const user = await response.json();
-
-  if (!user?.id) {
-    throw new Error("Unauthorized.");
-  }
-
-  return user;
-}
-
-async function supabaseRequest(path) {
-  const response = await fetch(
-    `${SUPABASE_URL}/rest/v1/${path}`,
-    {
-      method: "GET",
-      headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        Accept: "application/json"
-      }
-    }
-  );
-
-  const text = await response.text();
-
-  let data = {};
-  try {
-    data = text ? JSON.parse(text) : {};
-  } catch {
-    throw new Error(
-      `Supabase returned invalid JSON (HTTP ${response.status}).`
-    );
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      data?.message ||
-      data?.hint ||
-      data?.details ||
-      `Supabase request failed (HTTP ${response.status}).`
-    );
-  }
-
-  return data;
-}
-
-export default async function handler(req, res) {
-  if (req.method !== "GET") {
-    return res.status(405).json({
-      success: false,
-      error: "Method not allowed"
     });
-  }
-
-  try {
-    const user = await getAuthenticatedUser(req);
-
-    /*
-     * IMPORTANT:
-     * The orders table stores the provider verification/request ID as
-     * provider_order_id and the customer's price as customer_price.
-     * Do not request columns such as verification_id or price here because
-     * they are not part of this orders schema.
-     */
-    const orders = await supabaseRequest(
-      `orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,provider_order_id,service_country_price_id,service_name,country_name,customer_price,provider_cost,profit,status,phone_number,created_at&order=created_at.desc`
-    );
-
-    /*
-     * Keep purchased numbers visible until they reach a terminal state.
-     * Provider responses can use several successful/active status names.
-     */
-    const terminalStatuses = new Set([
-      "failed",
-      "cancelled",
-      "canceled",
-      "expired",
-      "refunded",
-      "rejected"
-    ]);
-
-    const activeNumbers = (Array.isArray(orders) ? orders : [])
-      .filter((order) => {
-        const status = String(order?.status || "active").toLowerCase();
-        return !terminalStatuses.has(status);
-      })
-      .map((order) => ({
-        ...order,
-        verification_id: order.provider_order_id,
-        selling_price: order.customer_price,
-        number: order.phone_number,
-        service: order.service_name
-      }));
-
-    return res.status(200).json({
-      success: true,
-      numbers: activeNumbers,
-      activations: activeNumbers,
-      data: activeNumbers
-    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.error ||
+        result.message ||
+        "Unable to load active numbers."
+      );
+    }
+    const numbers =
+      result.numbers ||
+      result.activations ||
+      result.data ||
+      [];
+    if (!numbers.length) {
+      container.innerHTML = `
+        <div style="padding:20px;text-align:center;">
+          No active numbers.
+        </div>
+      `;
+      return;
+    }
+    container.innerHTML = numbers.map(order => {
+      const verificationId =
+        order.verification_id ||
+        order.provider_order_id ||
+        "";
+      const number =
+        order.number ||
+        order.phone_number ||
+        "Unknown";
+      const service =
+        order.service ||
+        order.service_name ||
+        "Unknown";
+      const status =
+        order.status ||
+        "active";
+      const created =
+        order.created_at
+          ? new Date(order.created_at).toLocaleString()
+          : "—";
+      return `
+        <div
+          class="active-number-card"
+          data-verification-id="${escapeHtml(verificationId)}"
+          style="
+            border:1px solid #ddd;
+            border-radius:12px;
+            padding:16px;
+            margin-bottom:15px;
+            background:#fff;
+          "
+        >
+          <div style="margin-bottom:10px;">
+            <strong>Number</strong>
+            <div style="font-size:18px;margin-top:4px;">
+              ${escapeHtml(number)}
+            </div>
+          </div>
+          <div style="margin-bottom:8px;">
+            <strong>Service:</strong>
+            ${escapeHtml(service)}
+          </div>
+          <div style="margin-bottom:8px;">
+            <strong>Status:</strong>
+            <span class="number-status">
+              ${escapeHtml(status)}
+            </span>
+          </div>
+          <div style="margin-bottom:15px;">
+            <strong>Created:</strong>
+            ${escapeHtml(created)}
+          </div>
+          <div
+            class="sms-result"
+            style="
+              display:none;
+              padding:12px;
+              margin-bottom:12px;
+              border-radius:8px;
+              background:#f5f5f5;
+            "
+          ></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button
+              type="button"
+              class="check-sms-btn"
+              onclick="checkNumberSMS(this)"
+              style="
+                padding:10px 14px;
+                border:0;
+                border-radius:8px;
+                cursor:pointer;
+              "
+            >
+              📩 Check SMS
+            </button>
+            <button
+              type="button"
+              class="cancel-number-btn"
+              onclick="cancelActiveNumber(this)"
+              style="
+                padding:10px 14px;
+                border:0;
+                border-radius:8px;
+                cursor:pointer;
+              "
+            >
+              ❌ Cancel Number
+            </button>
+          </div>
+        </div>
+      `;
+    }).join("");
   } catch (error) {
-    console.error("Active numbers error:", error);
-
-    const message =
-      error?.message ||
-      "Unable to load active numbers.";
-
-    return res.status(
-      message === "Unauthorized." ? 401 : 500
-    ).json({
-      success: false,
-      error: message,
-      message
-    });
+    console.error("Active numbers:", error);
+    container.innerHTML = `
+      <div style="padding:20px;text-align:center;">
+        ${escapeHtml(
+          error.message || "Unable to load active numbers."
+        )}
+      </div>
+    `;
   }
 }
+/* =========================
+   CHECK SMS
+========================= */
+async function checkNumberSMS(button) {
+  const card = button.closest(".active-number-card");
+  if (!card) return;
+  const verificationId =
+    card.dataset.verificationId;
+  if (!verificationId) {
+    alert("Verification ID is missing.");
+    return;
+  }
+  const resultBox =
+    card.querySelector(".sms-result");
+  button.disabled = true;
+  button.textContent = "Checking SMS...";
+  try {
+    const response = await fetch(
+      `/api/sms/sms?id=${encodeURIComponent(verificationId)}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json"
+        }
+      }
+    );
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.error ||
+        result.message ||
+        "Unable to load SMS."
+      );
+    }
+    resultBox.style.display = "block";
+    /*
+     * Provider responses can have different SMS fields.
+     * Try the common possibilities.
+     */
+    const sms =
+      result.sms ||
+      result.message ||
+      result.code ||
+      result.data?.sms ||
+      result.data?.message ||
+      result.data?.code;
+    if (sms) {
+      resultBox.innerHTML = `
+        <strong>📩 SMS Received</strong>
+        <div style="margin-top:6px;">
+          ${escapeHtml(
+            typeof sms === "string"
+              ? sms
+              : JSON.stringify(sms)
+          )}
+        </div>
+      `;
+    } else {
+      resultBox.innerHTML = `
+        <strong>📩 SMS</strong>
+        <div style="margin-top:6px;">
+          No SMS has arrived yet. Tap "Check SMS" again shortly.
+        </div>
+      `;
+    }
+  } catch (error) {
+    resultBox.style.display = "block";
+    resultBox.innerHTML = `
+      <strong>SMS</strong>
+      <div style="margin-top:6px;">
+        ${escapeHtml(
+          error.message || "Unable to load SMS."
+        )}
+      </div>
+    `;
+  } finally {
+    button.disabled = false;
+    button.textContent = "📩 Check SMS";
+  }
+}
+/* =========================
+   CANCEL NUMBER
+========================= */
+async function cancelActiveNumber(button) {
+  const card = button.closest(".active-number-card");
+  if (!card) return;
+  const verificationId =
+    card.dataset.verificationId;
+  if (!verificationId) {
+    alert("Verification ID is missing.");
+    return;
+  }
+  const confirmed = confirm(
+    "Are you sure you want to cancel this number? Your wallet will be refunded if the cancellation is accepted."
+  );
+  if (!confirmed) return;
+  button.disabled = true;
+  button.textContent = "Cancelling...";
+  try {
+    const { data: sessionData, error: sessionError } =
+      await supabaseClient.auth.getSession();
+    if (sessionError || !sessionData?.session?.access_token) {
+      throw new Error("Please log in again.");
+    }
+    const token = sessionData.session.access_token;
+    const response = await fetch("/api/sms/cancel", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      },
+      body: JSON.stringify({
+        verificationId: verificationId
+      })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.error ||
+        result.message ||
+        "Unable to cancel number."
+      );
+    }
+    alert(
+      result.message ||
+      "Number cancelled and wallet refunded."
+    );
+    // Reload the active numbers.
+    await loadActiveNumbers();
+  } catch (error) {
+    console.error("Cancel number:", error);
+    alert(
+      error.message ||
+      "Unable to cancel number."
+    );
+    button.disabled = false;
+    button.textContent = "❌ Cancel Number";
+  }
+}
+/* =========================
+   HTML ESCAPE
+========================= */
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+/* =========================
+   REFRESH BUTTON
+========================= */
+function refreshActiveNumbers() {
+  loadActiveNumbers();
+}
+/* Load when page is ready */
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
+    loadActiveNumbers();
+  }
+);
