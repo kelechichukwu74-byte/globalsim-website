@@ -3,11 +3,9 @@ async function cancelActiveNumber(index) {
     const item = activeNumbers?.[index];
 
     if (!item) {
-      alert("Active number not found.");
-      return;
+      throw new Error("Active number not found.");
     }
 
-    // Use the order ID first, then fall back to phone number.
     const identifier =
       item.order_id ||
       item.orderId ||
@@ -17,56 +15,40 @@ async function cancelActiveNumber(index) {
       item.number;
 
     if (!identifier) {
-      alert("Order information not found.");
-      return;
+      throw new Error("Order information not found.");
     }
 
     const confirmed = confirm(
-      "Are you sure you want to cancel this number? If cancellation is successful, your money will be returned to your wallet."
+      "Are you sure you want to cancel this number? If it has expired, the money will be returned to your wallet."
     );
 
     if (!confirmed) return;
 
-    const sessionResult = await supabaseClient.auth.getSession();
-    const accessToken =
-      sessionResult?.data?.session?.access_token;
-
-    if (!accessToken) {
-      throw new Error("Please log in again.");
-    }
-
-    const response = await fetch(
-      `/api/cancel?id=${encodeURIComponent(identifier)}`,
+    const { data, error } = await supabaseClient.rpc(
+      "cancel_virtual_number",
       {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: "application/json"
-        }
+        p_identifier: String(identifier)
       }
     );
 
-    const result = await response.json().catch(() => ({}));
+    if (error) {
+      console.error("Supabase cancellation error:", error);
+      throw new Error(error.message || "Cancellation failed.");
+    }
 
-    if (!response.ok || result.success === false) {
+    if (!data?.success) {
       throw new Error(
-        result.error ||
-        result.message ||
-        `Cancellation failed (HTTP ${response.status})`
+        data?.error || "Unable to cancel this number."
       );
     }
 
     alert(
-      result.message ||
-      "Number cancelled successfully. Your money has been returned to your wallet."
+      data.message ||
+      "Number cancelled and your money has been returned."
     );
 
-    // Reload the active numbers after cancellation.
-    if (typeof loadActiveNumbers === "function") {
-      await loadActiveNumbers();
-    }
+    await loadActiveNumbers();
 
-    // Refresh wallet balance if your dashboard has either function.
     if (typeof loadWallet === "function") {
       await loadWallet();
     }
