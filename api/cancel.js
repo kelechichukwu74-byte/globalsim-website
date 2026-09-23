@@ -12,21 +12,13 @@ const SURE_BASE_URL =
   "https://sureverifications.com/api/v1";
 
 
-/* =========================================================
-   AUTHENTICATION
-========================================================= */
-
 function getToken(req) {
   const header =
     req.headers?.authorization ||
     req.headers?.Authorization ||
     "";
 
-  if (
-    !header
-      .toLowerCase()
-      .startsWith("bearer ")
-  ) {
+  if (!header.toLowerCase().startsWith("bearer ")) {
     return null;
   }
 
@@ -35,10 +27,9 @@ function getToken(req) {
 
 
 async function authenticate(req) {
-  const accessToken =
-    getToken(req);
+  const token = getToken(req);
 
-  if (!accessToken) {
+  if (!token) {
     throw new Error("Unauthorized.");
   }
 
@@ -48,29 +39,22 @@ async function authenticate(req) {
     );
   }
 
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/auth/v1/user`,
-      {
-        headers: {
-          apikey:
-            SUPABASE_SERVICE_ROLE_KEY,
-
-          Authorization:
-            `Bearer ${accessToken}`,
-
-          Accept:
-            "application/json"
-        }
+  const response = await fetch(
+    `${SUPABASE_URL}/auth/v1/user`,
+    {
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json"
       }
-    );
+    }
+  );
 
   if (!response.ok) {
     throw new Error("Unauthorized.");
   }
 
-  const user =
-    await response.json();
+  const user = await response.json();
 
   if (!user?.id) {
     throw new Error("Unauthorized.");
@@ -80,62 +64,38 @@ async function authenticate(req) {
 }
 
 
-/* =========================================================
-   SUPABASE REST HELPER
-========================================================= */
-
-async function db(
-  path,
-  options = {}
-) {
+async function db(path, options = {}) {
   if (!SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error(
       "SUPABASE_SERVICE_ROLE_KEY is not configured."
     );
   }
 
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/${path}`,
-      {
-        ...options,
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/${path}`,
+    {
+      ...options,
 
-        headers: {
-          apikey:
-            SUPABASE_SERVICE_ROLE_KEY,
-
-          Authorization:
-            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-
-          Accept:
-            "application/json",
-
-          "Content-Type":
-            "application/json",
-
-          Prefer:
-            "return=representation",
-
-          ...(options.headers || {})
-        }
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization:
+          `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+        ...(options.headers || {})
       }
-    );
+    }
+  );
 
-  const text =
-    await response.text();
+  const text = await response.text();
 
   let data = {};
 
   try {
-    data =
-      text
-        ? JSON.parse(text)
-        : {};
+    data = text ? JSON.parse(text) : {};
   } catch {
-    data = {
-      message:
-        text
-    };
+    data = { message: text };
   }
 
   if (!response.ok) {
@@ -152,28 +112,15 @@ async function db(
 }
 
 
-/* =========================================================
-   SUREVERIFICATION RESPONSE PARSER
-========================================================= */
-
-async function parseProviderResponse(
-  response
-) {
-  const text =
-    await response.text();
+async function parseProviderResponse(response) {
+  const text = await response.text();
 
   let data = {};
 
   try {
-    data =
-      text
-        ? JSON.parse(text)
-        : {};
+    data = text ? JSON.parse(text) : {};
   } catch {
-    data = {
-      message:
-        text
-    };
+    data = { message: text };
   }
 
   return {
@@ -183,28 +130,16 @@ async function parseProviderResponse(
 }
 
 
-/* =========================================================
-   CANCEL THROUGH SUREVERIFICATION
-========================================================= */
-
 /*
- * The important point here is:
+ * IMPORTANT:
  *
- * provider_order_id is the primary provider identifier.
+ * SureVerification cancellation requires the
+ * verification ID, NOT the request/order ID.
  *
- * For your current order:
- *
- * provider_order_id = 163804
- * provider_verification_id = null
- *
- * Therefore 163804 is tried first.
- *
- * If a verification ID exists, it is also retained
- * as a fallback.
+ * provider_verification_id must therefore be
+ * used first.
  */
-
 async function cancelWithSureVerification(
-  providerOrderId,
   providerVerificationId
 ) {
   if (!SURE_API_KEY) {
@@ -213,328 +148,146 @@ async function cancelWithSureVerification(
     );
   }
 
-  const candidates = [];
-
-  function addCandidate(
-    value,
-    type
+  if (
+    providerVerificationId === undefined ||
+    providerVerificationId === null ||
+    String(providerVerificationId).trim() === ""
   ) {
-    if (
-      value === undefined ||
-      value === null
-    ) {
-      return;
-    }
-
-    const cleaned =
-      String(value).trim();
-
-    if (!cleaned) {
-      return;
-    }
-
-    const exists =
-      candidates.some(
-        item =>
-          item.id === cleaned
-      );
-
-    if (!exists) {
-      candidates.push({
-        id:
-          cleaned,
-
-        type
-      });
-    }
-  }
-
-
-  /*
-   * PRIMARY:
-   * provider_order_id
-   */
-  addCandidate(
-    providerOrderId,
-    "provider_order_id"
-  );
-
-
-  /*
-   * FALLBACK:
-   * provider_verification_id
-   */
-  addCandidate(
-    providerVerificationId,
-    "provider_verification_id"
-  );
-
-
-  if (!candidates.length) {
     throw new Error(
-      "SureVerification provider order ID is missing."
+      "SureVerification verification ID is missing."
     );
   }
 
+  const verificationId =
+    String(providerVerificationId).trim();
 
-  let lastError =
-    "Verification number cannot be cancelled.";
+  const url =
+    `${SURE_BASE_URL}/verifications/cancel/${encodeURIComponent(
+      verificationId
+    )}`;
 
-  const attempted =
-    [];
-
-
-  for (
-    const candidate of candidates
-  ) {
-    const id =
-      candidate.id;
-
-    attempted.push(
-      id
-    );
-
-
-    /*
-     * This is the cancellation endpoint
-     * currently used by the application.
-     */
-    const url =
-      `${SURE_BASE_URL}/verifications/cancel/${encodeURIComponent(
-        id
-      )}`;
-
-
-    try {
-      console.log(
-        "Trying SureVerification cancellation:",
-        {
-          id,
-          type:
-            candidate.type
-        }
-      );
-
-
-      const response =
-        await fetch(
-          url,
-          {
-            method:
-              "DELETE",
-
-            headers: {
-              "x-api-key":
-                SURE_API_KEY,
-
-              Accept:
-                "application/json"
-            }
-          }
-        );
-
-
-      const {
-        data,
-        text
-      } =
-        await parseProviderResponse(
-          response
-        );
-
-
-      console.log(
-        "SureVerification cancellation response:",
-        {
-          id,
-          status:
-            response.status,
-          ok:
-            response.ok,
-          response:
-            data
-        }
-      );
-
-
-      if (response.ok) {
-        return {
-          success:
-            true,
-
-          provider_response:
-            data,
-
-          cancelled_id:
-            id,
-
-          cancelled_id_type:
-            candidate.type,
-
-          attempted_ids:
-            attempted
-        };
-      }
-
-
-      lastError =
-        data?.message ||
-        data?.error ||
-        data?.details ||
-        data?.hint ||
-        text ||
-        `Provider cancellation failed (${response.status})`;
-
-    } catch (error) {
-      console.error(
-        "SureVerification cancellation request error:",
-        error
-      );
-
-      lastError =
-        error?.message ||
-        lastError;
-    }
-  }
-
-
-  throw new Error(
-    `${lastError}`
+  console.log(
+    "Cancelling SureVerification verification:",
+    verificationId
   );
+
+  const response = await fetch(
+    url,
+    {
+      method: "DELETE",
+
+      headers: {
+        "x-api-key": SURE_API_KEY,
+        Accept: "application/json"
+      }
+    }
+  );
+
+  const {
+    data,
+    text
+  } = await parseProviderResponse(response);
+
+  console.log(
+    "SureVerification cancellation response:",
+    {
+      verificationId,
+      status: response.status,
+      ok: response.ok,
+      response: data
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+      data?.error ||
+      data?.details ||
+      data?.hint ||
+      text ||
+      `Provider cancellation failed (${response.status})`
+    );
+  }
+
+  return {
+    success: true,
+    provider_response: data,
+    cancelled_id: verificationId
+  };
 }
 
 
-/* =========================================================
-   GET CUSTOMER WALLET
-========================================================= */
+async function getWallet(userId) {
+  const wallets = await db(
+    `wallets?user_id=eq.${encodeURIComponent(
+      userId
+    )}&select=*&limit=1`
+  );
 
-async function getWallet(
-  userId
-) {
-  const wallets =
-    await db(
-      `wallets?user_id=eq.${encodeURIComponent(
-        userId
-      )}&select=*&limit=1`
-    );
-
-  const wallet =
-    wallets?.[0];
+  const wallet = wallets?.[0];
 
   if (!wallet) {
-    throw new Error(
-      "Wallet not found."
-    );
+    throw new Error("Wallet not found.");
   }
 
   return wallet;
 }
 
 
-/* =========================================================
-   REFUND CUSTOMER WALLET
-========================================================= */
-
-async function refundWallet(
-  userId,
-  amount
-) {
-  const refundAmount =
-    Number(amount);
+async function refundWallet(userId, amount) {
+  const refundAmount = Number(amount);
 
   if (
-    !Number.isFinite(
-      refundAmount
-    ) ||
+    !Number.isFinite(refundAmount) ||
     refundAmount <= 0
   ) {
     return null;
   }
 
-
-  /*
-   * Retry a few times to reduce the
-   * possibility of a balance race.
-   */
-  for (
-    let attempt = 0;
-    attempt < 5;
-    attempt++
-  ) {
-    const wallet =
-      await getWallet(
-        userId
-      );
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const wallet = await getWallet(userId);
 
     const currentBalance =
-      Number(
-        wallet.balance || 0
-      );
+      Number(wallet.balance || 0);
 
-    if (
-      !Number.isFinite(
-        currentBalance
-      )
-    ) {
+    if (!Number.isFinite(currentBalance)) {
       throw new Error(
         "Unable to read wallet balance."
       );
     }
 
     const newBalance =
-      currentBalance +
-      refundAmount;
+      currentBalance + refundAmount;
 
+    const updated = await db(
+      `wallets?user_id=eq.${encodeURIComponent(
+        userId
+      )}&balance=eq.${encodeURIComponent(
+        currentBalance
+      )}`,
+      {
+        method: "PATCH",
 
-    /*
-     * Optimistic balance update.
-     *
-     * Only update if the balance is still
-     * the same balance we originally read.
-     */
-    const updated =
-      await db(
-        `wallets?user_id=eq.${encodeURIComponent(
-          userId
-        )}&balance=eq.${encodeURIComponent(
-          currentBalance
-        )}`,
-        {
-          method:
-            "PATCH",
-
-          body:
-            JSON.stringify({
-              balance:
-                newBalance,
-
-              updated_at:
-                new Date().toISOString()
-            })
-        }
-      );
-
+        body: JSON.stringify({
+          balance: newBalance,
+          updated_at: new Date().toISOString()
+        })
+      }
+    );
 
     if (
-      Array.isArray(
-        updated
-      ) &&
+      Array.isArray(updated) &&
       updated.length > 0
     ) {
       return newBalance;
     }
   }
 
-
   throw new Error(
     "Unable to update wallet balance."
   );
 }
 
-
-/* =========================================================
-   RECORD REFUND TRANSACTION
-========================================================= */
 
 async function recordRefund(
   userId,
@@ -546,28 +299,17 @@ async function recordRefund(
     await db(
       "wallet_transactions",
       {
-        method:
-          "POST",
+        method: "POST",
 
-        body:
-          JSON.stringify({
-            user_id:
-              userId,
-
-            amount:
-              Number(amount),
-
-            balance_after:
-              Number(
-                balanceAfter
-              ),
-
-            type:
-              "refund",
-
-            description:
-              `Refund for cancelled virtual number (${orderId})`
-          })
+        body: JSON.stringify({
+          user_id: userId,
+          amount: Number(amount),
+          balance_after: Number(balanceAfter),
+          type: "refund",
+          reference_id: orderId,
+          description:
+            `Refund for cancelled virtual number (${orderId})`
+        })
       }
     );
 
@@ -579,34 +321,15 @@ async function recordRefund(
       error
     );
 
-    /*
-     * Do not make the cancellation fail
-     * just because transaction history
-     * failed to record.
-     */
     return false;
   }
 }
 
 
-/* =========================================================
-   GET SUPPLIED CANCELLATION ID
-========================================================= */
+function getSuppliedId(req) {
+  const query = req.query || {};
+  const body = req.body || {};
 
-function getSuppliedId(
-  req
-) {
-  const query =
-    req.query || {};
-
-  const body =
-    req.body || {};
-
-
-  /*
-   * Support all existing frontend
-   * parameter names.
-   */
   return (
     query.id ||
     query.orderId ||
@@ -633,35 +356,63 @@ function getSuppliedId(
 }
 
 
-/* =========================================================
-   FIND ORDER
-========================================================= */
-
 async function findOrder(
   userId,
   suppliedId
 ) {
   const cleanId =
-    String(
-      suppliedId
-    ).trim();
-
+    String(suppliedId).trim();
 
   /*
-   * 1. Provider order ID
+   * First try Supabase order UUID.
+   */
+  let orders = await db(
+    `orders?user_id=eq.${encodeURIComponent(
+      userId
+    )}&id=eq.${encodeURIComponent(
+      cleanId
+    )}&select=*&limit=1`
+  );
+
+  if (
+    Array.isArray(orders) &&
+    orders.length > 0
+  ) {
+    return orders[0];
+  }
+
+  /*
+   * Then provider verification ID.
+   */
+  orders = await db(
+    `orders?user_id=eq.${encodeURIComponent(
+      userId
+    )}&provider_verification_id=eq.${encodeURIComponent(
+      cleanId
+    )}&select=*&limit=1`
+  );
+
+  if (
+    Array.isArray(orders) &&
+    orders.length > 0
+  ) {
+    return orders[0];
+  }
+
+  /*
+   * Finally provider request/order ID.
    *
-   * This is the most important lookup
-   * for your current order.
+   * This is only for locating the database
+   * order. It is NOT used for provider
+   * cancellation.
    */
-  let orders =
-    await db(
-      `orders?user_id=eq.${encodeURIComponent(
-        userId
-      )}&provider_order_id=eq.${encodeURIComponent(
-        cleanId
-      )}&select=*&limit=1`
-    );
-
+  orders = await db(
+    `orders?user_id=eq.${encodeURIComponent(
+      userId
+    )}&provider_order_id=eq.${encodeURIComponent(
+      cleanId
+    )}&select=*&limit=1`
+  );
 
   if (
     Array.isArray(orders) &&
@@ -669,121 +420,38 @@ async function findOrder(
   ) {
     return orders[0];
   }
-
-
-  /*
-   * 2. Provider verification ID
-   */
-  orders =
-    await db(
-      `orders?user_id=eq.${encodeURIComponent(
-        userId
-      )}&provider_verification_id=eq.${encodeURIComponent(
-        cleanId
-      )}&select=*&limit=1`
-    );
-
-
-  if (
-    Array.isArray(orders) &&
-    orders.length > 0
-  ) {
-    return orders[0];
-  }
-
-
-  /*
-   * 3. Supabase order UUID
-   */
-  orders =
-    await db(
-      `orders?user_id=eq.${encodeURIComponent(
-        userId
-      )}&id=eq.${encodeURIComponent(
-        cleanId
-      )}&select=*&limit=1`
-    );
-
-
-  if (
-    Array.isArray(orders) &&
-    orders.length > 0
-  ) {
-    return orders[0];
-  }
-
 
   return null;
 }
 
 
-/* =========================================================
-   MAIN HANDLER
-========================================================= */
-
-export default async function handler(
-  req,
-  res
-) {
-  /*
-   * Allow both DELETE and POST because
-   * different frontend implementations
-   * may use either one.
-   */
+export default async function handler(req, res) {
   if (
     req.method !== "DELETE" &&
     req.method !== "POST"
   ) {
     return res.status(405).json({
-      success:
-        false,
-
-      error:
-        "Method not allowed."
+      success: false,
+      error: "Method not allowed."
     });
   }
 
-
   try {
-    /* -----------------------------------------------------
-       Authenticate customer
-    ----------------------------------------------------- */
-
     const user =
-      await authenticate(
-        req
-      );
-
-
-    /* -----------------------------------------------------
-       Get requested order ID
-    ----------------------------------------------------- */
+      await authenticate(req);
 
     const suppliedId =
-      getSuppliedId(
-        req
-      );
+      getSuppliedId(req);
 
     const cleanId =
-      String(
-        suppliedId
-      ).trim();
-
+      String(suppliedId).trim();
 
     if (!cleanId) {
       return res.status(400).json({
-        success:
-          false,
-
-        error:
-          "Cancellation ID is required."
+        success: false,
+        error: "Cancellation ID is required."
       });
     }
-
-
-    /* -----------------------------------------------------
-       Find customer's order
-    ----------------------------------------------------- */
 
     const order =
       await findOrder(
@@ -791,80 +459,63 @@ export default async function handler(
         cleanId
       );
 
-
     if (!order) {
       return res.status(404).json({
-        success:
-          false,
-
+        success: false,
         error:
           "Order not found for this account."
       });
     }
 
-
     console.log(
       "Cancellation order:",
       {
-        id:
-          order.id,
-
+        id: order.id,
         provider_order_id:
           order.provider_order_id,
-
         provider_verification_id:
           order.provider_verification_id,
-
-        status:
-          order.status
+        status: order.status
       }
     );
 
-
-    /* -----------------------------------------------------
-       Check current status
-    ----------------------------------------------------- */
-
     const status =
-      String(
-        order.status || ""
-      )
-      .trim()
-      .toLowerCase();
-
+      String(order.status || "")
+        .trim()
+        .toLowerCase();
 
     if (
       status === "cancelled" ||
       status === "canceled"
     ) {
       return res.status(200).json({
-        success:
-          true,
-
-        already_cancelled:
-          true,
-
+        success: true,
+        already_cancelled: true,
         message:
           "Number is already cancelled.",
-
-        refunded:
-          false
+        refunded: false
       });
     }
 
+    if (
+      status === "expired" ||
+      status === "refunded" ||
+      status === "failed" ||
+      status === "rejected"
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          "This number can no longer be cancelled."
+      });
+    }
 
-    /* -----------------------------------------------------
-       Get provider identifiers
-    ----------------------------------------------------- */
-
-    const providerOrderId =
-      order.provider_order_id ||
-      order.providerOrderId ||
-      order.request_id ||
-      order.requestId ||
-      null;
-
-
+    /*
+     * THIS IS THE IMPORTANT PART.
+     *
+     * Use provider_verification_id for the
+     * SureVerification cancellation request.
+     */
     const providerVerificationId =
       order.provider_verification_id ||
       order.providerVerificationId ||
@@ -873,45 +524,31 @@ export default async function handler(
       order.verification?.verificationId ||
       null;
 
-
-    if (
-      !providerOrderId &&
-      !providerVerificationId
-    ) {
+    if (!providerVerificationId) {
       return res.status(400).json({
-        success:
-          false,
-
+        success: false,
         error:
-          "SureVerification provider order ID is missing for this order."
+          "SureVerification verification ID is missing for this order."
       });
     }
 
-
-    /* -----------------------------------------------------
-       Cancel at provider
-    ----------------------------------------------------- */
-
+    /*
+     * Cancel at SureVerification.
+     */
     const providerResult =
       await cancelWithSureVerification(
-        providerOrderId,
         providerVerificationId
       );
 
-
-    if (
-      !providerResult?.success
-    ) {
+    if (!providerResult?.success) {
       throw new Error(
         "Unable to cancel number with SureVerification."
       );
     }
 
-
-    /* -----------------------------------------------------
-       Determine refund amount
-    ----------------------------------------------------- */
-
+    /*
+     * Refund customer wallet.
+     */
     const refundAmount =
       Number(
         order.customer_price ??
@@ -920,22 +557,11 @@ export default async function handler(
         0
       );
 
-
-    let balanceAfter =
-      null;
-
-    let refunded =
-      false;
-
-
-    /* -----------------------------------------------------
-       Refund customer
-    ----------------------------------------------------- */
+    let balanceAfter = null;
+    let refunded = false;
 
     if (
-      Number.isFinite(
-        refundAmount
-      ) &&
+      Number.isFinite(refundAmount) &&
       refundAmount > 0
     ) {
       balanceAfter =
@@ -944,13 +570,8 @@ export default async function handler(
           refundAmount
         );
 
-      refunded =
-        true;
+      refunded = true;
 
-
-      /*
-       * Record transaction.
-       */
       await recordRefund(
         user.id,
         refundAmount,
@@ -959,11 +580,9 @@ export default async function handler(
       );
     }
 
-
-    /* -----------------------------------------------------
-       Mark order cancelled
-    ----------------------------------------------------- */
-
+    /*
+     * Mark order cancelled.
+     */
     const updatedOrders =
       await db(
         `orders?id=eq.${encodeURIComponent(
@@ -972,91 +591,56 @@ export default async function handler(
           user.id
         )}`,
         {
-          method:
-            "PATCH",
+          method: "PATCH",
 
-          body:
-            JSON.stringify({
-              status:
-                "cancelled",
-
-              updated_at:
-                new Date().toISOString()
-            })
+          body: JSON.stringify({
+            status: "cancelled",
+            updated_at:
+              new Date().toISOString()
+          })
         }
       );
 
-
     if (
-      !Array.isArray(
-        updatedOrders
-      ) ||
+      !Array.isArray(updatedOrders) ||
       updatedOrders.length === 0
     ) {
-      /*
-       * Provider cancellation already succeeded.
-       *
-       * We don't report the operation as
-       * completely failed because that could
-       * cause the frontend to retry and
-       * potentially create a duplicate refund.
-       */
       console.error(
         "Provider cancelled but database order update returned no rows.",
         {
-          orderId:
-            order.id,
-
-          providerOrderId:
-            providerOrderId
+          orderId: order.id,
+          providerVerificationId
         }
       );
     }
 
-
-    /* -----------------------------------------------------
-       Success response
-    ----------------------------------------------------- */
-
     return res.status(200).json({
-      success:
-        true,
+      success: true,
 
-      message:
-        refunded
-          ? `Number cancelled successfully. ₦${refundAmount.toLocaleString()} has been refunded to your wallet.`
-          : "Number cancelled successfully.",
+      message: refunded
+        ? `Number cancelled successfully. ₦${refundAmount.toLocaleString()} has been refunded to your wallet.`
+        : "Number cancelled successfully.",
 
-      order_id:
-        order.id,
+      order_id: order.id,
 
       provider_order_id:
-        providerOrderId,
+        order.provider_order_id || null,
 
       provider_verification_id:
         providerVerificationId,
 
       provider_cancelled_id:
-        providerResult?.cancelled_id ||
-        null,
+        providerResult.cancelled_id,
 
-      provider_cancelled_id_type:
-        providerResult?.cancelled_id_type ||
-        null,
-
-      refunded:
-        refunded,
+      refunded,
 
       refund_amount:
-        refunded
-          ? refundAmount
-          : 0,
+        refunded ? refundAmount : 0,
 
       balance_after:
         balanceAfter,
 
-      status:
-        "cancelled"
+      status: "cancelled"
     });
 
   } catch (error) {
@@ -1065,23 +649,17 @@ export default async function handler(
       error
     );
 
-
     const message =
       error?.message ||
       "Unable to cancel number.";
 
-
     return res.status(
-      message ===
-        "Unauthorized."
+      message === "Unauthorized."
         ? 401
         : 500
     ).json({
-      success:
-        false,
-
-      error:
-        message
+      success: false,
+      error: message
     });
   }
 }
