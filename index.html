@@ -5165,18 +5165,31 @@
         return;
       }
 
-      const verificationId =
-        item.provider_order_id ||
-        item.providerOrderId ||
-        item.verification_id ||
-        item.verificationId ||
-        item.verification?.request_id ||
-        item.verification?.requestId ||
-        item.verification?.id;
+      /*
+        IMPORTANT:
+        Cancellation is handled directly by Supabase.
+        We do NOT require a verification ID in the browser.
 
-      if (!verificationId) {
+        The Supabase function:
+        cancel_virtual_number(text)
+
+        finds the customer's order, checks the provider
+        expiry time, marks the order expired and refunds
+        the customer's wallet when the provider expiry
+        has been reached.
+      */
+
+      const identifier =
+        item.id ||
+        item.order_id ||
+        item.orderId ||
+        item.phone_number ||
+        item.phoneNumber ||
+        item.number;
+
+      if (!identifier) {
         showToast(
-          "Verification ID not found.",
+          "Order information not found.",
           "error"
         );
         return;
@@ -5199,7 +5212,7 @@
 
       const confirmed =
         window.confirm(
-          "Are you sure you want to cancel this number? The amount paid for this number will be refunded to your wallet."
+          "Are you sure you want to cancel this number? If the provider has already expired the number, the amount paid will be refunded to your wallet."
         );
 
       if (!confirmed) {
@@ -5211,42 +5224,49 @@
 
       try {
 
-        const accessToken = await getCurrentAccessToken();
+        /*
+          Call Supabase directly.
+          No /api/cancel call and no verification-ID
+          lookup is required on the frontend.
+        */
 
-        if (!accessToken) {
-          throw new Error(
-            "Your session has expired. Please log in again."
-          );
-        }
-
-        const response =
-          await fetch(
-            `/api/cancel?id=${encodeURIComponent(verificationId)}`,
+        const { data, error } =
+          await supabaseClient.rpc(
+            "cancel_virtual_number",
             {
-              method: "DELETE",
-              headers: {
-                Authorization:
-                  `Bearer ${accessToken}`
-              }
+              p_identifier: String(identifier)
             }
           );
 
-        const result =
-          await response.json();
+        if (error) {
+          console.error(
+            "Supabase cancellation error:",
+            error
+          );
 
-        if (!response.ok || !result?.success) {
           throw new Error(
-            result?.error ||
+            error.message ||
+            "Unable to cancel number."
+          );
+        }
+
+        if (!data?.success) {
+          throw new Error(
+            data?.error ||
             "Unable to cancel number."
           );
         }
 
         showToast(
-          result.message ||
+          data.message ||
           "Number cancelled successfully. Your wallet has been refunded.",
           "success"
         );
 
+        /*
+          Reload the order list so the cancelled/expired
+          number disappears from Active Numbers.
+        */
         await loadActiveNumbers();
 
         if (typeof loadWallet === "function") {
@@ -5264,7 +5284,7 @@
       } catch (error) {
 
         console.error(
-          "Cancel number error:",
+          "Supabase cancel number error:",
           error
         );
 
