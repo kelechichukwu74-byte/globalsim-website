@@ -1,556 +1,986 @@
+import { sureVerificationRequest } from "./_lib.js";
+
+const SUPABASE_URL =
+  process.env.SUPABASE_URL ||
+  "https://rfitbmkizfmwfqqskwhy.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+  process.env.SUPABASE_PUBLISHABLE_KEY ||
+  "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
+
+const SUPABASE_SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+
 /* =========================================================
-   ACTIVE NUMBERS
+   SUPABASE REQUEST
    ========================================================= */
 
-async function loadActiveNumbers() {
+async function supabaseRequest(path, options = {}) {
 
-  const container =
-    $("activeNumbersContainer");
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY is not configured."
+    );
+  }
 
-  container.innerHTML =
-    '<div class="loading">Loading active numbers...</div>';
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/${path}`,
+    {
+      ...options,
 
-  try {
+      headers: {
+        apikey:
+          SUPABASE_SERVICE_ROLE_KEY,
 
-    const accessToken =
-      await getCurrentAccessToken();
+        Authorization:
+          `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
 
-    if (!accessToken) {
-      throw new Error(
-        "Please log in again."
-      );
-    }
+        "Content-Type":
+          "application/json",
 
-    const response =
-      await fetch("/api/active", {
-        method: "GET",
-        headers: {
-          Authorization:
-            `Bearer ${accessToken}`,
-          Accept:
-            "application/json"
-        }
-      });
+        Accept:
+          "application/json",
 
-    const result =
-      await response
-        .json()
-        .catch(() => ({}));
+        Prefer:
+          "return=representation",
 
-    if (
-      !response.ok ||
-      result?.success === false
-    ) {
-      throw new Error(
-        result?.error ||
-        result?.message ||
-        "Unable to load active numbers."
-      );
-    }
-
-    let numbers =
-      Array.isArray(result)
-        ? result
-        : (
-            result?.numbers ||
-            result?.activations ||
-            result?.data ||
-            []
-          );
-
-    /*
-     * Normalize nested API responses.
-     */
-
-    for (
-      let i = 0;
-      i < 3 &&
-      numbers &&
-      !Array.isArray(numbers);
-      i++
-    ) {
-
-      if (
-        Array.isArray(numbers?.numbers)
-      ) {
-
-        numbers =
-          numbers.numbers;
-
-      } else if (
-        Array.isArray(numbers?.activations)
-      ) {
-
-        numbers =
-          numbers.activations;
-
-      } else if (
-        Array.isArray(numbers?.data)
-      ) {
-
-        numbers =
-          numbers.data;
-
-      } else {
-
-        break;
+        ...(options.headers || {})
       }
     }
+  );
 
-    if (!Array.isArray(numbers)) {
-      numbers = [];
-    }
+  const text =
+    await response.text();
 
-    /*
-     * IMPORTANT:
-     *
-     * Preserve the REAL provider verification ID.
-     * This is the ID required by SureVerification
-     * for SMS and cancellation.
-     */
+  let data = {};
 
-    numbers =
-      numbers.map(item => {
-
-        const verificationId =
-          item?.provider_verification_id ||
-          item?.providerVerificationId ||
-          item?.verification_id ||
-          item?.verificationId ||
-          item?.verification?.id ||
-          "";
-
-        return {
-          ...item,
-
-          provider_verification_id:
-            verificationId,
-
-          providerVerificationId:
-            verificationId,
-
-          verification_id:
-            verificationId,
-
-          verificationId:
-            verificationId
-        };
-      });
-
-    /*
-     * Make the numbers available to
-     * cancelActiveNumber().
-     */
-
-    window.globalSimActiveNumbers =
-      numbers;
-
-    if (!numbers.length) {
-
-      container.innerHTML =
-        `
-        <div class="empty-state">
-          You do not have any active numbers yet.
-        </div>
-        `;
-
-      return;
-    }
-
-    container.innerHTML =
-      `
-      ${numbers.map((item, index) => {
-
-        const phone =
-          item.phone_number ||
-          item.phoneNumber ||
-          item.number ||
-          "—";
-
-        const service =
-          item.service_name ||
-          item.serviceName ||
-          item.service ||
-          "—";
-
-        const status =
-          item.status ||
-          "active";
-
-        const verificationId =
-          item.provider_verification_id ||
-          item.providerVerificationId ||
-          "";
-
-        console.log(
-          "Active number:",
-          phone,
-          "Verification ID:",
-          verificationId
-        );
-
-        return `
-          <div class="active-number-card">
-
-            <div class="active-number-header">
-
-              <div>
-                ${escapeHtml(service)}
-              </div>
-
-              <span class="status-badge">
-                ${escapeHtml(status)}
-              </span>
-
-            </div>
-
-            <div class="active-number-phone">
-              ${escapeHtml(phone)}
-            </div>
-
-            <button
-              type="button"
-              class="copy-number-btn"
-              onclick="copyNumber('${escapeHtml(
-                String(phone)
-              )}')"
-            >
-              📋 Copy Number
-            </button>
-
-            <div
-              class="sms-box"
-              id="smsBox-${index}"
-            >
-
-              <div class="sms-header">
-                <strong>SMS</strong>
-
-                <span
-                  id="smsStatus-${index}"
-                >
-                  Waiting for SMS...
-                </span>
-              </div>
-
-              <div
-                id="smsMessage-${index}"
-              >
-                Waiting for incoming SMS...
-              </div>
-
-            </div>
-
-            <div
-              class="cancel-availability"
-              id="cancelAvailability-${index}"
-            >
-              Cancellation is now available.
-            </div>
-
-            <button
-              type="button"
-              id="cancelButton-${index}"
-              class="cancel-number-btn"
-              onclick="cancelActiveNumber(${index})"
-            >
-              ❌ Cancel Number
-            </button>
-
-            <div class="purchase-date">
-              Purchased:
-              ${formatDate(
-                item.created_at ||
-                item.createdAt
-              )}
-            </div>
-
-          </div>
-        `;
-
-      }).join("")}
-      `;
-
-  } catch (error) {
-
-    console.error(
-      "Active numbers error:",
-      error
+  try {
+    data =
+      text
+        ? JSON.parse(text)
+        : {};
+  } catch {
+    throw new Error(
+      `Supabase returned invalid JSON (HTTP ${response.status}).`
     );
-
-    container.innerHTML =
-      `
-      <div class="empty-state">
-        ${escapeHtml(
-          error?.message ||
-          "Unable to load active numbers."
-        )}
-      </div>
-      `;
   }
+
+  if (!response.ok) {
+
+    throw new Error(
+      data?.message ||
+      data?.hint ||
+      data?.details ||
+      `Supabase request failed (HTTP ${response.status}).`
+    );
+  }
+
+  return data;
 }
 
 
 /* =========================================================
-   CANCEL ACTIVE NUMBER
+   AUTHENTICATED USER
    ========================================================= */
 
-async function cancelActiveNumber(index) {
+function getBearerToken(req) {
 
-  const numbers =
-    window.globalSimActiveNumbers || [];
-
-  const item =
-    numbers[index];
-
-  if (!item) {
-
-    showToast(
-      "Number not found.",
-      "error"
-    );
-
-    return;
-  }
-
-  /*
-   * THIS IS THE IMPORTANT PART.
-   *
-   * provider_verification_id is the real
-   * SureVerification verification ID.
-   */
-
-  let verificationId =
-    item.provider_verification_id ||
-    item.providerVerificationId ||
-    item.verification_id ||
-    item.verificationId ||
-    item.verification?.id ||
+  const header =
+    req.headers?.authorization ||
+    req.headers?.Authorization ||
     "";
 
-  /*
-   * If the API response still doesn't contain
-   * the ID, try to retrieve the order directly
-   * from Supabase using the phone number.
-   */
+  if (!header.startsWith("Bearer ")) {
+    return null;
+  }
 
-  if (!verificationId) {
+  return header
+    .slice(7)
+    .trim();
+}
 
-    try {
 
-      const phoneNumber =
-        item.phone_number ||
-        item.phoneNumber ||
-        item.number ||
-        "";
+async function getAuthenticatedUser(req) {
 
-      if (phoneNumber) {
+  const token =
+    getBearerToken(req);
 
-        const {
-          data,
-          error
-        } = await supabaseClient
-          .from("orders")
-          .select(
-            "id,provider_verification_id,provider_order_id,phone_number,status"
-          )
-          .eq(
-            "user_id",
-            currentUser.id
-          )
-          .eq(
-            "phone_number",
-            phoneNumber
-          )
-          .order(
-            "created_at",
-            {
-              ascending: false
-            }
-          )
-          .limit(1)
-          .maybeSingle();
+  if (!token) {
+    throw new Error("Unauthorized.");
+  }
 
-        if (!error && data) {
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/auth/v1/user`,
+      {
+        method: "GET",
 
-          verificationId =
-            data.provider_verification_id ||
-            "";
+        headers: {
+          apikey:
+            SUPABASE_PUBLISHABLE_KEY,
+
+          Authorization:
+            `Bearer ${token}`,
+
+          Accept:
+            "application/json"
         }
       }
-
-    } catch (lookupError) {
-
-      console.error(
-        "Verification ID lookup error:",
-        lookupError
-      );
-    }
-  }
-
-  /*
-   * Still missing?
-   */
-
-  if (!verificationId) {
-
-    console.error(
-      "Cancellation failed. Full active number:",
-      item
     );
 
-    showToast(
-      "Verification ID not found.",
-      "error"
-    );
-
-    return;
+  if (!response.ok) {
+    throw new Error("Unauthorized.");
   }
 
-  console.log(
-    "Using verification ID for cancellation:",
-    verificationId
+  const user =
+    await response.json();
+
+  if (!user?.id) {
+    throw new Error("Unauthorized.");
+  }
+
+  return user;
+}
+
+
+/* =========================================================
+   URL ENCODING
+   ========================================================= */
+
+function quote(value) {
+
+  return encodeURIComponent(
+    String(value)
   );
 
-  const button =
-    $(`cancelButton-${index}`);
+}
 
-  if (!button) {
-    return;
+
+/* =========================================================
+   FIND ORDER
+   ========================================================= */
+
+async function findOrder(
+  userId,
+  identifier
+) {
+
+  const value =
+    String(identifier || "").trim();
+
+  if (!value) {
+    return null;
   }
 
-  if (button.disabled) {
 
-    showToast(
-      "Please wait until cancellation is available.",
-      "error"
-    );
-
-    return;
-  }
-
-  const confirmed =
-    window.confirm(
-      "Are you sure you want to cancel this number? The amount paid for this number will be refunded to your wallet."
-    );
-
-  if (!confirmed) {
-    return;
-  }
-
-  button.disabled =
-    true;
-
-  button.textContent =
-    "Cancelling...";
+  /*
+    First try the real Supabase order UUID.
+  */
 
   try {
 
-    const accessToken =
-      await getCurrentAccessToken();
-
-    if (!accessToken) {
-
-      throw new Error(
-        "Your session has expired. Please log in again."
+    const rows =
+      await supabaseRequest(
+        `orders?id=eq.${quote(value)}` +
+        `&user_id=eq.${quote(userId)}` +
+        `&select=*` +
+        `&limit=1`
       );
+
+    if (rows?.[0]) {
+      return rows[0];
     }
 
+  } catch {
     /*
-     * Your backend cancellation endpoint.
-     */
+      The identifier may not be a UUID.
+      Continue with the other identifiers.
+    */
+  }
 
-    const response =
-      await fetch(
-        `/api/cancel?id=${encodeURIComponent(
-          String(verificationId)
-        )}`,
+
+  /*
+    Try provider request/order ID.
+  */
+
+  const providerOrderRows =
+    await supabaseRequest(
+      `orders?provider_order_id=eq.${quote(value)}` +
+      `&user_id=eq.${quote(userId)}` +
+      `&select=*` +
+      `&order=created_at.desc` +
+      `&limit=1`
+    );
+
+  if (providerOrderRows?.[0]) {
+    return providerOrderRows[0];
+  }
+
+
+  /*
+    Try actual provider verification ID.
+  */
+
+  const verificationRows =
+    await supabaseRequest(
+      `orders?provider_verification_id=eq.${quote(value)}` +
+      `&user_id=eq.${quote(userId)}` +
+      `&select=*` +
+      `&order=created_at.desc` +
+      `&limit=1`
+    );
+
+  if (verificationRows?.[0]) {
+    return verificationRows[0];
+  }
+
+
+  /*
+    Finally allow the phone number.
+  */
+
+  const phoneRows =
+    await supabaseRequest(
+      `orders?phone_number=eq.${quote(value)}` +
+      `&user_id=eq.${quote(userId)}` +
+      `&select=*` +
+      `&order=created_at.desc` +
+      `&limit=1`
+    );
+
+  if (phoneRows?.[0]) {
+    return phoneRows[0];
+  }
+
+
+  return null;
+}
+
+
+/* =========================================================
+   REFUND CHECK
+   ========================================================= */
+
+async function hasRefund(
+  orderId
+) {
+
+  const rows =
+    await supabaseRequest(
+      `wallet_transactions` +
+      `?type=eq.refund` +
+      `&reference_id=eq.${quote(orderId)}` +
+      `&select=id,amount,created_at` +
+      `&limit=1`
+    );
+
+  return Boolean(
+    rows?.length
+  );
+}
+
+
+/* =========================================================
+   REFUND CUSTOMER
+   ========================================================= */
+
+async function refundOrder(
+  order
+) {
+
+  if (!order?.id) {
+    throw new Error(
+      "Order ID is missing."
+    );
+  }
+
+
+  /*
+    NEVER refund the same order twice.
+  */
+
+  if (
+    await hasRefund(order.id)
+  ) {
+
+    return {
+      refunded: true,
+      alreadyRefunded: true,
+      amount: Number(
+        order.customer_price || 0
+      )
+    };
+
+  }
+
+
+  const amount =
+    Number(
+      order.customer_price ??
+      order.selling_price ??
+      order.amount ??
+      0
+    );
+
+
+  if (
+    !Number.isFinite(amount) ||
+    amount <= 0
+  ) {
+
+    throw new Error(
+      "This order does not have a valid refundable amount."
+    );
+
+  }
+
+
+  /*
+    Get wallet.
+  */
+
+  const walletRows =
+    await supabaseRequest(
+      `wallets?user_id=eq.${quote(order.user_id)}` +
+      `&select=user_id,balance` +
+      `&limit=1`
+    );
+
+
+  let wallet =
+    walletRows?.[0];
+
+
+  /*
+    Create wallet if it somehow does not exist.
+  */
+
+  if (!wallet) {
+
+    const created =
+      await supabaseRequest(
+        "wallets",
         {
-          method: "DELETE",
+          method: "POST",
 
-          headers: {
-            Authorization:
-              `Bearer ${accessToken}`,
+          body: JSON.stringify({
+            user_id:
+              order.user_id,
 
-            Accept:
-              "application/json"
-          }
+            balance:
+              amount
+          })
         }
       );
 
-    const result =
-      await response
-        .json()
-        .catch(() => ({}));
+    wallet =
+      created?.[0] ||
+      {
+        user_id:
+          order.user_id,
 
-    console.log(
-      "Cancel API response:",
-      result
-    );
+        balance:
+          amount
+      };
 
-    if (
-      !response.ok ||
-      !result?.success
-    ) {
+  } else {
 
-      throw new Error(
-        result?.error ||
-        result?.message ||
-        "Unable to cancel number."
+    const before =
+      Number(
+        wallet.balance || 0
       );
-    }
 
-    showToast(
-      result.message ||
-      "Number cancelled successfully. Your wallet has been refunded.",
-      "success"
+    const after =
+      before + amount;
+
+
+    await supabaseRequest(
+      `wallets?user_id=eq.${quote(order.user_id)}`,
+      {
+        method: "PATCH",
+
+        body: JSON.stringify({
+          balance:
+            after,
+
+          updated_at:
+            new Date().toISOString()
+        })
+      }
     );
+
 
     /*
-     * Reload everything after successful
-     * cancellation.
-     */
+      Record the refund.
+    */
 
-    await loadActiveNumbers();
+    await supabaseRequest(
+      "wallet_transactions",
+      {
+        method: "POST",
 
-    if (
-      typeof loadWallet ===
-      "function"
-    ) {
-      await loadWallet();
+        body: JSON.stringify({
+          user_id:
+            order.user_id,
+
+          type:
+            "refund",
+
+          amount:
+            amount,
+
+          balance_before:
+            before,
+
+          balance_after:
+            after,
+
+          reference_id:
+            order.id,
+
+          description:
+            "Refund for cancelled or expired virtual number"
+        })
+      }
+    );
+
+  }
+
+
+  return {
+    refunded: true,
+    alreadyRefunded: false,
+    amount
+  };
+
+}
+
+
+/* =========================================================
+   UPDATE ORDER
+   ========================================================= */
+
+async function updateOrder(
+  orderId,
+  userId,
+  values
+) {
+
+  return await supabaseRequest(
+    `orders?id=eq.${quote(orderId)}` +
+    `&user_id=eq.${quote(userId)}`,
+    {
+      method:
+        "PATCH",
+
+      body:
+        JSON.stringify({
+          ...values,
+
+          updated_at:
+            new Date().toISOString()
+        })
+    }
+  );
+
+}
+
+
+/* =========================================================
+   PROVIDER ERROR LOOKS LIKE EXPIRATION
+   ========================================================= */
+
+function looksExpired(
+  error
+) {
+
+  const message =
+    String(
+      error?.message ||
+      ""
+    ).toLowerCase();
+
+  return (
+    message.includes("expired") ||
+    message.includes("already expired") ||
+    message.includes("not active") ||
+    message.includes("inactive") ||
+    message.includes("verification not found") ||
+    message.includes("verification has ended") ||
+    message.includes("number has expired")
+  );
+
+}
+
+
+/* =========================================================
+   MAIN CANCEL HANDLER
+   ========================================================= */
+
+export default async function handler(
+  req,
+  res
+) {
+
+  if (
+    req.method !== "DELETE" &&
+    req.method !== "POST"
+  ) {
+
+    return res.status(405).json({
+      success:
+        false,
+
+      error:
+        "Method not allowed"
+    });
+
+  }
+
+
+  try {
+
+    /*
+      Authenticate customer.
+    */
+
+    const user =
+      await getAuthenticatedUser(req);
+
+
+    /*
+      Accept all of these so the old frontend
+      can still work while we transition it:
+
+      ?orderId=
+      ?order_id=
+      ?phone=
+      ?phone_number=
+      ?id=
+    */
+
+    const identifier =
+      req.query?.orderId ||
+      req.query?.order_id ||
+      req.query?.phone ||
+      req.query?.phone_number ||
+      req.query?.id ||
+      req.body?.orderId ||
+      req.body?.order_id ||
+      req.body?.phone ||
+      req.body?.phone_number ||
+      req.body?.id;
+
+
+    if (!identifier) {
+
+      return res.status(400).json({
+        success:
+          false,
+
+        error:
+          "Order ID or phone number is required."
+      });
+
     }
 
-    if (
-      typeof loadDashboard ===
-      "function"
-    ) {
-      await loadDashboard();
+
+    /*
+      Find the customer's actual order.
+    */
+
+    const order =
+      await findOrder(
+        user.id,
+        identifier
+      );
+
+
+    if (!order) {
+
+      return res.status(404).json({
+        success:
+          false,
+
+        error:
+          "Order not found."
+      });
+
     }
 
+
+    /*
+      Make sure this order belongs to the
+      authenticated customer.
+    */
+
     if (
-      typeof loadOrderHistory ===
-      "function"
+      String(order.user_id) !==
+      String(user.id)
     ) {
-      await loadOrderHistory();
+
+      return res.status(403).json({
+        success:
+          false,
+
+        error:
+          "You are not allowed to cancel this order."
+      });
+
     }
+
+
+    /*
+      Already cancelled/refunded.
+    */
+
+    if (
+      String(order.status).toLowerCase() ===
+        "cancelled" ||
+      String(order.status).toLowerCase() ===
+        "canceled"
+    ) {
+
+      const refund =
+        await refundOrder(order);
+
+      return res.status(200).json({
+        success:
+          true,
+
+        message:
+          refund.alreadyRefunded
+            ? "This number was already cancelled and refunded."
+            : "This number was already cancelled. Your wallet has been refunded.",
+
+        order_id:
+          order.id,
+
+        status:
+          "cancelled",
+
+        refunded:
+          true,
+
+        refund_amount:
+          refund.amount
+      });
+
+    }
+
+
+    /*
+      Check provider expiration timestamp
+      BEFORE attempting cancellation.
+    */
+
+    const expiration =
+      order.provider_expired_at
+        ? new Date(
+            order.provider_expired_at
+          )
+        : null;
+
+    const now =
+      new Date();
+
+
+    if (
+      expiration &&
+      !Number.isNaN(
+        expiration.getTime()
+      ) &&
+      expiration.getTime() <=
+        now.getTime()
+    ) {
+
+      /*
+        The provider number has already expired.
+        Do NOT attempt a cancellation against
+        an already expired verification.
+      */
+
+      const refund =
+        await refundOrder(order);
+
+
+      await updateOrder(
+        order.id,
+        user.id,
+        {
+          status:
+            "expired",
+
+          provider_expired_at:
+            order.provider_expired_at
+        }
+      );
+
+
+      return res.status(200).json({
+        success:
+          true,
+
+        message:
+          refund.alreadyRefunded
+            ? "This number has already expired."
+            : "This number has expired and the amount has been refunded to your wallet.",
+
+        order_id:
+          order.id,
+
+        status:
+          "expired",
+
+        expired:
+          true,
+
+        refunded:
+          true,
+
+        refund_amount:
+          refund.amount
+      });
+
+    }
+
+
+    /*
+      We need the REAL SureVerification
+      verification.id here.
+
+      NOT request_id.
+      NOT provider_order_id.
+      NOT the phone number.
+    */
+
+    const verificationId =
+      order.provider_verification_id;
+
+
+    if (!verificationId) {
+
+      /*
+        If the provider ID is missing, do not
+        touch the wallet.
+
+        This protects the customer's money.
+      */
+
+      return res.status(409).json({
+        success:
+          false,
+
+        error:
+          "This order is missing its SureVerification verification ID. Your wallet has NOT been charged again and no refund was processed.",
+
+        order_id:
+          order.id,
+
+        provider_order_id:
+          order.provider_order_id ||
+          null
+      });
+
+    }
+
+
+    /*
+      SureVerification recommends waiting
+      at least two minutes before cancellation.
+    */
+
+    if (order.created_at) {
+
+      const created =
+        new Date(
+          order.created_at
+        );
+
+      if (
+        !Number.isNaN(
+          created.getTime()
+        )
+      ) {
+
+        const age =
+          Date.now() -
+          created.getTime();
+
+        const twoMinutes =
+          2 * 60 * 1000;
+
+        if (
+          age <
+          twoMinutes
+        ) {
+
+          const remaining =
+            Math.ceil(
+              (twoMinutes - age) /
+              1000
+            );
+
+          return res.status(400).json({
+            success:
+              false,
+
+            error:
+              `Cancellation becomes available after 2 minutes. Please wait ${remaining} seconds.`
+          });
+
+        }
+
+      }
+
+    }
+
+
+    /*
+      CANCEL AT SUREVERIFICATION.
+    */
+
+    try {
+
+      await sureVerificationRequest(
+        `/verifications/cancel/${encodeURIComponent(
+          String(
+            verificationId
+          )
+        )}`,
+        {
+          method:
+            "DELETE"
+        }
+      );
+
+    } catch (providerError) {
+
+      console.error(
+        "SureVerification cancellation error:",
+        providerError
+      );
+
+
+      /*
+        If provider says it has already expired,
+        synchronize our database and refund.
+      */
+
+      if (
+        looksExpired(
+          providerError
+        )
+      ) {
+
+        const refund =
+          await refundOrder(order);
+
+
+        await updateOrder(
+          order.id,
+          user.id,
+          {
+            status:
+              "expired"
+          }
+        );
+
+
+        return res.status(200).json({
+          success:
+            true,
+
+          message:
+            refund.alreadyRefunded
+              ? "The number has already expired."
+              : "The number had already expired and your wallet has been refunded.",
+
+          order_id:
+            order.id,
+
+          status:
+            "expired",
+
+          expired:
+            true,
+
+          refunded:
+            true,
+
+          refund_amount:
+            refund.amount
+        });
+
+      }
+
+
+      throw providerError;
+
+    }
+
+
+    /*
+      Provider cancellation succeeded.
+    */
+
+    const refund =
+      await refundOrder(order);
+
+
+    await updateOrder(
+      order.id,
+      user.id,
+      {
+        status:
+          "cancelled"
+      }
+    );
+
+
+    return res.status(200).json({
+      success:
+        true,
+
+      message:
+        refund.alreadyRefunded
+          ? "Number cancelled successfully."
+          : "Number cancelled successfully. Your wallet has been refunded.",
+
+      order_id:
+        order.id,
+
+      verification_id:
+        verificationId,
+
+      status:
+        "cancelled",
+
+      refunded:
+        true,
+
+      refund_amount:
+        refund.amount
+    });
+
 
   } catch (error) {
 
     console.error(
-      "Cancel number error:",
+      "Cancel API error:",
       error
     );
 
-    showToast(
-      error?.message ||
-      "Unable to cancel number.",
-      "error"
-    );
+    return res.status(500).json({
+      success:
+        false,
 
-    button.disabled =
-      false;
+      error:
+        error?.message ||
+        "Unable to cancel number."
+    });
 
-    button.textContent =
-      "❌ Cancel Number";
   }
+
 }
