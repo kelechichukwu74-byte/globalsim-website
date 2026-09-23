@@ -4885,298 +4885,85 @@
 
     async function loadActiveNumbers() {
 
-      const container =
-        $("activeNumbersContainer");
-
-      container.innerHTML =
-        '<div class="loading">Loading active numbers...</div>';
+      const container = $("activeNumbersContainer");
+      container.innerHTML = '<div class="loading">Loading active numbers...</div>';
 
       try {
-
-        const accessToken =
-          await getCurrentAccessToken();
-
-        if (!accessToken) {
+        if (!currentUser?.id) {
           throw new Error("Please log in again.");
         }
 
-        const response =
-          await fetch("/api/active", {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              Accept: "application/json"
-            }
-          });
+        // Read the user's orders directly from Supabase.
+        // This avoids depending on the /api/active serverless function.
+        const { data, error } = await supabaseClient
+          .from("orders")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .order("created_at", { ascending: false });
 
-        const result =
-          await response.json().catch(() => ({}));
-
-        /*
-          Convert any API error value into a real text message.
-          This prevents [object Object] from appearing in the UI.
-        */
-        function activeErrorMessage(value, fallback) {
-          if (value === null || value === undefined || value === "") {
-            return fallback;
-          }
-
-          if (typeof value === "string" || typeof value === "number") {
-            return String(value);
-          }
-
-          if (typeof value === "object") {
-            const nested =
-              value.message ??
-              value.error ??
-              value.details ??
-              value.hint ??
-              value.code;
-
-            if (
-              nested !== undefined &&
-              nested !== null &&
-              nested !== value
-            ) {
-              return activeErrorMessage(nested, fallback);
-            }
-
-            try {
-              return JSON.stringify(value);
-            } catch (_) {
-              return fallback;
-            }
-          }
-
-          return String(value);
+        if (error) {
+          throw new Error(error.message || "Unable to load active numbers.");
         }
 
-        if (!response.ok || result?.success === false) {
-          throw new Error(
-            activeErrorMessage(
-              result?.error ?? result?.message,
-              `Unable to load active numbers (HTTP ${response.status}).`
-            )
-          );
-        }
+        const terminalStatuses = new Set([
+          "failed",
+          "cancelled",
+          "canceled",
+          "expired",
+          "refunded",
+          "rejected"
+        ]);
 
-        let numbers =
-          Array.isArray(result)
-            ? result
-            : (
-                result?.numbers ??
-                result?.activations ??
-                result?.data ??
-                []
-              );
-
-        /*
-          Accept all common response shapes:
-          []
-          { numbers: [] }
-          { activations: [] }
-          { data: [] }
-          { data: { numbers: [] } }
-          { data: { activations: [] } }
-          { data: { ...single order... } }
-        */
-        for (let i = 0; i < 3 && numbers && !Array.isArray(numbers); i++) {
-          if (Array.isArray(numbers?.numbers)) {
-            numbers = numbers.numbers;
-          } else if (Array.isArray(numbers?.activations)) {
-            numbers = numbers.activations;
-          } else if (Array.isArray(numbers?.data)) {
-            numbers = numbers.data;
-          } else {
-            break;
-          }
-        }
-
-        if (!Array.isArray(numbers)) {
-          numbers =
-            numbers && typeof numbers === "object"
-              ? [numbers]
-              : [];
-        }
-
-        function activeValue(value, fallback = "—") {
-          if (
-            value === null ||
-            value === undefined ||
-            value === ""
-          ) {
-            return fallback;
-          }
-
-          if (
-            typeof value === "string" ||
-            typeof value === "number" ||
-            typeof value === "boolean"
-          ) {
-            return String(value);
-          }
-
-          if (typeof value === "object") {
-            const candidates = [
-              value.phone_number,
-              value.phoneNumber,
-              value.number,
-              value.phone,
-              value.value,
-              value.text,
-              value.name,
-              value.code,
-              value.id
-            ];
-
-            for (const candidate of candidates) {
-              if (
-                candidate !== null &&
-                candidate !== undefined &&
-                candidate !== ""
-              ) {
-                const converted =
-                  activeValue(candidate, "");
-
-                if (converted && converted !== "[object Object]") {
-                  return converted;
-                }
-              }
-            }
-
-            try {
-              const json = JSON.stringify(value);
-              return json || fallback;
-            } catch (_) {
-              return fallback;
-            }
-          }
-
-          return String(value);
-        }
+        const numbers = (Array.isArray(data) ? data : []).filter(order => {
+          const status = String(order?.status || "active").toLowerCase();
+          return !terminalStatuses.has(status) &&
+                 (order?.phone_number || order?.number);
+        });
 
         if (!numbers.length) {
-          container.innerHTML =
-            '<div class="empty-state">You do not have any active numbers yet.</div>';
+          container.innerHTML = '<div class="empty-state">You do not have any active numbers yet.</div>';
           return;
         }
 
         container.innerHTML = `
-
           <div class="table-wrapper">
-
             <table class="data-table">
-
               <thead>
                 <tr>
                   <th>Number</th>
                   <th>Service</th>
+                  <th>Country</th>
                   <th>Status</th>
                   <th>Created</th>
                 </tr>
               </thead>
-
               <tbody>
-
                 ${numbers.map(item => {
-
-                  const number =
-                    activeValue(
-                      item?.phone_number ??
-                      item?.phoneNumber ??
-                      item?.number ??
-                      item?.phone ??
-                      item?.activation?.phone_number ??
-                      item?.activation?.phoneNumber ??
-                      item?.activation?.number
-                    );
-
-                  const service =
-                    activeValue(
-                      item?.service_name ??
-                      item?.serviceName ??
-                      item?.service ??
-                      item?.activation?.service_name ??
-                      item?.activation?.serviceName ??
-                      item?.activation?.service ??
-                      item?.name
-                    );
-
-                  const status =
-                    activeValue(
-                      item?.status ??
-                      item?.activation?.status,
-                      "active"
-                    );
-
-                  const created =
-                    item?.created_at ??
-                    item?.createdAt ??
-                    item?.activation?.created_at ??
-                    item?.activation?.createdAt ??
-                    null;
+                  const number = item.phone_number || item.number || item.phone || "—";
+                  const service = item.service_name || item.service || "—";
+                  const country = item.country_name || item.country || "—";
+                  const status = item.status || "active";
 
                   return `
                     <tr>
-                      <td>
-                        <strong>
-                          ${escapeHtml(number)}
-                        </strong>
-                      </td>
-
-                      <td>
-                        ${escapeHtml(service)}
-                      </td>
-
-                      <td>
-                        ${statusBadge(status)}
-                      </td>
-
-                      <td>
-                        ${formatDate(created)}
-                      </td>
+                      <td><strong>${escapeHtml(String(number))}</strong></td>
+                      <td>${escapeHtml(String(service))}</td>
+                      <td>${escapeHtml(String(country))}</td>
+                      <td>${statusBadge(status)}</td>
+                      <td>${formatDate(item.created_at || item.createdAt)}</td>
                     </tr>
                   `;
-
                 }).join("")}
-
               </tbody>
-
             </table>
-
           </div>
-
         `;
 
       } catch (error) {
-
-        console.error(
-          "Active numbers error:",
-          error
-        );
-
-        let message =
-          error?.message ||
-          "Unable to load active numbers.";
-
-        if (typeof message === "object") {
-          try {
-            message = JSON.stringify(message);
-          } catch (_) {
-            message = "Unable to load active numbers.";
-          }
-        }
-
-        if (message === "[object Object]") {
-          message =
-            "The Active Numbers API returned an unexpected response.";
-        }
-
-        container.innerHTML =
-          `<div class="empty-state">${escapeHtml(message)}</div>`;
-
+        console.error("Active numbers error:", error);
+        const message = error?.message || "Unable to load active numbers.";
+        container.innerHTML = `<div class="empty-state">${escapeHtml(String(message))}</div>`;
       }
-
     }
 
     /* =========================================================
