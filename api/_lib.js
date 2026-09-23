@@ -1,30 +1,33 @@
 const BASE_URL = "https://sureverifications.com/api/v1";
 
-export const SURE_VERIFICATION_SERVERS = {
-  usa: ["usa-server-2", "usa-server-1", "global-server-1", "global-server-2"],
-  global: ["global-server-1", "global-server-2"]
-};
-
-export function isUsaCountry(country) {
+export function getServerForCountry(country) {
   const value = String(country || "").trim().toLowerCase();
-  return [
-    "us",
-    "usa",
-    "united states",
-    "united states of america",
-    "united_states",
-    "united-states"
-  ].includes(value);
+
+  if (
+    value === "us" ||
+    value === "usa" ||
+    value === "united states" ||
+    value === "united states of america"
+  ) {
+    return "usa-server-2";
+  }
+
+  return "global-server-2";
 }
 
 export function getServersForCountry(country) {
-  return isUsaCountry(country)
-    ? [...SURE_VERIFICATION_SERVERS.usa]
-    : [...SURE_VERIFICATION_SERVERS.global];
-}
+  const value = String(country || "").trim().toLowerCase();
 
-export function getServerForCountry(country) {
-  return getServersForCountry(country)[0];
+  if (
+    value === "us" ||
+    value === "usa" ||
+    value === "united states" ||
+    value === "united states of america"
+  ) {
+    return ["usa-server-2"];
+  }
+
+  return ["global-server-2", "global-server-1"];
 }
 
 export async function sureVerificationRequest(path, options = {}) {
@@ -41,14 +44,19 @@ export async function sureVerificationRequest(path, options = {}) {
       "x-api-key": apiKey,
       ...(options.headers || {})
     },
-    ...(options.body !== undefined ? { body: options.body } : {})
+    ...(options.body !== undefined
+      ? { body: options.body }
+      : {})
   });
 
-  const text = await response.text();
+  const responseText = await response.text();
+
   let data = {};
 
   try {
-    data = text ? JSON.parse(text) : {};
+    data = responseText
+      ? JSON.parse(responseText)
+      : {};
   } catch {
     throw new Error(
       `SureVerification returned invalid JSON (HTTP ${response.status}).`
