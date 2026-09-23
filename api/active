@@ -5,73 +5,119 @@ const SUPABASE_URL =
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+
+/* =========================================================
+   GET BEARER TOKEN
+========================================================= */
+
 function getBearerToken(req) {
   const header =
     req.headers?.authorization ||
     req.headers?.Authorization ||
     "";
 
-  if (!header.toLowerCase().startsWith("bearer ")) {
+  if (
+    !header
+      .toLowerCase()
+      .startsWith("bearer ")
+  ) {
     return null;
   }
 
   return header.slice(7).trim();
 }
 
+
+/* =========================================================
+   AUTHENTICATE USER
+========================================================= */
+
 async function getAuthenticatedUser(req) {
-  const token = getBearerToken(req);
+  const token =
+    getBearerToken(req);
 
   if (!token) {
-    throw new Error("Unauthorized.");
+    throw new Error(
+      "Unauthorized."
+    );
   }
 
   if (!SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY is not configured."
+    );
   }
 
-  const response = await fetch(
-    `${SUPABASE_URL}/auth/v1/user`,
-    {
-      headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json"
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/auth/v1/user`,
+      {
+        headers: {
+          apikey:
+            SUPABASE_SERVICE_ROLE_KEY,
+
+          Authorization:
+            `Bearer ${token}`,
+
+          Accept:
+            "application/json"
+        }
       }
-    }
-  );
+    );
 
   if (!response.ok) {
-    throw new Error("Unauthorized.");
+    throw new Error(
+      "Unauthorized."
+    );
   }
 
-  const user = await response.json();
+  const user =
+    await response.json();
 
   if (!user?.id) {
-    throw new Error("Unauthorized.");
+    throw new Error(
+      "Unauthorized."
+    );
   }
 
   return user;
 }
 
-async function supabaseRequest(path) {
-  const response = await fetch(
-    `${SUPABASE_URL}/rest/v1/${path}`,
-    {
-      method: "GET",
-      headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        Accept: "application/json"
-      }
-    }
-  );
 
-  const text = await response.text();
+/* =========================================================
+   SUPABASE GET REQUEST
+========================================================= */
+
+async function supabaseRequest(path) {
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/rest/v1/${path}`,
+      {
+        method: "GET",
+
+        headers: {
+          apikey:
+            SUPABASE_SERVICE_ROLE_KEY,
+
+          Authorization:
+            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+
+          Accept:
+            "application/json"
+        }
+      }
+    );
+
+  const text =
+    await response.text();
 
   let data = {};
 
   try {
-    data = text ? JSON.parse(text) : {};
+    data =
+      text
+        ? JSON.parse(text)
+        : {};
   } catch {
     throw new Error(
       `Supabase returned invalid JSON (HTTP ${response.status}).`
@@ -90,7 +136,15 @@ async function supabaseRequest(path) {
   return data;
 }
 
-export default async function handler(req, res) {
+
+/* =========================================================
+   MAIN HANDLER
+========================================================= */
+
+export default async function handler(
+  req,
+  res
+) {
   if (req.method !== "GET") {
     return res.status(405).json({
       success: false,
@@ -98,65 +152,165 @@ export default async function handler(req, res) {
     });
   }
 
+
   try {
-    const user = await getAuthenticatedUser(req);
+    /* -----------------------------------------------------
+       AUTHENTICATE
+    ----------------------------------------------------- */
 
-    const orders = await supabaseRequest(
-      `orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,provider_order_id,service_country_price_id,service_name,country_name,customer_price,provider_cost,profit,status,phone_number,created_at&order=created_at.desc`
-    );
+    const user =
+      await getAuthenticatedUser(req);
 
-    const terminalStatuses = new Set([
-      "failed",
-      "cancelled",
-      "canceled",
-      "expired",
-      "refunded",
-      "rejected"
-    ]);
 
-    const activeNumbers = (Array.isArray(orders) ? orders : [])
-      .filter((order) => {
-        const status =
-          String(order?.status || "active").toLowerCase();
+    /* -----------------------------------------------------
+       GET USER ORDERS
+    ----------------------------------------------------- */
 
-        return !terminalStatuses.has(status);
-      })
-      .map((order) => ({
-        ...order,
+    const orders =
+      await supabaseRequest(
+        `orders?user_id=eq.${encodeURIComponent(
+          user.id
+        )}&select=id,provider_order_id,provider_verification_id,service_country_price_id,service_name,country_name,customer_price,provider_cost,profit,status,phone_number,provider_expired_at,created_at,updated_at&order=created_at.desc`
+      );
 
-        verification_id:
-          order.provider_order_id,
 
-        selling_price:
-          order.customer_price,
+    /* -----------------------------------------------------
+       TERMINAL STATUSES
+    ----------------------------------------------------- */
 
-        number:
-          order.phone_number,
+    const terminalStatuses =
+      new Set([
+        "failed",
+        "cancelled",
+        "canceled",
+        "expired",
+        "refunded",
+        "rejected"
+      ]);
 
-        service:
-          order.service_name
-      }));
+
+    /* -----------------------------------------------------
+       BUILD ACTIVE NUMBERS
+    ----------------------------------------------------- */
+
+    const activeNumbers =
+      (Array.isArray(orders)
+        ? orders
+        : []
+      )
+        .filter((order) => {
+          const status =
+            String(
+              order?.status ||
+              "active"
+            ).toLowerCase();
+
+          return !terminalStatuses.has(
+            status
+          );
+        })
+        .map((order) => {
+
+          /*
+           * IMPORTANT:
+           *
+           * provider_verification_id is the REAL
+           * SureVerification verification.id.
+           *
+           * provider_order_id is only request_id.
+           */
+          const verificationId =
+            order?.provider_verification_id ||
+            null;
+
+
+          const expiredAt =
+            order?.provider_expired_at ||
+            null;
+
+
+          return {
+            ...order,
+
+            /*
+             * Real provider verification ID.
+             */
+            verification_id:
+              verificationId,
+
+            provider_verification_id:
+              verificationId,
+
+            /*
+             * Provider request/order ID remains
+             * available separately.
+             */
+            provider_order_id:
+              order.provider_order_id,
+
+            /*
+             * Existing frontend compatibility.
+             */
+            selling_price:
+              order.customer_price,
+
+            number:
+              order.phone_number,
+
+            service:
+              order.service_name,
+
+            /*
+             * Exact provider expiration timestamp.
+             */
+            expired_at:
+              expiredAt,
+
+            provider_expired_at:
+              expiredAt
+          };
+        });
+
+
+    /* -----------------------------------------------------
+       RETURN DATA
+    ----------------------------------------------------- */
 
     return res.status(200).json({
       success: true,
-      numbers: activeNumbers,
-      activations: activeNumbers,
-      data: activeNumbers
+
+      numbers:
+        activeNumbers,
+
+      activations:
+        activeNumbers,
+
+      data:
+        activeNumbers
     });
 
   } catch (error) {
-    console.error("Active numbers error:", error);
+    console.error(
+      "Active numbers error:",
+      error
+    );
 
     const message =
       error?.message ||
       "Unable to load active numbers.";
 
     return res.status(
-      message === "Unauthorized." ? 401 : 500
+      message === "Unauthorized."
+        ? 401
+        : 500
     ).json({
       success: false,
-      error: message,
-      message
+
+      error:
+        message,
+
+      message:
+        message
     });
   }
 }
