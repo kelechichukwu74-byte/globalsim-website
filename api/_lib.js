@@ -18,21 +18,6 @@ export function isUSA(country) {
   ].includes(value);
 }
 
-/*
- * SERVER ROUTING
- *
- * USA:
- *   Portal 2 -> USA Server 2
- *
- * Other countries:
- *   Portal 2 -> Global Server 2
- *   Portal 1 -> Global Server 1
- *
- * SureVerification documents Global Server 1 and
- * Global Server 2 as supporting international countries,
- * while USA Server 2 is USA-only.
- */
-
 export function getServerForCountry(country) {
   if (isUSA(country)) {
     return "usa-server-2";
@@ -43,9 +28,7 @@ export function getServerForCountry(country) {
 
 export function getServersForCountry(country) {
   if (isUSA(country)) {
-    return [
-      "usa-server-2"
-    ];
+    return ["usa-server-2"];
   }
 
   return [
@@ -76,7 +59,6 @@ export async function sureVerificationRequest(
       headers: {
         Accept: "application/json",
         "x-api-key": apiKey,
-
         ...(options.headers || {})
       },
 
