@@ -37,12 +37,6 @@ async function authenticate(req) {
     throw new Error("Unauthorized.");
   }
 
-  if (!SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not configured."
-    );
-  }
-
   const response = await fetch(
     `${SUPABASE_URL}/auth/v1/user`,
     {
@@ -73,12 +67,6 @@ async function authenticate(req) {
 ========================================================= */
 
 async function db(path, options = {}) {
-  if (!SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not configured."
-    );
-  }
-
   const response = await fetch(
     `${SUPABASE_URL}/rest/v1/${path}`,
     {
@@ -103,7 +91,9 @@ async function db(path, options = {}) {
   try {
     data = text ? JSON.parse(text) : {};
   } catch {
-    data = { message: text };
+    data = {
+      message: text
+    };
   }
 
   if (!response.ok) {
@@ -121,13 +111,11 @@ async function db(path, options = {}) {
 
 
 /* =========================================================
-   REQUEST BODY
+   BODY
 ========================================================= */
 
 function getBody(req) {
-  if (!req.body) {
-    return {};
-  }
+  if (!req.body) return {};
 
   if (typeof req.body === "object") {
     return req.body;
@@ -140,10 +128,6 @@ function getBody(req) {
   }
 }
 
-
-/* =========================================================
-   GET VALUE FROM BODY OR QUERY
-========================================================= */
 
 function firstValue(...values) {
   for (const value of values) {
@@ -161,45 +145,33 @@ function firstValue(...values) {
 
 
 /* =========================================================
-   GET WALLET
+   WALLET
 ========================================================= */
 
 async function getWallet(userId) {
-  const wallets = await db(
+  const rows = await db(
     `wallets?user_id=eq.${encodeURIComponent(
       userId
     )}&select=*&limit=1`
   );
 
-  const wallet = wallets?.[0];
-
-  if (!wallet) {
+  if (!rows?.[0]) {
     throw new Error("Wallet not found.");
   }
 
-  return wallet;
+  return rows[0];
 }
 
-
-/* =========================================================
-   DEDUCT WALLET
-========================================================= */
 
 async function deductWallet(
   userId,
   amount
 ) {
-  const purchaseAmount = Number(amount);
-
-  if (
-    !Number.isFinite(purchaseAmount) ||
-    purchaseAmount <= 0
-  ) {
-    throw new Error("Invalid purchase amount.");
-  }
+  const value = Number(amount);
 
   for (let attempt = 0; attempt < 5; attempt++) {
-    const wallet = await getWallet(userId);
+    const wallet =
+      await getWallet(userId);
 
     const balance =
       Number(wallet.balance || 0);
@@ -210,39 +182,40 @@ async function deductWallet(
       );
     }
 
-    if (balance < purchaseAmount) {
+    if (balance < value) {
       throw new Error(
         "Insufficient wallet balance."
       );
     }
 
     const newBalance =
-      balance - purchaseAmount;
+      balance - value;
 
-    const updated = await db(
-      `wallets?user_id=eq.${encodeURIComponent(
-        userId
-      )}&balance=eq.${encodeURIComponent(
-        balance
-      )}`,
-      {
-        method: "PATCH",
+    const updated =
+      await db(
+        `wallets?user_id=eq.${encodeURIComponent(
+          userId
+        )}&balance=eq.${encodeURIComponent(
+          balance
+        )}`,
+        {
+          method: "PATCH",
 
-        body: JSON.stringify({
-          balance: newBalance,
-          updated_at:
-            new Date().toISOString()
-        })
-      }
-    );
+          body: JSON.stringify({
+            balance: newBalance,
+            updated_at:
+              new Date().toISOString()
+          })
+        }
+      );
 
     if (
       Array.isArray(updated) &&
       updated.length > 0
     ) {
       return {
-        balanceBefore: balance,
-        balanceAfter: newBalance
+        before: balance,
+        after: newBalance
       };
     }
   }
@@ -253,54 +226,48 @@ async function deductWallet(
 }
 
 
-/* =========================================================
-   REFUND WALLET IF PROVIDER PURCHASE FAILS
-========================================================= */
-
 async function refundWallet(
   userId,
   amount
 ) {
-  const refundAmount = Number(amount);
-
-  if (
-    !Number.isFinite(refundAmount) ||
-    refundAmount <= 0
-  ) {
-    return null;
-  }
+  const value = Number(amount);
 
   for (let attempt = 0; attempt < 5; attempt++) {
-    const wallet = await getWallet(userId);
+    const wallet =
+      await getWallet(userId);
 
     const balance =
       Number(wallet.balance || 0);
 
     const newBalance =
-      balance + refundAmount;
+      balance + value;
 
-    const updated = await db(
-      `wallets?user_id=eq.${encodeURIComponent(
-        userId
-      )}&balance=eq.${encodeURIComponent(
-        balance
-      )}`,
-      {
-        method: "PATCH",
+    const updated =
+      await db(
+        `wallets?user_id=eq.${encodeURIComponent(
+          userId
+        )}&balance=eq.${encodeURIComponent(
+          balance
+        )}`,
+        {
+          method: "PATCH",
 
-        body: JSON.stringify({
-          balance: newBalance,
-          updated_at:
-            new Date().toISOString()
-        })
-      }
-    );
+          body: JSON.stringify({
+            balance: newBalance,
+            updated_at:
+              new Date().toISOString()
+          })
+        }
+      );
 
     if (
       Array.isArray(updated) &&
       updated.length > 0
     ) {
-      return newBalance;
+      return {
+        before: balance,
+        after: newBalance
+      };
     }
   }
 
@@ -311,15 +278,15 @@ async function refundWallet(
 
 
 /* =========================================================
-   WALLET TRANSACTION
+   TRANSACTION
 ========================================================= */
 
 async function recordTransaction(
   userId,
   type,
   amount,
-  balanceBefore,
-  balanceAfter,
+  before,
+  after,
   referenceId,
   description
 ) {
@@ -333,10 +300,8 @@ async function recordTransaction(
           user_id: userId,
           type,
           amount: Number(amount),
-          balance_before:
-            Number(balanceBefore),
-          balance_after:
-            Number(balanceAfter),
+          balance_before: Number(before),
+          balance_after: Number(after),
           reference_id:
             referenceId || null,
           description
@@ -345,7 +310,7 @@ async function recordTransaction(
     );
   } catch (error) {
     console.error(
-      "Wallet transaction error:",
+      "Transaction recording error:",
       error
     );
   }
@@ -353,12 +318,52 @@ async function recordTransaction(
 
 
 /* =========================================================
-   SELECT PROVIDER SERVER
+   GET SELLING PRICE
 ========================================================= */
 
-function selectServer(countryId, countryName) {
+async function getSellingPrice(
+  countryId,
+  service
+) {
+  const rows =
+    await db(
+      `product_prices?country_id=eq.${encodeURIComponent(
+        countryId
+      )}&service_id=eq.${encodeURIComponent(
+        service
+      )}&select=selling_price&limit=1`
+    );
+
+  const price =
+    Number(
+      rows?.[0]?.selling_price
+    );
+
+  if (
+    !Number.isFinite(price) ||
+    price <= 0
+  ) {
+    throw new Error(
+      "Selling price is not configured for this country and service."
+    );
+  }
+
+  return price;
+}
+
+
+/* =========================================================
+   PROVIDER SERVER
+========================================================= */
+
+function selectServer(
+  countryId,
+  countryName
+) {
   const country =
-    String(countryName || "").toLowerCase();
+    String(countryName || "")
+      .toLowerCase()
+      .trim();
 
   const isUSA =
     country === "united states" ||
@@ -366,13 +371,6 @@ function selectServer(countryId, countryName) {
     country === "us" ||
     String(countryId) === "236";
 
-  /*
-   * USA:
-   * Use USA Server 2.
-   *
-   * Other countries:
-   * Use Global Server 2.
-   */
   if (isUSA) {
     return {
       name: "usa-server-2",
@@ -391,7 +389,7 @@ function selectServer(countryId, countryName) {
    PROVIDER PURCHASE
 ========================================================= */
 
-async function purchaseFromSureVerification(
+async function purchaseFromProvider(
   countryId,
   service,
   countryName
@@ -408,14 +406,6 @@ async function purchaseFromSureVerification(
       countryName
     );
 
-  /*
-   * SureVerification requires:
-   *
-   * country_id
-   * service
-   *
-   * as query parameters.
-   */
   const url =
     `${SURE_BASE_URL}${server.path}/purchase` +
     `?country_id=${encodeURIComponent(
@@ -434,20 +424,21 @@ async function purchaseFromSureVerification(
     }
   );
 
-  const response = await fetch(
-    url,
-    {
-      method: "POST",
+  const response =
+    await fetch(
+      url,
+      {
+        method: "POST",
 
-      headers: {
-        "x-api-key":
-          SURE_API_KEY,
+        headers: {
+          "x-api-key":
+            SURE_API_KEY,
 
-        Accept:
-          "application/json"
+          Accept:
+            "application/json"
+        }
       }
-    }
-  );
+    );
 
   const text =
     await response.text();
@@ -480,68 +471,43 @@ async function purchaseFromSureVerification(
     data?.data?.verification ||
     data;
 
-  if (
-    !verification?.request_id &&
-    !verification?.id
-  ) {
-    throw new Error(
-      "SureVerification returned an invalid purchase response."
-    );
-  }
-
   return {
     server: server.name,
-    providerResponse: data,
+    raw: data,
     verification
   };
 }
 
 
 /* =========================================================
-   CANCEL PROVIDER PURCHASE ON DB FAILURE
+   PROVIDER CANCEL / ROLLBACK
 ========================================================= */
 
-async function cancelProviderVerification(
+async function cancelProvider(
   verificationId
 ) {
-  if (
-    !verificationId ||
-    !SURE_API_KEY
-  ) {
-    return;
-  }
+  if (!verificationId) return;
 
   try {
-    const response =
-      await fetch(
-        `${SURE_BASE_URL}/verifications/cancel/${encodeURIComponent(
-          verificationId
-        )}`,
-        {
-          method: "DELETE",
-
-          headers: {
-            "x-api-key":
-              SURE_API_KEY,
-
-            Accept:
-              "application/json"
-          }
-        }
-      );
-
-    console.log(
-      "Provider rollback cancellation:",
+    await fetch(
+      `${SURE_BASE_URL}/verifications/cancel/${encodeURIComponent(
+        verificationId
+      )}`,
       {
-        verificationId,
-        status:
-          response.status
+        method: "DELETE",
+
+        headers: {
+          "x-api-key":
+            SURE_API_KEY,
+
+          Accept:
+            "application/json"
+        }
       }
     );
-
   } catch (error) {
     console.error(
-      "Provider rollback cancellation failed:",
+      "Provider rollback failed:",
       error
     );
   }
@@ -549,7 +515,7 @@ async function cancelProviderVerification(
 
 
 /* =========================================================
-   MAIN ORDER HANDLER
+   MAIN
 ========================================================= */
 
 export default async function handler(
@@ -565,16 +531,11 @@ export default async function handler(
 
   try {
     /* -----------------------------------------------------
-       AUTH
+       USER
     ----------------------------------------------------- */
 
     const user =
       await authenticate(req);
-
-
-    /* -----------------------------------------------------
-       READ REQUEST
-    ----------------------------------------------------- */
 
     const body =
       getBody(req);
@@ -589,114 +550,45 @@ export default async function handler(
 
     const countryId =
       firstValue(
-        body.country_id,
         body.countryId,
+        body.country_id,
         body.countryID,
-        body.country,
-        query.country_id,
-        query.countryId
+        query.countryId,
+        query.country_id
       );
-
 
     const countryName =
       firstValue(
+        body.countryName,
         body.country_name,
-        body.countryName,
-        body.countryName,
         body.country,
-        query.country_name,
-        query.countryName
+        query.countryName,
+        query.country_name
       );
 
 
     /* -----------------------------------------------------
        SERVICE
-       Accept ALL common names used by the frontend.
     ----------------------------------------------------- */
 
     const service =
       firstValue(
         body.service,
-        body.service_id,
         body.serviceId,
-        body.service_code,
+        body.service_id,
         body.serviceCode,
-        body.service_key,
-        body.serviceKey,
-        body.service_name,
+        body.service_code,
         body.serviceName,
-
+        body.service_name,
         query.service,
-        query.service_id,
         query.serviceId,
-        query.service_code,
+        query.service_id,
         query.serviceCode,
-        query.service_name,
-        query.serviceName
+        query.service_code,
+        query.serviceName,
+        query.service_name
       );
 
-
-    /* -----------------------------------------------------
-       CUSTOMER PRICE
-    ----------------------------------------------------- */
-
-    const customerPriceRaw =
-      firstValue(
-        body.customer_price,
-        body.customerPrice,
-        body.selling_price,
-        body.sellingPrice,
-        body.price,
-        query.customer_price,
-        query.customerPrice,
-        query.selling_price,
-        query.sellingPrice,
-        query.price
-      );
-
-    const customerPrice =
-      Number(customerPriceRaw);
-
-
-    /* -----------------------------------------------------
-       SERVICE/COUNTRY PRICE ID
-    ----------------------------------------------------- */
-
-    const serviceCountryPriceId =
-      firstValue(
-        body.service_country_price_id,
-        body.serviceCountryPriceId,
-        body.price_id,
-        body.priceId,
-        query.service_country_price_id,
-        query.serviceCountryPriceId,
-        query.price_id,
-        query.priceId
-      ) || null;
-
-
-    console.log(
-      "Purchase request received:",
-      {
-        userId:
-          user.id,
-
-        countryId,
-
-        countryName,
-
-        service,
-
-        customerPrice,
-
-        serviceCountryPriceId
-      }
-    );
-
-
-    /* -----------------------------------------------------
-       VALIDATION
-    ----------------------------------------------------- */
 
     if (!countryId) {
       return res.status(400).json({
@@ -712,31 +604,41 @@ export default async function handler(
       });
     }
 
-    if (
-      !Number.isFinite(customerPrice) ||
-      customerPrice <= 0
-    ) {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid selling price."
-      });
-    }
+
+    /* -----------------------------------------------------
+       GET SELLING PRICE FROM DATABASE
+    ----------------------------------------------------- */
+
+    const customerPrice =
+      await getSellingPrice(
+        countryId,
+        service
+      );
+
+
+    console.log(
+      "Resolved selling price:",
+      {
+        countryId,
+        service,
+        customerPrice
+      }
+    );
 
 
     /* -----------------------------------------------------
-       GET WALLET
+       CHECK WALLET BEFORE PROVIDER PURCHASE
     ----------------------------------------------------- */
 
     const wallet =
       await getWallet(user.id);
 
-    const walletBalance =
+    const currentBalance =
       Number(wallet.balance || 0);
 
-
     if (
-      !Number.isFinite(walletBalance) ||
-      walletBalance < customerPrice
+      !Number.isFinite(currentBalance) ||
+      currentBalance < customerPrice
     ) {
       return res.status(400).json({
         success: false,
@@ -747,18 +649,18 @@ export default async function handler(
 
 
     /* -----------------------------------------------------
-       PURCHASE FROM SUREVERIFICATION
+       PROVIDER PURCHASE
     ----------------------------------------------------- */
 
     const provider =
-      await purchaseFromSureVerification(
+      await purchaseFromProvider(
         countryId,
         service,
         countryName
       );
 
     const verification =
-      provider.verification;
+      provider.verification || {};
 
 
     const providerOrderId =
@@ -798,8 +700,8 @@ export default async function handler(
 
 
     if (
-      !providerOrderId &&
-      !providerVerificationId
+      !providerVerificationId &&
+      !providerOrderId
     ) {
       throw new Error(
         "Provider did not return a valid verification ID."
@@ -809,7 +711,7 @@ export default async function handler(
 
     if (!phoneNumber) {
       if (providerVerificationId) {
-        await cancelProviderVerification(
+        await cancelProvider(
           providerVerificationId
         );
       }
@@ -821,7 +723,7 @@ export default async function handler(
 
 
     /* -----------------------------------------------------
-       DEDUCT CUSTOMER WALLET
+       DEDUCT WALLET
     ----------------------------------------------------- */
 
     let walletResult;
@@ -832,41 +734,15 @@ export default async function handler(
           user.id,
           customerPrice
         );
-
-    } catch (walletError) {
-      /*
-       * We already purchased the provider
-       * number, so cancel it if wallet
-       * deduction fails.
-       */
+    } catch (error) {
       if (providerVerificationId) {
-        await cancelProviderVerification(
+        await cancelProvider(
           providerVerificationId
         );
       }
 
-      throw walletError;
+      throw error;
     }
-
-
-    /* -----------------------------------------------------
-       CALCULATE PROFIT
-    ----------------------------------------------------- */
-
-    const providerCost =
-      Number(
-        body.provider_cost ??
-        body.providerCost ??
-        0
-      );
-
-    const profit =
-      customerPrice -
-      (
-        Number.isFinite(providerCost)
-          ? providerCost
-          : 0
-      );
 
 
     /* -----------------------------------------------------
@@ -893,7 +769,7 @@ export default async function handler(
                 providerVerificationId,
 
               service_country_price_id:
-                serviceCountryPriceId,
+                `${countryId}:${service}`,
 
               service_name:
                 providerService,
@@ -902,16 +778,13 @@ export default async function handler(
                 countryName,
 
               provider_cost:
-                Number.isFinite(
-                  providerCost
-                )
-                  ? providerCost
-                  : 0,
+                0,
 
               customer_price:
                 customerPrice,
 
-              profit,
+              profit:
+                customerPrice,
 
               status:
                 providerStatus,
@@ -936,25 +809,19 @@ export default async function handler(
           ? inserted[0]
           : inserted;
 
-    } catch (databaseError) {
-      /*
-       * Database save failed after provider
-       * purchase. Cancel provider number and
-       * refund customer.
-       */
-
+    } catch (error) {
       console.error(
-        "Order database save failed:",
-        databaseError
+        "Order save failed:",
+        error
       );
 
       if (providerVerificationId) {
-        await cancelProviderVerification(
+        await cancelProvider(
           providerVerificationId
         );
       }
 
-      const refundedBalance =
+      const refund =
         await refundWallet(
           user.id,
           customerPrice
@@ -964,26 +831,26 @@ export default async function handler(
         user.id,
         "refund",
         customerPrice,
-        walletResult.balanceAfter,
-        refundedBalance,
+        walletResult.after,
+        refund.after,
         null,
         "Refund for failed virtual number order"
       );
 
-      throw databaseError;
+      throw error;
     }
 
 
     /* -----------------------------------------------------
-       RECORD PURCHASE TRANSACTION
+       PURCHASE TRANSACTION
     ----------------------------------------------------- */
 
     await recordTransaction(
       user.id,
       "purchase",
       customerPrice,
-      walletResult.balanceBefore,
-      walletResult.balanceAfter,
+      walletResult.before,
+      walletResult.after,
       savedOrder?.id ||
         providerOrderId,
       `Purchase of ${providerService} virtual number`
@@ -1002,8 +869,7 @@ export default async function handler(
 
       order: {
         id:
-          savedOrder?.id ||
-          null,
+          savedOrder?.id || null,
 
         provider_order_id:
           providerOrderId,
@@ -1066,7 +932,7 @@ export default async function handler(
       },
 
       balance:
-        walletResult.balanceAfter
+        walletResult.after
     });
 
   } catch (error) {
