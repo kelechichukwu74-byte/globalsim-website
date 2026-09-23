@@ -1,15 +1,13 @@
 async function cancelActiveNumber(index) {
   try {
-    const item =
-      Array.isArray(activeNumbers)
-        ? activeNumbers[index]
-        : null;
+    const item = activeNumbers?.[index];
 
     if (!item) {
       alert("Active number not found.");
       return;
     }
 
+    // Use the order ID first, then fall back to phone number.
     const identifier =
       item.order_id ||
       item.orderId ||
@@ -23,18 +21,15 @@ async function cancelActiveNumber(index) {
       return;
     }
 
-    const button = document.activeElement;
+    const confirmed = confirm(
+      "Are you sure you want to cancel this number? If cancellation is successful, your money will be returned to your wallet."
+    );
 
-    if (button) {
-      button.disabled = true;
-      button.dataset.originalText = button.textContent;
-      button.textContent = "Cancelling...";
-    }
+    if (!confirmed) return;
 
-    const session = await supabaseClient.auth.getSession();
-
+    const sessionResult = await supabaseClient.auth.getSession();
     const accessToken =
-      session?.data?.session?.access_token;
+      sessionResult?.data?.session?.access_token;
 
     if (!accessToken) {
       throw new Error("Please log in again.");
@@ -51,23 +46,27 @@ async function cancelActiveNumber(index) {
       }
     );
 
-    const data = await response.json().catch(() => ({}));
+    const result = await response.json().catch(() => ({}));
 
-    if (!response.ok || data.success === false) {
+    if (!response.ok || result.success === false) {
       throw new Error(
-        data.error ||
-        data.message ||
+        result.error ||
+        result.message ||
         `Cancellation failed (HTTP ${response.status})`
       );
     }
 
     alert(
-      data.message ||
+      result.message ||
       "Number cancelled successfully. Your money has been returned to your wallet."
     );
 
-    await loadActiveNumbers();
+    // Reload the active numbers after cancellation.
+    if (typeof loadActiveNumbers === "function") {
+      await loadActiveNumbers();
+    }
 
+    // Refresh wallet balance if your dashboard has either function.
     if (typeof loadWallet === "function") {
       await loadWallet();
     }
@@ -77,23 +76,11 @@ async function cancelActiveNumber(index) {
     }
 
   } catch (error) {
-    console.error("Cancel number error:", error);
+    console.error("Cancel Number Error:", error);
 
     alert(
       error?.message ||
       "Unable to cancel number."
     );
-
-  } finally {
-    const button = document.activeElement;
-
-    if (button) {
-      button.disabled = false;
-
-      if (button.dataset.originalText) {
-        button.textContent = button.dataset.originalText;
-        delete button.dataset.originalText;
-      }
-    }
   }
 }
