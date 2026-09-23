@@ -4641,7 +4641,7 @@
 
         await loadDashboard();
 
-        navigateTo("dashboard");
+        navigateTo("active");
 
 
       } catch (error) {
@@ -4683,8 +4683,11 @@
 
       try {
 
+        const sessionResult =
+          await supabaseClient.auth.getSession();
+
         const accessToken =
-          await getCurrentAccessToken() ||
+          sessionResult?.data?.session?.access_token ||
           "";
 
         if (!accessToken) {
@@ -5018,7 +5021,8 @@
         item.verificationId ||
         item.verification?.request_id ||
         item.verification?.requestId ||
-        item.verification?.id;
+        item.verification?.id ||
+        "";
 
       if (!verificationId) {
         return;
@@ -5142,13 +5146,10 @@
       }
 
       const verificationId =
-        item.provider_order_id ||
-        item.providerOrderId ||
         item.verification_id ||
         item.verificationId ||
-        item.verification?.request_id ||
-        item.verification?.requestId ||
-        item.verification?.id;
+        item.verification?.id ||
+        item.id;
 
       if (!verificationId) {
         showToast(
@@ -5188,8 +5189,7 @@
       try {
 
         const accessToken =
-          await getCurrentAccessToken() ||
-          "";
+          await getCurrentAccessToken();
 
         if (!accessToken) {
           throw new Error(
@@ -5505,6 +5505,7 @@
         return null;
       }
     }
+
     async function loadAdminPricing() {
       const countrySelect = $("adminPricingCountry");
       const serviceSelect = $("adminPricingService");
