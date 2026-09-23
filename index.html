@@ -1021,6 +1021,20 @@
       }
     }
 
+
+    .dashboard-atm-card { position: relative; overflow: hidden; min-height: 150px; border-radius: 18px; padding: 18px; color: #fff; background: linear-gradient(135deg,#2563eb 0%,#1d4ed8 55%,#0f3fae 100%); box-shadow: 0 14px 30px rgba(37,99,235,.22); margin-bottom:18px; }
+    .dashboard-atm-card::before,.dashboard-atm-card::after { content:""; position:absolute; border-radius:50%; background:rgba(255,255,255,.08); pointer-events:none; }
+    .dashboard-atm-card::before { width:170px; height:170px; right:-75px; top:-85px; }
+    .dashboard-atm-card::after { width:110px; height:110px; left:-55px; bottom:-65px; }
+    .dashboard-atm-top,.dashboard-atm-bottom { position:relative; z-index:1; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .dashboard-atm-brand { font-size:12px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+    .dashboard-atm-chip { width:34px; height:25px; border-radius:6px; background:linear-gradient(135deg,#f8fafc,#cbd5e1); position:relative; }
+    .dashboard-atm-chip::after { content:""; position:absolute; inset:5px 7px; border:1px solid rgba(15,23,42,.25); border-radius:4px; }
+    .dashboard-atm-label { position:relative; z-index:1; margin-top:20px; color:#dbeafe; font-size:10px; }
+    .dashboard-atm-amount { position:relative; z-index:1; margin-top:4px; font-size:27px; line-height:1.1; font-weight:800; }
+    .dashboard-atm-bottom { margin-top:18px; color:#dbeafe; font-size:10px; }
+    .dashboard-atm-status { padding:4px 8px; border-radius:999px; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.22); color:#fff; font-weight:700; }
+
     /* =========================================================
        MOBILE
        ========================================================= */
@@ -1175,6 +1189,7 @@
           <div class="form-group">
             <label for="loginPassword">Password</label>
 
+            <div class="password-wrap">
             <input
               id="loginPassword"
               class="form-control"
@@ -1183,6 +1198,13 @@
               required
               placeholder="Enter your password"
             />
+            <button
+              type="button"
+              class="password-toggle"
+              aria-label="Show password"
+              onclick="togglePasswordVisibility('loginPassword', this)"
+            >👁</button>
+          </div>
           </div>
 
           <button
@@ -1262,6 +1284,7 @@
           <div class="form-group">
             <label for="registerPassword">Password</label>
 
+            <div class="password-wrap">
             <input
               id="registerPassword"
               class="form-control"
@@ -1271,6 +1294,13 @@
               minlength="6"
               placeholder="At least 6 characters"
             />
+            <button
+              type="button"
+              class="password-toggle"
+              aria-label="Show password"
+              onclick="togglePasswordVisibility('registerPassword', this)"
+            >👁</button>
+          </div>
           </div>
 
           <div class="form-group">
@@ -1278,6 +1308,7 @@
               Confirm Password
             </label>
 
+            <div class="password-wrap">
             <input
               id="registerConfirmPassword"
               class="form-control"
@@ -1287,6 +1318,13 @@
               minlength="6"
               placeholder="Repeat your password"
             />
+            <button
+              type="button"
+              class="password-toggle"
+              aria-label="Show password"
+              onclick="togglePasswordVisibility('registerConfirmPassword', this)"
+            >👁</button>
+          </div>
           </div>
 
           <label class="checkbox-row">
@@ -1546,16 +1584,16 @@
 
             <div class="stats-grid">
 
-              <div class="dashboard-wallet-card">
-                <div class="dashboard-wallet-top">
-                  <span>Global Virtual Sim</span>
-                  <span class="dashboard-wallet-status">Active</span>
+              <div class="dashboard-atm-card">
+                <div class="dashboard-atm-top">
+                  <span class="dashboard-atm-brand">Global Virtual Sim</span>
+                  <div class="dashboard-atm-chip"></div>
                 </div>
-                <div class="dashboard-wallet-label">Wallet Balance</div>
-                <div id="dashboardBalance" class="dashboard-wallet-amount">₦0.00</div>
-                <div class="dashboard-wallet-bottom">
-                  <span>Available funds</span>
-                  <span>••••</span>
+                <div class="dashboard-atm-label">Available Wallet Balance</div>
+                <div id="dashboardBalance" class="dashboard-atm-amount">₦0.00</div>
+                <div class="dashboard-atm-bottom">
+                  <span>Wallet</span>
+                  <span class="dashboard-atm-status">Active</span>
                 </div>
               </div>
 
@@ -2449,14 +2487,12 @@
                 <div class="grid-2">
                   <div class="form-group">
                     <label for="adminPricingCountry">Country</label>
-                    <input type="search" class="form-control admin-pricing-search" data-target="adminPricingCountry" placeholder="Search country..." autocomplete="off">
                     <select id="adminPricingCountry" class="form-control" onchange="loadAdminPricingServices()">
                       <option value="">Select a country</option>
                     </select>
                   </div>
                   <div class="form-group">
                     <label for="adminPricingService">Service</label>
-                    <input type="search" class="form-control admin-pricing-search" data-target="adminPricingService" placeholder="Search service..." autocomplete="off">
                     <select id="adminPricingService" class="form-control">
                       <option value="">Select a service</option>
                     </select>
@@ -2580,7 +2616,7 @@
               Email
             </a>
 
-            <a onclick="showLegal('Telegram')">
+            <a href="https://t.me/GlobalVirtualSimWebSupport" target="_blank" rel="noopener">
               Telegram
             </a>
 
@@ -4559,11 +4595,9 @@
           be placed in this HTML.
         */
 
-        const accessToken =
-          await getCurrentAccessToken();
-
+        const accessToken = await getCurrentAccessToken();
         if (!accessToken) {
-          throw new Error("Unauthorized. Please log in again.");
+          throw new Error("Your session has expired. Please log in again.");
         }
 
         const response =
@@ -4573,7 +4607,7 @@
 
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${accessToken}`
+              "Authorization": `Bearer ${accessToken}`
             },
 
             body: JSON.stringify({
@@ -4683,46 +4717,33 @@
 
       try {
 
-        const sessionResult =
-          await supabaseClient.auth.getSession();
-
-        const accessToken =
-          sessionResult?.data?.session?.access_token ||
-          "";
-
-        if (!accessToken) {
+        if (!currentUser?.id) {
           throw new Error("Please log in again.");
         }
 
-        const response =
-          await fetch("/api/active", {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              Accept: "application/json"
-            }
-          });
+        const { data: result, error: orderError } =
+          await supabaseClient
+            .from("orders")
+            .select("*")
+            .eq("user_id", currentUser.id)
+            .order("created_at", { ascending: false });
 
-        const result =
-          await response.json().catch(() => ({}));
-
-        if (!response.ok || result?.success === false) {
-          throw new Error(
-            result?.error ||
-            result?.message ||
-            `Unable to load active numbers (HTTP ${response.status}).`
-          );
+        if (orderError) {
+          throw new Error(orderError.message || "Unable to load active numbers.");
         }
 
-        const numbers =
-          Array.isArray(result)
-            ? result
-            : (
-                result.data ||
-                result.activations ||
-                result.numbers ||
-                []
-              );
+        const terminalStatuses = new Set([
+          "failed", "cancelled", "canceled", "expired", "refunded", "rejected"
+        ]);
+
+        const activeResult = (result || []).filter(item =>
+          !terminalStatuses.has(String(item.status || "").toLowerCase())
+        );
+
+        const response = { ok: true, status: 200 };
+
+        result && (result.data = activeResult);
+        const numbers = activeResult;
 
         if (!numbers.length) {
           container.innerHTML = `
@@ -5021,8 +5042,7 @@
         item.verificationId ||
         item.verification?.request_id ||
         item.verification?.requestId ||
-        item.verification?.id ||
-        "";
+        item.verification?.id;
 
       if (!verificationId) {
         return;
@@ -5146,10 +5166,13 @@
       }
 
       const verificationId =
+        item.provider_order_id ||
+        item.providerOrderId ||
         item.verification_id ||
         item.verificationId ||
-        item.verification?.id ||
-        item.id;
+        item.verification?.request_id ||
+        item.verification?.requestId ||
+        item.verification?.id;
 
       if (!verificationId) {
         showToast(
@@ -5188,8 +5211,7 @@
 
       try {
 
-        const accessToken =
-          await getCurrentAccessToken();
+        const accessToken = await getCurrentAccessToken();
 
         if (!accessToken) {
           throw new Error(
@@ -5482,24 +5504,12 @@
 
     async function getCurrentAccessToken() {
       try {
-        const sessionResult =
-          await supabaseClient.auth.getSession();
-
+        const sessionResult = await supabaseClient.auth.getSession();
         if (sessionResult?.data?.session?.access_token) {
           return sessionResult.data.session.access_token;
         }
-
-        const refreshed =
-          await supabaseClient.auth.refreshSession();
-
-        if (
-          !refreshed.error &&
-          refreshed.data?.session?.access_token
-        ) {
-          return refreshed.data.session.access_token;
-        }
-
-        return null;
+        const refreshed = await supabaseClient.auth.refreshSession();
+        return refreshed?.data?.session?.access_token || null;
       } catch (error) {
         console.error("Access token error:", error);
         return null;
@@ -6433,6 +6443,17 @@
             Email:
             <strong>globalsimwebsite@gmail.com</strong>
           </p>
+          <p style="margin-top:12px;">
+            <a
+              href="https://t.me/GlobalVirtualSimWebSupport"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="secondary-btn"
+              style="display:inline-block;text-decoration:none;"
+            >
+              Follow us on Telegram
+            </a>
+          </p>
         `,
 
         "Contact": `
@@ -6707,41 +6728,7 @@
 .gvs-service-icon{width:28px;height:28px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;background:#edf5ff;font-size:16px;flex:none}
 .gvs-search-empty{padding:14px;color:#6b7b91;font-size:13px}
 .gvs-hidden-native{display:none!important}
-</style>
-<script>
-(function(){
-const flags={US:"🇺🇸",NG:"🇳🇬",GB:"🇬🇧",CA:"🇨🇦",DE:"🇩🇪",FR:"🇫🇷",IT:"🇮🇹",ES:"🇪🇸",NL:"🇳🇱",BE:"🇧🇪",CH:"🇨🇭",AT:"🇦🇹",SE:"🇸🇪",NO:"🇳🇴",DK:"🇩🇰",FI:"🇫🇮",PL:"🇵🇱",CZ:"🇨🇿",PT:"🇵🇹",IE:"🇮🇪",AU:"🇦🇺",NZ:"🇳🇿",JP:"🇯🇵",KR:"🇰🇷",CN:"🇨🇳",IN:"🇮🇳",ID:"🇮🇩",MY:"🇲🇾",SG:"🇸🇬",PH:"🇵🇭",TH:"🇹🇭",VN:"🇻🇳",AE:"🇦🇪",SA:"🇸🇦",IL:"🇮🇱",TR:"🇹🇷",BR:"🇧🇷",MX:"🇲🇽",AR:"🇦🇷",CL:"🇨🇱",CO:"🇨🇴",PE:"🇵🇪",ZA:"🇿🇦",EG:"🇪🇬",KE:"🇰🇪",GH:"🇬🇭",TZ:"🇹🇿",UG:"🇺🇬",RU:"🇷🇺",UA:"🇺🇦",RO:"🇷🇴",GR:"🇬🇷",HU:"🇭🇺",BG:"🇧🇬"};
-const icon=n=>{n=String(n||"").toLowerCase();if(n.includes("whatsapp"))return"🟢";if(n.includes("telegram"))return"✈️";if(n.includes("instagram"))return"📸";if(n.includes("facebook"))return"🔵";if(n.includes("tiktok"))return"🎵";if(n.includes("google"))return"🔎";if(n.includes("signal"))return"🔐";if(n.includes("discord"))return"🎮";if(n.includes("microsoft"))return"🪟";if(n.includes("twitter")||n==="x")return"𝕏";if(n.includes("snapchat"))return"👻";if(n.includes("uber"))return"🚕";if(n.includes("amazon"))return"🛒";if(n.includes("viber"))return"📞";return"📱"};
-const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-const flag=c=>{let x=String(c?.code||c?.country_code||c?.countryCode||"").toUpperCase();if(flags[x])return flags[x];return/^[A-Z]{2}$/.test(x)?String.fromCodePoint(...[...x].map(a=>127397+a.charCodeAt(0))):"🌐"};
 
-function enhance(sel,type){
-if(!sel||sel.dataset.gvsEnhanced)return;
-sel.dataset.gvsEnhanced="1";sel.classList.add("gvs-hidden-native");
-const wrap=document.createElement("div"),input=document.createElement("input"),list=document.createElement("div");
-wrap.className="gvs-search-wrap";input.className="gvs-search-input";input.type="search";input.autocomplete="off";input.placeholder=type==="country"?"Search country...":"Search service...";
-list.className="gvs-search-list";wrap.append(input,list);sel.parentNode.insertBefore(wrap,sel);
-function items(){
-return [...sel.options].filter(o=>o.value).map(o=>{let raw={};try{raw=JSON.parse(o.dataset.raw||"{}")}catch{};return {...raw,id:o.value,name:o.dataset.countryName||o.dataset.serviceName||o.textContent.trim(),code:o.dataset.countryCode||raw.code||raw.country_code||""}});
-}
-function render(){
-let q=input.value.trim().toLowerCase(),arr=items().filter(x=>!q||String(x.name).toLowerCase().includes(q)||String(x.code).toLowerCase().includes(q));
-list.innerHTML=arr.length?arr.map(x=>`<button type="button" class="gvs-search-item" data-id="${esc(x.id)}"><span class="${type==="country"?"gvs-flag":"gvs-service-icon"}">${type==="country"?flag(x):icon(x.name)}</span><span>${esc(x.name)}</span></button>`).join(""):'<div class="gvs-search-empty">No results found.</div>';
-list.classList.add("open");
-list.querySelectorAll("button").forEach(b=>b.onclick=()=>{sel.value=b.dataset.id;sel.dispatchEvent(new Event("change",{bubbles:true}));let x=arr.find(a=>String(a.id)===String(b.dataset.id));if(x)input.value=(type==="country"?flag(x):icon(x.name))+" "+x.name;list.classList.remove("open")});
-}
-input.onfocus=render;input.oninput=render;document.addEventListener("click",e=>{if(!wrap.contains(e.target))list.classList.remove("open")});
-sel.addEventListener("change",()=>{let x=items().find(a=>String(a.id)===String(sel.value));if(x)input.value=(type==="country"?flag(x):icon(x.name))+" "+x.name});
-}
-
-function init(){enhance(document.getElementById("countrySelect"),"country");enhance(document.getElementById("serviceSelect"),"service")}
-if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
-})();
-</script>
-
-
-<style>
-.admin-pricing-search{margin-bottom:8px;}
 
 /* =========================================================
    ACTIVE NUMBER UI
@@ -6873,19 +6860,28 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 }
 </style>
 <script>
-document.addEventListener("DOMContentLoaded",function(){
-  document.querySelectorAll(".admin-pricing-search").forEach(function(search){
-    search.addEventListener("input",function(){
-      const select=document.getElementById(search.dataset.target);
-      if(!select)return;
-      const q=search.value.toLowerCase().trim();
-      Array.from(select.options).forEach(function(option,index){
-        if(index===0){option.hidden=false;return;}
-        option.hidden=!!q && !option.textContent.toLowerCase().includes(q);
-      });
-    });
-  });
-});
+(function(){
+const flags={US:"🇺🇸",NG:"🇳🇬",GB:"🇬🇧",CA:"🇨🇦",DE:"🇩🇪",FR:"🇫🇷",IT:"🇮🇹",ES:"🇪🇸",NL:"🇳🇱",BE:"🇧🇪",CH:"🇨🇭",AT:"🇦🇹",SE:"🇸🇪",NO:"🇳🇴",DK:"🇩🇰",FI:"🇫🇮",PL:"🇵🇱",CZ:"🇨🇿",PT:"🇵🇹",IE:"🇮🇪",AU:"🇦🇺",NZ:"🇳🇿",JP:"🇯🇵",KR:"🇰🇷",CN:"🇨🇳",IN:"🇮🇳",ID:"🇮🇩",MY:"🇲🇾",SG:"🇸🇬",PH:"🇵🇭",TH:"🇹🇭",VN:"🇻🇳",AE:"🇦🇪",SA:"🇸🇦",IL:"🇮🇱",TR:"🇹🇷",BR:"🇧🇷",MX:"🇲🇽",AR:"🇦🇷",CL:"🇨🇱",CO:"🇨🇴",PE:"🇵🇪",ZA:"🇿🇦",EG:"🇪🇬",KE:"🇰🇪",GH:"🇬🇭",TZ:"🇹🇿",UG:"🇺🇬",RU:"🇷🇺",UA:"🇺🇦",RO:"🇷🇴",GR:"🇬🇷",HU:"🇭🇺",BG:"🇧🇬"};
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+const flag=c=>{let x=String(c?.code||c?.country_code||c?.countryCode||"").toUpperCase();if(flags[x])return flags[x];return/^[A-Z]{2}$/.test(x)?String.fromCodePoint(...[...x].map(a=>127397+a.charCodeAt(0))):"🌐"};
+
+function enhanceCountry(sel){
+if(!sel||sel.dataset.gvsEnhanced)return;
+sel.dataset.gvsEnhanced="1";
+sel.classList.add("gvs-hidden-native");
+const wrap=document.createElement("div"),input=document.createElement("input"),list=document.createElement("div");
+wrap.className="gvs-search-wrap";input.className="gvs-search-input";input.type="search";input.autocomplete="off";input.placeholder="Search country...";
+list.className="gvs-search-list";wrap.append(input,list);sel.parentNode.insertBefore(wrap,sel);
+function items(){return [...sel.options].filter(o=>o.value).map(o=>{let raw={};try{raw=JSON.parse(o.dataset.raw||"{}")}catch{};return {...raw,id:o.value,name:o.dataset.countryName||o.textContent.trim(),code:o.dataset.countryCode||raw.code||raw.country_code||""}});}
+function render(){let q=input.value.trim().toLowerCase(),arr=items().filter(x=>!q||String(x.name).toLowerCase().includes(q)||String(x.code).toLowerCase().includes(q));list.innerHTML=arr.length?arr.map(x=>`<button type="button" class="gvs-search-item" data-id="${esc(x.id)}"><span class="gvs-flag">${flag(x)}</span><span>${esc(x.name)}</span></button>`).join(""):"<div class="gvs-search-empty">No results found.</div>";list.classList.add("open");list.querySelectorAll("button").forEach(b=>b.onclick=()=>{sel.value=b.dataset.id;sel.dispatchEvent(new Event("change",{bubbles:true}));let x=arr.find(a=>String(a.id)===String(b.dataset.id));if(x)input.value=flag(x)+" "+x.name;list.classList.remove("open")});}
+input.onfocus=render;input.oninput=render;document.addEventListener("click",e=>{if(!wrap.contains(e.target))list.classList.remove("open")});
+sel.addEventListener("change",()=>{let x=items().find(a=>String(a.id)===String(sel.value));if(x)input.value=flag(x)+" "+x.name});
+}
+
+function init(){enhanceCountry(document.getElementById("countrySelect"));}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})();
 </script>
+
 </body>
 </html>
