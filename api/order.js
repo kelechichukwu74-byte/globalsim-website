@@ -22,11 +22,7 @@ function getToken(req) {
     req.headers?.Authorization ||
     "";
 
-  if (
-    !header
-      .toLowerCase()
-      .startsWith("bearer ")
-  ) {
+  if (!header.toLowerCase().startsWith("bearer ")) {
     return null;
   }
 
@@ -35,13 +31,10 @@ function getToken(req) {
 
 
 async function authenticate(req) {
-  const accessToken =
-    getToken(req);
+  const accessToken = getToken(req);
 
   if (!accessToken) {
-    throw new Error(
-      "Unauthorized."
-    );
+    throw new Error("Unauthorized.");
   }
 
   if (!SUPABASE_SERVICE_ROLE_KEY) {
@@ -50,36 +43,25 @@ async function authenticate(req) {
     );
   }
 
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/auth/v1/user`,
-      {
-        headers: {
-          apikey:
-            SUPABASE_SERVICE_ROLE_KEY,
-
-          Authorization:
-            `Bearer ${accessToken}`,
-
-          Accept:
-            "application/json"
-        }
+  const response = await fetch(
+    `${SUPABASE_URL}/auth/v1/user`,
+    {
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json"
       }
-    );
+    }
+  );
 
   if (!response.ok) {
-    throw new Error(
-      "Unauthorized."
-    );
+    throw new Error("Unauthorized.");
   }
 
-  const user =
-    await response.json();
+  const user = await response.json();
 
   if (!user?.id) {
-    throw new Error(
-      "Unauthorized."
-    );
+    throw new Error("Unauthorized.");
   }
 
   return user;
@@ -90,57 +72,46 @@ async function authenticate(req) {
    SUPABASE REST HELPER
 ========================================================= */
 
-async function db(
-  path,
-  options = {}
-) {
+async function db(path, options = {}) {
   if (!SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error(
       "SUPABASE_SERVICE_ROLE_KEY is not configured."
     );
   }
 
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/${path}`,
-      {
-        ...options,
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/${path}`,
+    {
+      ...options,
 
-        headers: {
-          apikey:
-            SUPABASE_SERVICE_ROLE_KEY,
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
 
-          Authorization:
-            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        Authorization:
+          `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
 
-          Accept:
-            "application/json",
+        Accept: "application/json",
 
-          "Content-Type":
-            "application/json",
+        "Content-Type":
+          "application/json",
 
-          Prefer:
-            "return=representation",
+        Prefer:
+          "return=representation",
 
-          ...(options.headers || {})
-        }
+        ...(options.headers || {})
       }
-    );
+    }
+  );
 
-  const text =
-    await response.text();
+  const text = await response.text();
 
   let data = {};
 
   try {
-    data =
-      text
-        ? JSON.parse(text)
-        : {};
+    data = text ? JSON.parse(text) : {};
   } catch {
     data = {
-      message:
-        text
+      message: text
     };
   }
 
@@ -162,23 +133,16 @@ async function db(
    READ PROVIDER RESPONSE
 ========================================================= */
 
-async function readResponse(
-  response
-) {
-  const text =
-    await response.text();
+async function readResponse(response) {
+  const text = await response.text();
 
   let data = {};
 
   try {
-    data =
-      text
-        ? JSON.parse(text)
-        : {};
+    data = text ? JSON.parse(text) : {};
   } catch {
     data = {
-      message:
-        text
+      message: text
     };
   }
 
@@ -190,12 +154,10 @@ async function readResponse(
 
 
 /* =========================================================
-   NORMALIZE SERVER NAME
+   NORMALIZE SERVER
 ========================================================= */
 
-function normalizeServer(
-  value
-) {
+function normalizeServer(value) {
   if (!value) {
     return null;
   }
@@ -208,59 +170,28 @@ function normalizeServer(
       .replace(/\s+/g, "-");
 
   const aliases = {
-    "usa1":
-      "usa-server-1",
+    usa1: "usa-server-1",
+    "usa-1": "usa-server-1",
+    us1: "usa-server-1",
+    "server-1": "usa-server-1",
+    "usa-server-1": "usa-server-1",
 
-    "usa-1":
-      "usa-server-1",
+    usa2: "usa-server-2",
+    "usa-2": "usa-server-2",
+    us2: "usa-server-2",
+    "server-2": "usa-server-2",
+    "usa-server-2": "usa-server-2",
 
-    "us1":
-      "usa-server-1",
+    global1: "global-server-1",
+    "global-1": "global-server-1",
+    "global-server-1": "global-server-1",
 
-    "server-1":
-      "usa-server-1",
-
-    "usa-server-1":
-      "usa-server-1",
-
-    "usa2":
-      "usa-server-2",
-
-    "usa-2":
-      "usa-server-2",
-
-    "us2":
-      "usa-server-2",
-
-    "server-2":
-      "usa-server-2",
-
-    "usa-server-2":
-      "usa-server-2",
-
-    "global1":
-      "global-server-1",
-
-    "global-1":
-      "global-server-1",
-
-    "global-server-1":
-      "global-server-1",
-
-    "global2":
-      "global-server-2",
-
-    "global-2":
-      "global-server-2",
-
-    "global-server-2":
-      "global-server-2"
+    global2: "global-server-2",
+    "global-2": "global-server-2",
+    "global-server-2": "global-server-2"
   };
 
-  return (
-    aliases[server] ||
-    server
-  );
+  return aliases[server] || server;
 }
 
 
@@ -268,33 +199,13 @@ function normalizeServer(
    SELECT PROVIDER SERVER
 ========================================================= */
 
-/*
- * Your system can explicitly send:
- *
- * server:
- *   usa-server-1
- *   usa-server-2
- *   global-server-1
- *   global-server-2
- *
- * If server is not supplied:
- *
- * United States -> USA Server 2
- * Other countries -> Global Server 2
- *
- * This keeps provider 2 as the default while still
- * supporting all four documented servers.
- */
-
 function selectServer(
   requestedServer,
   countryId,
   countryName
 ) {
   const explicit =
-    normalizeServer(
-      requestedServer
-    );
+    normalizeServer(requestedServer);
 
   const validServers = [
     "usa-server-1",
@@ -305,28 +216,18 @@ function selectServer(
 
   if (
     explicit &&
-    validServers.includes(
-      explicit
-    )
+    validServers.includes(explicit)
   ) {
     return explicit;
   }
 
   const country =
-    String(
-      countryName || ""
-    )
+    String(countryName || "")
       .trim()
       .toLowerCase();
 
-  /*
-   * SureVerification currently documents
-   * country ID 236 as USA in its examples.
-   */
   const isUSA =
-    String(
-      countryId || ""
-    ) === "236" ||
+    String(countryId || "") === "236" ||
     country === "united states" ||
     country === "usa" ||
     country === "us" ||
@@ -367,8 +268,7 @@ async function purchaseFromSureVerification({
     );
   }
 
-  const params =
-    new URLSearchParams();
+  const params = new URLSearchParams();
 
   params.set(
     "country_id",
@@ -380,10 +280,8 @@ async function purchaseFromSureVerification({
     String(service)
   );
 
-
   const url =
     `${SURE_BASE_URL}/${server}/purchase?${params.toString()}`;
-
 
   console.log(
     "SureVerification purchase:",
@@ -394,45 +292,30 @@ async function purchaseFromSureVerification({
     }
   );
 
+  const response = await fetch(
+    url,
+    {
+      method: "POST",
 
-  const response =
-    await fetch(
-      url,
-      {
-        method:
-          "POST",
-
-        headers: {
-          "x-api-key":
-            SURE_API_KEY,
-
-          Accept:
-            "application/json"
-        }
+      headers: {
+        "x-api-key": SURE_API_KEY,
+        Accept: "application/json"
       }
-    );
-
+    }
+  );
 
   const {
     data,
     text
-  } =
-    await readResponse(
-      response
-    );
-
+  } = await readResponse(response);
 
   console.log(
     "SureVerification purchase response:",
     {
-      status:
-        response.status,
-
-      response:
-        data
+      status: response.status,
+      response: data
     }
   );
-
 
   if (!response.ok) {
     throw new Error(
@@ -445,21 +328,8 @@ async function purchaseFromSureVerification({
     );
   }
 
-
-  /*
-   * SureVerification's documented response:
-   *
-   * verification.request_id
-   * verification.number
-   * verification.service
-   * verification.status
-   * verification.expired_at
-   * verification.id
-   */
-
   const verification =
     data?.verification;
-
 
   if (!verification) {
     throw new Error(
@@ -467,50 +337,34 @@ async function purchaseFromSureVerification({
     );
   }
 
-
   if (
-    verification.id ===
-      undefined ||
-    verification.id ===
-      null ||
-    String(
-      verification.id
-    ).trim() === ""
+    verification.id === undefined ||
+    verification.id === null ||
+    String(verification.id).trim() === ""
   ) {
     throw new Error(
-      "Provider returned no verification ID. The number was not saved."
+      "Provider returned no verification ID."
     );
   }
 
-
   if (
-    verification.request_id ===
-      undefined ||
-    verification.request_id ===
-      null ||
-    String(
-      verification.request_id
-    ).trim() === ""
+    verification.request_id === undefined ||
+    verification.request_id === null ||
+    String(verification.request_id).trim() === ""
   ) {
     throw new Error(
-      "Provider returned no request ID. The number was not saved."
+      "Provider returned no request ID."
     );
   }
 
-
-  if (
-    !verification.number
-  ) {
+  if (!verification.number) {
     throw new Error(
       "Provider returned no phone number."
     );
   }
 
-
   return {
-    raw:
-      data,
-
+    raw: data,
     verification
   };
 }
@@ -520,23 +374,17 @@ async function purchaseFromSureVerification({
    GET WALLET
 ========================================================= */
 
-async function getWallet(
-  userId
-) {
-  const wallets =
-    await db(
-      `wallets?user_id=eq.${encodeURIComponent(
-        userId
-      )}&select=*&limit=1`
-    );
+async function getWallet(userId) {
+  const wallets = await db(
+    `wallets?user_id=eq.${encodeURIComponent(
+      userId
+    )}&select=*&limit=1`
+  );
 
-  const wallet =
-    wallets?.[0];
+  const wallet = wallets?.[0];
 
   if (!wallet) {
-    throw new Error(
-      "Wallet not found."
-    );
+    throw new Error("Wallet not found.");
   }
 
   return wallet;
@@ -555,9 +403,7 @@ async function deductWallet(
     Number(amount);
 
   if (
-    !Number.isFinite(
-      purchaseAmount
-    ) ||
+    !Number.isFinite(purchaseAmount) ||
     purchaseAmount <= 0
   ) {
     throw new Error(
@@ -565,37 +411,24 @@ async function deductWallet(
     );
   }
 
-
   for (
     let attempt = 0;
     attempt < 5;
     attempt++
   ) {
     const wallet =
-      await getWallet(
-        userId
-      );
+      await getWallet(userId);
 
     const currentBalance =
-      Number(
-        wallet.balance || 0
-      );
+      Number(wallet.balance || 0);
 
-    if (
-      !Number.isFinite(
-        currentBalance
-      )
-    ) {
+    if (!Number.isFinite(currentBalance)) {
       throw new Error(
         "Unable to read wallet balance."
       );
     }
 
-
-    if (
-      currentBalance <
-      purchaseAmount
-    ) {
+    if (currentBalance < purchaseAmount) {
       const error =
         new Error(
           "Insufficient wallet balance."
@@ -607,11 +440,9 @@ async function deductWallet(
       throw error;
     }
 
-
     const newBalance =
       currentBalance -
       purchaseAmount;
-
 
     const updated =
       await db(
@@ -621,8 +452,7 @@ async function deductWallet(
           currentBalance
         )}`,
         {
-          method:
-            "PATCH",
+          method: "PATCH",
 
           body:
             JSON.stringify({
@@ -635,17 +465,13 @@ async function deductWallet(
         }
       );
 
-
     if (
-      Array.isArray(
-        updated
-      ) &&
+      Array.isArray(updated) &&
       updated.length > 0
     ) {
       return newBalance;
     }
   }
-
 
   throw new Error(
     "Unable to update wallet balance. Please try again."
@@ -667,8 +493,7 @@ async function recordPurchaseTransaction({
     await db(
       "wallet_transactions",
       {
-        method:
-          "POST",
+        method: "POST",
 
         body:
           JSON.stringify({
@@ -681,9 +506,7 @@ async function recordPurchaseTransaction({
               ),
 
             balance_after:
-              Number(
-                balanceAfter
-              ),
+              Number(balanceAfter),
 
             type:
               "purchase",
@@ -698,11 +521,6 @@ async function recordPurchaseTransaction({
       "Purchase transaction history error:",
       error
     );
-
-    /*
-     * Do not undo a successful wallet deduction
-     * just because history failed.
-     */
   }
 }
 
@@ -720,9 +538,7 @@ async function refundWalletAfterFailure(
       Number(amount);
 
     if (
-      !Number.isFinite(
-        refundAmount
-      ) ||
+      !Number.isFinite(refundAmount) ||
       refundAmount <= 0
     ) {
       return null;
@@ -734,19 +550,14 @@ async function refundWalletAfterFailure(
       attempt++
     ) {
       const wallet =
-        await getWallet(
-          userId
-        );
+        await getWallet(userId);
 
       const currentBalance =
-        Number(
-          wallet.balance || 0
-        );
+        Number(wallet.balance || 0);
 
       const newBalance =
         currentBalance +
         refundAmount;
-
 
       const updated =
         await db(
@@ -756,8 +567,7 @@ async function refundWalletAfterFailure(
             currentBalance
           )}`,
           {
-            method:
-              "PATCH",
+            method: "PATCH",
 
             body:
               JSON.stringify({
@@ -770,17 +580,13 @@ async function refundWalletAfterFailure(
           }
         );
 
-
       if (
-        Array.isArray(
-          updated
-        ) &&
+        Array.isArray(updated) &&
         updated.length > 0
       ) {
         return newBalance;
       }
     }
-
   } catch (error) {
     console.error(
       "Automatic refund failed:",
@@ -793,20 +599,15 @@ async function refundWalletAfterFailure(
 
 
 /* =========================================================
-   CANCEL PROVIDER NUMBER AFTER DATABASE FAILURE
+   CANCEL PROVIDER NUMBER
 ========================================================= */
 
 async function cancelProviderVerification(
   verificationId
 ) {
-  if (!verificationId) {
+  if (!verificationId || !SURE_API_KEY) {
     return false;
   }
-
-  if (!SURE_API_KEY) {
-    return false;
-  }
-
 
   try {
     const response =
@@ -815,8 +616,7 @@ async function cancelProviderVerification(
           verificationId
         )}`,
         {
-          method:
-            "DELETE",
+          method: "DELETE",
 
           headers: {
             "x-api-key":
@@ -828,26 +628,17 @@ async function cancelProviderVerification(
         }
       );
 
-
-    const {
-      data
-    } =
-      await readResponse(
-        response
-      );
-
+    const { data } =
+      await readResponse(response);
 
     console.log(
       "Provider rollback cancellation:",
       {
         verificationId,
-        status:
-          response.status,
-        response:
-          data
+        status: response.status,
+        response: data
       }
     );
-
 
     return response.ok;
 
@@ -866,15 +657,12 @@ async function cancelProviderVerification(
    GET REQUEST DATA
 ========================================================= */
 
-function getRequestData(
-  req
-) {
+function getRequestData(req) {
   const query =
     req.query || {};
 
   const body =
     req.body || {};
-
 
   const countryId =
     query.country_id ||
@@ -883,7 +671,6 @@ function getRequestData(
     body.countryId ||
     body.country ||
     "";
-
 
   const service =
     query.service ||
@@ -894,7 +681,6 @@ function getRequestData(
     body.serviceId ||
     "";
 
-
   const server =
     query.server ||
     query.provider ||
@@ -904,7 +690,6 @@ function getRequestData(
     body.portal ||
     "";
 
-
   const countryName =
     query.country_name ||
     query.countryName ||
@@ -912,13 +697,6 @@ function getRequestData(
     body.countryName ||
     "";
 
-
-  /*
-   * Customer selling price.
-   *
-   * Supports the different names your frontend
-   * may already be sending.
-   */
   const customerPrice =
     query.customer_price ||
     query.customerPrice ||
@@ -931,7 +709,6 @@ function getRequestData(
     body.sellingPrice ||
     body.price ||
     "";
-
 
   return {
     countryId:
@@ -949,9 +726,7 @@ function getRequestData(
     customerPrice:
       customerPrice === ""
         ? ""
-        : Number(
-            customerPrice
-          )
+        : Number(customerPrice)
   };
 }
 
@@ -964,18 +739,12 @@ export default async function handler(
   req,
   res
 ) {
-  if (
-    req.method !== "POST"
-  ) {
+  if (req.method !== "POST") {
     return res.status(405).json({
-      success:
-        false,
-
-      error:
-        "Method not allowed."
+      success: false,
+      error: "Method not allowed."
     });
   }
-
 
   let user = null;
 
@@ -994,9 +763,7 @@ export default async function handler(
     ----------------------------------------------------- */
 
     user =
-      await authenticate(
-        req
-      );
+      await authenticate(req);
 
 
     /* -----------------------------------------------------
@@ -1011,50 +778,31 @@ export default async function handler(
       countryName,
       customerPrice
     } =
-      getRequestData(
-        req
-      );
+      getRequestData(req);
 
 
     if (!countryId) {
       return res.status(400).json({
-        success:
-          false,
-
-        error:
-          "Country ID is required."
+        success: false,
+        error: "Country ID is required."
       });
     }
 
 
     if (!service) {
       return res.status(400).json({
-        success:
-          false,
-
-        error:
-          "Service is required."
+        success: false,
+        error: "Service is required."
       });
     }
 
 
-    /*
-     * Customer price must be supplied by the
-     * frontend/admin pricing system.
-     *
-     * Example:
-     * ₦3000
-     */
     if (
-      !Number.isFinite(
-        customerPrice
-      ) ||
+      !Number.isFinite(customerPrice) ||
       customerPrice <= 0
     ) {
       return res.status(400).json({
-        success:
-          false,
-
+        success: false,
         error:
           "A valid selling price is required."
       });
@@ -1062,13 +810,11 @@ export default async function handler(
 
 
     walletAmount =
-      Number(
-        customerPrice
-      );
+      Number(customerPrice);
 
 
     /* -----------------------------------------------------
-       SELECT SERVER
+       SELECT PROVIDER SERVER
     ----------------------------------------------------- */
 
     const server =
@@ -1091,43 +837,28 @@ export default async function handler(
 
 
     /* -----------------------------------------------------
-       CHECK WALLET BEFORE BUYING
+       CHECK WALLET
     ----------------------------------------------------- */
 
     const wallet =
-      await getWallet(
-        user.id
-      );
+      await getWallet(user.id);
 
     const currentBalance =
-      Number(
-        wallet.balance || 0
-      );
+      Number(wallet.balance || 0);
 
 
-    if (
-      !Number.isFinite(
-        currentBalance
-      )
-    ) {
+    if (!Number.isFinite(currentBalance)) {
       return res.status(400).json({
-        success:
-          false,
-
+        success: false,
         error:
           "Unable to read wallet balance."
       });
     }
 
 
-    if (
-      currentBalance <
-      walletAmount
-    ) {
+    if (currentBalance < walletAmount) {
       return res.status(400).json({
-        success:
-          false,
-
+        success: false,
         error:
           "Insufficient wallet balance."
       });
@@ -1135,7 +866,7 @@ export default async function handler(
 
 
     /* -----------------------------------------------------
-       PURCHASE FROM SUREVERIFICATION
+       PURCHASE FROM PROVIDER
     ----------------------------------------------------- */
 
     const provider =
@@ -1151,48 +882,59 @@ export default async function handler(
 
 
     /*
-     * THIS IS THE CRITICAL FIX.
+     * request_id and verification.id are different.
      *
-     * Save both values separately.
+     * request_id:
+     *     provider_order_id
+     *
+     * verification.id:
+     *     provider_verification_id
+     *
+     * SMS/CANCEL use verification.id.
      */
+
     const providerOrderId =
       String(
         verification.request_id
       ).trim();
-
 
     providerVerificationId =
       String(
         verification.id
       ).trim();
 
-
     const phoneNumber =
       String(
         verification.number
       ).trim();
 
-
     const providerStatus =
       verification.status ||
       "active";
 
-
+    /*
+     * THIS IS THE PROVIDER'S REAL EXPIRATION TIME.
+     */
     const providerExpiredAt =
       verification.expired_at ||
       null;
 
 
-    if (!providerVerificationId) {
+    if (!providerOrderId) {
       throw new Error(
-        "Provider verification ID is missing. Purchase was not saved."
+        "Provider request ID is missing."
       );
     }
 
-
-    if (!providerOrderId) {
+    if (!providerVerificationId) {
       throw new Error(
-        "Provider request ID is missing. Purchase was not saved."
+        "Provider verification ID is missing."
+      );
+    }
+
+    if (!phoneNumber) {
+      throw new Error(
+        "Provider phone number is missing."
       );
     }
 
@@ -1217,14 +959,12 @@ export default async function handler(
 
     let insertedOrders;
 
-
     try {
       insertedOrders =
         await db(
           "orders",
           {
-            method:
-              "POST",
+            method: "POST",
 
             body:
               JSON.stringify({
@@ -1234,12 +974,6 @@ export default async function handler(
                 provider_order_id:
                   providerOrderId,
 
-                /*
-                 * CRITICAL:
-                 * This is verification.id.
-                 *
-                 * SMS and cancel use this value.
-                 */
                 provider_verification_id:
                   providerVerificationId,
 
@@ -1247,6 +981,7 @@ export default async function handler(
                   phoneNumber,
 
                 service_name:
+                  verification.service ||
                   service,
 
                 country_name:
@@ -1258,15 +993,6 @@ export default async function handler(
 
                 customer_price:
                   walletAmount,
-
-                selling_price:
-                  walletAmount,
-
-                amount:
-                  walletAmount,
-
-                provider_server:
-                  server,
 
                 provider_expired_at:
                   providerExpiredAt,
@@ -1281,7 +1007,6 @@ export default async function handler(
         );
 
     } catch (databaseError) {
-
       console.error(
         "Order insert failed:",
         databaseError
@@ -1289,23 +1014,15 @@ export default async function handler(
 
 
       /*
-       * The provider already gave us a number.
-       *
-       * Cancel it immediately so the provider number
-       * is not left active.
+       * Provider number exists but database save
+       * failed, so cancel the provider activation.
        */
       await cancelProviderVerification(
         providerVerificationId
       );
 
 
-      /*
-       * Refund the customer because the order
-       * could not be saved.
-       */
-      if (
-        walletDeducted
-      ) {
+      if (walletDeducted) {
         const refundedBalance =
           await refundWalletAfterFailure(
             user.id,
@@ -1337,7 +1054,6 @@ export default async function handler(
     const savedOrder =
       insertedOrders?.[0];
 
-
     await recordPurchaseTransaction({
       userId:
         user.id,
@@ -1358,20 +1074,14 @@ export default async function handler(
     ----------------------------------------------------- */
 
     return res.status(200).json({
-      success:
-        true,
+      success: true,
 
       message:
         "Number purchased successfully.",
 
       order:
-        savedOrder ||
-        null,
+        savedOrder || null,
 
-      /*
-       * Provider values are returned so the frontend
-       * can immediately use them if necessary.
-       */
       provider_order_id:
         providerOrderId,
 
@@ -1388,6 +1098,9 @@ export default async function handler(
       status:
         providerStatus,
 
+      /*
+       * Frontend countdown will use this.
+       */
       expired_at:
         providerExpiredAt,
 
@@ -1407,7 +1120,6 @@ export default async function handler(
       error
     );
 
-
     const message =
       error?.message ||
       "Unable to purchase number.";
@@ -1418,9 +1130,7 @@ export default async function handler(
       "INSUFFICIENT_FUNDS"
     ) {
       return res.status(400).json({
-        success:
-          false,
-
+        success: false,
         error:
           "Insufficient wallet balance."
       });
@@ -1432,21 +1142,15 @@ export default async function handler(
       "Unauthorized."
     ) {
       return res.status(401).json({
-        success:
-          false,
-
-        error:
-          message
+        success: false,
+        error: message
       });
     }
 
 
     return res.status(500).json({
-      success:
-        false,
-
-      error:
-        message
+      success: false,
+      error: message
     });
   }
 }
