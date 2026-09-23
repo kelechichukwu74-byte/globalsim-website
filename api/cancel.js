@@ -18,19 +18,14 @@ function getBearerToken(req) {
     req.headers?.Authorization ||
     "";
 
-  if (!header.startsWith("Bearer ")) {
-    return null;
-  }
-
+  if (!header.startsWith("Bearer ")) return null;
   return header.slice(7).trim();
 }
 
 async function getAuthenticatedUser(req) {
   const token = getBearerToken(req);
 
-  if (!token) {
-    throw new Error("Unauthorized.");
-  }
+  if (!token) throw new Error("Unauthorized.");
 
   const response = await fetch(
     `${SUPABASE_URL}/auth/v1/user`,
@@ -43,24 +38,18 @@ async function getAuthenticatedUser(req) {
     }
   );
 
-  if (!response.ok) {
-    throw new Error("Unauthorized.");
-  }
+  if (!response.ok) throw new Error("Unauthorized.");
 
   const user = await response.json();
 
-  if (!user?.id) {
-    throw new Error("Unauthorized.");
-  }
+  if (!user?.id) throw new Error("Unauthorized.");
 
   return user;
 }
 
 async function supabaseRequest(path, options = {}) {
   if (!SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not configured."
-    );
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
   }
 
   const response = await fetch(
@@ -69,8 +58,7 @@ async function supabaseRequest(path, options = {}) {
       ...options,
       headers: {
         apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization:
-          `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         "Content-Type": "application/json",
         Accept: "application/json",
         Prefer: "return=representation",
@@ -80,15 +68,12 @@ async function supabaseRequest(path, options = {}) {
   );
 
   const text = await response.text();
-
   let data = {};
 
   try {
     data = text ? JSON.parse(text) : {};
   } catch {
-    throw new Error(
-      `Supabase returned invalid JSON (HTTP ${response.status}).`
-    );
+    throw new Error(`Supabase returned invalid JSON (HTTP ${response.status}).`);
   }
 
   if (!response.ok) {
@@ -103,46 +88,31 @@ async function supabaseRequest(path, options = {}) {
   return data;
 }
 
-async function cancelProviderVerification(
-  verificationId
-) {
-  const cleanId =
-    String(verificationId || "").trim();
+async function cancelProviderVerification(verificationId) {
+  const cleanId = String(verificationId || "").trim();
 
   if (!cleanId) {
     throw new Error("Verification ID is missing.");
   }
 
-  if (!process.env.SUREVERIFICATION_API_KEY) {
-    throw new Error(
-      "SUREVERIFICATION_API_KEY is not configured."
-    );
-  }
-
   const url =
-    `${SURE_BASE_URL}/verifications/cancel/${encodeURIComponent(
-      cleanId
-    )}`;
+    `${SURE_BASE_URL}/verifications/cancel/${encodeURIComponent(cleanId)}`;
 
   const response = await fetch(url, {
     method: "DELETE",
     headers: {
-      "x-api-key":
-        process.env.SUREVERIFICATION_API_KEY,
+      "x-api-key": process.env.SUREVERIFICATION_API_KEY,
       Accept: "application/json"
     }
   });
 
   const text = await response.text();
-
   let data = {};
 
   try {
     data = text ? JSON.parse(text) : {};
   } catch {
-    data = {
-      message: text
-    };
+    data = { message: text };
   }
 
   if (!response.ok) {
@@ -156,117 +126,63 @@ async function cancelProviderVerification(
   return data;
 }
 
-async function refundWallet(
-  userId,
-  amount
-) {
-  const refundAmount =
-    Number(amount);
+async function refundWallet(userId, amount) {
+  const refundAmount = Number(amount);
 
-  if (
-    !Number.isFinite(refundAmount) ||
-    refundAmount <= 0
-  ) {
-    throw new Error(
-      "Invalid refund amount."
-    );
+  if (!Number.isFinite(refundAmount) || refundAmount <= 0) {
+    throw new Error("Invalid refund amount.");
   }
 
-  for (
-    let attempt = 0;
-    attempt < 5;
-    attempt++
-  ) {
-    const rows =
-      await supabaseRequest(
-        `wallets?user_id=eq.${encodeURIComponent(
-          userId
-        )}&select=user_id,balance&limit=1`
-      );
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const rows = await supabaseRequest(
+      `wallets?user_id=eq.${encodeURIComponent(userId)}&select=user_id,balance&limit=1`
+    );
 
-    const wallet =
-      rows?.[0];
+    const wallet = rows?.[0];
 
-    if (!wallet) {
-      throw new Error(
-        "Wallet not found while processing refund."
-      );
-    }
+    if (!wallet) throw new Error("Wallet not found while processing refund.");
 
-    const currentBalance =
-      Number(wallet.balance || 0);
+    const currentBalance = Number(wallet.balance || 0);
+    const newBalance = currentBalance + refundAmount;
 
-    const newBalance =
-      currentBalance +
-      refundAmount;
+    const updated = await supabaseRequest(
+      `wallets?user_id=eq.${encodeURIComponent(userId)}&balance=eq.${encodeURIComponent(currentBalance)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          balance: newBalance,
+          updated_at: new Date().toISOString()
+        })
+      }
+    );
 
-    const updated =
-      await supabaseRequest(
-        `wallets?user_id=eq.${encodeURIComponent(
-          userId
-        )}&balance=eq.${encodeURIComponent(
-          currentBalance
-        )}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({
-            balance: newBalance,
-            updated_at:
-              new Date().toISOString()
-          })
-        }
-      );
-
-    if (
-      Array.isArray(updated) &&
-      updated.length
-    ) {
+    if (Array.isArray(updated) && updated.length) {
       return newBalance;
     }
   }
 
-  throw new Error(
-    "Unable to complete wallet refund automatically."
-  );
+  throw new Error("Unable to complete wallet refund automatically.");
 }
 
-async function createRefundTransaction(
-  userId,
-  amount,
-  balanceAfter
-) {
+async function createRefundTransaction(userId, amount, balanceAfter) {
   try {
-    await supabaseRequest(
-      "wallet_transactions",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          user_id: userId,
-          amount: Number(amount),
-          balance_after:
-            Number(balanceAfter),
-          type: "refund",
-          description:
-            "Refund for cancelled virtual number"
-        })
-      }
-    );
+    await supabaseRequest("wallet_transactions", {
+      method: "POST",
+      body: JSON.stringify({
+        user_id: userId,
+        amount: Number(amount),
+        balance_after: Number(balanceAfter),
+        type: "refund",
+        description: "Refund for cancelled virtual number"
+      })
+    });
   } catch (error) {
-    console.error(
-      "Refund transaction history error:",
-      error
-    );
+    console.error("Refund transaction history error:", error);
   }
 }
 
-export default async function handler(
-  req,
-  res
-) {
-  if (
-    req.method !== "DELETE" &&
-    req.method !== "POST"
-  ) {
+export default async function handler(req, res) {
+  if (req.method !== "DELETE" && req.method !== "POST") {
     return res.status(405).json({
       success: false,
       error: "Method not allowed"
@@ -274,16 +190,14 @@ export default async function handler(
   }
 
   try {
-    const user =
-      await getAuthenticatedUser(req);
+    const user = await getAuthenticatedUser(req);
 
     const queryId =
       req.query?.id ||
       req.query?.verificationId ||
       req.query?.verification_id;
 
-    const body =
-      req.body || {};
+    const body = req.body || {};
 
     const requestedId =
       queryId ||
@@ -295,134 +209,72 @@ export default async function handler(
     if (!requestedId) {
       return res.status(400).json({
         success: false,
-        error:
-          "Verification ID is required."
+        error: "Verification ID is required."
       });
     }
 
-    const id =
-      String(requestedId).trim();
+    const id = String(requestedId).trim();
 
-    /*
-     * IMPORTANT:
-     * provider_order_id must contain the
-     * SureVerification request_id.
-     */
+    const orders = await supabaseRequest(
+      `orders?user_id=eq.${encodeURIComponent(user.id)}&provider_order_id=eq.${encodeURIComponent(id)}&select=*&limit=1`
+    );
 
-    const orders =
-      await supabaseRequest(
-        `orders?user_id=eq.${encodeURIComponent(
-          user.id
-        )}&provider_order_id=eq.${encodeURIComponent(
-          id
-        )}&select=*&limit=1`
-      );
-
-    const order =
-      orders?.[0];
+    const order = orders?.[0];
 
     if (!order) {
       return res.status(404).json({
         success: false,
-        error:
-          "Order not found for this account."
+        error: "Order not found for this account."
       });
     }
 
     const currentStatus =
-      String(
-        order.status || ""
-      ).toLowerCase();
+      String(order.status || "").toLowerCase();
 
-    if (
-      [
-        "cancelled",
-        "canceled",
-        "refunded"
-      ].includes(currentStatus)
-    ) {
+    if (["cancelled", "canceled", "refunded"].includes(currentStatus)) {
       return res.status(200).json({
         success: true,
-        message:
-          "Number is already cancelled.",
+        message: "Number is already cancelled.",
         refunded: true
       });
     }
 
-    /*
-     * Cancel directly through
-     * SureVerification.
-     */
-    await cancelProviderVerification(
-      id
-    );
+    // SureVerification's cancellation endpoint is independent of the
+    // regional purchase server. It cancels by the verification request_id.
+    await cancelProviderVerification(id);
 
-    /*
-     * Refund the customer.
-     */
-    const refundAmount =
-      Number(
-        order.customer_price || 0
-      );
-
+    const refundAmount = Number(order.customer_price || 0);
     let balanceAfter = null;
 
     if (refundAmount > 0) {
-      balanceAfter =
-        await refundWallet(
-          user.id,
-          refundAmount
-        );
-
-      await createRefundTransaction(
-        user.id,
-        refundAmount,
-        balanceAfter
-      );
+      balanceAfter = await refundWallet(user.id, refundAmount);
+      await createRefundTransaction(user.id, refundAmount, balanceAfter);
     }
 
-    /*
-     * Mark the order as cancelled.
-     */
     await supabaseRequest(
-      `orders?id=eq.${encodeURIComponent(
-        order.id
-      )}&user_id=eq.${encodeURIComponent(
-        user.id
-      )}`,
+      `orders?id=eq.${encodeURIComponent(order.id)}&user_id=eq.${encodeURIComponent(user.id)}`,
       {
         method: "PATCH",
         body: JSON.stringify({
           status: "cancelled",
-          updated_at:
-            new Date().toISOString()
+          updated_at: new Date().toISOString()
         })
       }
     );
 
     return res.status(200).json({
       success: true,
-
       message:
         refundAmount > 0
           ? `Number cancelled successfully. ₦${refundAmount.toLocaleString()} has been refunded to your wallet.`
           : "Number cancelled successfully.",
-
-      refunded:
-        refundAmount > 0,
-
-      refund_amount:
-        refundAmount,
-
-      balance_after:
-        balanceAfter
+      refunded: refundAmount > 0,
+      refund_amount: refundAmount,
+      balance_after: balanceAfter
     });
 
   } catch (error) {
-    console.error(
-      "Cancel number error:",
-      error
-    );
+    console.error("Cancel number error:", error);
 
     const message =
       error?.message ||
