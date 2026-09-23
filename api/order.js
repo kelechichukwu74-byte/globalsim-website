@@ -1,4 +1,7 @@
-import { sureVerificationRequest } from "./_lib.js";
+import {
+  sureVerificationRequest,
+  getServersForCountry
+} from "./_lib.js";
 
 const SUPABASE_URL =
   process.env.SUPABASE_URL ||
@@ -11,13 +14,15 @@ const SUPABASE_PUBLISHABLE_KEY =
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const enc = v => encodeURIComponent(String(v ?? ""));
+const enc = v =>
+  encodeURIComponent(String(v ?? ""));
 
 function token(req) {
   const h =
     req.headers?.authorization ||
     req.headers?.Authorization ||
     "";
+
   return h.startsWith("Bearer ")
     ? h.slice(7).trim()
     : null;
@@ -25,19 +30,25 @@ function token(req) {
 
 async function user(req) {
   const t = token(req);
-  if (!t) throw new Error("Unauthorized.");
+
+  if (!t)
+    throw new Error("Unauthorized.");
 
   const r = await fetch(
     `${SUPABASE_URL}/auth/v1/user`,
     {
       headers: {
-        apikey: SUPABASE_PUBLISHABLE_KEY,
-        Authorization: `Bearer ${t}`
+        apikey:
+          SUPABASE_PUBLISHABLE_KEY,
+
+        Authorization:
+          `Bearer ${t}`
       }
     }
   );
 
-  const data = await r.json().catch(() => null);
+  const data =
+    await r.json().catch(() => null);
 
   if (!r.ok || !data?.id)
     throw new Error("Unauthorized.");
@@ -45,42 +56,67 @@ async function user(req) {
   return data;
 }
 
-async function db(path, options = {}) {
-  if (!SUPABASE_SERVICE_ROLE_KEY)
+async function db(
+  path,
+  options = {}
+) {
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error(
       "SUPABASE_SERVICE_ROLE_KEY is not configured."
     );
+  }
 
   const r = await fetch(
     `${SUPABASE_URL}/rest/v1/${path}`,
     {
-      method: options.method || "GET",
+      method:
+        options.method || "GET",
+
       headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        apikey:
+          SUPABASE_SERVICE_ROLE_KEY,
+
         Authorization:
           `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Prefer: "return=representation"
+
+        "Content-Type":
+          "application/json",
+
+        Accept:
+          "application/json",
+
+        Prefer:
+          "return=representation"
       },
+
       ...(options.body !== undefined
         ? {
             body:
-              typeof options.body === "string"
+              typeof options.body ===
+              "string"
                 ? options.body
-                : JSON.stringify(options.body)
+                : JSON.stringify(
+                    options.body
+                  )
           }
         : {})
     }
   );
 
-  const text = await r.text();
+  const text =
+    await r.text();
+
   let data = {};
 
   try {
-    data = text ? JSON.parse(text) : {};
+    data =
+      text
+        ? JSON.parse(text)
+        : {};
   } catch {
-    data = { message: text };
+    data = {
+      message: text
+    };
   }
 
   if (!r.ok) {
@@ -99,11 +135,22 @@ function norm(v) {
   return String(v ?? "")
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
+    .replace(
+      /[^a-z0-9]/g,
+      ""
+    );
 }
 
-function usa(id, code, name) {
-  return [id, code, name]
+function usa(
+  id,
+  code,
+  name
+) {
+  return [
+    id,
+    code,
+    name
+  ]
     .map(v =>
       String(v ?? "")
         .trim()
@@ -132,7 +179,8 @@ function verification(data) {
 }
 
 function number(data) {
-  const v = verification(data);
+  const v =
+    verification(data);
 
   return (
     v?.number ||
@@ -144,7 +192,8 @@ function number(data) {
 }
 
 function verificationId(data) {
-  const v = verification(data);
+  const v =
+    verification(data);
 
   return (
     v?.id ??
@@ -157,7 +206,8 @@ function verificationId(data) {
 }
 
 function requestId(data) {
-  const v = verification(data);
+  const v =
+    verification(data);
 
   return (
     v?.request_id ??
@@ -169,7 +219,8 @@ function requestId(data) {
 }
 
 function providerCost(data) {
-  const v = verification(data);
+  const v =
+    verification(data);
 
   const values = [
     v?.price,
@@ -180,10 +231,18 @@ function providerCost(data) {
     data?.data?.amount
   ];
 
-  for (const value of values) {
-    const n = Number(value);
-    if (Number.isFinite(n) && n >= 0)
+  for (
+    const value of values
+  ) {
+    const n =
+      Number(value);
+
+    if (
+      Number.isFinite(n) &&
+      n >= 0
+    ) {
       return n;
+    }
   }
 
   return null;
@@ -204,7 +263,11 @@ function services(data) {
     data?.providerResponse?.data
   ];
 
-  return values.find(Array.isArray) || [];
+  return (
+    values.find(
+      Array.isArray
+    ) || []
+  );
 }
 
 function serviceId(s) {
@@ -242,15 +305,19 @@ async function providerService(
       )}`
     );
 
-  const list = services(data);
+  const list =
+    services(data);
 
-  if (!list.length)
+  if (!list.length) {
     throw new Error(
       `No services returned by ${server}.`
     );
+  }
 
   const id =
-    String(requestedId ?? "").trim();
+    String(
+      requestedId ?? ""
+    ).trim();
 
   const name =
     norm(requestedName);
@@ -258,37 +325,48 @@ async function providerService(
   let found = null;
 
   if (id) {
-    found = list.find(
-      s =>
-        String(
-          serviceId(s) ?? ""
-        ).trim() === id
-    );
-  }
-
-  if (!found && name) {
-    found = list.find(
-      s =>
-        norm(serviceName(s)) === name
-    );
-  }
-
-  if (!found && name) {
-    found = list.find(s => {
-      const n = norm(serviceName(s));
-      return (
-        n.includes(name) ||
-        name.includes(n)
+    found =
+      list.find(
+        s =>
+          String(
+            serviceId(s) ?? ""
+          ).trim() === id
       );
-    });
   }
 
-  if (!found)
+  if (!found && name) {
+    found =
+      list.find(
+        s =>
+          norm(
+            serviceName(s)
+          ) === name
+      );
+  }
+
+  if (!found && name) {
+    found =
+      list.find(s => {
+        const n =
+          norm(
+            serviceName(s)
+          );
+
+        return (
+          n.includes(name) ||
+          name.includes(n)
+        );
+      });
+  }
+
+  if (!found) {
     throw new Error(
       `Service "${requestedName || requestedId}" is not available on ${server}.`
     );
+  }
 
-  const idValue = serviceId(found);
+  const idValue =
+    serviceId(found);
 
   if (
     idValue === null ||
@@ -303,7 +381,9 @@ async function providerService(
   return String(idValue);
 }
 
-async function wallet(userId) {
+async function wallet(
+  userId
+) {
   const rows =
     await db(
       `wallets?user_id=eq.${enc(
@@ -312,7 +392,9 @@ async function wallet(userId) {
     );
 
   if (!rows?.[0])
-    throw new Error("Wallet not found.");
+    throw new Error(
+      "Wallet not found."
+    );
 
   return rows[0];
 }
@@ -325,7 +407,9 @@ async function changeWallet(
     await wallet(userId);
 
   const before =
-    Number(w.balance || 0);
+    Number(
+      w.balance || 0
+    );
 
   const after =
     before + Number(amount);
@@ -338,9 +422,12 @@ async function changeWallet(
         before
       )}`,
       {
-        method: "PATCH",
+        method:
+          "PATCH",
+
         body: {
           balance: after,
+
           updated_at:
             new Date().toISOString()
         }
@@ -369,15 +456,24 @@ async function transaction(
     await db(
       "wallet_transactions",
       {
-        method: "POST",
+        method:
+          "POST",
+
         body: {
-          user_id: userId,
+          user_id:
+            userId,
+
           type:
             Number(amount) < 0
               ? "purchase"
               : "refund",
-          amount: Number(amount),
-          balance_after: balance,
+
+          amount:
+            Number(amount),
+
+          balance_after:
+            balance,
+
           description
         }
       }
@@ -418,9 +514,12 @@ async function createOrder(
   return db(
     "orders",
     {
-      method: "POST",
+      method:
+        "POST",
+
       body: {
-        user_id: userId,
+        user_id:
+          userId,
 
         provider_order_id:
           data.requestId,
@@ -444,11 +543,16 @@ async function createOrder(
           data.customerPrice,
 
         profit:
-          Number(data.customerPrice) -
-          Number(data.providerCost),
+          Number(
+            data.customerPrice
+          ) -
+          Number(
+            data.providerCost
+          ),
 
         status:
-          data.status || "active",
+          data.status ||
+          "active",
 
         phone_number:
           data.phoneNumber
@@ -461,11 +565,17 @@ export default async function handler(
   req,
   res
 ) {
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      success: false,
-      error: "Method not allowed"
-    });
+  if (
+    req.method !==
+    "POST"
+  ) {
+    return res
+      .status(405)
+      .json({
+        success: false,
+        error:
+          "Method not allowed"
+      });
   }
 
   let currentUser = null;
@@ -505,19 +615,18 @@ export default async function handler(
       body.service_name ??
       "";
 
-    if (!countryId)
+    if (!countryId) {
       throw new Error(
         "Country is required."
       );
+    }
 
-    if (!internalServiceId)
+    if (!internalServiceId) {
       throw new Error(
         "Service is required."
       );
+    }
 
-    /*
-     * CUSTOMER SELLING PRICE
-     */
     let pricing =
       await db(
         `product_prices?country_id=eq.${enc(
@@ -527,9 +636,6 @@ export default async function handler(
         )}&select=country_id,country_name,service_id,service_name,selling_price&limit=1`
       );
 
-    /*
-     * Match by service name if needed.
-     */
     if (
       (!pricing ||
         !pricing.length) &&
@@ -587,13 +693,6 @@ export default async function handler(
         internalServiceId
       );
 
-    /*
-     * PORTAL ROUTING
-     *
-     * USA -> USA SERVER 2 ONLY
-     * Other countries -> GLOBAL SERVER 2,
-     * then GLOBAL SERVER 1.
-     */
     const isUnitedStates =
       usa(
         countryId,
@@ -601,13 +700,25 @@ export default async function handler(
         countryName
       );
 
-    const servers =
+    /*
+     * PORTAL ROUTING
+     *
+     * USA:
+     *   USA Server 2
+     *
+     * Other countries:
+     *   Global Server 2
+     *   Global Server 1 fallback
+     */
+    const routingCountry =
       isUnitedStates
-        ? ["usa-server-2"]
-        : [
-            "global-server-2",
-            "global-server-1"
-          ];
+        ? "US"
+        : countryName;
+
+    const servers =
+      getServersForCountry(
+        routingCountry
+      );
 
     console.log(
       "[ORDER] ROUTING",
@@ -621,9 +732,6 @@ export default async function handler(
       }
     );
 
-    /*
-     * DEBIT CUSTOMER
-     */
     const w =
       await wallet(
         currentUser.id
@@ -660,13 +768,9 @@ export default async function handler(
 
     let providerData = null;
     let selectedServer = null;
-    let selectedProviderService =
-      null;
+    let selectedProviderService = null;
     let lastError = null;
 
-    /*
-     * PURCHASE
-     */
     for (
       const server of servers
     ) {
@@ -697,20 +801,25 @@ export default async function handler(
               selectedProviderService
             )}`,
             {
-              method: "POST"
+              method:
+                "POST"
             }
           );
 
         console.log(
           "[ORDER] PROVIDER RESPONSE",
-          JSON.stringify(result)
+          JSON.stringify(
+            result
+          )
         );
 
         const receivedNumber =
           number(result);
 
         const receivedId =
-          verificationId(result);
+          verificationId(
+            result
+          );
 
         if (
           receivedNumber &&
@@ -730,7 +839,8 @@ export default async function handler(
             "Provider did not return a valid number."
           );
       } catch (e) {
-        lastError = e;
+        lastError =
+          e;
 
         console.error(
           "[ORDER] SERVER ERROR",
@@ -738,14 +848,14 @@ export default async function handler(
           e?.message
         );
 
-        if (isUnitedStates)
-          break;
+        /*
+         * USA has only USA Server 2.
+         * Other countries may continue to
+         * Global Server 1 fallback.
+         */
       }
     }
 
-    /*
-     * REFUND IF PROVIDER FAILED
-     */
     if (!providerData) {
       await refund(
         currentUser.id,
@@ -800,16 +910,6 @@ export default async function handler(
       );
     }
 
-    /*
-     * PROVIDER COST
-     *
-     * The provider response may not contain price.
-     * Your orders.provider_cost column is NOT NULL,
-     * so use the actual provider price when supplied.
-     *
-     * If the provider does not return it, use the
-     * provider service price if available.
-     */
     let cost =
       providerCost(
         providerData
@@ -823,7 +923,9 @@ export default async function handler(
           `/${selectedServer}/services?country_id=${enc(
             countryId
           )}`
-        ).catch(() => null);
+        ).catch(
+          () => null
+        );
 
       const list =
         services(
@@ -869,12 +971,6 @@ export default async function handler(
       }
     }
 
-    /*
-     * LAST DATABASE-SAFE FALLBACK.
-     *
-     * This prevents the NOT NULL error.
-     * It does not change the customer's selling price.
-     */
     if (
       cost === null ||
       !Number.isFinite(cost) ||
@@ -883,9 +979,6 @@ export default async function handler(
       cost = 0;
     }
 
-    /*
-     * SAVE ORDER
-     */
     const order =
       await createOrder(
         currentUser.id,
@@ -906,7 +999,9 @@ export default async function handler(
           countryName:
             priceRow?.country_name ||
             countryName ||
-            String(countryId),
+            String(
+              countryId
+            ),
 
           providerCost:
             cost,
@@ -931,74 +1026,73 @@ export default async function handler(
         currentUser.id
       );
 
-    /*
-     * RETURN THE NUMBER DIRECTLY
-     * TO YOUR WEBSITE.
-     */
-    return res.status(200).json({
-      success: true,
+    return res
+      .status(200)
+      .json({
+        success:
+          true,
 
-      message:
-        "Number purchased successfully.",
+        message:
+          "Number purchased successfully.",
 
-      order:
-        order?.[0] ||
-        null,
+        order:
+          order?.[0] ||
+          null,
 
-      phone_number:
-        phoneNumber,
+        phone_number:
+          phoneNumber,
 
-      phoneNumber:
-        phoneNumber,
+        phoneNumber:
+          phoneNumber,
 
-      verification_id:
-        realVerificationId,
+        verification_id:
+          realVerificationId,
 
-      verificationId:
-        realVerificationId,
-
-      request_id:
-        purchaseRequestId ||
-        null,
-
-      provider_server:
-        selectedServer,
-
-      provider_service_id:
-        selectedProviderService,
-
-      provider_cost:
-        cost,
-
-      provider_price:
-        cost,
-
-      selling_price:
-        sellingPrice,
-
-      sellingPrice:
-        sellingPrice,
-
-      balance:
-        Number(
-          finalWallet?.balance ||
-          0
-        ),
-
-      verification: {
-        ...v,
-
-        id:
+        verificationId:
           realVerificationId,
 
         request_id:
           purchaseRequestId ||
           null,
 
-        number:
-          phoneNumber
-      }
-    });
+        provider_server:
+          selectedServer,
+
+        provider_service_id:
+          selectedProviderService,
+
+        provider_cost:
+          cost,
+
+        provider_price:
+          cost,
+
+        selling_price:
+          sellingPrice,
+
+        sellingPrice:
+          sellingPrice,
+
+        balance:
+          Number(
+            finalWallet?.balance ||
+            0
+          ),
+
+        verification: {
+          ...v,
+
+          id:
+            realVerificationId,
+
+          request_id:
+            purchaseRequestId ||
+            null,
+
+          number:
+            phoneNumber
+        }
+      });
 
   } catch (error) {
     console.error(
@@ -1017,7 +1111,9 @@ export default async function handler(
           purchasePrice,
           "Automatic refund after failed purchase"
         );
-      } catch (refundError) {
+      } catch (
+        refundError
+      ) {
         console.error(
           "[ORDER] REFUND ERROR:",
           refundError
@@ -1032,32 +1128,51 @@ export default async function handler(
     if (
       message
         .toLowerCase()
-        .includes("insufficient")
+        .includes(
+          "insufficient"
+        )
     ) {
-      return res.status(400).json({
-        success: false,
-        error:
-          "Insufficient wallet balance.",
-        message:
-          "Insufficient wallet balance."
-      });
+      return res
+        .status(400)
+        .json({
+          success:
+            false,
+
+          error:
+            "Insufficient wallet balance.",
+
+          message:
+            "Insufficient wallet balance."
+        });
     }
 
     if (
       message ===
       "Unauthorized."
     ) {
-      return res.status(401).json({
-        success: false,
-        error: message,
-        message
-      });
+      return res
+        .status(401)
+        .json({
+          success:
+            false,
+
+          error:
+            message,
+
+          message
+        });
     }
 
-    return res.status(500).json({
-      success: false,
-      error: message,
-      message
-    });
+    return res
+      .status(500)
+      .json({
+        success:
+          false,
+
+        error:
+          message,
+
+        message
+      });
   }
 }
