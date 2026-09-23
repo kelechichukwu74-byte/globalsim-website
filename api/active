@@ -2,45 +2,22 @@ const SUPABASE_URL =
   process.env.SUPABASE_URL ||
   "https://rfitbmkizfmwfqqskwhy.supabase.co";
 
+const SUPABASE_PUBLISHABLE_KEY =
+  process.env.SUPABASE_PUBLISHABLE_KEY ||
+  "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
+
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 
 /* =========================================================
-   GET BEARER TOKEN
-========================================================= */
+   SUPABASE REQUEST
+   ========================================================= */
 
-function getBearerToken(req) {
-  const header =
-    req.headers?.authorization ||
-    req.headers?.Authorization ||
-    "";
-
-  if (
-    !header
-      .toLowerCase()
-      .startsWith("bearer ")
-  ) {
-    return null;
-  }
-
-  return header.slice(7).trim();
-}
-
-
-/* =========================================================
-   AUTHENTICATE USER
-========================================================= */
-
-async function getAuthenticatedUser(req) {
-  const token =
-    getBearerToken(req);
-
-  if (!token) {
-    throw new Error(
-      "Unauthorized."
-    );
-  }
+async function supabaseRequest(
+  path,
+  options = {}
+) {
 
   if (!SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error(
@@ -50,11 +27,111 @@ async function getAuthenticatedUser(req) {
 
   const response =
     await fetch(
+      `${SUPABASE_URL}/rest/v1/${path}`,
+      {
+        ...options,
+
+        headers: {
+          apikey:
+            SUPABASE_SERVICE_ROLE_KEY,
+
+          Authorization:
+            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+
+          "Content-Type":
+            "application/json",
+
+          Accept:
+            "application/json",
+
+          Prefer:
+            "return=representation",
+
+          ...(options.headers || {})
+        }
+      }
+    );
+
+  const text =
+    await response.text();
+
+  let data = {};
+
+  try {
+
+    data =
+      text
+        ? JSON.parse(text)
+        : {};
+
+  } catch {
+
+    throw new Error(
+      `Supabase returned invalid JSON (HTTP ${response.status}).`
+    );
+
+  }
+
+  if (!response.ok) {
+
+    throw new Error(
+      data?.message ||
+      data?.hint ||
+      data?.details ||
+      `Supabase request failed (HTTP ${response.status}).`
+    );
+
+  }
+
+  return data;
+
+}
+
+
+/* =========================================================
+   AUTH
+   ========================================================= */
+
+function getBearerToken(req) {
+
+  const header =
+    req.headers?.authorization ||
+    req.headers?.Authorization ||
+    "";
+
+  if (
+    !header.startsWith(
+      "Bearer "
+    )
+  ) {
+    return null;
+  }
+
+  return header
+    .slice(7)
+    .trim();
+
+}
+
+
+async function getAuthenticatedUser(req) {
+
+  const token =
+    getBearerToken(req);
+
+  if (!token) {
+    throw new Error(
+      "Unauthorized."
+    );
+  }
+
+  const response =
+    await fetch(
       `${SUPABASE_URL}/auth/v1/user`,
       {
         headers: {
           apikey:
-            SUPABASE_SERVICE_ROLE_KEY,
+            SUPABASE_PUBLISHABLE_KEY,
 
           Authorization:
             `Bearer ${token}`,
@@ -81,203 +158,553 @@ async function getAuthenticatedUser(req) {
   }
 
   return user;
+
 }
 
 
 /* =========================================================
-   SUPABASE GET REQUEST
-========================================================= */
+   QUOTE
+   ========================================================= */
 
-async function supabaseRequest(path) {
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/${path}`,
+function quote(value) {
+
+  return encodeURIComponent(
+    String(value)
+  );
+
+}
+
+
+/* =========================================================
+   REFUND CHECK
+   ========================================================= */
+
+async function hasRefund(
+  orderId
+) {
+
+  const rows =
+    await supabaseRequest(
+      `wallet_transactions` +
+      `?type=eq.refund` +
+      `&reference_id=eq.${quote(orderId)}` +
+      `&select=id,amount,created_at` +
+      `&limit=1`
+    );
+
+  return Boolean(
+    rows?.length
+  );
+
+}
+
+
+/* =========================================================
+   REFUND EXPIRED ORDER
+   ========================================================= */
+
+async function refundExpiredOrder(
+  order
+) {
+
+  if (
+    !order?.id ||
+    !order?.user_id
+  ) {
+    return {
+      refunded:
+        false,
+
+      alreadyRefunded:
+        false,
+
+      amount:
+        0
+    };
+  }
+
+
+  /*
+    Never refund twice.
+  */
+
+  if (
+    await hasRefund(
+      order.id
+    )
+  ) {
+
+    return {
+      refunded:
+        true,
+
+      alreadyRefunded:
+        true,
+
+      amount:
+        Number(
+          order.customer_price ||
+          0
+        )
+    };
+
+  }
+
+
+  const amount =
+    Number(
+      order.customer_price ??
+      order.selling_price ??
+      order.amount ??
+      0
+    );
+
+
+  if (
+    !Number.isFinite(amount) ||
+    amount <= 0
+  ) {
+
+    return {
+      refunded:
+        false,
+
+      alreadyRefunded:
+        false,
+
+      amount:
+        0
+    };
+
+  }
+
+
+  const walletRows =
+    await supabaseRequest(
+      `wallets?user_id=eq.${quote(order.user_id)}` +
+      `&select=user_id,balance` +
+      `&limit=1`
+    );
+
+
+  const wallet =
+    walletRows?.[0];
+
+
+  if (!wallet) {
+
+    await supabaseRequest(
+      "wallets",
       {
-        method: "GET",
+        method:
+          "POST",
 
-        headers: {
-          apikey:
-            SUPABASE_SERVICE_ROLE_KEY,
+        body:
+          JSON.stringify({
+            user_id:
+              order.user_id,
 
-          Authorization:
-            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-
-          Accept:
-            "application/json"
-        }
+            balance:
+              amount
+          })
       }
     );
 
-  const text =
-    await response.text();
 
-  let data = {};
+    await supabaseRequest(
+      "wallet_transactions",
+      {
+        method:
+          "POST",
 
-  try {
-    data =
-      text
-        ? JSON.parse(text)
-        : {};
-  } catch {
-    throw new Error(
-      `Supabase returned invalid JSON (HTTP ${response.status}).`
+        body:
+          JSON.stringify({
+            user_id:
+              order.user_id,
+
+            type:
+              "refund",
+
+            amount:
+              amount,
+
+            balance_before:
+              0,
+
+            balance_after:
+              amount,
+
+            reference_id:
+              order.id,
+
+            description:
+              "Refund for expired virtual number order"
+          })
+      }
     );
+
+
+    return {
+      refunded:
+        true,
+
+      alreadyRefunded:
+        false,
+
+      amount
+    };
+
   }
 
-  if (!response.ok) {
-    throw new Error(
-      data?.message ||
-      data?.hint ||
-      data?.details ||
-      `Supabase request failed (HTTP ${response.status}).`
-    );
-  }
 
-  return data;
+  const before =
+    Number(
+      wallet.balance || 0
+    );
+
+  const after =
+    before + amount;
+
+
+  await supabaseRequest(
+    `wallets?user_id=eq.${quote(order.user_id)}`,
+    {
+      method:
+        "PATCH",
+
+      body:
+        JSON.stringify({
+          balance:
+            after,
+
+          updated_at:
+            new Date().toISOString()
+        })
+    }
+  );
+
+
+  await supabaseRequest(
+    "wallet_transactions",
+    {
+      method:
+        "POST",
+
+      body:
+        JSON.stringify({
+          user_id:
+            order.user_id,
+
+          type:
+            "refund",
+
+          amount:
+            amount,
+
+          balance_before:
+            before,
+
+          balance_after:
+            after,
+
+          reference_id:
+            order.id,
+
+          description:
+            "Refund for expired virtual number order"
+        })
+    }
+  );
+
+
+  return {
+    refunded:
+      true,
+
+    alreadyRefunded:
+      false,
+
+    amount
+  };
+
 }
 
 
 /* =========================================================
-   MAIN HANDLER
-========================================================= */
+   MARK EXPIRED
+   ========================================================= */
+
+async function markExpired(
+  order
+) {
+
+  const refund =
+    await refundExpiredOrder(
+      order
+    );
+
+
+  await supabaseRequest(
+    `orders?id=eq.${quote(order.id)}` +
+    `&user_id=eq.${quote(order.user_id)}`,
+    {
+      method:
+        "PATCH",
+
+      body:
+        JSON.stringify({
+          status:
+            "expired",
+
+          updated_at:
+            new Date().toISOString()
+        })
+    }
+  );
+
+
+  return {
+    ...order,
+
+    status:
+      "expired",
+
+    refund
+  };
+
+}
+
+
+/* =========================================================
+   MAIN ACTIVE API
+   ========================================================= */
 
 export default async function handler(
   req,
   res
 ) {
-  if (req.method !== "GET") {
+
+  if (
+    req.method !==
+    "GET"
+  ) {
+
     return res.status(405).json({
-      success: false,
-      error: "Method not allowed"
+      success:
+        false,
+
+      error:
+        "Method not allowed"
     });
+
   }
 
 
   try {
-    /* -----------------------------------------------------
-       AUTHENTICATE
-    ----------------------------------------------------- */
 
     const user =
-      await getAuthenticatedUser(req);
-
-
-    /* -----------------------------------------------------
-       GET USER ORDERS
-    ----------------------------------------------------- */
-
-    const orders =
-      await supabaseRequest(
-        `orders?user_id=eq.${encodeURIComponent(
-          user.id
-        )}&select=id,provider_order_id,provider_verification_id,service_country_price_id,service_name,country_name,customer_price,provider_cost,profit,status,phone_number,provider_expired_at,created_at,updated_at&order=created_at.desc`
+      await getAuthenticatedUser(
+        req
       );
 
 
-    /* -----------------------------------------------------
-       TERMINAL STATUSES
-    ----------------------------------------------------- */
+    /*
+      Get active/pending orders belonging
+      ONLY to this customer.
+    */
 
-    const terminalStatuses =
-      new Set([
-        "failed",
-        "cancelled",
-        "canceled",
-        "expired",
-        "refunded",
-        "rejected"
-      ]);
+    const orders =
+      await supabaseRequest(
+        `orders?user_id=eq.${quote(user.id)}` +
+        `&select=*` +
+        `&order=created_at.desc`
+      );
 
-
-    /* -----------------------------------------------------
-       BUILD ACTIVE NUMBERS
-    ----------------------------------------------------- */
 
     const activeNumbers =
-      (Array.isArray(orders)
-        ? orders
-        : []
-      )
-        .filter((order) => {
-          const status =
-            String(
-              order?.status ||
-              "active"
-            ).toLowerCase();
+      [];
 
-          return !terminalStatuses.has(
-            status
+    const expiredNumbers =
+      [];
+
+
+    for (
+      const order of
+      orders || []
+    ) {
+
+      const status =
+        String(
+          order.status || ""
+        ).toLowerCase();
+
+
+      /*
+        Only active/pending orders belong
+        in the active-number processing.
+      */
+
+      if (
+        ![
+          "active",
+          "pending"
+        ].includes(status)
+      ) {
+        continue;
+      }
+
+
+      /*
+        Check the provider's expiration time.
+      */
+
+      let expired =
+        false;
+
+      let expiresAt =
+        order.provider_expired_at
+          ? new Date(
+              order.provider_expired_at
+            )
+          : null;
+
+
+      if (
+        expiresAt &&
+        !Number.isNaN(
+          expiresAt.getTime()
+        )
+      ) {
+
+        expired =
+          expiresAt.getTime() <=
+          Date.now();
+
+      }
+
+
+      /*
+        If provider expiration time has passed,
+        synchronize our database and refund.
+      */
+
+      if (expired) {
+
+        const expiredOrder =
+          await markExpired(
+            order
           );
-        })
-        .map((order) => {
 
-          /*
-           * IMPORTANT:
-           *
-           * provider_verification_id is the REAL
-           * SureVerification verification.id.
-           *
-           * provider_order_id is only request_id.
-           */
-          const verificationId =
-            order?.provider_verification_id ||
-            null;
+        expiredNumbers.push(
+          {
+            ...expiredOrder,
 
+            order_id:
+              order.id,
 
-          const expiredAt =
-            order?.provider_expired_at ||
-            null;
+            phone_number:
+              order.phone_number,
 
+            service_name:
+              order.service_name,
 
-          return {
-            ...order,
-
-            /*
-             * Real provider verification ID.
-             */
-            verification_id:
-              verificationId,
+            country_name:
+              order.country_name,
 
             provider_verification_id:
-              verificationId,
+              order.provider_verification_id,
 
-            /*
-             * Provider request/order ID remains
-             * available separately.
-             */
             provider_order_id:
               order.provider_order_id,
 
-            /*
-             * Existing frontend compatibility.
-             */
-            selling_price:
-              order.customer_price,
-
-            number:
-              order.phone_number,
-
-            service:
-              order.service_name,
-
-            /*
-             * Exact provider expiration timestamp.
-             */
             expired_at:
-              expiredAt,
+              order.provider_expired_at,
 
-            provider_expired_at:
-              expiredAt
-          };
-        });
+            status:
+              "expired",
+
+            refunded:
+              expiredOrder.refund?.refunded ||
+              false,
+
+            refund_amount:
+              expiredOrder.refund?.amount ||
+              0
+          }
+        );
+
+        continue;
+      }
 
 
-    /* -----------------------------------------------------
-       RETURN DATA
-    ----------------------------------------------------- */
+      /*
+        Still active.
+      */
+
+      activeNumbers.push({
+        id:
+          order.id,
+
+        order_id:
+          order.id,
+
+        provider_order_id:
+          order.provider_order_id,
+
+        provider_verification_id:
+          order.provider_verification_id,
+
+        verification_id:
+          order.provider_verification_id,
+
+        phone_number:
+          order.phone_number,
+
+        number:
+          order.phone_number,
+
+        service_name:
+          order.service_name,
+
+        service:
+          order.service_name,
+
+        country_name:
+          order.country_name,
+
+        status:
+          order.status,
+
+        customer_price:
+          Number(
+            order.customer_price || 0
+          ),
+
+        selling_price:
+          Number(
+            order.customer_price || 0
+          ),
+
+        created_at:
+          order.created_at,
+
+        updated_at:
+          order.updated_at,
+
+        provider_expired_at:
+          order.provider_expired_at,
+
+        expired_at:
+          order.provider_expired_at
+      });
+
+    }
+
 
     return res.status(200).json({
-      success: true,
+
+      success:
+        true,
 
       numbers:
         activeNumbers,
@@ -286,31 +713,35 @@ export default async function handler(
         activeNumbers,
 
       data:
-        activeNumbers
+        activeNumbers,
+
+      expired:
+        expiredNumbers,
+
+      count:
+        activeNumbers.length,
+
+      expired_count:
+        expiredNumbers.length
     });
 
+
   } catch (error) {
+
     console.error(
-      "Active numbers error:",
+      "Active numbers API error:",
       error
     );
 
-    const message =
-      error?.message ||
-      "Unable to load active numbers.";
-
-    return res.status(
-      message === "Unauthorized."
-        ? 401
-        : 500
-    ).json({
-      success: false,
+    return res.status(500).json({
+      success:
+        false,
 
       error:
-        message,
-
-      message:
-        message
+        error?.message ||
+        "Unable to load active numbers."
     });
+
   }
+
 }
