@@ -200,8 +200,8 @@ async function resolveServiceId({
   const directId = clean(serviceId);
 
   /*
-   * If the frontend already supplied the provider ID,
-   * for example "wa", use it directly.
+   * If frontend already supplied the provider service ID,
+   * use it directly.
    */
   if (directId) {
     return directId;
@@ -532,27 +532,48 @@ export default async function handler(
        SERVER SELECTION
     ----------------------------------------- */
 
+    const normalizedCountryName =
+      normalize(countryName);
+
+    const normalizedCountryId =
+      normalize(countryId);
+
     const countryIsUSA =
-      normalize(countryName) ===
+      normalizedCountryName ===
         "unitedstates" ||
-      normalize(countryName) === "usa" ||
-      normalize(countryName) === "us";
+      normalizedCountryName === "usa" ||
+      normalizedCountryName === "us" ||
+      normalizedCountryId === "us" ||
+      normalizedCountryId === "usa" ||
+      normalizedCountryId ===
+        "unitedstates";
 
     let servers;
 
     if (countryIsUSA) {
       /*
-       * USA numbers must use USA servers.
-       * Try Server 2 first, then Server 1.
+       * =================================================
+       * UNITED STATES
+       * =================================================
+       *
+       * US NUMBERS ARE FORCED THROUGH USA SERVER 2.
+       *
+       * THERE IS NO FALLBACK TO USA SERVER 1.
+       *
+       * This ensures that a US number purchased by
+       * this website comes from Portal / USA Server 2.
        */
       servers = [
-        "usa-server-2",
-        "usa-server-1"
+        "usa-server-2"
       ];
     } else {
       /*
-       * International numbers use global servers.
-       * Try Server 2 first, then Server 1.
+       * =================================================
+       * NON-USA COUNTRIES
+       * =================================================
+       *
+       * Keep international numbers on the global
+       * provider servers.
        */
       servers = [
         "global-server-2",
@@ -561,25 +582,12 @@ export default async function handler(
     }
 
     /*
-     * If _lib knows a more specific server list,
-     * use it only when it returns something valid.
+     * Keep the existing helper available.
+     * We deliberately do NOT allow it to override the
+     * USA Server 2 requirement above.
      */
     try {
-      const configured =
-        getServersForCountry(
-          countryName
-        );
-
-      if (
-        Array.isArray(configured) &&
-        configured.length
-      ) {
-        /*
-         * Keep the required regional server
-         * order above instead of accidentally
-         * sending USA numbers to a global server.
-         */
-      }
+      getServersForCountry(countryName);
     } catch {}
 
     /* -----------------------------------------
@@ -595,12 +603,6 @@ export default async function handler(
           suppliedServiceName,
         servers
       });
-
-    /*
-     * Example:
-     * Whatsapp -> wa
-     * Telegram -> tg
-     */
 
     /* -----------------------------------------
        GET ADMIN SELLING PRICE
@@ -680,7 +682,12 @@ export default async function handler(
           )}`;
 
         console.log(
-          "SureVerification purchase:",
+          "SureVerification purchase server:",
+          server
+        );
+
+        console.log(
+          "SureVerification purchase endpoint:",
           endpoint
         );
 
@@ -817,10 +824,6 @@ export default async function handler(
 
       charged = true;
 
-      /*
-       * We only need the balance after
-       * the purchase for the response.
-       */
       var balanceAfter =
         debit.after;
 
@@ -904,11 +907,6 @@ export default async function handler(
           }
         );
     } catch (databaseError) {
-      /*
-       * Provider succeeded but database failed.
-       * Cancel provider and refund customer.
-       */
-
       await cancelProvider(
         providerVerificationId
       );
@@ -953,10 +951,10 @@ export default async function handler(
     createdOrderId =
       order.id;
 
-    /*
-     * Update purchase transaction with the
-     * actual order ID when possible.
-     */
+    /* -----------------------------------------
+       UPDATE PURCHASE TRANSACTION
+    ----------------------------------------- */
+
     try {
       await supabaseRequest(
         `wallet_transactions?user_id=eq.${quote(
@@ -1034,6 +1032,13 @@ export default async function handler(
       service_id:
         serviceId,
 
+      /*
+       * This will now be:
+       *
+       * "usa-server-2"
+       *
+       * for every US purchase.
+       */
       provider_server:
         selectedServer,
 
@@ -1047,11 +1052,6 @@ export default async function handler(
       error
     );
 
-    /*
-     * Only refund here if this handler had
-     * actually charged the wallet but failed
-     * afterward without already refunding.
-     */
     if (
       charged &&
       userId &&
