@@ -42,11 +42,9 @@ async function authenticate(req) {
   const response = await fetch(
     `${SUPABASE_URL}/auth/v1/user`,
     {
-      method: "GET",
       headers: {
         apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization:
-          `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         Accept: "application/json"
       }
     }
@@ -67,102 +65,30 @@ async function authenticate(req) {
 
 
 async function db(path, options = {}) {
-  if (!SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not configured."
-    );
-  }
-
   const response = await fetch(
     `${SUPABASE_URL}/rest/v1/${path}`,
     {
       ...options,
       headers: {
-        apikey:
-          SUPABASE_SERVICE_ROLE_KEY,
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
         Authorization:
           `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         Accept: "application/json",
-        "Content-Type":
-          "application/json",
-        Prefer:
-          "return=representation",
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
         ...(options.headers || {})
       }
     }
   );
 
-  const text =
-    await response.text();
+  const text = await response.text();
 
   let data = {};
 
   try {
-    data = text
-      ? JSON.parse(text)
-      : {};
+    data = text ? JSON.parse(text) : {};
   } catch {
-    data = {
-      message: text
-    };
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      data?.message ||
-      data?.hint ||
-      data?.details ||
-      `Supabase request failed (HTTP ${response.status})`
-    );
-  }
-
-  return data;
-}
-
-
-async function cancelProvider(requestId) {
-  const cleanId =
-    String(requestId || "").trim();
-
-  if (!cleanId) {
-    throw new Error(
-      "SureVerification request ID is missing."
-    );
-  }
-
-  if (!SURE_API_KEY) {
-    throw new Error(
-      "SUREVERIFICATION_API_KEY is not configured."
-    );
-  }
-
-  const response =
-    await fetch(
-      `${SURE_BASE_URL}/verifications/cancel/${encodeURIComponent(cleanId)}`,
-      {
-        method: "DELETE",
-        headers: {
-          "x-api-key":
-            SURE_API_KEY,
-          Accept:
-            "application/json"
-        }
-      }
-    );
-
-  const text =
-    await response.text();
-
-  let data = {};
-
-  try {
-    data = text
-      ? JSON.parse(text)
-      : {};
-  } catch {
-    data = {
-      message: text
-    };
+    data = { message: text };
   }
 
   if (!response.ok) {
@@ -170,7 +96,8 @@ async function cancelProvider(requestId) {
       data?.message ||
       data?.error ||
       data?.details ||
-      "Verification number cannot be cancelled."
+      data?.hint ||
+      `Supabase request failed (${response.status})`
     );
   }
 
@@ -178,59 +105,135 @@ async function cancelProvider(requestId) {
 }
 
 
+/*
+  Try the provider request_id first.
+  If the provider rejects it, also try the numeric
+  verification id returned inside verification.id.
+*/
+async function cancelWithSureVerification(
+  requestId,
+  verificationId
+) {
+  if (!SURE_API_KEY) {
+    throw new Error(
+      "SUREVERIFICATION_API_KEY is not configured."
+    );
+  }
+
+  const candidates = [];
+
+  if (requestId) {
+    candidates.push(String(requestId).trim());
+  }
+
+  if (
+    verificationId !== undefined &&
+    verificationId !== null &&
+    String(verificationId).trim() !== ""
+  ) {
+    const id = String(verificationId).trim();
+
+    if (!candidates.includes(id)) {
+      candidates.push(id);
+    }
+  }
+
+  if (!candidates.length) {
+    throw new Error(
+      "SureVerification verification ID is missing."
+    );
+  }
+
+  let lastMessage =
+    "Verification number cannot be cancelled.";
+
+  for (const verificationIdToCancel of candidates) {
+    const response = await fetch(
+      `${SURE_BASE_URL}/verifications/cancel/${encodeURIComponent(
+        verificationIdToCancel
+      )}`,
+      {
+        method: "DELETE",
+        headers: {
+          "x-api-key": SURE_API_KEY,
+          Accept: "application/json"
+        }
+      }
+    );
+
+    const text = await response.text();
+
+    let data = {};
+
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = {
+        message: text
+      };
+    }
+
+    if (response.ok) {
+      return data;
+    }
+
+    lastMessage =
+      data?.message ||
+      data?.error ||
+      data?.details ||
+      lastMessage;
+  }
+
+  throw new Error(lastMessage);
+}
+
+
 async function refundWallet(
   userId,
   amount
 ) {
-  const refund =
-    Number(amount);
+  const refundAmount = Number(amount);
 
   if (
-    !Number.isFinite(refund) ||
-    refund <= 0
+    !Number.isFinite(refundAmount) ||
+    refundAmount <= 0
   ) {
     return null;
   }
 
-  const wallets =
-    await db(
-      `wallets?user_id=eq.${encodeURIComponent(
-        userId
-      )}&select=*&limit=1`
-    );
+  const wallets = await db(
+    `wallets?user_id=eq.${encodeURIComponent(
+      userId
+    )}&select=*&limit=1`
+  );
 
-  const wallet =
-    wallets?.[0];
+  const wallet = wallets?.[0];
 
   if (!wallet) {
-    throw new Error(
-      "Wallet not found."
-    );
+    throw new Error("Wallet not found.");
   }
 
-  const current =
+  const currentBalance =
     Number(wallet.balance || 0);
 
   const newBalance =
-    current + refund;
+    currentBalance + refundAmount;
 
-  const updated =
-    await db(
-      `wallets?user_id=eq.${encodeURIComponent(
-        userId
-      )}&balance=eq.${encodeURIComponent(
-        current
-      )}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({
-          balance:
-            newBalance,
-          updated_at:
-            new Date().toISOString()
-        })
-      }
-    );
+  const updated = await db(
+    `wallets?user_id=eq.${encodeURIComponent(
+      userId
+    )}&balance=eq.${encodeURIComponent(
+      currentBalance
+    )}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        balance: newBalance,
+        updated_at:
+          new Date().toISOString()
+      })
+    }
+  );
 
   if (
     !Array.isArray(updated) ||
@@ -257,14 +260,11 @@ async function recordRefund(
       {
         method: "POST",
         body: JSON.stringify({
-          user_id:
-            userId,
-          amount:
-            Number(amount),
+          user_id: userId,
+          amount: Number(amount),
           balance_after:
             Number(balanceAfter),
-          type:
-            "refund",
+          type: "refund",
           description:
             `Refund for cancelled virtual number (${orderId})`
         })
@@ -289,8 +289,7 @@ export default async function handler(
   ) {
     return res.status(405).json({
       success: false,
-      error:
-        "Method not allowed."
+      error: "Method not allowed."
     });
   }
 
@@ -329,31 +328,28 @@ export default async function handler(
       });
     }
 
-    let orders =
-      await db(
-        `orders?user_id=eq.${encodeURIComponent(
-          user.id
-        )}&provider_order_id=eq.${encodeURIComponent(
-          cleanId
-        )}&select=*&limit=1`
-      );
+    let orders = await db(
+      `orders?user_id=eq.${encodeURIComponent(
+        user.id
+      )}&provider_order_id=eq.${encodeURIComponent(
+        cleanId
+      )}&select=*&limit=1`
+    );
 
     if (
       !Array.isArray(orders) ||
       orders.length === 0
     ) {
-      orders =
-        await db(
-          `orders?user_id=eq.${encodeURIComponent(
-            user.id
-          )}&id=eq.${encodeURIComponent(
-            cleanId
-          )}&select=*&limit=1`
-        );
+      orders = await db(
+        `orders?user_id=eq.${encodeURIComponent(
+          user.id
+        )}&id=eq.${encodeURIComponent(
+          cleanId
+        )}&select=*&limit=1`
+      );
     }
 
-    const order =
-      orders?.[0];
+    const order = orders?.[0];
 
     if (!order) {
       return res.status(404).json({
@@ -363,20 +359,36 @@ export default async function handler(
       });
     }
 
+    /*
+      Support every likely field that may contain
+      the provider request ID.
+    */
     const requestId =
       order.provider_order_id ||
       order.providerOrderId ||
+      order.request_id ||
+      order.requestId ||
       order.verification?.request_id ||
       order.verification?.requestId ||
       order.verification_id ||
       order.verificationId ||
-      "";
+      null;
 
-    if (!requestId) {
+    /*
+      Also keep the numeric SureVerification
+      verification.id if it was saved.
+    */
+    const verificationId =
+      order.verification?.id ||
+      order.verification_id ||
+      order.verificationId ||
+      null;
+
+    if (!requestId && !verificationId) {
       return res.status(400).json({
         success: false,
         error:
-          "SureVerification request ID was not saved for this order."
+          "SureVerification verification ID was not saved for this order."
       });
     }
 
@@ -397,8 +409,9 @@ export default async function handler(
       });
     }
 
-    await cancelProvider(
-      requestId
+    await cancelWithSureVerification(
+      requestId,
+      verificationId
     );
 
     const refundAmount =
@@ -412,9 +425,7 @@ export default async function handler(
     let balanceAfter = null;
 
     if (
-      Number.isFinite(
-        refundAmount
-      ) &&
+      Number.isFinite(refundAmount) &&
       refundAmount > 0
     ) {
       balanceAfter =
@@ -440,8 +451,7 @@ export default async function handler(
       {
         method: "PATCH",
         body: JSON.stringify({
-          status:
-            "cancelled",
+          status: "cancelled",
           updated_at:
             new Date().toISOString()
         })
