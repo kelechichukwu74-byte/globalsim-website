@@ -37,9 +37,7 @@ async function authenticate(req) {
     getToken(req);
 
   if (!accessToken) {
-    throw new Error(
-      "Unauthorized."
-    );
+    throw new Error("Unauthorized.");
   }
 
   if (!SUPABASE_SERVICE_ROLE_KEY) {
@@ -66,18 +64,14 @@ async function authenticate(req) {
     );
 
   if (!response.ok) {
-    throw new Error(
-      "Unauthorized."
-    );
+    throw new Error("Unauthorized.");
   }
 
   const user =
     await response.json();
 
   if (!user?.id) {
-    throw new Error(
-      "Unauthorized."
-    );
+    throw new Error("Unauthorized.");
   }
 
   return user;
@@ -262,24 +256,6 @@ function normalizeServer(
    SELECT PROVIDER SERVER
 ========================================================= */
 
-/*
- * Your system can explicitly send:
- *
- * server:
- *   usa-server-1
- *   usa-server-2
- *   global-server-1
- *   global-server-2
- *
- * If server is not supplied:
- *
- * United States -> USA Server 2
- * Other countries -> Global Server 2
- *
- * This keeps provider 2 as the default while still
- * supporting all four documented servers.
- */
-
 function selectServer(
   requestedServer,
   countryId,
@@ -313,10 +289,6 @@ function selectServer(
       .trim()
       .toLowerCase();
 
-  /*
-   * SureVerification currently documents
-   * country ID 236 as USA in its examples.
-   */
   const isUSA =
     String(
       countryId || ""
@@ -324,7 +296,8 @@ function selectServer(
     country === "united states" ||
     country === "usa" ||
     country === "us" ||
-    country === "united states of america";
+    country ===
+      "united states of america";
 
   if (isUSA) {
     return "usa-server-2";
@@ -431,17 +404,6 @@ async function purchaseFromSureVerification({
       `Provider purchase failed (${response.status})`
     );
   }
-
-  /*
-   * SureVerification's documented response:
-   *
-   * verification.request_id
-   * verification.number
-   * verification.service
-   * verification.status
-   * verification.expired_at
-   * verification.id
-   */
 
   const verification =
     data?.verification;
@@ -616,7 +578,13 @@ async function deductWallet(
       ) &&
       updated.length > 0
     ) {
-      return newBalance;
+      return {
+        balanceBefore:
+          currentBalance,
+
+        balanceAfter:
+          newBalance
+      };
     }
   }
 
@@ -632,6 +600,7 @@ async function deductWallet(
 async function recordPurchaseTransaction({
   userId,
   amount,
+  balanceBefore,
   balanceAfter,
   orderId
 }) {
@@ -647,9 +616,17 @@ async function recordPurchaseTransaction({
             user_id:
               userId,
 
+            type:
+              "purchase",
+
             amount:
               -Math.abs(
                 Number(amount)
+              ),
+
+            balance_before:
+              Number(
+                balanceBefore
               ),
 
             balance_after:
@@ -657,11 +634,14 @@ async function recordPurchaseTransaction({
                 balanceAfter
               ),
 
-            type:
-              "purchase",
+            reference_id:
+              orderId,
 
             description:
-              `Virtual number purchase (${orderId})`
+              `Virtual number purchase (${orderId})`,
+
+            created_at:
+              new Date().toISOString()
           })
       }
     );
@@ -672,9 +652,69 @@ async function recordPurchaseTransaction({
     );
 
     /*
-     * Do not undo a successful wallet deduction
-     * just because history failed.
+     * Do not undo the successful purchase
+     * if transaction history fails.
      */
+  }
+}
+
+/* =========================================================
+   RECORD REFUND TRANSACTION
+========================================================= */
+
+async function recordRefundTransaction({
+  userId,
+  amount,
+  balanceBefore,
+  balanceAfter,
+  referenceId
+}) {
+  try {
+    await db(
+      "wallet_transactions",
+      {
+        method:
+          "POST",
+
+        body:
+          JSON.stringify({
+            user_id:
+              userId,
+
+            type:
+              "refund",
+
+            amount:
+              Math.abs(
+                Number(amount)
+              ),
+
+            balance_before:
+              Number(
+                balanceBefore
+              ),
+
+            balance_after:
+              Number(
+                balanceAfter
+              ),
+
+            reference_id:
+              referenceId,
+
+            description:
+              "Refund for failed virtual number order",
+
+            created_at:
+              new Date().toISOString()
+          })
+      }
+    );
+  } catch (error) {
+    console.error(
+      "Refund transaction history error:",
+      error
+    );
   }
 }
 
@@ -684,7 +724,8 @@ async function recordPurchaseTransaction({
 
 async function refundWalletAfterFailure(
   userId,
-  amount
+  amount,
+  referenceId
 ) {
   try {
     const refundAmount =
@@ -746,10 +787,24 @@ async function refundWalletAfterFailure(
         ) &&
         updated.length > 0
       ) {
+        await recordRefundTransaction({
+          userId,
+
+          amount:
+            refundAmount,
+
+          balanceBefore:
+            currentBalance,
+
+          balanceAfter:
+            newBalance,
+
+          referenceId
+        });
+
         return newBalance;
       }
     }
-
   } catch (error) {
     console.error(
       "Automatic refund failed:",
@@ -806,15 +861,16 @@ async function cancelProviderVerification(
       "Provider rollback cancellation:",
       {
         verificationId,
+
         status:
           response.status,
+
         response:
           data
       }
     );
 
     return response.ok;
-
   } catch (error) {
     console.error(
       "Provider rollback cancellation error:",
@@ -846,13 +902,35 @@ function getRequestData(
     body.country ||
     "";
 
+  /*
+   * IMPORTANT:
+   *
+   * serviceCountryPriceId is now accepted.
+   *
+   * Example:
+   *
+   * WhatsApp = wa
+   * Telegram = tg
+   *
+   * The provider needs the actual service ID.
+   */
+
   const service =
     query.service ||
     query.service_id ||
     query.serviceId ||
+    query.serviceCountryPriceId ||
     body.service ||
     body.service_id ||
     body.serviceId ||
+    body.serviceCountryPriceId ||
+    "";
+
+  const serviceName =
+    query.service_name ||
+    query.serviceName ||
+    body.service_name ||
+    body.serviceName ||
     "";
 
   const server =
@@ -871,12 +949,6 @@ function getRequestData(
     body.countryName ||
     "";
 
-  /*
-   * Customer selling price.
-   *
-   * Supports the different names your frontend
-   * may already be sending.
-   */
   const customerPrice =
     query.customer_price ||
     query.customerPrice ||
@@ -892,16 +964,29 @@ function getRequestData(
 
   return {
     countryId:
-      String(countryId).trim(),
+      String(
+        countryId
+      ).trim(),
 
     service:
-      String(service).trim(),
+      String(
+        service
+      ).trim(),
+
+    serviceName:
+      String(
+        serviceName
+      ).trim(),
 
     server:
-      String(server).trim(),
+      String(
+        server
+      ).trim(),
 
     countryName:
-      String(countryName).trim(),
+      String(
+        countryName
+      ).trim(),
 
     customerPrice:
       customerPrice === ""
@@ -943,6 +1028,12 @@ export default async function handler(
   let walletAmount =
     0;
 
+  let purchaseBalanceBefore =
+    null;
+
+  let purchaseBalanceAfter =
+    null;
+
   try {
     /* -----------------------------------------------------
        AUTHENTICATE
@@ -960,6 +1051,7 @@ export default async function handler(
     const {
       countryId,
       service,
+      serviceName,
       server:
         requestedServer,
       countryName,
@@ -990,12 +1082,13 @@ export default async function handler(
     }
 
     /*
-     * Customer price must be supplied by the
+     * Selling price comes from the existing
      * frontend/admin pricing system.
      *
      * Example:
-     * ₦3000
+     * 3000
      */
+
     if (
       !Number.isFinite(
         customerPrice
@@ -1017,7 +1110,7 @@ export default async function handler(
       );
 
     /* -----------------------------------------------------
-       SELECT SERVER
+       SELECT PROVIDER SERVER
     ----------------------------------------------------- */
 
     const server =
@@ -1033,7 +1126,8 @@ export default async function handler(
         server,
         countryId,
         countryName,
-        service
+        service,
+        serviceName
       }
     );
 
@@ -1085,22 +1179,36 @@ export default async function handler(
     const provider =
       await purchaseFromSureVerification({
         server,
+
         countryId,
+
         service
       });
 
     const verification =
       provider.verification;
 
+    /* -----------------------------------------------------
+       PROVIDER IDs
+    ----------------------------------------------------- */
+
     /*
-     * THIS IS THE CRITICAL FIX.
-     *
-     * Save both values separately.
+     * request_id:
+     * Provider purchase/request reference.
      */
+
     const providerOrderId =
       String(
         verification.request_id
       ).trim();
+
+    /*
+     * verification.id:
+     *
+     * CRITICAL.
+     *
+     * SMS and CANCEL use this ID.
+     */
 
     providerVerificationId =
       String(
@@ -1120,15 +1228,25 @@ export default async function handler(
       verification.expired_at ||
       null;
 
-    if (!providerVerificationId) {
+    if (
+      !providerVerificationId
+    ) {
       throw new Error(
         "Provider verification ID is missing. Purchase was not saved."
       );
     }
 
-    if (!providerOrderId) {
+    if (
+      !providerOrderId
+    ) {
       throw new Error(
         "Provider request ID is missing. Purchase was not saved."
+      );
+    }
+
+    if (!phoneNumber) {
+      throw new Error(
+        "Provider returned no phone number."
       );
     }
 
@@ -1136,11 +1254,17 @@ export default async function handler(
        DEDUCT CUSTOMER WALLET
     ----------------------------------------------------- */
 
-    const balanceAfter =
+    const walletResult =
       await deductWallet(
         user.id,
         walletAmount
       );
+
+    purchaseBalanceBefore =
+      walletResult.balanceBefore;
+
+    purchaseBalanceAfter =
+      walletResult.balanceAfter;
 
     walletDeducted =
       true;
@@ -1168,18 +1292,32 @@ export default async function handler(
                   providerOrderId,
 
                 /*
-                 * CRITICAL:
-                 * This is verification.id.
+                 * verification.id
                  *
-                 * SMS and cancel use this value.
+                 * Used by SMS and Cancel.
                  */
                 provider_verification_id:
                   providerVerificationId,
 
+                /*
+                 * Keep the country/service reference
+                 * used by your pricing system.
+                 */
+                service_country_price_id:
+                  `${countryId}:${service}`,
+
                 phone_number:
                   phoneNumber,
 
+                /*
+                 * Save the readable service name.
+                 *
+                 * If frontend does not send it,
+                 * provider service name is used.
+                 */
                 service_name:
+                  serviceName ||
+                  verification.service ||
                   service,
 
                 country_name:
@@ -1192,15 +1330,6 @@ export default async function handler(
                 customer_price:
                   walletAmount,
 
-                selling_price:
-                  walletAmount,
-
-                amount:
-                  walletAmount,
-
-                provider_server:
-                  server,
-
                 provider_expired_at:
                   providerExpiredAt,
 
@@ -1212,27 +1341,22 @@ export default async function handler(
               })
           }
         );
-
     } catch (databaseError) {
-
       console.error(
         "Order insert failed:",
         databaseError
       );
 
       /*
-       * The provider already gave us a number.
-       *
-       * Cancel it immediately so the provider number
-       * is not left active.
+       * Provider already supplied the number.
+       * Cancel it so it is not left active.
        */
       await cancelProviderVerification(
         providerVerificationId
       );
 
       /*
-       * Refund the customer because the order
-       * could not be saved.
+       * Refund the customer's wallet.
        */
       if (
         walletDeducted
@@ -1240,7 +1364,10 @@ export default async function handler(
         const refundedBalance =
           await refundWalletAfterFailure(
             user.id,
-            walletAmount
+
+            walletAmount,
+
+            providerOrderId
           );
 
         walletDeducted =
@@ -1260,11 +1387,15 @@ export default async function handler(
     }
 
     /* -----------------------------------------------------
-       RECORD WALLET TRANSACTION
+       SAVED ORDER
     ----------------------------------------------------- */
 
     const savedOrder =
       insertedOrders?.[0];
+
+    /* -----------------------------------------------------
+       RECORD PURCHASE TRANSACTION
+    ----------------------------------------------------- */
 
     await recordPurchaseTransaction({
       userId:
@@ -1273,7 +1404,11 @@ export default async function handler(
       amount:
         walletAmount,
 
-      balanceAfter,
+      balanceBefore:
+        purchaseBalanceBefore,
+
+      balanceAfter:
+        purchaseBalanceAfter,
 
       orderId:
         savedOrder?.id ||
@@ -1295,10 +1430,6 @@ export default async function handler(
         savedOrder ||
         null,
 
-      /*
-       * Provider values are returned so the frontend
-       * can immediately use them if necessary.
-       */
       provider_order_id:
         providerOrderId,
 
@@ -1310,6 +1441,10 @@ export default async function handler(
 
       service:
         verification.service ||
+        serviceName ||
+        service,
+
+      service_id:
         service,
 
       status:
@@ -1324,8 +1459,11 @@ export default async function handler(
       customer_price:
         walletAmount,
 
+      balance_before:
+        purchaseBalanceBefore,
+
       balance_after:
-        balanceAfter
+        purchaseBalanceAfter
     });
 
   } catch (error) {
