@@ -192,36 +192,6 @@
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
 
-    .password-wrap {
-      position: relative;
-    }
-
-    .password-wrap .form-control {
-      padding-right: 44px;
-    }
-
-    .password-toggle {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 30px;
-      height: 30px;
-      border: 0;
-      background: transparent;
-      color: #64748b;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 7px;
-      padding: 0;
-    }
-
-    .password-toggle:hover {
-      background: #f1f5f9;
-      color: #2563eb;
-    }
-
     .checkbox-row {
       display: flex;
       gap: 9px;
@@ -539,19 +509,6 @@
       gap: 15px;
       margin-bottom: 20px;
     }
-
-    .dashboard-atm-card { position: relative; overflow: hidden; min-height: 150px; border-radius: 18px; padding: 18px; color: #fff; background: linear-gradient(135deg,#2563eb 0%,#1d4ed8 55%,#0f3fae 100%); box-shadow: 0 14px 30px rgba(37,99,235,.22); margin-bottom:18px; }
-    .dashboard-atm-card::before,.dashboard-atm-card::after { content:""; position:absolute; border-radius:50%; background:rgba(255,255,255,.08); pointer-events:none; }
-    .dashboard-atm-card::before { width:170px; height:170px; right:-75px; top:-85px; }
-    .dashboard-atm-card::after { width:110px; height:110px; left:-55px; bottom:-65px; }
-    .dashboard-atm-top,.dashboard-atm-bottom { position:relative; z-index:1; display:flex; justify-content:space-between; align-items:center; gap:10px; }
-    .dashboard-atm-brand { font-size:12px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
-    .dashboard-atm-chip { width:34px; height:25px; border-radius:6px; background:linear-gradient(135deg,#f8fafc,#cbd5e1); position:relative; box-shadow:inset 0 0 0 1px rgba(15,23,42,.12); }
-    .dashboard-atm-chip::after { content:""; position:absolute; inset:5px 7px; border:1px solid rgba(15,23,42,.25); border-radius:4px; }
-    .dashboard-atm-label { position:relative; z-index:1; margin-top:20px; color:#dbeafe; font-size:10px; }
-    .dashboard-atm-amount { position:relative; z-index:1; margin-top:4px; font-size:27px; line-height:1.1; font-weight:800; letter-spacing:-.02em; }
-    .dashboard-atm-bottom { margin-top:18px; color:#dbeafe; font-size:10px; }
-    .dashboard-atm-status { padding:4px 8px; border-radius:999px; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.22); color:#fff; font-weight:700; }
 
     .stat-card {
       background: #fff;
@@ -874,13 +831,6 @@
       line-height: 1.6;
     }
 
-    .support-actions {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 9px;
-    }
-
     .profile-grid {
       display: grid;
       grid-template-columns: 130px 1fr;
@@ -987,6 +937,88 @@
 
     .modal-body {
       padding: 18px;
+    }
+
+    /* =========================================================
+       COMPACT DASHBOARD WALLET CARD
+       ========================================================= */
+
+    .dashboard-wallet-card {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      border-radius: 15px;
+      padding: 15px 16px;
+      min-height: 138px;
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dashboard-wallet-card::after {
+      content: "";
+      position: absolute;
+      width: 105px;
+      height: 105px;
+      border-radius: 50%;
+      right: -42px;
+      top: -42px;
+      background: rgba(255,255,255,0.09);
+    }
+
+    .dashboard-wallet-top,
+    .dashboard-wallet-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .dashboard-wallet-top > span:first-child {
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+
+    .dashboard-wallet-status {
+      background: rgba(255,255,255,.16);
+      border: 1px solid rgba(255,255,255,.22);
+      padding: 3px 7px;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+
+    .dashboard-wallet-label {
+      margin-top: 20px;
+      font-size: 10px;
+      color: #dbeafe;
+      position: relative;
+      z-index: 1;
+    }
+
+    .dashboard-wallet-amount {
+      margin-top: 3px;
+      font-size: 22px;
+      line-height: 1.1;
+      font-weight: 850;
+      position: relative;
+      z-index: 1;
+    }
+
+    .dashboard-wallet-bottom {
+      margin-top: 12px;
+      color: #dbeafe;
+    }
+
+    @media (max-width: 520px) {
+      .dashboard-wallet-card {
+        min-height: 130px;
+        padding: 14px;
+      }
+      .dashboard-wallet-amount {
+        font-size: 20px;
+      }
     }
 
     /* =========================================================
@@ -1143,6 +1175,7 @@
           <div class="form-group">
             <label for="loginPassword">Password</label>
 
+            <div class="password-wrap">
             <input
               id="loginPassword"
               class="form-control"
@@ -1151,6 +1184,13 @@
               required
               placeholder="Enter your password"
             />
+            <button
+              type="button"
+              class="password-toggle"
+              aria-label="Show password"
+              onclick="togglePasswordVisibility('loginPassword', this)"
+            >👁</button>
+          </div>
           </div>
 
           <button
@@ -1230,6 +1270,7 @@
           <div class="form-group">
             <label for="registerPassword">Password</label>
 
+            <div class="password-wrap">
             <input
               id="registerPassword"
               class="form-control"
@@ -1239,6 +1280,13 @@
               minlength="6"
               placeholder="At least 6 characters"
             />
+            <button
+              type="button"
+              class="password-toggle"
+              aria-label="Show password"
+              onclick="togglePasswordVisibility('registerPassword', this)"
+            >👁</button>
+          </div>
           </div>
 
           <div class="form-group">
@@ -1246,6 +1294,7 @@
               Confirm Password
             </label>
 
+            <div class="password-wrap">
             <input
               id="registerConfirmPassword"
               class="form-control"
@@ -1255,6 +1304,13 @@
               minlength="6"
               placeholder="Repeat your password"
             />
+            <button
+              type="button"
+              class="password-toggle"
+              aria-label="Show password"
+              onclick="togglePasswordVisibility('registerConfirmPassword', this)"
+            >👁</button>
+          </div>
           </div>
 
           <label class="checkbox-row">
@@ -1512,23 +1568,81 @@
             </div>
 
 
-            <div class="dashboard-atm-card">
-              <div class="dashboard-atm-top">
-                <span class="dashboard-atm-brand">Global Virtual Sim</span>
-                <div class="dashboard-atm-chip"></div>
-              </div>
-              <div class="dashboard-atm-label">Available Wallet Balance</div>
-              <div id="dashboardBalance" class="dashboard-atm-amount">₦0.00</div>
-              <div class="dashboard-atm-bottom">
-                <span>Wallet</span>
-                <span class="dashboard-atm-status">Active</span>
-              </div>
-            </div>
-
             <div class="stats-grid">
-              <div class="stat-card"><div class="stat-label">Active Numbers</div><div id="dashboardActiveNumbers" class="stat-value">0</div><div class="stat-sub">Current activations</div></div>
-              <div class="stat-card"><div class="stat-label">Total Orders</div><div id="dashboardOrders" class="stat-value">0</div><div class="stat-sub">Your orders</div></div>
-              <div class="stat-card"><div class="stat-label">Transactions</div><div id="dashboardTransactions" class="stat-value">0</div><div class="stat-sub">Wallet activity</div></div>
+
+              <div class="dashboard-wallet-card">
+                <div class="dashboard-wallet-top">
+                  <span>Global Virtual Sim</span>
+                  <span class="dashboard-wallet-status">Active</span>
+                </div>
+                <div class="dashboard-wallet-label">Wallet Balance</div>
+                <div id="dashboardBalance" class="dashboard-wallet-amount">₦0.00</div>
+                <div class="dashboard-wallet-bottom">
+                  <span>Available funds</span>
+                  <span>••••</span>
+                </div>
+              </div>
+
+
+              <div class="stat-card">
+
+                <div class="stat-label">
+                  Active Numbers
+                </div>
+
+                <div
+                  id="dashboardActiveNumbers"
+                  class="stat-value"
+                >
+                  0
+                </div>
+
+                <div class="stat-sub">
+                  Current activations
+                </div>
+
+              </div>
+
+
+              <div class="stat-card">
+
+                <div class="stat-label">
+                  Total Orders
+                </div>
+
+                <div
+                  id="dashboardOrders"
+                  class="stat-value"
+                >
+                  0
+                </div>
+
+                <div class="stat-sub">
+                  Your orders
+                </div>
+
+              </div>
+
+
+              <div class="stat-card">
+
+                <div class="stat-label">
+                  Transactions
+                </div>
+
+                <div
+                  id="dashboardTransactions"
+                  class="stat-value"
+                >
+                  0
+                </div>
+
+                <div class="stat-sub">
+                  Wallet activity
+                </div>
+
+              </div>
+
             </div>
 
 
@@ -1627,18 +1741,9 @@
 
                   <div class="form-group">
 
-                    <label for="countrySearch">
+                    <label for="countrySelect">
                       Country
                     </label>
-
-                    <input
-                      id="countrySearch"
-                      type="search"
-                      class="form-control"
-                      placeholder="Search country..."
-                      autocomplete="off"
-                      oninput="filterCustomerCountries()"
-                    />
 
                     <select
                       id="countrySelect"
@@ -1657,19 +1762,9 @@
 
                   <div class="form-group">
 
-                    <label for="serviceSearch">
+                    <label for="serviceSelect">
                       Service
                     </label>
-
-                    <input
-                      id="serviceSearch"
-                      type="search"
-                      class="form-control"
-                      placeholder="Search service..."
-                      autocomplete="off"
-                      disabled
-                      oninput="filterCustomerServices()"
-                    />
 
                     <select
                       id="serviceSelect"
@@ -1986,10 +2081,6 @@
 
                   </div>
 
-                  <div class="payment-note" style="margin-top:14px; padding:12px 14px; border-radius:10px; background:#f3f7ff;">
-                    <strong>Quick verification:</strong> After making your deposit, message our WhatsApp number <strong>09136540119</strong> for faster deposit approval.
-                  </div>
-
                 </div>
 
 
@@ -2151,10 +2242,13 @@
                 order or another website issue, contact our support team.
               </p>
 
-              <div class="support-actions">
-                <a href="mailto:watchandearn.ng@gmail.com" class="primary-btn" style="display:inline-block;text-decoration:none;">Email Support</a>
-                <a href="https://t.me/GlobalVirtualSimWebSupport" target="_blank" rel="noopener noreferrer" class="secondary-btn" style="display:inline-block;text-decoration:none;">Follow us on Telegram</a>
-              </div>
+              <a
+                href="mailto:globalsimwebsite@gmail.com"
+                class="primary-btn"
+                style="display:inline-block;text-decoration:none;"
+              >
+                Email Support
+              </a>
 
             </div>
 
@@ -2379,14 +2473,12 @@
                 <div class="grid-2">
                   <div class="form-group">
                     <label for="adminPricingCountry">Country</label>
-                    <input id="adminPricingCountrySearch" type="search" class="form-control" placeholder="Search country..." autocomplete="off" oninput="filterAdminPricingCountries()">
                     <select id="adminPricingCountry" class="form-control" onchange="loadAdminPricingServices()">
                       <option value="">Select a country</option>
                     </select>
                   </div>
                   <div class="form-group">
                     <label for="adminPricingService">Service</label>
-                    <input id="adminPricingServiceSearch" type="search" class="form-control" placeholder="Search service..." autocomplete="off" disabled oninput="filterAdminPricingServices()">
                     <select id="adminPricingService" class="form-control">
                       <option value="">Select a service</option>
                     </select>
@@ -2506,11 +2598,11 @@
               Contact
             </a>
 
-            <a href="mailto:watchandearn.ng@gmail.com">
+            <a href="mailto:globalsimwebsite@gmail.com">
               Email
             </a>
 
-            <a onclick="showLegal('Telegram')">
+            <a href="https://t.me/GlobalVirtualSimWebSupport" target="_blank" rel="noopener">
               Telegram
             </a>
 
@@ -4071,232 +4163,6 @@
        WITHDRAWAL
        ========================================================= */
 
-    async function submitWithdrawal(event) {
-
-      event.preventDefault();
-
-
-      const button =
-        $("withdrawButton");
-
-
-      const bank =
-        $("withdrawBank").value;
-
-
-      const accountNumber =
-        $("withdrawAccountNumber")
-          .value
-          .trim();
-
-
-      const accountName =
-        $("withdrawAccountName")
-          .value
-          .trim();
-
-
-      const amount =
-        Number(
-          $("withdrawAmount").value
-        );
-
-
-      if (!bank) {
-
-        showToast(
-          "Select your bank.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      if (!/^\d{10}$/.test(accountNumber)) {
-
-        showToast(
-          "Enter a valid 10-digit account number.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      if (!accountName) {
-
-        showToast(
-          "Enter the account name.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      if (!amount || amount < 1000) {
-
-        showToast(
-          "Minimum withdrawal is ₦1,000.",
-          "error"
-        );
-
-        return;
-      }
-
-
-      setButtonLoading(
-        button,
-        true,
-        "Submitting..."
-      );
-
-
-      try {
-
-        /*
-          This calls your secure Supabase RPC.
-          The RPC must perform the balance/withdrawal
-          transaction server-side.
-        */
-
-        const {
-          data,
-          error
-        } = await supabaseClient.rpc(
-          "request_withdrawal",
-          {
-            p_bank_name: bank,
-            p_account_number: accountNumber,
-            p_account_name: accountName,
-            p_amount: amount
-          }
-        );
-
-
-        if (error) {
-          throw error;
-        }
-
-
-        showToast(
-          "Withdrawal request submitted successfully.",
-          "success"
-        );
-
-
-        $("withdrawForm").reset();
-
-
-        await loadWalletData();
-
-        await loadDashboard();
-
-
-      } catch (error) {
-
-        console.error(
-          "Withdrawal error:",
-          error
-        );
-
-        showToast(
-          error.message ||
-          "Unable to submit withdrawal request.",
-          "error"
-        );
-
-      } finally {
-
-        setButtonLoading(
-          button,
-          false
-        );
-
-      }
-
-    }
-
-
-    function togglePasswordVisibility(inputId, button) {
-      const input = $(inputId);
-      if (!input) return;
-
-      const showing = input.type === "text";
-      input.type = showing ? "password" : "text";
-      button.textContent = showing ? "👁" : "🙈";
-      button.setAttribute(
-        "aria-label",
-        showing ? "Show password" : "Hide password"
-      );
-    }
-
-
-    /* =========================================================
-       CUSTOMER SEARCH
-       ========================================================= */
-
-    let customerCountriesCache = [];
-    let customerServicesCache = [];
-
-    function filterCustomerCountries() {
-      const q = ($("countrySearch")?.value || "").trim().toLowerCase();
-      const select = $("countrySelect");
-      if (!select) return;
-      const current = select.value;
-      const list = customerCountriesCache.filter(c =>
-        String(c.name || c.countryName || c.country_name || "").toLowerCase().includes(q) ||
-        String(c.code || c.countryCode || c.country_code || "").toLowerCase().includes(q)
-      );
-      select.innerHTML = '<option value="">Select a country</option>';
-      list.forEach(country => {
-        const option = document.createElement("option");
-        const id = country.id ?? country.countryId ?? country.country_id;
-        const name = country.name ?? country.countryName ?? country.country_name ?? id;
-        option.value = id;
-        option.textContent = name;
-        option.dataset.countryName = name;
-        option.dataset.countryCode = country.code ?? country.countryCode ?? country.country_code ?? "";
-        option.dataset.server = country.server ?? "";
-        select.appendChild(option);
-      });
-      if (current && list.some(c => String(c.id ?? c.countryId ?? c.country_id) === String(current))) {
-        select.value = current;
-      }
-    }
-
-    function filterCustomerServices() {
-      const q = ($("serviceSearch")?.value || "").trim().toLowerCase();
-      const select = $("serviceSelect");
-      if (!select) return;
-      const current = select.value;
-      const list = customerServicesCache.filter(s =>
-        String(s.name || s.serviceName || s.service_name || s.title || "").toLowerCase().includes(q) ||
-        String(s.id || s.serviceId || s.service_id || "").toLowerCase().includes(q)
-      );
-      select.innerHTML = '<option value="">Select a service</option>';
-      list.forEach(service => {
-        const option = document.createElement("option");
-        const id = service.id ?? service.serviceId ?? service.service_id ?? service.serviceCountryPriceId ?? service.service_country_price_id;
-        const name = service.name ?? service.serviceName ?? service.service_name ?? service.title ?? id;
-        const price = service.selling_price ?? service.sellingPrice ?? service.price ?? service.amount ?? null;
-        const availableServers = Array.isArray(service.available_servers) ? service.available_servers : (Array.isArray(service.servers) ? service.servers : []);
-        option.value = id;
-        option.textContent = price !== null ? `${name} — ${formatMoney(price)}` : name;
-        option.dataset.serviceName = name;
-        option.dataset.price = price ?? "";
-        option.dataset.servers = JSON.stringify(availableServers);
-        option.dataset.raw = JSON.stringify(service);
-        select.appendChild(option);
-      });
-      if (current && list.some(s => String(s.id ?? s.serviceId ?? s.service_id ?? s.serviceCountryPriceId ?? s.service_country_price_id) === String(current))) {
-        select.value = current;
-      }
-      updatePurchasePreview();
-    }
-
-
     /* =========================================================
        COUNTRIES
        ========================================================= */
@@ -4324,15 +4190,17 @@
           await fetch("/api/countries");
 
 
-        const result =
-          await response.json().catch(() => ({}));
+        if (!response.ok) {
 
-        if (!response.ok || result?.success === false) {
           throw new Error(
-            result?.error ||
-            `Unable to load countries (HTTP ${response.status}).`
+            "Unable to load countries."
           );
+
         }
+
+
+        const result =
+          await response.json();
 
 
         currentCountries =
@@ -4344,18 +4212,10 @@
                 []
               );
 
-        customerCountriesCache = currentCountries;
-        $("countrySearch").disabled = false;
-
 
         select.innerHTML =
           '<option value="">Select a country</option>';
 
-
-        if (!currentCountries.length) {
-          select.innerHTML = '<option value="">No countries available</option>';
-          throw new Error("No countries were returned by SureVerification.");
-        }
 
         currentCountries.forEach(country => {
 
@@ -4383,16 +4243,6 @@
           option.dataset.countryName =
             name;
 
-          option.dataset.countryCode =
-            country.code ??
-            country.countryCode ??
-            country.country_code ??
-            "";
-
-          option.dataset.server =
-            country.server ??
-            "";
-
           select.appendChild(option);
 
         });
@@ -4406,10 +4256,11 @@
         );
 
         select.innerHTML =
-          `<option value="">${escapeHtml(error?.message || "Unable to load countries")}</option>`;
+          '<option value="">Unable to load countries</option>';
+
 
         showToast(
-          error?.message || "Unable to load countries.",
+          "Unable to load countries.",
           "error"
         );
 
@@ -4435,12 +4286,6 @@
       const countryId =
         countrySelect.value;
 
-      const countryOption =
-        countrySelect.options[countrySelect.selectedIndex];
-
-      const countryCode =
-        countryOption?.dataset?.countryCode ||
-        "";
 
       serviceSelect.innerHTML =
         '<option value="">Loading services...</option>';
@@ -4451,10 +4296,6 @@
 
 
       if (!countryId) {
-
-        customerServicesCache = [];
-        $("serviceSearch").disabled = true;
-        $("serviceSearch").value = "";
 
         serviceSelect.innerHTML =
           '<option value="">Select a service</option>';
@@ -4467,16 +4308,10 @@
 
       try {
 
-        const serviceQuery =
-          `/api/services?countryId=${encodeURIComponent(countryId)}` +
-          (countryCode
-            ? `&countryCode=${encodeURIComponent(countryCode)}`
-            : "");
-
         const response =
-          await fetch(`${serviceQuery}${serviceQuery.includes("?") ? "&" : "?"}_=${Date.now()}`, {
-            cache: "no-store"
-          });
+          await fetch(
+            `/api/services?countryId=${encodeURIComponent(countryId)}`
+          );
 
 
         if (!response.ok) {
@@ -4500,9 +4335,6 @@
                 result.services ||
                 []
               );
-
-        customerServicesCache = currentServices;
-        $("serviceSearch").disabled = false;
 
 
         serviceSelect.innerHTML =
@@ -4543,20 +4375,10 @@
             id;
 
 
-          const availableServers =
-            Array.isArray(service.available_servers)
-              ? service.available_servers
-              : (Array.isArray(service.servers) ? service.servers : []);
-
-          const portalLabel =
-            availableServers.length > 1
-              ? ` — ${availableServers.length} portals`
-              : "";
-
           option.textContent =
             price !== null
-              ? `${name}${portalLabel} — ${formatMoney(price)}`
-              : `${name}${portalLabel}`;
+              ? `${name} — ${formatMoney(price)}`
+              : name;
 
 
           option.dataset.serviceName =
@@ -4566,9 +4388,6 @@
           option.dataset.price =
             price ?? "";
 
-
-          option.dataset.servers =
-            JSON.stringify(availableServers);
 
           option.dataset.raw =
             JSON.stringify(service);
@@ -4688,13 +4507,6 @@
       const countryId =
         countrySelect.value;
 
-      const countryOption =
-        countrySelect.options[countrySelect.selectedIndex];
-
-      const countryCode =
-        countryOption?.dataset?.countryCode ||
-        "";
-
 
       const serviceOption =
         serviceSelect.options[
@@ -4769,21 +4581,13 @@
           be placed in this HTML.
         */
 
-        const accessToken =
-          await getCurrentAccessToken();
-
-        if (!accessToken) {
-          throw new Error("Unauthorized.");
-        }
-
         const response =
           await fetch("/api/order", {
 
             method: "POST",
 
             headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${accessToken}`
+              "Content-Type": "application/json"
             },
 
             body: JSON.stringify({
@@ -4796,20 +4600,13 @@
 
               countryId,
 
-              countryCode,
-
               countryName,
 
               serviceName:
                 serviceData.serviceName ||
                 serviceData.name ||
                 serviceOption.dataset.serviceName ||
-                serviceOption.textContent,
-
-              availableServers:
-                Array.isArray(serviceData.available_servers)
-                  ? serviceData.available_servers
-                  : (Array.isArray(serviceData.servers) ? serviceData.servers : [])
+                serviceOption.textContent
 
             })
 
@@ -4823,11 +4620,18 @@
 
         if (!response.ok) {
 
-          throw new Error(
+          const purchaseError =
             result.message ||
             result.error ||
-            "Unable to purchase number."
-          );
+            "Unable to purchase number.";
+
+          if (
+            String(purchaseError).toLowerCase().includes("insufficient")
+          ) {
+            throw new Error("Insufficient wallet balance.");
+          }
+
+          throw new Error(purchaseError);
 
         }
 
@@ -4885,86 +4689,568 @@
 
     async function loadActiveNumbers() {
 
-      const container = $("activeNumbersContainer");
-      container.innerHTML = '<div class="loading">Loading active numbers...</div>';
+      const container =
+        $("activeNumbersContainer");
+
+      container.innerHTML =
+        '<div class="loading">Loading active numbers...</div>';
 
       try {
-        if (!currentUser?.id) {
-          throw new Error("Please log in again.");
+
+        const response =
+          await fetch("/api/active");
+
+        if (!response.ok) {
+          throw new Error("Unable to load active numbers.");
         }
 
-        // Read the user's orders directly from Supabase.
-        // This avoids depending on the /api/active serverless function.
-        const { data, error } = await supabaseClient
-          .from("orders")
-          .select("*")
-          .eq("user_id", currentUser.id)
-          .order("created_at", { ascending: false });
+        const result =
+          await response.json();
 
-        if (error) {
-          throw new Error(error.message || "Unable to load active numbers.");
-        }
-
-        const terminalStatuses = new Set([
-          "failed",
-          "cancelled",
-          "canceled",
-          "expired",
-          "refunded",
-          "rejected"
-        ]);
-
-        const numbers = (Array.isArray(data) ? data : []).filter(order => {
-          const status = String(order?.status || "active").toLowerCase();
-          return !terminalStatuses.has(status) &&
-                 (order?.phone_number || order?.number);
-        });
+        const numbers =
+          Array.isArray(result)
+            ? result
+            : (
+                result.data ||
+                result.activations ||
+                result.numbers ||
+                []
+              );
 
         if (!numbers.length) {
-          container.innerHTML = '<div class="empty-state">You do not have any active numbers yet.</div>';
+          container.innerHTML = `
+            <div class="empty-state">
+              You do not have any active numbers yet.
+            </div>
+          `;
           return;
         }
 
-        container.innerHTML = `
-          <div class="table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Number</th>
-                  <th>Service</th>
-                  <th>Country</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${numbers.map(item => {
-                  const number = item.phone_number || item.number || item.phone || "—";
-                  const service = item.service_name || item.service || "—";
-                  const country = item.country_name || item.country || "—";
-                  const status = item.status || "active";
+        window.globalSimActiveNumbers = numbers;
 
-                  return `
-                    <tr>
-                      <td><strong>${escapeHtml(String(number))}</strong></td>
-                      <td>${escapeHtml(String(service))}</td>
-                      <td>${escapeHtml(String(country))}</td>
-                      <td>${statusBadge(status)}</td>
-                      <td>${formatDate(item.created_at || item.createdAt)}</td>
-                    </tr>
-                  `;
-                }).join("")}
-              </tbody>
-            </table>
+        container.innerHTML = `
+          <div class="active-numbers-list">
+            ${numbers.map((item, index) => {
+
+              const phoneNumber =
+                item.phone_number ||
+                item.phoneNumber ||
+                item.number ||
+                item.phone ||
+                "—";
+
+              const service =
+                item.service_name ||
+                item.serviceName ||
+                item.service ||
+                "—";
+
+              const status =
+                item.status ||
+                "active";
+
+              const verificationId =
+                item.verification_id ||
+                item.verificationId ||
+                item.verification?.id ||
+                item.id ||
+                "";
+
+              const createdAt =
+                item.created_at ||
+                item.createdAt ||
+                "";
+
+              return `
+                <div
+                  class="active-number-card"
+                  data-index="${index}"
+                >
+
+                  <div class="active-number-top">
+                    <div>
+                      <div class="active-number-label">
+                        ${escapeHtml(String(service))}
+                      </div>
+
+                      <div class="active-number-value">
+                        ${escapeHtml(String(phoneNumber))}
+                      </div>
+                    </div>
+
+                    <div>
+                      ${statusBadge(status)}
+                    </div>
+                  </div>
+
+                  <div class="active-number-actions">
+                    <button
+                      type="button"
+                      class="secondary-button"
+                      onclick="copyActiveNumber(${index})"
+                    >
+                      📋 Copy Number
+                    </button>
+                  </div>
+
+                  <div
+                    class="sms-box"
+                    id="smsBox-${index}"
+                  >
+                    <div class="sms-box-header">
+                      <strong>SMS</strong>
+                      <span
+                        class="sms-status"
+                        id="smsStatus-${index}"
+                      >
+                        Waiting for SMS...
+                      </span>
+                    </div>
+
+                    <div
+                      class="sms-content"
+                      id="smsContent-${index}"
+                    >
+                      <div class="sms-waiting">
+                        Waiting for incoming SMS...
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    class="cancel-area"
+                    id="cancelArea-${index}"
+                  >
+                    <div
+                      class="cancel-countdown"
+                      id="cancelCountdown-${index}"
+                    >
+                      Checking cancellation time...
+                    </div>
+
+                    <button
+                      type="button"
+                      class="danger-button"
+                      id="cancelButton-${index}"
+                      disabled
+                      onclick="cancelActiveNumber(${index})"
+                    >
+                      ❌ Cancel Number
+                    </button>
+                  </div>
+
+                  <div class="active-number-created">
+                    Purchased:
+                    ${formatDate(createdAt)}
+                  </div>
+
+                </div>
+              `;
+            }).join("")}
           </div>
         `;
 
+        numbers.forEach((item, index) => {
+          startActiveNumberTimer(item, index);
+          checkActiveNumberSMS(item, index);
+        });
+
       } catch (error) {
-        console.error("Active numbers error:", error);
-        const message = error?.message || "Unable to load active numbers.";
-        container.innerHTML = `<div class="empty-state">${escapeHtml(String(message))}</div>`;
+
+        console.error(
+          "Active numbers error:",
+          error
+        );
+
+        container.innerHTML = `
+          <div class="empty-state">
+            Unable to load active numbers.
+          </div>
+        `;
       }
     }
+
+
+    /* =========================================================
+       COPY ACTIVE NUMBER
+       ========================================================= */
+
+    async function copyActiveNumber(index) {
+
+      const numbers =
+        window.globalSimActiveNumbers || [];
+
+      const item =
+        numbers[index];
+
+      if (!item) {
+        showToast(
+          "Number not found.",
+          "error"
+        );
+        return;
+      }
+
+      const number =
+        item.phone_number ||
+        item.phoneNumber ||
+        item.number ||
+        item.phone ||
+        "";
+
+      if (!number) {
+        showToast(
+          "Number is not available.",
+          "error"
+        );
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(
+          String(number)
+        );
+
+        showToast(
+          "Number copied successfully.",
+          "success"
+        );
+      } catch (error) {
+        console.error(
+          "Copy number error:",
+          error
+        );
+
+        showToast(
+          "Unable to copy number.",
+          "error"
+        );
+      }
+    }
+
+
+    /* =========================================================
+       CANCELLATION TIMER
+       ========================================================= */
+
+    function startActiveNumberTimer(item, index) {
+
+      const countdown =
+        $(`cancelCountdown-${index}`);
+
+      const button =
+        $(`cancelButton-${index}`);
+
+      if (!countdown || !button) {
+        return;
+      }
+
+      const createdAt =
+        item.created_at ||
+        item.createdAt;
+
+      if (!createdAt) {
+        countdown.textContent =
+          "Cancellation time unavailable.";
+        return;
+      }
+
+      const createdTime =
+        new Date(createdAt).getTime();
+
+      if (!Number.isFinite(createdTime)) {
+        countdown.textContent =
+          "Cancellation time unavailable.";
+        return;
+      }
+
+      const cancellationTime =
+        createdTime + (2 * 60 * 1000);
+
+      function updateTimer() {
+
+        const remaining =
+          cancellationTime - Date.now();
+
+        if (remaining <= 0) {
+          countdown.textContent =
+            "Cancellation is now available.";
+
+          button.disabled = false;
+          return;
+        }
+
+        button.disabled = true;
+
+        const totalSeconds =
+          Math.ceil(remaining / 1000);
+
+        const minutes =
+          Math.floor(totalSeconds / 60);
+
+        const seconds =
+          totalSeconds % 60;
+
+        countdown.textContent =
+          `Cancellation available after ${minutes}:${String(seconds).padStart(2, "0")}`;
+
+        setTimeout(updateTimer, 1000);
+      }
+
+      updateTimer();
+    }
+
+
+    /* =========================================================
+       SMS STATUS CHECKING
+       ========================================================= */
+
+    function checkActiveNumberSMS(item, index) {
+
+      const verificationId =
+        item.verification_id ||
+        item.verificationId ||
+        item.verification?.id ||
+        item.id;
+
+      if (!verificationId) {
+        return;
+      }
+
+      const smsStatus =
+        $(`smsStatus-${index}`);
+
+      const smsContent =
+        $(`smsContent-${index}`);
+
+      if (!smsStatus || !smsContent) {
+        return;
+      }
+
+      async function checkSMS() {
+
+        try {
+
+          const response =
+            await fetch(
+              `/api/sms/status?verificationId=${encodeURIComponent(verificationId)}`
+            );
+
+          if (!response.ok) {
+            setTimeout(checkSMS, 7000);
+            return;
+          }
+
+          const result =
+            await response.json();
+
+          const data =
+            result?.data ||
+            result?.verification ||
+            result;
+
+          const sms =
+            data?.sms ||
+            data?.message ||
+            data?.code ||
+            data?.otp ||
+            data?.verification_code ||
+            data?.verificationCode ||
+            null;
+
+          if (sms) {
+
+            smsStatus.textContent =
+              "SMS received";
+
+            smsStatus.classList.add(
+              "received"
+            );
+
+            smsContent.innerHTML = `
+              <div class="sms-received">
+                <div class="sms-code">
+                  ${escapeHtml(String(sms))}
+                </div>
+              </div>
+            `;
+
+            return;
+          }
+
+          const providerStatus =
+            String(
+              data?.status ||
+              item.status ||
+              ""
+            ).toLowerCase();
+
+          if (
+            providerStatus === "cancelled" ||
+            providerStatus === "canceled"
+          ) {
+            smsStatus.textContent =
+              "Number cancelled";
+            return;
+          }
+
+          smsStatus.textContent =
+            "Waiting for SMS...";
+
+          setTimeout(checkSMS, 5000);
+
+        } catch (error) {
+
+          console.error(
+            "SMS status error:",
+            error
+          );
+
+          setTimeout(checkSMS, 7000);
+        }
+      }
+
+      checkSMS();
+    }
+
+
+    /* =========================================================
+       CANCEL ACTIVE NUMBER
+       ========================================================= */
+
+    async function cancelActiveNumber(index) {
+
+      const numbers =
+        window.globalSimActiveNumbers || [];
+
+      const item =
+        numbers[index];
+
+      if (!item) {
+        showToast(
+          "Number not found.",
+          "error"
+        );
+        return;
+      }
+
+      const verificationId =
+        item.verification_id ||
+        item.verificationId ||
+        item.verification?.id ||
+        item.id;
+
+      if (!verificationId) {
+        showToast(
+          "Verification ID not found.",
+          "error"
+        );
+        return;
+      }
+
+      const button =
+        $(`cancelButton-${index}`);
+
+      if (!button) {
+        return;
+      }
+
+      if (button.disabled) {
+        showToast(
+          "Please wait until cancellation is available.",
+          "error"
+        );
+        return;
+      }
+
+      const confirmed =
+        window.confirm(
+          "Are you sure you want to cancel this number? The amount paid for this number will be refunded to your wallet."
+        );
+
+      if (!confirmed) {
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Cancelling...";
+
+      try {
+
+        const sessionResult =
+          await supabaseClient.auth.getSession();
+
+        const accessToken =
+          sessionResult?.data?.session?.access_token ||
+          "";
+
+        if (!accessToken) {
+          throw new Error(
+            "Your session has expired. Please log in again."
+          );
+        }
+
+        const response =
+          await fetch(
+            `/api/cancel?id=${encodeURIComponent(verificationId)}`,
+            {
+              method: "DELETE",
+              headers: {
+                Authorization:
+                  `Bearer ${accessToken}`
+              }
+            }
+          );
+
+        const result =
+          await response.json();
+
+        if (!response.ok || !result?.success) {
+          throw new Error(
+            result?.error ||
+            "Unable to cancel number."
+          );
+        }
+
+        showToast(
+          result.message ||
+          "Number cancelled successfully. Your wallet has been refunded.",
+          "success"
+        );
+
+        await loadActiveNumbers();
+
+        if (typeof loadWallet === "function") {
+          await loadWallet();
+        }
+
+        if (typeof loadDashboard === "function") {
+          await loadDashboard();
+        }
+
+        if (typeof loadOrderHistory === "function") {
+          await loadOrderHistory();
+        }
+
+      } catch (error) {
+
+        console.error(
+          "Cancel number error:",
+          error
+        );
+
+        showToast(
+          error?.message ||
+          "Unable to cancel number.",
+          "error"
+        );
+
+        button.disabled = false;
+        button.textContent =
+          "❌ Cancel Number";
+      }
+    }
+
 
     /* =========================================================
        ORDER HISTORY
@@ -5192,37 +5478,6 @@
       return data?.session?.access_token || null;
     }
 
-    let adminPricingCountriesCache = [];
-    let adminPricingServicesCache = [];
-
-    function filterAdminPricingCountries() {
-      const q = ($("adminPricingCountrySearch")?.value || "").toLowerCase();
-      const select = $("adminPricingCountry");
-      if (!select) return;
-      const current = select.value;
-      const list = adminPricingCountriesCache.filter(c =>
-        String(c.name || "").toLowerCase().includes(q) ||
-        String(c.code || "").toLowerCase().includes(q)
-      );
-      select.innerHTML = '<option value="">Select a country</option>' + list.map(country => `
-        <option value="${escapeHtml(String(country.id))}" data-name="${escapeHtml(country.name || "")}" data-code="${escapeHtml(country.code || "")}" data-server="${escapeHtml(country.server || "")}">${escapeHtml(country.name || String(country.id))}</option>`).join("");
-      if (current && list.some(c => String(c.id) === String(current))) select.value = current;
-    }
-
-    function filterAdminPricingServices() {
-      const q = ($("adminPricingServiceSearch")?.value || "").toLowerCase();
-      const select = $("adminPricingService");
-      if (!select) return;
-      const current = select.value;
-      const list = adminPricingServicesCache.filter(s =>
-        String(s.name || "").toLowerCase().includes(q) ||
-        String(s.id || "").toLowerCase().includes(q)
-      );
-      select.innerHTML = '<option value="">Select a service</option>' + list.map(service => `
-        <option value="${escapeHtml(String(service.id))}" data-name="${escapeHtml(service.name || "")}">${escapeHtml(service.name || String(service.id))}</option>`).join("");
-      if (current && list.some(s => String(s.id) === String(current))) select.value = current;
-    }
-
     async function loadAdminPricing() {
       const countrySelect = $("adminPricingCountry");
       const serviceSelect = $("adminPricingService");
@@ -5235,10 +5490,9 @@
         const countriesData = await countriesResponse.json();
 
         if (countriesData?.success) {
-          adminPricingCountriesCache = countriesData.countries || [];
           countrySelect.innerHTML =
             '<option value="">Select a country</option>' +
-            adminPricingCountriesCache.map(country => `
+            (countriesData.countries || []).map(country => `
               <option value="${escapeHtml(String(country.id))}"
                 data-name="${escapeHtml(country.name || "")}"
                 data-code="${escapeHtml(country.code || "")}"
@@ -5305,9 +5559,6 @@
         '<option value="">Loading services...</option>';
 
       if (!countryId) {
-        adminPricingServicesCache = [];
-        $("adminPricingServiceSearch").disabled = true;
-        $("adminPricingServiceSearch").value = "";
         serviceSelect.innerHTML =
           '<option value="">Select a service</option>';
         return;
@@ -5325,11 +5576,9 @@
           throw new Error(data?.error || "Unable to load services.");
         }
 
-        adminPricingServicesCache = data.services || [];
-        $("adminPricingServiceSearch").disabled = false;
         serviceSelect.innerHTML =
           '<option value="">Select a service</option>' +
-          adminPricingServicesCache.map(service => `
+          (data.services || []).map(service => `
             <option value="${escapeHtml(String(service.id))}"
               data-name="${escapeHtml(service.name || "")}">
               ${escapeHtml(service.name || String(service.id))}
@@ -5438,7 +5687,7 @@
 
       try {
 
-        await Promise.allSettled([
+        await Promise.all([
           loadAdminUsers(),
           loadAdminOrders(),
           loadAdminDeposits(),
@@ -6154,7 +6403,18 @@
           </p>
           <p>
             Email:
-            <strong>watchandearn.ng@gmail.com</strong>
+            <strong>globalsimwebsite@gmail.com</strong>
+          </p>
+          <p style="margin-top:12px;">
+            <a
+              href="https://t.me/GlobalVirtualSimWebSupport"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="secondary-btn"
+              style="display:inline-block;text-decoration:none;"
+            >
+              Follow us on Telegram
+            </a>
           </p>
         `,
 
@@ -6164,7 +6424,7 @@
           </p>
           <p>
             Email:
-            <strong>watchandearn.ng@gmail.com</strong>
+            <strong>globalsimwebsite@gmail.com</strong>
           </p>
         `,
 
@@ -6416,6 +6676,198 @@
     }
 
   </script>
+
+
+<style>
+.gvs-search-wrap{position:relative;width:100%}
+.gvs-search-input{width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #d7e2ee;border-radius:10px;background:#fff;font:inherit;color:#152238;outline:none}
+.gvs-search-input:focus{border-color:#5ba9ff;box-shadow:0 0 0 3px rgba(91,169,255,.12)}
+.gvs-search-list{position:absolute;z-index:9999;left:0;right:0;top:calc(100% + 5px);max-height:280px;overflow:auto;background:#fff;border:1px solid #d7e2ee;border-radius:10px;box-shadow:0 12px 28px rgba(20,50,90,.14);display:none}
+.gvs-search-list.open{display:block}
+.gvs-search-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:0;background:#fff;text-align:left;cursor:pointer;font:inherit;color:#17263b}
+.gvs-search-item:hover,.gvs-search-item.active{background:#eaf5ff}
+.gvs-flag{font-size:21px;line-height:1;width:26px;text-align:center}
+.gvs-service-icon{width:28px;height:28px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;background:#edf5ff;font-size:16px;flex:none}
+.gvs-search-empty{padding:14px;color:#6b7b91;font-size:13px}
+.gvs-hidden-native{display:none!important}
+
+
+/* =========================================================
+   ACTIVE NUMBER UI
+   ========================================================= */
+
+.active-numbers-list {
+  display: grid;
+  gap: 16px;
+}
+
+.active-number-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.active-number-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.active-number-label {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 5px;
+}
+
+.active-number-value {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  color: #0f172a;
+}
+
+.active-number-actions {
+  margin-top: 15px;
+}
+
+.active-number-actions button {
+  width: 100%;
+}
+
+.sms-box {
+  margin-top: 16px;
+  border: 1px solid #dbeafe;
+  background: #f8fbff;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.sms-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sms-status {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.sms-status.received {
+  color: #15803d;
+  font-weight: 700;
+}
+
+.sms-content {
+  min-height: 45px;
+}
+
+.sms-waiting {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.sms-received {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #dbeafe;
+}
+
+.sms-code {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: #0f172a;
+}
+
+.cancel-area {
+  margin-top: 15px;
+}
+
+.cancel-countdown {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 9px;
+}
+
+.danger-button {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 15px;
+  background: #dc2626;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.danger-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.active-number-created {
+  margin-top: 14px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+</style>
+<script>
+(function(){
+const flags={US:"🇺🇸",NG:"🇳🇬",GB:"🇬🇧",CA:"🇨🇦",DE:"🇩🇪",FR:"🇫🇷",IT:"🇮🇹",ES:"🇪🇸",NL:"🇳🇱",BE:"🇧🇪",CH:"🇨🇭",AT:"🇦🇹",SE:"🇸🇪",NO:"🇳🇴",DK:"🇩🇰",FI:"🇫🇮",PL:"🇵🇱",CZ:"🇨🇿",PT:"🇵🇹",IE:"🇮🇪",AU:"🇦🇺",NZ:"🇳🇿",JP:"🇯🇵",KR:"🇰🇷",CN:"🇨🇳",IN:"🇮🇳",ID:"🇮🇩",MY:"🇲🇾",SG:"🇸🇬",PH:"🇵🇭",TH:"🇹🇭",VN:"🇻🇳",AE:"🇦🇪",SA:"🇸🇦",IL:"🇮🇱",TR:"🇹🇷",BR:"🇧🇷",MX:"🇲🇽",AR:"🇦🇷",CL:"🇨🇱",CO:"🇨🇴",PE:"🇵🇪",ZA:"🇿🇦",EG:"🇪🇬",KE:"🇰🇪",GH:"🇬🇭",TZ:"🇹🇿",UG:"🇺🇬",RU:"🇷🇺",UA:"🇺🇦",RO:"🇷🇴",GR:"🇬🇷",HU:"🇭🇺",BG:"🇧🇬"};
+const icon=n=>{n=String(n||"").toLowerCase();if(n.includes("whatsapp"))return"🟢";if(n.includes("telegram"))return"✈️";if(n.includes("instagram"))return"📸";if(n.includes("facebook"))return"🔵";if(n.includes("tiktok"))return"🎵";if(n.includes("google"))return"🔎";if(n.includes("signal"))return"🔐";if(n.includes("discord"))return"🎮";if(n.includes("microsoft"))return"🪟";if(n.includes("twitter")||n==="x")return"𝕏";if(n.includes("snapchat"))return"👻";if(n.includes("uber"))return"🚕";if(n.includes("amazon"))return"🛒";if(n.includes("viber"))return"📞";return"📱"};
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+const flag=c=>{let x=String(c?.code||c?.country_code||c?.countryCode||"").toUpperCase();if(flags[x])return flags[x];return/^[A-Z]{2}$/.test(x)?String.fromCodePoint(...[...x].map(a=>127397+a.charCodeAt(0))):"🌐"};
+
+function enhance(sel,type){
+if(!sel||sel.dataset.gvsEnhanced)return;
+sel.dataset.gvsEnhanced="1";sel.classList.add("gvs-hidden-native");
+const wrap=document.createElement("div"),input=document.createElement("input"),list=document.createElement("div");
+wrap.className="gvs-search-wrap";input.className="gvs-search-input";input.type="search";input.autocomplete="off";input.placeholder=type==="country"?"Search country...":"Search service...";
+list.className="gvs-search-list";wrap.append(input,list);sel.parentNode.insertBefore(wrap,sel);
+function items(){
+return [...sel.options].filter(o=>o.value).map(o=>{let raw={};try{raw=JSON.parse(o.dataset.raw||"{}")}catch{};return {...raw,id:o.value,name:o.dataset.countryName||o.dataset.serviceName||o.textContent.trim(),code:o.dataset.countryCode||raw.code||raw.country_code||""}});
+}
+function render(){
+let q=input.value.trim().toLowerCase(),arr=items().filter(x=>!q||String(x.name).toLowerCase().includes(q)||String(x.code).toLowerCase().includes(q));
+list.innerHTML=arr.length?arr.map(x=>`<button type="button" class="gvs-search-item" data-id="${esc(x.id)}"><span class="${type==="country"?"gvs-flag":"gvs-service-icon"}">${type==="country"?flag(x):icon(x.name)}</span><span>${esc(x.name)}</span></button>`).join(""):'<div class="gvs-search-empty">No results found.</div>';
+list.classList.add("open");
+list.querySelectorAll("button").forEach(b=>b.onclick=()=>{sel.value=b.dataset.id;sel.dispatchEvent(new Event("change",{bubbles:true}));let x=arr.find(a=>String(a.id)===String(b.dataset.id));if(x)input.value=(type==="country"?flag(x):icon(x.name))+" "+x.name;list.classList.remove("open")});
+}
+input.onfocus=render;input.oninput=render;document.addEventListener("click",e=>{if(!wrap.contains(e.target))list.classList.remove("open")});
+sel.addEventListener("change",()=>{let x=items().find(a=>String(a.id)===String(sel.value));if(x)input.value=(type==="country"?flag(x):icon(x.name))+" "+x.name});
+}
+
+function init(){enhance(document.getElementById("countrySelect"),"country");enhance(document.getElementById("serviceSelect"),"service")}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})();
+
+
+    function togglePasswordVisibility(inputId, button) {
+      const input = $(inputId);
+      if (!input) return;
+
+      const showing = input.type === "text";
+      input.type = showing ? "password" : "text";
+
+      if (button) {
+        button.textContent = showing ? "👁" : "🙈";
+        button.setAttribute(
+          "aria-label",
+          showing ? "Show password" : "Hide password"
+        );
+      }
+    }
+</script>
 
 </body>
 </html>
