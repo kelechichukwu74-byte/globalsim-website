@@ -4697,15 +4697,36 @@
 
       try {
 
-        const response =
-          await fetch("/api/active");
+        const sessionResult =
+          await supabaseClient.auth.getSession();
 
-        if (!response.ok) {
-          throw new Error("Unable to load active numbers.");
+        const accessToken =
+          sessionResult?.data?.session?.access_token ||
+          "";
+
+        if (!accessToken) {
+          throw new Error("Please log in again.");
         }
 
+        const response =
+          await fetch("/api/active", {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              Accept: "application/json"
+            }
+          });
+
         const result =
-          await response.json();
+          await response.json().catch(() => ({}));
+
+        if (!response.ok || result?.success === false) {
+          throw new Error(
+            result?.error ||
+            result?.message ||
+            `Unable to load active numbers (HTTP ${response.status}).`
+          );
+        }
 
         const numbers =
           Array.isArray(result)
@@ -6824,49 +6845,25 @@
 <script>
 (function(){
 const flags={US:"🇺🇸",NG:"🇳🇬",GB:"🇬🇧",CA:"🇨🇦",DE:"🇩🇪",FR:"🇫🇷",IT:"🇮🇹",ES:"🇪🇸",NL:"🇳🇱",BE:"🇧🇪",CH:"🇨🇭",AT:"🇦🇹",SE:"🇸🇪",NO:"🇳🇴",DK:"🇩🇰",FI:"🇫🇮",PL:"🇵🇱",CZ:"🇨🇿",PT:"🇵🇹",IE:"🇮🇪",AU:"🇦🇺",NZ:"🇳🇿",JP:"🇯🇵",KR:"🇰🇷",CN:"🇨🇳",IN:"🇮🇳",ID:"🇮🇩",MY:"🇲🇾",SG:"🇸🇬",PH:"🇵🇭",TH:"🇹🇭",VN:"🇻🇳",AE:"🇦🇪",SA:"🇸🇦",IL:"🇮🇱",TR:"🇹🇷",BR:"🇧🇷",MX:"🇲🇽",AR:"🇦🇷",CL:"🇨🇱",CO:"🇨🇴",PE:"🇵🇪",ZA:"🇿🇦",EG:"🇪🇬",KE:"🇰🇪",GH:"🇬🇭",TZ:"🇹🇿",UG:"🇺🇬",RU:"🇷🇺",UA:"🇺🇦",RO:"🇷🇴",GR:"🇬🇷",HU:"🇭🇺",BG:"🇧🇬"};
-const icon=n=>{n=String(n||"").toLowerCase();if(n.includes("whatsapp"))return"🟢";if(n.includes("telegram"))return"✈️";if(n.includes("instagram"))return"📸";if(n.includes("facebook"))return"🔵";if(n.includes("tiktok"))return"🎵";if(n.includes("google"))return"🔎";if(n.includes("signal"))return"🔐";if(n.includes("discord"))return"🎮";if(n.includes("microsoft"))return"🪟";if(n.includes("twitter")||n==="x")return"𝕏";if(n.includes("snapchat"))return"👻";if(n.includes("uber"))return"🚕";if(n.includes("amazon"))return"🛒";if(n.includes("viber"))return"📞";return"📱"};
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 const flag=c=>{let x=String(c?.code||c?.country_code||c?.countryCode||"").toUpperCase();if(flags[x])return flags[x];return/^[A-Z]{2}$/.test(x)?String.fromCodePoint(...[...x].map(a=>127397+a.charCodeAt(0))):"🌐"};
 
-function enhance(sel,type){
+function enhanceCountry(sel){
 if(!sel||sel.dataset.gvsEnhanced)return;
-sel.dataset.gvsEnhanced="1";sel.classList.add("gvs-hidden-native");
+sel.dataset.gvsEnhanced="1";
+sel.classList.add("gvs-hidden-native");
 const wrap=document.createElement("div"),input=document.createElement("input"),list=document.createElement("div");
-wrap.className="gvs-search-wrap";input.className="gvs-search-input";input.type="search";input.autocomplete="off";input.placeholder=type==="country"?"Search country...":"Search service...";
+wrap.className="gvs-search-wrap";input.className="gvs-search-input";input.type="search";input.autocomplete="off";input.placeholder="Search country...";
 list.className="gvs-search-list";wrap.append(input,list);sel.parentNode.insertBefore(wrap,sel);
-function items(){
-return [...sel.options].filter(o=>o.value).map(o=>{let raw={};try{raw=JSON.parse(o.dataset.raw||"{}")}catch{};return {...raw,id:o.value,name:o.dataset.countryName||o.dataset.serviceName||o.textContent.trim(),code:o.dataset.countryCode||raw.code||raw.country_code||""}});
-}
-function render(){
-let q=input.value.trim().toLowerCase(),arr=items().filter(x=>!q||String(x.name).toLowerCase().includes(q)||String(x.code).toLowerCase().includes(q));
-list.innerHTML=arr.length?arr.map(x=>`<button type="button" class="gvs-search-item" data-id="${esc(x.id)}"><span class="${type==="country"?"gvs-flag":"gvs-service-icon"}">${type==="country"?flag(x):icon(x.name)}</span><span>${esc(x.name)}</span></button>`).join(""):'<div class="gvs-search-empty">No results found.</div>';
-list.classList.add("open");
-list.querySelectorAll("button").forEach(b=>b.onclick=()=>{sel.value=b.dataset.id;sel.dispatchEvent(new Event("change",{bubbles:true}));let x=arr.find(a=>String(a.id)===String(b.dataset.id));if(x)input.value=(type==="country"?flag(x):icon(x.name))+" "+x.name;list.classList.remove("open")});
-}
+function items(){return [...sel.options].filter(o=>o.value).map(o=>{let raw={};try{raw=JSON.parse(o.dataset.raw||"{}")}catch{};return {...raw,id:o.value,name:o.dataset.countryName||o.textContent.trim(),code:o.dataset.countryCode||raw.code||raw.country_code||""}});}
+function render(){let q=input.value.trim().toLowerCase(),arr=items().filter(x=>!q||String(x.name).toLowerCase().includes(q)||String(x.code).toLowerCase().includes(q));list.innerHTML=arr.length?arr.map(x=>`<button type="button" class="gvs-search-item" data-id="${esc(x.id)}"><span class="gvs-flag">${flag(x)}</span><span>${esc(x.name)}</span></button>`).join(""):"<div class="gvs-search-empty">No results found.</div>";list.classList.add("open");list.querySelectorAll("button").forEach(b=>b.onclick=()=>{sel.value=b.dataset.id;sel.dispatchEvent(new Event("change",{bubbles:true}));let x=arr.find(a=>String(a.id)===String(b.dataset.id));if(x)input.value=flag(x)+" "+x.name;list.classList.remove("open")});}
 input.onfocus=render;input.oninput=render;document.addEventListener("click",e=>{if(!wrap.contains(e.target))list.classList.remove("open")});
-sel.addEventListener("change",()=>{let x=items().find(a=>String(a.id)===String(sel.value));if(x)input.value=(type==="country"?flag(x):icon(x.name))+" "+x.name});
+sel.addEventListener("change",()=>{let x=items().find(a=>String(a.id)===String(sel.value));if(x)input.value=flag(x)+" "+x.name});
 }
 
-function init(){enhance(document.getElementById("countrySelect"),"country");enhance(document.getElementById("serviceSelect"),"service")}
+function init(){enhanceCountry(document.getElementById("countrySelect"));}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
-
-
-    function togglePasswordVisibility(inputId, button) {
-      const input = $(inputId);
-      if (!input) return;
-
-      const showing = input.type === "text";
-      input.type = showing ? "password" : "text";
-
-      if (button) {
-        button.textContent = showing ? "👁" : "🙈";
-        button.setAttribute(
-          "aria-label",
-          showing ? "Show password" : "Hide password"
-        );
-      }
-    }
 </script>
 
 </body>
