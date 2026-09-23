@@ -1,16 +1,16 @@
-import { sureVerificationRequest } from "./_lib.js";
+import {
+  sureVerificationRequest,
+  getServersForCountry
+} from "./_lib.js";
 
 const SUPABASE_URL =
-  process.env.SUPABASE_URL ||
   "https://rfitbmkizfmwfqqskwhy.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
 
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-
-/* =========================================================
-   AUTHENTICATION
-   ========================================================= */
 
 function getBearerToken(req) {
   const header =
@@ -18,139 +18,73 @@ function getBearerToken(req) {
     req.headers?.Authorization ||
     "";
 
-  if (!header) {
-    return null;
-  }
-
-  if (!header.toLowerCase().startsWith("bearer ")) {
+  if (!header.startsWith("Bearer ")) {
     return null;
   }
 
   return header.slice(7).trim();
 }
 
-
 async function getAuthenticatedUser(req) {
-  const token =
-    getBearerToken(req);
+  const token = getBearerToken(req);
 
   if (!token) {
     throw new Error("Unauthorized.");
   }
 
-  if (!SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not configured."
-    );
+  const response = await fetch(
+    `${SUPABASE_URL}/auth/v1/user`,
+    {
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json"
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Unauthorized.");
   }
 
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/auth/v1/user`,
-      {
-        method: "GET",
+  const user = await response.json();
 
-        headers: {
-          apikey:
-            SUPABASE_SERVICE_ROLE_KEY,
-
-          Authorization:
-            `Bearer ${token}`,
-
-          Accept:
-            "application/json"
-        }
-      }
-    );
-
-  const text =
-    await response.text();
-
-  let user = null;
-
-  try {
-    user =
-      text
-        ? JSON.parse(text)
-        : null;
-  } catch {
-    throw new Error(
-      "Unauthorized."
-    );
-  }
-
-  if (
-    !response.ok ||
-    !user?.id
-  ) {
-    console.error(
-      "Supabase authentication failed:",
-      {
-        status: response.status,
-        response: user
-      }
-    );
-
-    throw new Error(
-      "Unauthorized."
-    );
+  if (!user?.id) {
+    throw new Error("Unauthorized.");
   }
 
   return user;
 }
 
-
-/* =========================================================
-   SUPABASE DATABASE
-   ========================================================= */
-
-async function supabaseRequest(
-  path,
-  options = {}
-) {
+async function supabaseRequest(path, options = {}) {
   if (!SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error(
       "SUPABASE_SERVICE_ROLE_KEY is not configured."
     );
   }
 
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/${path}`,
-      {
-        ...options,
-
-        headers: {
-          apikey:
-            SUPABASE_SERVICE_ROLE_KEY,
-
-          Authorization:
-            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-
-          "Content-Type":
-            "application/json",
-
-          Accept:
-            "application/json",
-
-          Prefer:
-            "return=representation",
-
-          ...(options.headers || {})
-        }
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/${path}`,
+    {
+      ...options,
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization:
+          `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Prefer: "return=representation",
+        ...(options.headers || {})
       }
-    );
+    }
+  );
 
-  const text =
-    await response.text();
+  const text = await response.text();
 
   let data = {};
 
   try {
-    data =
-      text
-        ? JSON.parse(text)
-        : {};
+    data = text ? JSON.parse(text) : {};
   } catch {
     throw new Error(
       `Supabase returned invalid JSON (HTTP ${response.status}).`
@@ -169,116 +103,20 @@ async function supabaseRequest(
   return data;
 }
 
-
-/* =========================================================
-   HELPERS
-   ========================================================= */
-
 function quote(value) {
-  return encodeURIComponent(
-    String(value)
-  );
+  return encodeURIComponent(String(value));
 }
-
-
-function isUSCountry(
-  countryCode,
-  countryName
-) {
-  const code =
-    String(countryCode || "")
-      .trim()
-      .toLowerCase();
-
-  const name =
-    String(countryName || "")
-      .trim()
-      .toLowerCase();
-
-  return (
-    code === "us" ||
-    code === "usa" ||
-    name === "united states" ||
-    name === "united states of america"
-  );
-}
-
-
-/* =========================================================
-   PROVIDER SERVERS
-   ========================================================= */
-
-function getProviderServers(
-  countryCode,
-  countryName,
-  availableServers
-) {
-  const preferred =
-    isUSCountry(
-      countryCode,
-      countryName
-    )
-      ? [
-          "usa-server-2",
-          "usa-server-1",
-          "global-server-1",
-          "global-server-2"
-        ]
-      : [
-          "global-server-1",
-          "global-server-2"
-        ];
-
-  const supplied =
-    Array.isArray(availableServers)
-      ? availableServers
-          .map(value =>
-            String(value || "").trim()
-          )
-          .filter(Boolean)
-      : [];
-
-  const combined = [
-    ...supplied,
-    ...preferred
-  ];
-
-  return [
-    ...new Set(
-      combined.filter(
-        server =>
-          preferred.includes(server)
-      )
-    )
-  ];
-}
-
-
-/* =========================================================
-   PROVIDER PRICE
-   ========================================================= */
 
 function getProviderPrice(data) {
-  const price =
-    Number(
-      data?.price ??
-      data?.data?.price ??
-      data?.amount ??
-      data?.data?.amount ??
-      data?.verification?.price ??
-      data?.verification?.amount
-    );
-
-  return Number.isFinite(price) &&
-    price >= 0
-    ? price
-    : null;
+  return Number(
+    data?.price ??
+    data?.data?.price ??
+    data?.amount ??
+    data?.data?.amount ??
+    data?.verification?.price ??
+    data?.verification?.amount
+  );
 }
-
-
-/* =========================================================
-   PROVIDER VERIFICATION
-   ========================================================= */
 
 function getVerification(data) {
   return (
@@ -289,10 +127,8 @@ function getVerification(data) {
   );
 }
 
-
 function getVerificationId(data) {
-  const verification =
-    getVerification(data);
+  const verification = getVerification(data);
 
   return (
     verification?.request_id ??
@@ -304,10 +140,8 @@ function getVerificationId(data) {
   );
 }
 
-
 function getPhoneNumber(data) {
-  const verification =
-    getVerification(data);
+  const verification = getVerification(data);
 
   return (
     verification?.number ??
@@ -318,41 +152,28 @@ function getPhoneNumber(data) {
   );
 }
 
-
-/* =========================================================
-   WALLET DEBIT
-   ========================================================= */
-
-async function debitWallet(
-  userId,
-  amount
-) {
-  const requiredAmount =
-    Number(amount);
+async function debitWallet(userId, amount) {
+  const requiredAmount = Number(amount);
 
   if (
     !Number.isFinite(requiredAmount) ||
     requiredAmount <= 0
   ) {
-    throw new Error(
-      "Invalid purchase amount."
-    );
+    throw new Error("Invalid purchase amount.");
   }
 
-  for (
-    let attempt = 0;
-    attempt < 5;
-    attempt++
-  ) {
-    const rows =
-      await supabaseRequest(
-        `wallets?user_id=eq.${quote(
-          userId
-        )}&select=user_id,balance&limit=1`
-      );
+  /*
+   * Optimistic compare-and-set debit.
+   *
+   * The balance is checked and changed on the server, scoped to the
+   * authenticated user. The client can never choose the amount to debit.
+   */
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const rows = await supabaseRequest(
+      `wallets?user_id=eq.${quote(userId)}&select=user_id,balance&limit=1`
+    );
 
-    const wallet =
-      rows?.[0];
+    const wallet = rows?.[0];
 
     if (!wallet) {
       throw new Error(
@@ -361,61 +182,39 @@ async function debitWallet(
     }
 
     const currentBalance =
-      Number(
-        wallet.balance || 0
-      );
+      Number(wallet.balance || 0);
 
-    if (
-      !Number.isFinite(
-        currentBalance
-      )
-    ) {
+    if (!Number.isFinite(currentBalance)) {
       throw new Error(
         "Unable to read wallet balance."
       );
     }
 
-    if (
-      currentBalance <
-      requiredAmount
-    ) {
+    if (currentBalance < requiredAmount) {
       throw new Error(
         "Insufficient wallet balance."
       );
     }
 
     const newBalance =
-      currentBalance -
-      requiredAmount;
+      currentBalance - requiredAmount;
 
-    const updated =
-      await supabaseRequest(
-        `wallets?user_id=eq.${quote(
-          userId
-        )}&balance=eq.${encodeURIComponent(
-          currentBalance
-        )}`,
-        {
-          method: "PATCH",
+    const updated = await supabaseRequest(
+      `wallets?user_id=eq.${quote(userId)}&balance=eq.${encodeURIComponent(
+        currentBalance
+      )}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          balance: newBalance,
+          updated_at: new Date().toISOString()
+        })
+      }
+    );
 
-          body: JSON.stringify({
-            balance:
-              newBalance,
-
-            updated_at:
-              new Date().toISOString()
-          })
-        }
-      );
-
-    if (
-      Array.isArray(updated) &&
-      updated.length > 0
-    ) {
+    if (Array.isArray(updated) && updated.length > 0) {
       return {
-        previousBalance:
-          currentBalance,
-
+        previousBalance: currentBalance,
         newBalance
       };
     }
@@ -426,17 +225,8 @@ async function debitWallet(
   );
 }
 
-
-/* =========================================================
-   WALLET REFUND
-   ========================================================= */
-
-async function refundWallet(
-  userId,
-  amount
-) {
-  const refundAmount =
-    Number(amount);
+async function refundWallet(userId, amount) {
+  const refundAmount = Number(amount);
 
   if (
     !Number.isFinite(refundAmount) ||
@@ -445,20 +235,12 @@ async function refundWallet(
     return null;
   }
 
-  for (
-    let attempt = 0;
-    attempt < 5;
-    attempt++
-  ) {
-    const rows =
-      await supabaseRequest(
-        `wallets?user_id=eq.${quote(
-          userId
-        )}&select=user_id,balance&limit=1`
-      );
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const rows = await supabaseRequest(
+      `wallets?user_id=eq.${quote(userId)}&select=user_id,balance&limit=1`
+    );
 
-    const wallet =
-      rows?.[0];
+    const wallet = rows?.[0];
 
     if (!wallet) {
       throw new Error(
@@ -467,42 +249,27 @@ async function refundWallet(
     }
 
     const currentBalance =
-      Number(
-        wallet.balance || 0
-      );
+      Number(wallet.balance || 0);
 
     const newBalance =
-      currentBalance +
-      refundAmount;
+      currentBalance + refundAmount;
 
-    const updated =
-      await supabaseRequest(
-        `wallets?user_id=eq.${quote(
-          userId
-        )}&balance=eq.${encodeURIComponent(
-          currentBalance
-        )}`,
-        {
-          method: "PATCH",
+    const updated = await supabaseRequest(
+      `wallets?user_id=eq.${quote(userId)}&balance=eq.${encodeURIComponent(
+        currentBalance
+      )}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          balance: newBalance,
+          updated_at: new Date().toISOString()
+        })
+      }
+    );
 
-          body: JSON.stringify({
-            balance:
-              newBalance,
-
-            updated_at:
-              new Date().toISOString()
-          })
-        }
-      );
-
-    if (
-      Array.isArray(updated) &&
-      updated.length > 0
-    ) {
+    if (Array.isArray(updated) && updated.length > 0) {
       return {
-        previousBalance:
-          currentBalance,
-
+        previousBalance: currentBalance,
         newBalance
       };
     }
@@ -512,11 +279,6 @@ async function refundWallet(
     "Unable to complete wallet refund automatically."
   );
 }
-
-
-/* =========================================================
-   WALLET TRANSACTION HISTORY
-   ========================================================= */
 
 async function createWalletTransaction({
   userId,
@@ -529,26 +291,21 @@ async function createWalletTransaction({
       "wallet_transactions",
       {
         method: "POST",
-
         body: JSON.stringify({
-          user_id:
-            userId,
-
-          amount:
-            amount,
-
-          balance_after:
-            balanceAfter,
-
-          type:
-            "order",
-
-          description:
-            description
+          user_id: userId,
+          amount,
+          balance_after: balanceAfter,
+          type: "order",
+          description
         })
       }
     );
   } catch (error) {
+    /*
+     * Do not turn a successful provider purchase into a failed customer
+     * purchase merely because the history insert has a schema problem.
+     * The wallet/order state remains authoritative.
+     */
     console.error(
       "Wallet transaction history error:",
       error
@@ -556,84 +313,34 @@ async function createWalletTransaction({
   }
 }
 
-
-/* =========================================================
-   CREATE ORDER
-   ========================================================= */
-
-async function createOrder(
-  userId,
-  order
-) {
+async function createOrder(userId, order) {
   return await supabaseRequest(
     "orders",
     {
       method: "POST",
-
       body: JSON.stringify({
-        user_id:
-          userId,
-
-        provider_order_id:
-          order.verificationId,
-
-        service_country_price_id:
-          order.serviceCountryPriceId,
-
-        service_name:
-          order.serviceName,
-
-        country_name:
-          order.countryName,
-
-        /*
-         * IMPORTANT:
-         * orders.provider_cost is NOT NULL.
-         * Therefore this value is ALWAYS a number.
-         */
-        provider_cost:
-          Number.isFinite(
-            order.providerPrice
-          )
-            ? order.providerPrice
-            : 0,
-
-        customer_price:
-          order.sellingPrice,
-
-        profit:
-          Number.isFinite(
-            order.providerPrice
-          )
-            ? order.sellingPrice -
-              order.providerPrice
-            : order.sellingPrice,
-
-        status:
-          order.status ||
-          "active",
-
-        phone_number:
-          order.phoneNumber
+        user_id: userId,
+        provider_order_id: order.verificationId,
+        service_country_price_id: order.serviceCountryPriceId,
+        service_name: order.serviceName,
+        country_name: order.countryName,
+        provider_cost: order.providerPrice,
+        customer_price: order.sellingPrice,
+        profit: Number.isFinite(order.providerPrice)
+          ? order.sellingPrice - order.providerPrice
+          : null,
+        status: order.status || "active",
+        phone_number: order.phoneNumber
       })
     }
   );
 }
 
-
-/* =========================================================
-   MAIN ORDER HANDLER
-   ========================================================= */
-
-export default async function handler(
-  req,
-  res
-) {
+export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
       success: false,
-      error:
-        "Method not allowed"
+      error: "Method not allowed"
     });
   }
 
@@ -642,96 +349,62 @@ export default async function handler(
   let debitAmount = 0;
 
   try {
+    user = await getAuthenticatedUser(req);
 
-    /* -----------------------------------------
-       AUTHENTICATE CUSTOMER
-       ----------------------------------------- */
-
-    user =
-      await getAuthenticatedUser(
-        req
-      );
-
-
-    const body =
-      req.body || {};
-
+    const body = req.body || {};
 
     const countryId =
       body.countryId ??
       body.country_id;
-
 
     const countryName =
       body.countryName ??
       body.country_name ??
       "";
 
-
-    const countryCode =
-      body.countryCode ??
-      body.country_code ??
-      "";
-
-
     const serviceId =
       body.serviceCountryPriceId ??
       body.serviceId ??
       body.service_id;
-
 
     const requestedServiceName =
       body.serviceName ??
       body.service_name ??
       "";
 
-
     if (!countryId) {
       return res.status(400).json({
         success: false,
-        error:
-          "Country is required."
+        error: "Country is required."
       });
     }
-
 
     if (!serviceId) {
       return res.status(400).json({
         success: false,
-        error:
-          "Service is required."
+        error: "Service is required."
       });
     }
 
+    /*
+     * The selling price ALWAYS comes from the admin pricing table.
+     * Never trust a price sent by the browser.
+     */
+    const pricingRows = await supabaseRequest(
+      `product_prices?country_id=eq.${quote(
+        countryId
+      )}&service_id=eq.${quote(
+        serviceId
+      )}&select=country_id,country_name,service_id,service_name,selling_price&limit=1`
+    );
 
-    /* -----------------------------------------
-       GET ADMIN SELLING PRICE
-       ----------------------------------------- */
-
-    const pricingRows =
-      await supabaseRequest(
-        `product_prices?country_id=eq.${quote(
-          countryId
-        )}&service_id=eq.${quote(
-          serviceId
-        )}&select=country_id,country_name,service_id,service_name,selling_price&limit=1`
-      );
-
-
-    const pricing =
-      pricingRows?.[0];
-
+    const pricing = pricingRows?.[0];
 
     const sellingPrice =
-      Number(
-        pricing?.selling_price
-      );
-
+      Number(pricing?.selling_price);
 
     if (
-      !Number.isFinite(
-        sellingPrice
-      ) ||
+      !Number.isFinite(sellingPrice) ||
       sellingPrice <= 0
     ) {
       return res.status(400).json({
@@ -741,350 +414,136 @@ export default async function handler(
       });
     }
 
-
     const serviceName =
       pricing?.service_name ||
       requestedServiceName ||
       String(serviceId);
 
-
-    /* -----------------------------------------
-       PROVIDER SERVERS
-       ----------------------------------------- */
-
     const servers =
-      getProviderServers(
-        countryCode,
-        countryName,
-        body.availableServers
+      body.server
+        ? [body.server]
+        : getServersForCountry(countryName);
+
+    /*
+     * Debit the customer's configured selling price BEFORE calling the
+     * provider. If the provider purchase fails, the debit is refunded.
+     */
+    const debit =
+      await debitWallet(
+        user.id,
+        sellingPrice
       );
 
-
-    /* -----------------------------------------
-       DEBIT WALLET
-       ----------------------------------------- */
-
-    await debitWallet(
-      user.id,
-      sellingPrice
-    );
-
     debited = true;
-    debitAmount =
-      sellingPrice;
+    debitAmount = sellingPrice;
 
+    let providerData;
+    let providerError = null;
+    let selectedServer = null;
 
-    /* -----------------------------------------
-       PURCHASE NUMBER
-       ----------------------------------------- */
-
-    let providerData =
-      null;
-
-    let providerPrice =
-      null;
-
-    let selectedServer =
-      null;
-
-    let lastProviderError =
-      null;
-
-
-    for (
-      const server
-      of servers
-    ) {
-
+    for (const server of servers) {
       try {
+        const candidate = await sureVerificationRequest(
+          `/${server}/purchase?country_id=${quote(
+            countryId
+          )}&service=${quote(
+            serviceId
+          )}`,
+          { method: "POST" }
+        );
 
-        /*
-         * Check provider price.
-         * This is optional and will not block purchase.
-         */
+        const candidateVerificationId =
+          getVerificationId(candidate);
+        const candidatePhoneNumber =
+          getPhoneNumber(candidate);
 
-        let serverProviderPrice =
-          null;
-
-
-        try {
-
-          const priceData =
-            await sureVerificationRequest(
-              `/${server}/price?country_id=${quote(
-                countryId
-              )}&service=${quote(
-                serviceId
-              )}`
-            );
-
-
-          const parsedPrice =
-            getProviderPrice(
-              priceData
-            );
-
-
-          if (
-            Number.isFinite(
-              parsedPrice
-            ) &&
-            parsedPrice >= 0
-          ) {
-
-            serverProviderPrice =
-              parsedPrice;
-          }
-
-        } catch (priceError) {
-
-          console.warn(
-            `Provider price unavailable on ${server}:`,
-            priceError?.message ||
-            priceError
-          );
-        }
-
-
-        /*
-         * Actual number purchase.
-         */
-
-        const candidate =
-          await sureVerificationRequest(
-            `/${server}/purchase?country_id=${quote(
-              countryId
-            )}&service=${quote(
-              serviceId
-            )}`,
-            {
-              method:
-                "POST"
-            }
-          );
-
-
-        const candidateId =
-          getVerificationId(
-            candidate
-          );
-
-
-        const candidateNumber =
-          getPhoneNumber(
-            candidate
-          );
-
-
-        if (
-          candidateId &&
-          candidateNumber
-        ) {
-
-          providerData =
-            candidate;
-
-          selectedServer =
-            server;
-
-          /*
-           * Some provider purchase responses also
-           * contain the provider price.
-           * Use it when the /price endpoint did not.
-           */
-
-          const purchasePrice =
-            getProviderPrice(
-              candidate
-            );
-
-
-          if (
-            Number.isFinite(
-              purchasePrice
-            ) &&
-            purchasePrice >= 0
-          ) {
-            providerPrice =
-              purchasePrice;
-          } else if (
-            Number.isFinite(
-              serverProviderPrice
-            ) &&
-            serverProviderPrice >= 0
-          ) {
-            providerPrice =
-              serverProviderPrice;
-          } else {
-            /*
-             * The database requires provider_cost
-             * to be NOT NULL.
-             *
-             * 0 means the provider did not return
-             * a readable provider cost.
-             */
-            providerPrice =
-              0;
-          }
-
+        if (candidateVerificationId && candidatePhoneNumber) {
+          providerData = candidate;
+          selectedServer = server;
           break;
         }
 
-
-        lastProviderError =
-          new Error(
-            `${server}: provider did not return a valid number.`
-          );
-
-      } catch (providerError) {
-
-        lastProviderError =
-          providerError;
-
-        console.error(
-          `Provider purchase failed on ${server}:`,
-          providerError?.message ||
-          providerError
+        providerError = new Error(
+          "Provider did not return a valid number."
         );
+      } catch (error) {
+        providerError = error;
       }
     }
 
-
-    /* -----------------------------------------
-       ALL PROVIDERS FAILED
-       ----------------------------------------- */
-
     if (!providerData) {
-
       try {
-
-        await refundWallet(
-          user.id,
-          sellingPrice
-        );
-
+        await refundWallet(user.id, sellingPrice);
       } catch (refundError) {
-
         console.error(
-          "Automatic refund failed:",
+          "Automatic purchase refund failed:",
           refundError
         );
       }
 
-
       debited = false;
-
-
       throw new Error(
-        lastProviderError?.message ||
+        providerError?.message ||
         "No number is currently available from the provider."
       );
     }
 
-
-    /* -----------------------------------------
-       VERIFY NUMBER
-       ----------------------------------------- */
-
     const verification =
-      getVerification(
-        providerData
-      );
-
+      getVerification(providerData);
 
     const verificationId =
-      getVerificationId(
-        providerData
-      );
-
+      getVerificationId(providerData);
 
     const phoneNumber =
-      getPhoneNumber(
-        providerData
-      );
+      getPhoneNumber(providerData);
 
-
-    if (
-      !verificationId ||
-      !phoneNumber
-    ) {
-
+    if (!verificationId || !phoneNumber) {
       try {
-
         await refundWallet(
           user.id,
           sellingPrice
         );
-
       } catch (refundError) {
-
         console.error(
           "Refund after incomplete provider response failed:",
           refundError
         );
       }
 
-
       debited = false;
-
 
       throw new Error(
         "The provider did not return a valid number. Your wallet was refunded."
       );
     }
 
-
-    /* -----------------------------------------
-       FINAL PROVIDER COST SAFETY CHECK
-       ----------------------------------------- */
-
-    if (
-      !Number.isFinite(
-        providerPrice
-      ) ||
-      providerPrice < 0
-    ) {
-      providerPrice =
-        0;
-    }
-
-
-    /* -----------------------------------------
-       SAVE ORDER
-       ----------------------------------------- */
+    const providerPrice =
+      getProviderPrice(providerData);
 
     const orderRows =
       await createOrder(
         user.id,
         {
-          verificationId,
-
-          serviceCountryPriceId:
-            serviceId,
-
-          serviceName,
-
+          countryId,
           countryName:
             pricing?.country_name ||
             countryName ||
             String(countryId),
-
-          providerPrice,
-
+          serviceId,
+          serviceCountryPriceId: serviceId,
+          serviceName,
+          verificationId,
+          phoneNumber,
           sellingPrice,
-
+          providerPrice:
+            Number.isFinite(providerPrice)
+              ? providerPrice
+              : null,
           status:
             verification?.status ||
-            "active",
-
-          phoneNumber
+            "active"
         }
       );
-
-
-    /* -----------------------------------------
-       GET NEW BALANCE
-       ----------------------------------------- */
 
     const walletRows =
       await supabaseRequest(
@@ -1093,105 +552,67 @@ export default async function handler(
         )}&select=balance&limit=1`
       );
 
-
     const balanceAfter =
       Number(
-        walletRows?.[0]?.balance ||
-        0
+        walletRows?.[0]?.balance || 0
       );
 
-
-    /* -----------------------------------------
-       TRANSACTION HISTORY
-       ----------------------------------------- */
-
     await createWalletTransaction({
-      userId:
-        user.id,
-
-      amount:
-        -sellingPrice,
-
+      userId: user.id,
+      amount: -sellingPrice,
       balanceAfter,
-
       description:
         `Purchase: ${serviceName} ${phoneNumber}`
     });
 
-
     debited = false;
 
-
-    /* -----------------------------------------
-       SUCCESS
-       ----------------------------------------- */
-
     return res.status(200).json({
-
-      success:
-        true,
-
+      success: true,
       message:
         "Number purchased successfully.",
-
       order:
-        orderRows?.[0] ||
-        null,
-
+        orderRows?.[0] || null,
       verification: {
         ...verification,
-
         request_id:
           verificationId,
-
         number:
           phoneNumber
       },
-
       provider_price:
-        providerPrice,
-
+        Number.isFinite(providerPrice)
+          ? providerPrice
+          : null,
       selling_price:
         sellingPrice,
-
       sellingPrice:
         sellingPrice,
-
       balance:
-        balanceAfter,
-
-      provider_server:
-        selectedServer
+        balanceAfter
     });
 
-
   } catch (error) {
-
     console.error(
       "Order purchase error:",
       error
     );
 
-
-    /* -----------------------------------------
-       SAFETY REFUND
-       ----------------------------------------- */
-
+    /*
+     * This is a safety net. Normal provider failures are refunded above.
+     * If a later unexpected error happens after debit, attempt one refund.
+     */
     if (
       debited &&
       user?.id &&
       debitAmount > 0
     ) {
-
       try {
-
         await refundWallet(
           user.id,
           debitAmount
         );
-
       } catch (refundError) {
-
         console.error(
           "Safety refund failed:",
           refundError
@@ -1199,53 +620,36 @@ export default async function handler(
       }
     }
 
-
     const message =
       error?.message ||
       "Unable to purchase number.";
-
 
     if (
       String(message)
         .toLowerCase()
         .includes("insufficient")
     ) {
-
       return res.status(400).json({
         success: false,
-
         error:
           "Insufficient wallet balance.",
-
         message:
           "Insufficient wallet balance."
       });
     }
 
-
     if (
-      message ===
-      "Unauthorized."
+      message === "Unauthorized."
     ) {
-
       return res.status(401).json({
         success: false,
-
-        error:
-          "Unauthorized.",
-
-        message:
-          "Unauthorized."
+        error: message
       });
     }
 
-
     return res.status(500).json({
       success: false,
-
-      error:
-        message,
-
+      error: message,
       message
     });
   }
