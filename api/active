@@ -1,747 +1,200 @@
-const SUPABASE_URL =
-  process.env.SUPABASE_URL ||
-  "https://rfitbmkizfmwfqqskwhy.supabase.co";
-
-const SUPABASE_PUBLISHABLE_KEY =
-  process.env.SUPABASE_PUBLISHABLE_KEY ||
-  "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
-
-const SUPABASE_SERVICE_ROLE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-
 /* =========================================================
-   SUPABASE REQUEST
+   SMS + AUTO MOVE TO ORDER HISTORY
    ========================================================= */
 
-async function supabaseRequest(
-  path,
-  options = {}
-) {
+function checkActiveNumberSMS(item, index) {
 
-  if (!SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not configured."
+  const verificationId =
+    item.provider_verification_id ||
+    item.providerVerificationId ||
+    item.verification_id ||
+    item.verificationId ||
+    item.provider_order_id ||
+    item.providerOrderId ||
+    item.verification?.request_id ||
+    item.verification?.requestId ||
+    item.verification?.id;
+
+  if (!verificationId) {
+    console.error(
+      "SMS: Provider verification ID is missing.",
+      item
     );
+    return;
   }
 
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/${path}`,
-      {
-        ...options,
+  const smsStatus =
+    $(`smsStatus-${index}`);
 
-        headers: {
-          apikey:
-            SUPABASE_SERVICE_ROLE_KEY,
+  const smsContent =
+    $(`smsContent-${index}`);
 
-          Authorization:
-            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-
-          "Content-Type":
-            "application/json",
-
-          Accept:
-            "application/json",
-
-          Prefer:
-            "return=representation",
-
-          ...(options.headers || {})
-        }
-      }
-    );
-
-  const text =
-    await response.text();
-
-  let data = {};
-
-  try {
-
-    data =
-      text
-        ? JSON.parse(text)
-        : {};
-
-  } catch {
-
-    throw new Error(
-      `Supabase returned invalid JSON (HTTP ${response.status}).`
-    );
-
+  if (!smsStatus || !smsContent) {
+    return;
   }
 
-  if (!response.ok) {
+  let smsReceived = false;
+  let historyTimerStarted = false;
 
-    throw new Error(
-      data?.message ||
-      data?.hint ||
-      data?.details ||
-      `Supabase request failed (HTTP ${response.status}).`
-    );
+  async function checkSMS() {
 
-  }
-
-  return data;
-
-}
-
-
-/* =========================================================
-   AUTH
-   ========================================================= */
-
-function getBearerToken(req) {
-
-  const header =
-    req.headers?.authorization ||
-    req.headers?.Authorization ||
-    "";
-
-  if (
-    !header.startsWith(
-      "Bearer "
-    )
-  ) {
-    return null;
-  }
-
-  return header
-    .slice(7)
-    .trim();
-
-}
-
-
-async function getAuthenticatedUser(req) {
-
-  const token =
-    getBearerToken(req);
-
-  if (!token) {
-    throw new Error(
-      "Unauthorized."
-    );
-  }
-
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/auth/v1/user`,
-      {
-        headers: {
-          apikey:
-            SUPABASE_PUBLISHABLE_KEY,
-
-          Authorization:
-            `Bearer ${token}`,
-
-          Accept:
-            "application/json"
-        }
-      }
-    );
-
-  if (!response.ok) {
-    throw new Error(
-      "Unauthorized."
-    );
-  }
-
-  const user =
-    await response.json();
-
-  if (!user?.id) {
-    throw new Error(
-      "Unauthorized."
-    );
-  }
-
-  return user;
-
-}
-
-
-/* =========================================================
-   QUOTE
-   ========================================================= */
-
-function quote(value) {
-
-  return encodeURIComponent(
-    String(value)
-  );
-
-}
-
-
-/* =========================================================
-   REFUND CHECK
-   ========================================================= */
-
-async function hasRefund(
-  orderId
-) {
-
-  const rows =
-    await supabaseRequest(
-      `wallet_transactions` +
-      `?type=eq.refund` +
-      `&reference_id=eq.${quote(orderId)}` +
-      `&select=id,amount,created_at` +
-      `&limit=1`
-    );
-
-  return Boolean(
-    rows?.length
-  );
-
-}
-
-
-/* =========================================================
-   REFUND EXPIRED ORDER
-   ========================================================= */
-
-async function refundExpiredOrder(
-  order
-) {
-
-  if (
-    !order?.id ||
-    !order?.user_id
-  ) {
-    return {
-      refunded:
-        false,
-
-      alreadyRefunded:
-        false,
-
-      amount:
-        0
-    };
-  }
-
-
-  /*
-    Never refund twice.
-  */
-
-  if (
-    await hasRefund(
-      order.id
-    )
-  ) {
-
-    return {
-      refunded:
-        true,
-
-      alreadyRefunded:
-        true,
-
-      amount:
-        Number(
-          order.customer_price ||
-          0
-        )
-    };
-
-  }
-
-
-  const amount =
-    Number(
-      order.customer_price ??
-      order.selling_price ??
-      order.amount ??
-      0
-    );
-
-
-  if (
-    !Number.isFinite(amount) ||
-    amount <= 0
-  ) {
-
-    return {
-      refunded:
-        false,
-
-      alreadyRefunded:
-        false,
-
-      amount:
-        0
-    };
-
-  }
-
-
-  const walletRows =
-    await supabaseRequest(
-      `wallets?user_id=eq.${quote(order.user_id)}` +
-      `&select=user_id,balance` +
-      `&limit=1`
-    );
-
-
-  const wallet =
-    walletRows?.[0];
-
-
-  if (!wallet) {
-
-    await supabaseRequest(
-      "wallets",
-      {
-        method:
-          "POST",
-
-        body:
-          JSON.stringify({
-            user_id:
-              order.user_id,
-
-            balance:
-              amount
-          })
-      }
-    );
-
-
-    await supabaseRequest(
-      "wallet_transactions",
-      {
-        method:
-          "POST",
-
-        body:
-          JSON.stringify({
-            user_id:
-              order.user_id,
-
-            type:
-              "refund",
-
-            amount:
-              amount,
-
-            balance_before:
-              0,
-
-            balance_after:
-              amount,
-
-            reference_id:
-              order.id,
-
-            description:
-              "Refund for expired virtual number order"
-          })
-      }
-    );
-
-
-    return {
-      refunded:
-        true,
-
-      alreadyRefunded:
-        false,
-
-      amount
-    };
-
-  }
-
-
-  const before =
-    Number(
-      wallet.balance || 0
-    );
-
-  const after =
-    before + amount;
-
-
-  await supabaseRequest(
-    `wallets?user_id=eq.${quote(order.user_id)}`,
-    {
-      method:
-        "PATCH",
-
-      body:
-        JSON.stringify({
-          balance:
-            after,
-
-          updated_at:
-            new Date().toISOString()
-        })
+    if (smsReceived) {
+      return;
     }
-  );
 
+    try {
 
-  await supabaseRequest(
-    "wallet_transactions",
-    {
-      method:
-        "POST",
-
-      body:
-        JSON.stringify({
-          user_id:
-            order.user_id,
-
-          type:
-            "refund",
-
-          amount:
-            amount,
-
-          balance_before:
-            before,
-
-          balance_after:
-            after,
-
-          reference_id:
-            order.id,
-
-          description:
-            "Refund for expired virtual number order"
-        })
-    }
-  );
-
-
-  return {
-    refunded:
-      true,
-
-    alreadyRefunded:
-      false,
-
-    amount
-  };
-
-}
-
-
-/* =========================================================
-   MARK EXPIRED
-   ========================================================= */
-
-async function markExpired(
-  order
-) {
-
-  const refund =
-    await refundExpiredOrder(
-      order
-    );
-
-
-  await supabaseRequest(
-    `orders?id=eq.${quote(order.id)}` +
-    `&user_id=eq.${quote(order.user_id)}`,
-    {
-      method:
-        "PATCH",
-
-      body:
-        JSON.stringify({
-          status:
-            "expired",
-
-          updated_at:
-            new Date().toISOString()
-        })
-    }
-  );
-
-
-  return {
-    ...order,
-
-    status:
-      "expired",
-
-    refund
-  };
-
-}
-
-
-/* =========================================================
-   MAIN ACTIVE API
-   ========================================================= */
-
-export default async function handler(
-  req,
-  res
-) {
-
-  if (
-    req.method !==
-    "GET"
-  ) {
-
-    return res.status(405).json({
-      success:
-        false,
-
-      error:
-        "Method not allowed"
-    });
-
-  }
-
-
-  try {
-
-    const user =
-      await getAuthenticatedUser(
-        req
-      );
-
-
-    /*
-      Get active/pending orders belonging
-      ONLY to this customer.
-    */
-
-    const orders =
-      await supabaseRequest(
-        `orders?user_id=eq.${quote(user.id)}` +
-        `&select=*` +
-        `&order=created_at.desc`
-      );
-
-
-    const activeNumbers =
-      [];
-
-    const expiredNumbers =
-      [];
-
-
-    for (
-      const order of
-      orders || []
-    ) {
-
-      const status =
-        String(
-          order.status || ""
-        ).toLowerCase();
-
-
-      /*
-        Only active/pending orders belong
-        in the active-number processing.
-      */
-
-      if (
-        ![
-          "active",
-          "pending"
-        ].includes(status)
-      ) {
-        continue;
-      }
-
-
-      /*
-        Check the provider's expiration time.
-      */
-
-      let expired =
-        false;
-
-      let expiresAt =
-        order.provider_expired_at
-          ? new Date(
-              order.provider_expired_at
-            )
-          : null;
-
-
-      if (
-        expiresAt &&
-        !Number.isNaN(
-          expiresAt.getTime()
-        )
-      ) {
-
-        expired =
-          expiresAt.getTime() <=
-          Date.now();
-
-      }
-
-
-      /*
-        If provider expiration time has passed,
-        synchronize our database and refund.
-      */
-
-      if (expired) {
-
-        const expiredOrder =
-          await markExpired(
-            order
-          );
-
-        expiredNumbers.push(
-          {
-            ...expiredOrder,
-
-            order_id:
-              order.id,
-
-            phone_number:
-              order.phone_number,
-
-            service_name:
-              order.service_name,
-
-            country_name:
-              order.country_name,
-
-            provider_verification_id:
-              order.provider_verification_id,
-
-            provider_order_id:
-              order.provider_order_id,
-
-            expired_at:
-              order.provider_expired_at,
-
-            status:
-              "expired",
-
-            refunded:
-              expiredOrder.refund?.refunded ||
-              false,
-
-            refund_amount:
-              expiredOrder.refund?.amount ||
-              0
-          }
+      const response =
+        await fetch(
+          `/api/SMS?id=${encodeURIComponent(
+            verificationId
+          )}`
         );
 
-        continue;
+      const result =
+        await response.json().catch(
+          () => ({})
+        );
+
+      if (!response.ok) {
+
+        smsStatus.textContent =
+          "Waiting for SMS...";
+
+        setTimeout(
+          checkSMS,
+          5000
+        );
+
+        return;
       }
 
-
       /*
-        Still active.
+        SMS.js returns:
+        {
+          success,
+          sms,
+          code,
+          provider_response
+        }
       */
 
-      activeNumbers.push({
-        id:
-          order.id,
+      const provider =
+        result?.provider_response ||
+        result?.data ||
+        result?.verification ||
+        {};
 
-        order_id:
-          order.id,
+      const sms =
+        result?.sms ||
+        result?.code ||
+        provider?.sms ||
+        provider?.code ||
+        provider?.otp ||
+        provider?.verification_code ||
+        provider?.verificationCode ||
+        null;
 
-        provider_order_id:
-          order.provider_order_id,
+      if (sms) {
 
-        provider_verification_id:
-          order.provider_verification_id,
+        smsReceived = true;
 
-        verification_id:
-          order.provider_verification_id,
+        smsStatus.textContent =
+          "SMS received";
 
-        phone_number:
-          order.phone_number,
+        smsStatus.classList.add(
+          "received"
+        );
 
-        number:
-          order.phone_number,
+        smsContent.innerHTML = `
+          <div class="sms-received">
+            <div class="sms-code">
+              ${escapeHtml(
+                String(sms)
+              )}
+            </div>
+          </div>
+        `;
 
-        service_name:
-          order.service_name,
+        /*
+          Code has arrived.
+          Keep the number visible for
+          exactly 1 minute, then remove it
+          from Active Number.
 
-        service:
-          order.service_name,
+          We do NOT cancel it.
+          We do NOT refund it.
+          The order remains in Supabase
+          and therefore remains in
+          Order History.
+        */
 
-        country_name:
-          order.country_name,
+        if (!historyTimerStarted) {
 
-        status:
-          order.status,
+          historyTimerStarted = true;
 
-        customer_price:
-          Number(
-            order.customer_price || 0
-          ),
+          setTimeout(
+            async () => {
 
-        selling_price:
-          Number(
-            order.customer_price || 0
-          ),
+              try {
 
-        created_at:
-          order.created_at,
+                /*
+                  Refresh active numbers.
+                  Because the order remains in
+                  the database, loadOrderHistory()
+                  will still show it there.
+                */
 
-        updated_at:
-          order.updated_at,
+                await loadActiveNumbers();
 
-        provider_expired_at:
-          order.provider_expired_at,
+                if (
+                  typeof loadOrderHistory ===
+                  "function"
+                ) {
+                  await loadOrderHistory();
+                }
 
-        expired_at:
-          order.provider_expired_at
-      });
+              } catch (error) {
 
+                console.error(
+                  "Moving completed number to history error:",
+                  error
+                );
+
+              }
+
+            },
+            60 * 1000
+          );
+        }
+
+        return;
+      }
+
+      smsStatus.textContent =
+        "Waiting for SMS...";
+
+      setTimeout(
+        checkSMS,
+        5000
+      );
+
+    } catch (error) {
+
+      console.error(
+        "SMS polling error:",
+        error
+      );
+
+      smsStatus.textContent =
+        "Waiting for SMS...";
+
+      setTimeout(
+        checkSMS,
+        7000
+      );
     }
-
-
-    return res.status(200).json({
-
-      success:
-        true,
-
-      numbers:
-        activeNumbers,
-
-      activations:
-        activeNumbers,
-
-      data:
-        activeNumbers,
-
-      expired:
-        expiredNumbers,
-
-      count:
-        activeNumbers.length,
-
-      expired_count:
-        expiredNumbers.length
-    });
-
-
-  } catch (error) {
-
-    console.error(
-      "Active numbers API error:",
-      error
-    );
-
-    return res.status(500).json({
-      success:
-        false,
-
-      error:
-        error?.message ||
-        "Unable to load active numbers."
-    });
-
   }
 
+  checkSMS();
 }
