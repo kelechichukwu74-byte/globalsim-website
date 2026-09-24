@@ -1,215 +1,186 @@
 import { sureVerificationRequest } from "./_lib.js";
 
-function encode(value) {
-  return encodeURIComponent(String(value ?? ""));
+const ALLOWED_SERVERS = [
+  "usa-server-1",
+  "usa-server-2",
+  "global-server-1",
+  "global-server-2"
+];
+
+function str(value) {
+  return String(value ?? "").trim();
 }
 
-function errorMessage(error) {
-  if (!error) return "Unable to load provider price.";
-
-  if (typeof error === "string") return error;
-
-  if (typeof error?.message === "string") {
-    return error.message;
-  }
-
-  if (typeof error?.error === "string") {
-    return error.error;
-  }
-
-  try {
-    return JSON.stringify(error);
-  } catch {
-    return "Unable to load provider price.";
-  }
+function encode(value) {
+  return encodeURIComponent(str(value));
 }
 
 function getServices(data) {
   if (Array.isArray(data)) return data;
-
-  if (Array.isArray(data?.services)) {
-    return data.services;
-  }
-
-  if (Array.isArray(data?.data)) {
-    return data.data;
-  }
-
-  if (Array.isArray(data?.data?.services)) {
-    return data.data.services;
-  }
-
+  if (Array.isArray(data?.services)) return data.services;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.data?.services)) return data.data.services;
   return [];
 }
 
-function getServiceId(service) {
-  return String(
+function serviceId(service) {
+  return str(
     service?.id ??
     service?.service_id ??
     service?.serviceId ??
-    service?.service?.id ??
-    ""
-  ).trim();
+    service?.service?.id
+  );
 }
 
-function getServiceName(service) {
-  return String(
+function serviceName(service) {
+  return str(
     service?.name ??
     service?.service_name ??
     service?.serviceName ??
     service?.title ??
-    service?.service?.name ??
-    ""
-  ).trim();
+    service?.service?.name
+  );
 }
 
 function findService(services, requested) {
-  const wanted = String(requested || "").trim().toLowerCase();
+  const wanted = str(requested).toLowerCase();
 
   if (!wanted) return null;
 
-  // Exact provider service ID
-  let match = services.find(
-    service =>
-      getServiceId(service).toLowerCase() === wanted
+  // Exact provider ID
+  let found = services.find(
+    item => serviceId(item).toLowerCase() === wanted
   );
 
-  if (match) return match;
+  if (found) return found;
 
   // Exact provider service name
-  match = services.find(
-    service =>
-      getServiceName(service).toLowerCase() === wanted
+  found = services.find(
+    item => serviceName(item).toLowerCase() === wanted
   );
 
-  if (match) return match;
+  if (found) return found;
 
-  // Partial name match
-  match = services.find(
-    service =>
-      getServiceName(service)
+  // Name contains requested value
+  found = services.find(
+    item =>
+      serviceName(item)
         .toLowerCase()
         .includes(wanted)
   );
 
-  if (match) return match;
+  if (found) return found;
 
-  // Reverse partial match
-  match = services.find(service => {
-    const name = getServiceName(service).toLowerCase();
+  // Requested value contains provider name
+  found = services.find(
+    item => {
+      const name = serviceName(item).toLowerCase();
+      return name && wanted.includes(name);
+    }
+  );
 
-    return (
-      name &&
-      wanted.includes(name)
-    );
-  });
-
-  return match || null;
+  return found || null;
 }
 
-function extractPrice(data, providerServiceId, providerServiceName) {
-  /*
-   * USA Server 1 / USA Server 2 /
-   * Global Server 1 normally return:
-   *
-   * {
-   *   price: {
-   *     service: {...},
-   *     price: 900
-   *   }
-   * }
-   */
+function numberValue(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return null;
+  }
 
-  const possibleDirectPrices = [
-    data?.price?.price,
-    data?.price?.amount,
-    data?.data?.price?.price,
-    data?.data?.price?.amount,
-    data?.amount,
-    data?.data?.amount
-  ];
+  const number = Number(value);
 
-  for (const value of possibleDirectPrices) {
-    if (
-      value !== null &&
-      value !== undefined &&
-      typeof value !== "object"
-    ) {
-      const number = Number(value);
+  return Number.isFinite(number)
+    ? number
+    : null;
+}
 
-      if (
-        Number.isFinite(number) &&
-        number > 0
-      ) {
-        return number;
+function extractGlobalServer2Price(
+  data,
+  providerService
+) {
+  const wantedId =
+    serviceId(providerService).toLowerCase();
+
+  const wantedName =
+    serviceName(providerService).toLowerCase();
+
+  const lists = [];
+
+  if (Array.isArray(data?.prices)) {
+    lists.push(data.prices);
+  }
+
+  if (Array.isArray(data?.data?.prices)) {
+    lists.push(data.data.prices);
+  }
+
+  if (Array.isArray(data)) {
+    lists.push(data);
+  }
+
+  for (const list of lists) {
+    for (const row of list) {
+      const rowId = str(
+        row?.service?.id ??
+        row?.service_id ??
+        row?.serviceId ??
+        row?.id
+      ).toLowerCase();
+
+      const rowName = str(
+        row?.service?.name ??
+        row?.name ??
+        row?.service_name
+      ).toLowerCase();
+
+      const matches =
+        rowId === wantedId ||
+        rowName === wantedName ||
+        (
+          wantedName &&
+          rowName.includes(wantedName)
+        ) ||
+        (
+          rowName &&
+          wantedName.includes(rowName)
+        );
+
+      if (!matches) continue;
+
+      const price =
+        numberValue(row?.price) ??
+        numberValue(row?.amount) ??
+        numberValue(row?.selling_price);
+
+      if (price !== null && price > 0) {
+        return price;
       }
     }
   }
 
-  /*
-   * Global Server 2 returns:
-   *
-   * {
-   *   prices: [
-   *     {
-   *       service: {
-   *         id: "wa",
-   *         name: "Whatsapp"
-   *       },
-   *       price: 1604,
-   *       id: 1
-   *     }
-   *   ]
-   * }
-   */
+  return null;
+}
 
-  const priceLists = [
-    data?.prices,
-    data?.data?.prices,
-    Array.isArray(data) ? data : null
-  ].filter(Array.isArray);
+function extractNormalServerPrice(data) {
+  const possible = [
+    data?.price?.price,
+    data?.price?.amount,
+    data?.data?.price?.price,
+    data?.data?.price?.amount,
+    data?.price,
+    data?.amount,
+    data?.data?.amount
+  ];
 
-  const wantedId = String(
-    providerServiceId || ""
-  ).toLowerCase();
+  for (const value of possible) {
+    const price = numberValue(value);
 
-  const wantedName = String(
-    providerServiceName || ""
-  ).toLowerCase();
-
-  for (const list of priceLists) {
-    for (const row of list) {
-      const rowId = String(
-        row?.service?.id ??
-        row?.service_id ??
-        row?.serviceId ??
-        ""
-      ).toLowerCase();
-
-      const rowName = String(
-        row?.service?.name ??
-        row?.name ??
-        row?.service_name ??
-        ""
-      ).toLowerCase();
-
-      if (
-        rowId === wantedId ||
-        rowName === wantedName
-      ) {
-        const price = Number(
-          row?.price ??
-          row?.amount ??
-          row?.selling_price
-        );
-
-        if (
-          Number.isFinite(price) &&
-          price > 0
-        ) {
-          return price;
-        }
-      }
+    if (price !== null && price > 0) {
+      return price;
     }
   }
 
@@ -230,21 +201,22 @@ async function getProviderService(
 
   if (!services.length) {
     throw new Error(
-      `SureVerification returned no services for ${server} and country ${countryId}.`
+      `No services were returned by ${server} for country ${countryId}.`
     );
   }
 
-  const service = findService(
-    services,
-    requestedService
-  );
+  const matched =
+    findService(
+      services,
+      requestedService
+    );
 
-  if (!service) {
+  if (!matched) {
     const available = services
-      .slice(0, 30)
-      .map(service => {
-        const id = getServiceId(service);
-        const name = getServiceName(service);
+      .slice(0, 50)
+      .map(item => {
+        const id = serviceId(item);
+        const name = serviceName(item);
 
         return `${name || "Unknown"} [${id || "no-id"}]`;
       })
@@ -255,39 +227,42 @@ async function getProviderService(
     );
   }
 
-  const id = getServiceId(service);
-  const name = getServiceName(service);
+  const id = serviceId(matched);
+  const name = serviceName(matched);
 
   if (!id) {
     throw new Error(
-      `SureVerification returned "${name || requestedService}" without a service ID on ${server}.`
+      `Provider returned "${name || requestedService}" without a service ID on ${server}.`
     );
   }
 
   return {
     id,
-    name: name || requestedService
+    name: name || requestedService,
+    raw: matched
   };
 }
 
+/*
+ * Gets provider price from the correct server.
+ *
+ * USA Server 1:
+ * /usa-server-1/price?country_id=...&service=...
+ *
+ * USA Server 2:
+ * /usa-server-2/price?country_id=...&service=...
+ *
+ * Global Server 1:
+ * /global-server-1/price?country_id=...&service=...
+ *
+ * Global Server 2:
+ * /global-server-2/price
+ */
 async function getProviderPrice({
   server,
   countryId,
   requestedService
 }) {
-  /*
-   * IMPORTANT:
-   *
-   * We do NOT trust the frontend service ID.
-   *
-   * Example:
-   * Global Server 2 may use "wa".
-   * USA Server 2 may use a completely different ID.
-   *
-   * Therefore we ask the selected server for its
-   * own service list first.
-   */
-
   const providerService =
     await getProviderService(
       server,
@@ -297,48 +272,198 @@ async function getProviderPrice({
 
   let response;
 
-  /*
-   * Global Server 2 has a different price endpoint.
-   * Its price endpoint returns a list of price tiers.
-   */
   if (server === "global-server-2") {
     response =
       await sureVerificationRequest(
         "/global-server-2/price"
       );
   } else {
-    /*
-     * USA Server 1
-     * USA Server 2
-     * Global Server 1
-     */
-
     response =
       await sureVerificationRequest(
         `/${server}/price?country_id=${encode(countryId)}&service=${encode(providerService.id)}`
       );
   }
 
-  const providerPrice =
-    extractPrice(
-      response,
-      providerService.id,
-      providerService.name
-    );
+  let providerPrice;
+
+  if (server === "global-server-2") {
+    providerPrice =
+      extractGlobalServer2Price(
+        response,
+        providerService
+      );
+  } else {
+    providerPrice =
+      extractNormalServerPrice(
+        response
+      );
+  }
 
   if (
-    !Number.isFinite(providerPrice) ||
+    providerPrice === null ||
     providerPrice <= 0
   ) {
     throw new Error(
-      `SureVerification returned no valid price for ${providerService.name} on ${server}. Provider service ID: ${providerService.id}.`
+      `No valid provider price was returned for ${providerService.name} on ${server}. Provider service ID: ${providerService.id}.`
     );
   }
 
   return {
     providerPrice,
-    providerService
+    providerService,
+    providerResponse: response
   };
+}
+
+/*
+ * Get your saved selling price from Supabase.
+ *
+ * This is READ ONLY.
+ * It does not change your database.
+ */
+async function getSavedSellingPrice({
+  countryId,
+  countryName,
+  serviceId,
+  serviceName,
+  server
+}) {
+  const supabaseUrl =
+    process.env.SUPABASE_URL;
+
+  const serviceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (
+    !supabaseUrl ||
+    !serviceRoleKey
+  ) {
+    return {
+      sellingPrice: null,
+      databaseAvailable: false
+    };
+  }
+
+  const filters = [];
+
+  if (countryId) {
+    filters.push(
+      `country_id=eq.${encodeURIComponent(countryId)}`
+    );
+  }
+
+  if (serviceId) {
+    filters.push(
+      `service_id=eq.${encodeURIComponent(serviceId)}`
+    );
+  }
+
+  if (server) {
+    filters.push(
+      `provider_server=eq.${encodeURIComponent(server)}`
+    );
+  }
+
+  let url =
+    `${supabaseUrl.replace(/\/$/, "")}/rest/v1/product_prices`;
+
+  if (filters.length) {
+    url += `?${filters.join("&")}`;
+  }
+
+  url +=
+    filters.length ? "&limit=1" : "?limit=1";
+
+  try {
+    const response =
+      await fetch(url, {
+        method: "GET",
+        headers: {
+          apikey: serviceRoleKey,
+          Authorization:
+            `Bearer ${serviceRoleKey}`,
+          Accept: "application/json"
+        }
+      });
+
+    if (!response.ok) {
+      return {
+        sellingPrice: null,
+        databaseAvailable: false
+      };
+    }
+
+    const rows =
+      await response.json();
+
+    if (!Array.isArray(rows) || !rows.length) {
+      return {
+        sellingPrice: null,
+        databaseAvailable: true
+      };
+    }
+
+    const row = rows[0];
+
+    const sellingPrice =
+      numberValue(
+        row?.selling_price
+      );
+
+    return {
+      sellingPrice,
+      databaseAvailable: true,
+      databaseRow: {
+        id: row?.id ?? null,
+        country_id:
+          row?.country_id ?? null,
+        country_name:
+          row?.country_name ?? null,
+        service_id:
+          row?.service_id ?? null,
+        service_name:
+          row?.service_name ?? null,
+        provider_server:
+          row?.provider_server ?? null,
+        provider_price:
+          row?.provider_price ?? null,
+        selling_price:
+          row?.selling_price ?? null,
+        is_active:
+          row?.is_active ?? null
+      }
+    };
+
+  } catch {
+    return {
+      sellingPrice: null,
+      databaseAvailable: false
+    };
+  }
+}
+
+function errorMessage(error) {
+  if (!error) {
+    return "Unable to load provider price.";
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (typeof error?.message === "string") {
+    return error.message;
+  }
+
+  if (typeof error?.error === "string") {
+    return error.error;
+  }
+
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return "Unable to load provider price.";
+  }
 }
 
 export default async function handler(req, res) {
@@ -349,21 +474,20 @@ export default async function handler(req, res) {
     });
   }
 
-  const countryId = String(
-    req.query?.countryId || ""
-  ).trim();
+  const countryId =
+    str(req.query?.countryId);
 
-  const countryName = String(
-    req.query?.countryName || ""
-  ).trim();
+  const countryName =
+    str(req.query?.countryName);
 
-  const service = String(
-    req.query?.service || ""
-  ).trim();
+  const requestedService =
+    str(req.query?.service);
 
-  const server = String(
-    req.query?.server || ""
-  ).trim();
+  const requestedServiceId =
+    str(req.query?.serviceId);
+
+  const server =
+    str(req.query?.server);
 
   if (!countryId) {
     return res.status(400).json({
@@ -372,10 +496,11 @@ export default async function handler(req, res) {
     });
   }
 
-  if (!service) {
+  if (!requestedService && !requestedServiceId) {
     return res.status(400).json({
       success: false,
-      error: "service is required."
+      error:
+        "service or serviceId is required."
     });
   }
 
@@ -386,37 +511,68 @@ export default async function handler(req, res) {
     });
   }
 
-  const allowedServers = [
-    "usa-server-1",
-    "usa-server-2",
-    "global-server-1",
-    "global-server-2"
-  ];
-
-  if (!allowedServers.includes(server)) {
+  if (!ALLOWED_SERVERS.includes(server)) {
     return res.status(400).json({
       success: false,
-      error: `Invalid provider server: ${server}`
+      error:
+        `Invalid provider server: ${server}`
     });
   }
+
+  /*
+   * Prefer service name because the provider has
+   * different IDs on different servers.
+   */
+  const serviceToFind =
+    requestedService ||
+    requestedServiceId;
 
   try {
     const result =
       await getProviderPrice({
         server,
         countryId,
-        requestedService: service
+        requestedService:
+          serviceToFind
       });
 
+    /*
+     * Read the saved selling price.
+     *
+     * We use the ACTUAL provider service ID
+     * returned above rather than trusting the
+     * frontend/database service ID.
+     */
+    const saved =
+      await getSavedSellingPrice({
+        countryId,
+        countryName,
+        serviceId:
+          result.providerService.id,
+        serviceName:
+          result.providerService.name,
+        server
+      });
+
+    /*
+     * Keep the provider price in the response.
+     *
+     * Your website selling price remains your
+     * own price, e.g. ₦3,000.
+     */
     return res.status(200).json({
       success: true,
 
-      countryId,
-      countryName,
+      country_id:
+        countryId,
 
-      requested_service: service,
+      country_name:
+        countryName,
 
       server,
+
+      requested_service:
+        serviceToFind,
 
       provider_service_id:
         result.providerService.id,
@@ -425,7 +581,27 @@ export default async function handler(req, res) {
         result.providerService.name,
 
       provider_price:
-        result.providerPrice
+        result.providerPrice,
+
+      selling_price:
+        saved.sellingPrice,
+
+      provider_cost:
+        result.providerPrice,
+
+      profit:
+        saved.sellingPrice !== null
+          ? Number(
+              (
+                saved.sellingPrice -
+                result.providerPrice
+              ).toFixed(2)
+            )
+          : null,
+
+      database_available:
+        saved.databaseAvailable
+
     });
 
   } catch (error) {
@@ -433,11 +609,12 @@ export default async function handler(req, res) {
       errorMessage(error);
 
     console.error(
-      "SureVerification provider price error:",
+      "SureVerification price error:",
       {
         countryId,
         countryName,
-        service,
+        service:
+          serviceToFind,
         server,
         error: message
       }
@@ -446,10 +623,17 @@ export default async function handler(req, res) {
     return res.status(502).json({
       success: false,
       error: message,
-      countryId,
-      countryName,
-      service,
-      server
+
+      country_id:
+        countryId,
+
+      country_name:
+        countryName,
+
+      server,
+
+      requested_service:
+        serviceToFind
     });
   }
 }
