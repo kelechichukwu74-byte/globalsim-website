@@ -4618,6 +4618,18 @@
 
               autoSearchServer: true,
 
+              /*
+                Keep server selection explicit in the frontend request.
+                US numbers must use SureVerification USA Server 2.
+                Other countries continue using automatic server selection.
+              */
+              server:
+                /^(us|usa|united states|united states of america)$/i.test(
+                  String(countryName).trim()
+                )
+                  ? "usa-server-2"
+                  : undefined,
+
               countryId,
 
               countryName,
