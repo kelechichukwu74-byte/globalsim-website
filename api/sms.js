@@ -1,57 +1,5 @@
 import { sureVerificationRequest, quote } from "./_lib.js";
 
-function extractSMS(data) {
-  if (!data || typeof data !== "object") {
-    return {
-      sms: null,
-      code: null
-    };
-  }
-
-  const sources = [
-    data,
-    data.verification,
-    data.data,
-    data.result
-  ].filter(Boolean);
-
-  let sms = null;
-  let code = null;
-
-  for (const source of sources) {
-    if (!source || typeof source !== "object") continue;
-
-    if (!sms) {
-      sms =
-        source.sms ??
-        source.sms_code ??
-        source.sms_content ??
-        source.content ??
-        source.text ??
-        null;
-    }
-
-    if (!code) {
-      code =
-        source.code ??
-        source.verification_code ??
-        source.verificationCode ??
-        source.otp ??
-        source.otp_code ??
-        null;
-    }
-  }
-
-  if (!sms && code) {
-    sms = String(code);
-  }
-
-  return {
-    sms: sms != null ? String(sms) : null,
-    code: code != null ? String(code) : null
-  };
-}
-
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({
@@ -75,19 +23,31 @@ export default async function handler(req, res) {
   }
 
   try {
-    const providerResponse = await sureVerificationRequest(
+    const data = await sureVerificationRequest(
       `/verifications/sms/${quote(verificationId)}`
     );
 
-    const result = extractSMS(providerResponse);
+    const smsList = Array.isArray(data?.sms)
+      ? data.sms
+      : [];
+
+    const latestSms =
+      smsList.length > 0
+        ? smsList[smsList.length - 1]
+        : null;
+
+    const code =
+      latestSms?.formatted ||
+      latestSms?.raw ||
+      null;
 
     return res.status(200).json({
       success: true,
       verification_id: verificationId,
-      sms: result.sms,
-      code: result.code,
-      message: providerResponse?.message || null,
-      data: providerResponse
+      sms: code,
+      code: code,
+      sms_received: Boolean(code),
+      sms_list: smsList
     });
 
   } catch (error) {
@@ -98,6 +58,7 @@ export default async function handler(req, res) {
       verification_id: verificationId,
       sms: null,
       code: null,
+      sms_received: false,
       error:
         error?.message ||
         "Unable to retrieve SMS from SureVerification."
