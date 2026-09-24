@@ -4633,9 +4633,48 @@
           });
 
 
-        const result =
-          await response.json()
-            .catch(() => ({}));
+        const rawResponse =
+          await response.text();
+
+
+        console.log(
+          "ORDER HTTP STATUS:",
+          response.status
+        );
+
+        console.log(
+          "ORDER RAW RESPONSE:",
+          rawResponse
+        );
+
+
+        let result = {};
+
+        try {
+
+          result =
+            rawResponse
+              ? JSON.parse(rawResponse)
+              : {};
+
+        } catch (parseError) {
+
+          console.error(
+            "ORDER RESPONSE IS NOT JSON:",
+            parseError
+          );
+
+          throw new Error(
+            `Server returned HTTP ${response.status}: ${rawResponse || "Empty response"}`
+          );
+
+        }
+
+
+        console.log(
+          "ORDER JSON RESPONSE:",
+          result
+        );
 
 
         if (!response.ok) {
@@ -4643,7 +4682,8 @@
           const purchaseError =
             result.message ||
             result.error ||
-            "Unable to purchase number.";
+            result.debug ||
+            `Purchase failed with HTTP ${response.status}.`;
 
           if (
             String(purchaseError).toLowerCase().includes("insufficient")
@@ -5036,8 +5076,8 @@
     function checkActiveNumberSMS(item, index) {
 
       const verificationId =
-        item.provider_order_id ||
-        item.providerOrderId ||
+        item.provider_verification_id ||
+        item.providerVerificationId ||
         item.verification_id ||
         item.verificationId ||
         item.verification?.request_id ||
@@ -5045,59 +5085,46 @@
         item.verification?.id;
 
       if (!verificationId) {
+        console.warn(
+          "No provider verification ID found for active number:",
+          item
+        );
         return;
       }
 
-      const smsStatus =
-        $(`smsStatus-${index}`);
+      const smsStatus = $(`smsStatus-${index}`);
+      const smsContent = $(`smsContent-${index}`);
 
-      const smsContent =
-        $(`smsContent-${index}`);
-
-      if (!smsStatus || !smsContent) {
-        return;
-      }
+      if (!smsStatus || !smsContent) return;
 
       async function checkSMS() {
-
         try {
+          const response = await fetch(
+            `/api/sms?id=${encodeURIComponent(verificationId)}`
+          );
 
-          const response =
-            await fetch(
-              `/api/sms/status?verificationId=${encodeURIComponent(verificationId)}`
-            );
+          const result = await response.json().catch(() => ({}));
 
           if (!response.ok) {
+            smsStatus.textContent = "Waiting for SMS...";
             setTimeout(checkSMS, 7000);
             return;
           }
 
-          const result =
-            await response.json();
-
-          const data =
-            result?.data ||
-            result?.verification ||
-            result;
+          const latest = Array.isArray(result?.sms_list) && result.sms_list.length
+            ? result.sms_list[result.sms_list.length - 1]
+            : null;
 
           const sms =
-            data?.sms ||
-            data?.message ||
-            data?.code ||
-            data?.otp ||
-            data?.verification_code ||
-            data?.verificationCode ||
+            result?.sms ||
+            result?.code ||
+            latest?.formatted ||
+            latest?.raw ||
             null;
 
           if (sms) {
-
-            smsStatus.textContent =
-              "SMS received";
-
-            smsStatus.classList.add(
-              "received"
-            );
-
+            smsStatus.textContent = "SMS received";
+            smsStatus.classList.add("received");
             smsContent.innerHTML = `
               <div class="sms-received">
                 <div class="sms-code">
@@ -5105,45 +5132,20 @@
                 </div>
               </div>
             `;
-
             return;
           }
 
-          const providerStatus =
-            String(
-              data?.status ||
-              item.status ||
-              ""
-            ).toLowerCase();
-
-          if (
-            providerStatus === "cancelled" ||
-            providerStatus === "canceled"
-          ) {
-            smsStatus.textContent =
-              "Number cancelled";
-            return;
-          }
-
-          smsStatus.textContent =
-            "Waiting for SMS...";
-
+          smsStatus.textContent = "Waiting for SMS...";
           setTimeout(checkSMS, 5000);
-
         } catch (error) {
-
-          console.error(
-            "SMS status error:",
-            error
-          );
-
+          console.error("SMS retrieval error:", error);
+          smsStatus.textContent = "Waiting for SMS...";
           setTimeout(checkSMS, 7000);
         }
       }
 
       checkSMS();
     }
-
 
     /* =========================================================
        CANCEL ACTIVE NUMBER
