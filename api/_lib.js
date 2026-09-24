@@ -1,7 +1,7 @@
 const BASE_URL = "https://sureverifications.com/api/v1";
 
-function normalizeCountry(country) {
-  return String(country ?? "")
+function normalizeCountry(value) {
+  return String(value ?? "")
     .trim()
     .toLowerCase()
     .replace(/\s+/g, " ");
@@ -14,10 +14,22 @@ export function isUSA(country) {
     value === "us" ||
     value === "usa" ||
     value === "united states" ||
-    value === "united states of america"
+    value === "united states of america" ||
+    value === "united states of america (usa)"
   );
 }
 
+/*
+ * The provider's documented API does not expose a URL such as:
+ *
+ *   /usa-server-2/purchase
+ *
+ * Server selection is handled by the provider through the
+ * selected serviceCountryPriceId and autoSearchServer.
+ *
+ * We keep these helpers for compatibility with the rest of
+ * your project, but we do NOT construct fake provider URLs.
+ */
 export function getServerForCountry(country) {
   return isUSA(country)
     ? "usa-server-2"
@@ -34,7 +46,8 @@ export async function sureVerificationRequest(
   path,
   options = {}
 ) {
-  const apiKey = process.env.SUREVERIFICATION_API_KEY;
+  const apiKey =
+    process.env.SUREVERIFICATION_API_KEY;
 
   if (!apiKey) {
     throw new Error(
@@ -42,7 +55,8 @@ export async function sureVerificationRequest(
     );
   }
 
-  const requestPath = String(path || "").trim();
+  const requestPath =
+    String(path || "").trim();
 
   if (!requestPath.startsWith("/")) {
     throw new Error(
@@ -50,22 +64,39 @@ export async function sureVerificationRequest(
     );
   }
 
+  const headers = {
+    Accept: "application/json",
+    "x-api-key": apiKey,
+    ...(options.headers || {})
+  };
+
+  if (
+    options.body !== undefined &&
+    !headers["Content-Type"]
+  ) {
+    headers["Content-Type"] =
+      "application/json";
+  }
+
   const response = await fetch(
     `${BASE_URL}${requestPath}`,
     {
-      method: options.method || "GET",
-      headers: {
-        Accept: "application/json",
-        "x-api-key": apiKey,
-        ...(options.headers || {})
-      },
+      method:
+        options.method || "GET",
+      headers,
       ...(options.body !== undefined
-        ? { body: options.body }
+        ? {
+            body:
+              typeof options.body === "string"
+                ? options.body
+                : JSON.stringify(options.body)
+          }
         : {})
     }
   );
 
-  const responseText = await response.text();
+  const responseText =
+    await response.text();
 
   let data = {};
 
@@ -80,12 +111,28 @@ export async function sureVerificationRequest(
   }
 
   if (!response.ok) {
-    throw new Error(
+    const errorCode =
+      data?.error || "";
+
+    const message =
       data?.message ||
       data?.error ||
       data?.details ||
-      `SureVerification returned HTTP ${response.status}.`
-    );
+      `SureVerification returned HTTP ${response.status}.`;
+
+    const error =
+      new Error(String(message));
+
+    error.status =
+      response.status;
+
+    error.code =
+      errorCode;
+
+    error.providerResponse =
+      data;
+
+    throw error;
   }
 
   return data;
