@@ -2481,23 +2481,42 @@
                 <div class="section-heading">
                   <div>
                     <h3>Pricing</h3>
-                    <p>Set the selling price for each country and service.</p>
+                    <p>Set the selling price for each country, service and server.</p>
                   </div>
                 </div>
+
                 <div class="grid-2">
                   <div class="form-group">
                     <label for="adminPricingCountry">Country</label>
+                    <input id="adminPricingCountrySearch" type="search" class="form-control" placeholder="Search country..." autocomplete="off" oninput="filterAdminPricingCountries()">
                     <select id="adminPricingCountry" class="form-control" onchange="loadAdminPricingServices()">
                       <option value="">Select a country</option>
                     </select>
                   </div>
+
                   <div class="form-group">
                     <label for="adminPricingService">Service</label>
-                    <select id="adminPricingService" class="form-control">
+                    <input id="adminPricingServiceSearch" type="search" class="form-control" placeholder="Search service..." autocomplete="off" disabled oninput="filterAdminPricingServices()">
+                    <select id="adminPricingService" class="form-control" onchange="loadAdminProviderPrice()">
                       <option value="">Select a service</option>
                     </select>
                   </div>
                 </div>
+
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label for="adminPricingServer">Server</label>
+                    <select id="adminPricingServer" class="form-control" onchange="loadAdminProviderPrice()" disabled>
+                      <option value="">Select a server</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="adminProviderPrice">Provider Price</label>
+                    <input id="adminProviderPrice" class="form-control" type="text" placeholder="Select service and server" readonly />
+                  </div>
+                </div>
+
                 <div class="grid-2">
                   <div class="form-group">
                     <label for="adminPricingAmount">Selling Price (₦)</label>
@@ -2507,9 +2526,11 @@
                     <button id="adminPricingSave" class="primary-btn full-btn" type="button" onclick="saveAdminPricing()">Save Price</button>
                   </div>
                 </div>
+
                 <div id="adminPricingStatus" class="small-muted"></div>
                 <div id="adminPricingTable" style="margin-top:16px;"></div>
               </div>
+
 
               <div class="section-card">
 
@@ -5076,8 +5097,8 @@
     function checkActiveNumberSMS(item, index) {
 
       const verificationId =
-        item.provider_verification_id ||
-        item.providerVerificationId ||
+        item.provider_order_id ||
+        item.providerOrderId ||
         item.verification_id ||
         item.verificationId ||
         item.verification?.request_id ||
@@ -5104,14 +5125,7 @@
 
           const response =
             await fetch(
-              `/api/sms?id=${encodeURIComponent(verificationId)}`,
-              {
-                method: "GET",
-                headers: {
-                  Accept: "application/json"
-                },
-                cache: "no-store"
-              }
+              `/api/sms/status?verificationId=${encodeURIComponent(verificationId)}`
             );
 
           if (!response.ok) {
@@ -5128,16 +5142,9 @@
             result;
 
           const sms =
-            result?.code ||
-            result?.sms ||
-            data?.code ||
             data?.sms ||
-            (Array.isArray(data?.sms)
-              ? data.sms[data.sms.length - 1]?.formatted ||
-                data.sms[data.sms.length - 1]?.raw ||
-                null
-              : null) ||
             data?.message ||
+            data?.code ||
             data?.otp ||
             data?.verification_code ||
             data?.verificationCode ||
@@ -5587,139 +5594,304 @@
       }
     }
 
+    let adminPricingCountriesCache = [];
+    let adminPricingServicesCache = [];
+
+    const ADMIN_PRICING_SERVERS_USA = [
+      { id: "usa-server-1", name: "USA Server 1" },
+      { id: "usa-server-2", name: "USA Server 2" }
+    ];
+
+    const ADMIN_PRICING_SERVERS_GLOBAL = [
+      { id: "global-server-1", name: "Global Server 1" },
+      { id: "global-server-2", name: "Global Server 2" }
+    ];
+
+    function adminPricingIsUSA(country) {
+      const value = String(
+        country?.name || country?.code || country || ""
+      ).trim().toLowerCase();
+      return [
+        "us",
+        "usa",
+        "united states",
+        "united states of america"
+      ].includes(value);
+    }
+
+    function getAdminPricingServers(country) {
+      return adminPricingIsUSA(country)
+        ? ADMIN_PRICING_SERVERS_USA
+        : ADMIN_PRICING_SERVERS_GLOBAL;
+    }
+
+    function filterAdminPricingCountries() {
+      const q = ($("adminPricingCountrySearch")?.value || "").toLowerCase();
+      const select = $("adminPricingCountry");
+      if (!select) return;
+      const current = select.value;
+      const list = adminPricingCountriesCache.filter(c =>
+        String(c.name || "").toLowerCase().includes(q) ||
+        String(c.code || "").toLowerCase().includes(q)
+      );
+      select.innerHTML = '<option value="">Select a country</option>' + list.map(country => `
+        <option value="${escapeHtml(String(country.id))}"
+          data-name="${escapeHtml(country.name || "")}"
+          data-code="${escapeHtml(country.code || "")}"
+          data-server="${escapeHtml(country.server || "")}"
+        >${escapeHtml(country.name || String(country.id))}</option>
+      `).join("");
+      if (current && list.some(c => String(c.id) === String(current))) {
+        select.value = current;
+      }
+    }
+
+    function filterAdminPricingServices() {
+      const q = ($("adminPricingServiceSearch")?.value || "").toLowerCase();
+      const select = $("adminPricingService");
+      if (!select) return;
+      const current = select.value;
+      const list = adminPricingServicesCache.filter(s =>
+        String(s.name || "").toLowerCase().includes(q) ||
+        String(s.id || "").toLowerCase().includes(q)
+      );
+      select.innerHTML = '<option value="">Select a service</option>' + list.map(service => `
+        <option value="${escapeHtml(String(service.id))}"
+          data-name="${escapeHtml(service.name || "")}"
+          data-provider-id="${escapeHtml(service.id || "")}"
+        >${escapeHtml(service.name || String(service.id))}</option>
+      `).join("");
+      if (current && list.some(s => String(s.id) === String(current))) {
+        select.value = current;
+      }
+    }
+
+    function populateAdminPricingServers(country) {
+      const serverSelect = $("adminPricingServer");
+      if (!serverSelect) return;
+
+      const servers = getAdminPricingServers(country);
+      serverSelect.innerHTML =
+        '<option value="">Select a server</option>' +
+        servers.map(server =>
+          `<option value="${server.id}">${server.name}</option>`
+        ).join("");
+      serverSelect.disabled = !country;
+
+      if (servers.length) {
+        serverSelect.value = servers[0].id;
+      }
+    }
+
     async function loadAdminPricing() {
       const countrySelect = $("adminPricingCountry");
       const serviceSelect = $("adminPricingService");
+      const serverSelect = $("adminPricingServer");
       const table = $("adminPricingTable");
 
-      if (!countrySelect || !serviceSelect || !table) return;
+      if (!countrySelect || !serviceSelect || !serverSelect || !table) return;
 
       try {
-        const countriesResponse = await fetch("/api/countries");
-        const countriesData = await countriesResponse.json();
+        const countriesResponse = await fetch("/api/countries", { cache: "no-store" });
+        const countriesData = await countriesResponse.json().catch(() => ({}));
 
-        if (countriesData?.success) {
-          countrySelect.innerHTML =
-            '<option value="">Select a country</option>' +
-            (countriesData.countries || []).map(country => `
-              <option value="${escapeHtml(String(country.id))}"
-                data-name="${escapeHtml(country.name || "")}"
-                data-code="${escapeHtml(country.code || "")}"
-                data-server="${escapeHtml(country.server || "")}">
-                ${escapeHtml(country.name || String(country.id))}
-              </option>
-            `).join("");
+        if (!countriesResponse.ok || !countriesData?.success) {
+          throw new Error(countriesData?.error || "Unable to load countries.");
         }
 
-        const token = await getCurrentAccessToken();
-        if (!token) throw new Error("Unauthorized.");
+        adminPricingCountriesCache = countriesData.countries || [];
+        countrySelect.innerHTML =
+          '<option value="">Select a country</option>' +
+          adminPricingCountriesCache.map(country => `
+            <option value="${escapeHtml(String(country.id))}"
+              data-name="${escapeHtml(country.name || "")}"
+              data-code="${escapeHtml(country.code || "")}"
+              data-server="${escapeHtml(country.server || "")}"
+            >${escapeHtml(country.name || String(country.id))}</option>
+          `).join("");
 
-        const response = await fetch("/api/admin-pricing", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        serviceSelect.innerHTML = '<option value="">Select a service</option>';
+        serverSelect.innerHTML = '<option value="">Select a server</option>';
+        serverSelect.disabled = true;
+        $("adminProviderPrice").value = "";
+        $("adminPricingStatus").textContent = "";
 
-        const data = await response.json();
+        /* Saved prices are optional. A failure here must NOT break the pricing form. */
+        try {
+          const token = await getCurrentAccessToken();
+          const response = token
+            ? await fetch("/api/admin-pricing", {
+                headers: { Authorization: `Bearer ${token}` },
+                cache: "no-store"
+              })
+            : null;
+          const data = response ? await response.json().catch(() => ({})) : {};
+          const rows = response?.ok && data?.success ? (data.prices || []) : [];
 
-        if (!response.ok || !data?.success) {
-          throw new Error(data?.error || "Unable to load prices.");
+          table.innerHTML = rows.length ? `
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead><tr><th>Country</th><th>Service</th><th>Server</th><th>Selling Price</th></tr></thead>
+                <tbody>
+                  ${rows.map(row => `
+                    <tr>
+                      <td>${escapeHtml(row.country_name || row.country_id || "—")}</td>
+                      <td>${escapeHtml(row.service_name || row.service_id || "—")}</td>
+                      <td>${escapeHtml(row.provider_server || row.server || "—")}</td>
+                      <td>${formatMoney(row.selling_price)}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          ` : '<div class="empty-state">No custom selling prices have been set yet.</div>';
+        } catch (error) {
+          console.warn("Saved pricing list unavailable:", error);
+          table.innerHTML = '<div class="empty-state">Select a country, service and server to load provider pricing.</div>';
         }
-
-        const rows = data.prices || [];
-
-        table.innerHTML = rows.length ? `
-          <div class="table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Country</th>
-                  <th>Service</th>
-                  <th>Selling Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rows.map(row => `
-                  <tr>
-                    <td>${escapeHtml(row.country_name || row.country_id || "—")}</td>
-                    <td>${escapeHtml(row.service_name || row.service_id || "—")}</td>
-                    <td>${formatMoney(row.selling_price)}</td>
-                  </tr>
-                `).join("")}
-              </tbody>
-            </table>
-          </div>
-        ` : '<div class="empty-state">No custom selling prices have been set yet.</div>';
-
       } catch (error) {
-        console.error("Admin pricing load error:", error);
-        table.innerHTML = '<div class="empty-state">Unable to load pricing.</div>';
+        console.error("Admin pricing countries error:", error);
+        table.innerHTML = `<div class="empty-state">${escapeHtml(error?.message || "Unable to load countries.")}</div>`;
       }
     }
 
     async function loadAdminPricingServices() {
       const countrySelect = $("adminPricingCountry");
       const serviceSelect = $("adminPricingService");
-      if (!countrySelect || !serviceSelect) return;
+      const serverSelect = $("adminPricingServer");
+      const providerInput = $("adminProviderPrice");
+      const amountInput = $("adminPricingAmount");
+      if (!countrySelect || !serviceSelect || !serverSelect) return;
 
-      const option = countrySelect.options[countrySelect.selectedIndex];
+      const countryOption = countrySelect.options[countrySelect.selectedIndex];
       const countryId = countrySelect.value;
-      const server = option?.dataset?.server || "";
+      const country = {
+        id: countryId,
+        name: countryOption?.dataset?.name || countryOption?.textContent?.trim() || "",
+        code: countryOption?.dataset?.code || ""
+      };
 
-      serviceSelect.innerHTML =
-        '<option value="">Loading services...</option>';
+      serviceSelect.innerHTML = '<option value="">Loading services...</option>';
+      providerInput.value = "";
+      amountInput.value = "";
+      populateAdminPricingServers(country);
 
       if (!countryId) {
-        serviceSelect.innerHTML =
-          '<option value="">Select a service</option>';
+        adminPricingServicesCache = [];
+        $("adminPricingServiceSearch").disabled = true;
+        $("adminPricingServiceSearch").value = "";
+        serviceSelect.innerHTML = '<option value="">Select a service</option>';
+        serverSelect.innerHTML = '<option value="">Select a server</option>';
+        serverSelect.disabled = true;
         return;
       }
 
+      const servers = getAdminPricingServers(country);
+      const serviceServer = servers[0]?.id;
+
       try {
-        const query =
-          `/api/services?countryId=${encodeURIComponent(countryId)}` +
-          (server ? `&server=${encodeURIComponent(server)}` : "");
-
-        const response = await fetch(query);
-        const data = await response.json();
-
+        const response = await fetch(
+          `/api/services?countryId=${encodeURIComponent(countryId)}&server=${encodeURIComponent(serviceServer)}`,
+          { cache: "no-store" }
+        );
+        const data = await response.json().catch(() => ({}));
         if (!response.ok || !data?.success) {
           throw new Error(data?.error || "Unable to load services.");
         }
 
-        serviceSelect.innerHTML =
-          '<option value="">Select a service</option>' +
-          (data.services || []).map(service => `
-            <option value="${escapeHtml(String(service.id))}"
-              data-name="${escapeHtml(service.name || "")}">
-              ${escapeHtml(service.name || String(service.id))}
-            </option>
-          `).join("");
-
+        adminPricingServicesCache = data.services || [];
+        $("adminPricingServiceSearch").disabled = false;
+        filterAdminPricingServices();
+        await loadAdminProviderPrice();
       } catch (error) {
         console.error("Admin pricing services error:", error);
-        serviceSelect.innerHTML =
-          '<option value="">Unable to load services</option>';
+        adminPricingServicesCache = [];
+        serviceSelect.innerHTML = '<option value="">Unable to load services</option>';
+        $("adminPricingServiceSearch").disabled = true;
+        providerInput.value = "";
+      }
+    }
+
+    async function loadAdminProviderPrice() {
+      const countrySelect = $("adminPricingCountry");
+      const serviceSelect = $("adminPricingService");
+      const serverSelect = $("adminPricingServer");
+      const providerInput = $("adminProviderPrice");
+      const status = $("adminPricingStatus");
+
+      const countryOption = countrySelect?.options[countrySelect.selectedIndex];
+      const serviceOption = serviceSelect?.options[serviceSelect.selectedIndex];
+      const countryId = countrySelect?.value;
+      const serviceId = serviceSelect?.value;
+      const server = serverSelect?.value;
+      const countryName = countryOption?.dataset?.name || countryOption?.textContent?.trim() || "";
+      const serviceName = serviceOption?.dataset?.name || serviceOption?.textContent?.trim() || "";
+
+      if (!countryId || !serviceId || !server) {
+        providerInput.value = "";
+        return;
+      }
+
+      providerInput.value = "Loading...";
+      if (status) status.textContent = "";
+
+      try {
+        const query =
+          `/api/price?countryId=${encodeURIComponent(countryId)}` +
+          `&countryName=${encodeURIComponent(countryName)}` +
+          `&service=${encodeURIComponent(serviceId)}` +
+          `&serviceName=${encodeURIComponent(serviceName)}` +
+          `&server=${encodeURIComponent(server)}`;
+
+        const response = await fetch(query, { cache: "no-store" });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || !data?.success) {
+          throw new Error(data?.error || "Provider price not available.");
+        }
+
+        if (Number.isFinite(Number(data.providerPrice)) && Number(data.providerPrice) > 0) {
+          providerInput.value = formatMoney(data.providerPrice);
+          providerInput.dataset.rawPrice = String(data.providerPrice);
+        } else {
+          providerInput.value = "Price not available";
+          providerInput.dataset.rawPrice = "";
+        }
+      } catch (error) {
+        console.error("Provider price error:", error);
+        providerInput.value = "Price not available";
+        providerInput.dataset.rawPrice = "";
+        if (status) status.textContent = error?.message || "Provider price not available.";
       }
     }
 
     async function saveAdminPricing() {
       const countrySelect = $("adminPricingCountry");
       const serviceSelect = $("adminPricingService");
+      const serverSelect = $("adminPricingServer");
+      const providerInput = $("adminProviderPrice");
       const amountInput = $("adminPricingAmount");
       const status = $("adminPricingStatus");
       const button = $("adminPricingSave");
 
-      const countryOption =
-        countrySelect?.options[countrySelect.selectedIndex];
-      const serviceOption =
-        serviceSelect?.options[serviceSelect.selectedIndex];
-
+      const countryOption = countrySelect?.options[countrySelect.selectedIndex];
+      const serviceOption = serviceSelect?.options[serviceSelect.selectedIndex];
       const countryId = countrySelect?.value;
       const serviceId = serviceSelect?.value;
+      const server = serverSelect?.value;
+      const providerPrice = Number(providerInput?.dataset?.rawPrice);
       const sellingPrice = Number(amountInput?.value);
 
-      if (!countryId || !serviceId || !Number.isFinite(sellingPrice) || sellingPrice <= 0) {
-        if (status) status.textContent =
-          "Select a country, service and enter a valid selling price.";
+      if (!countryId || !serviceId || !server) {
+        if (status) status.textContent = "Select a country, service and server first.";
+        return;
+      }
+      if (!Number.isFinite(providerPrice) || providerPrice <= 0) {
+        if (status) status.textContent = "Provider price is not available for this server/service.";
+        return;
+      }
+      if (!Number.isFinite(sellingPrice) || sellingPrice <= 0) {
+        if (status) status.textContent = "Enter a valid selling price.";
         return;
       }
 
@@ -5738,35 +5910,37 @@
           },
           body: JSON.stringify({
             countryId,
-            countryName:
-              countryOption?.dataset?.name ||
-              countryOption?.textContent?.trim() ||
-              "",
+            countryName: countryOption?.dataset?.name || countryOption?.textContent?.trim() || "",
             serviceId,
-            serviceName:
-              serviceOption?.dataset?.name ||
-              serviceOption?.textContent?.trim() ||
-              "",
+            serviceName: serviceOption?.dataset?.name || serviceOption?.textContent?.trim() || "",
+            server,
+            providerServer: server,
+            providerPrice,
             sellingPrice
           })
         });
 
-        const data = await response.json();
-
+        const data = await response.json().catch(() => ({}));
         if (!response.ok || !data?.success) {
           throw new Error(data?.error || "Unable to save selling price.");
         }
 
-        if (status) status.textContent =
-          "Selling price saved successfully.";
-
+        if (status) status.textContent = "Selling price saved successfully.";
         amountInput.value = "";
         await loadAdminPricing();
-
+        countrySelect.value = countryId;
+        populateAdminPricingServers({
+          id: countryId,
+          name: countryOption?.dataset?.name || countryOption?.textContent?.trim() || "",
+          code: countryOption?.dataset?.code || ""
+        });
+        serverSelect.value = server;
+        await loadAdminPricingServices();
+        serviceSelect.value = serviceId;
+        await loadAdminProviderPrice();
       } catch (error) {
         console.error("Save pricing error:", error);
-        if (status) status.textContent =
-          error?.message || "Unable to save selling price.";
+        if (status) status.textContent = error?.message || "Unable to save selling price.";
       } finally {
         button.disabled = false;
       }
