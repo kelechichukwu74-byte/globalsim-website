@@ -5080,62 +5080,53 @@
         item.providerVerificationId ||
         item.verification_id ||
         item.verificationId ||
+        item.provider_order_id ||
+        item.providerOrderId ||
         item.verification?.request_id ||
         item.verification?.requestId ||
         item.verification?.id;
 
-      const smsStatus =
-        $(`smsStatus-${index}`);
-
-      const smsContent =
-        $(`smsContent-${index}`);
-
-      if (!smsStatus || !smsContent) {
-        return;
-      }
-
       if (!verificationId) {
-        smsStatus.textContent =
-          "SMS unavailable";
-        smsContent.innerHTML = `
-          <div class="sms-waiting">
-            Verification ID is not available for this number.
-          </div>
-        `;
-        console.warn("Missing provider_verification_id:", item);
+        console.error("SMS: No verification ID found.", item);
         return;
       }
+
+      const smsStatus = $(`smsStatus-${index}`);
+      const smsContent = $(`smsContent-${index}`);
+
+      if (!smsStatus || !smsContent) return;
 
       async function checkSMS() {
         try {
           const response = await fetch(
-            `/api/sms?id=${encodeURIComponent(String(verificationId))}`,
-            { cache: "no-store" }
+            `/api/sms?id=${encodeURIComponent(verificationId)}`
           );
 
           const result = await response.json().catch(() => ({}));
 
-          if (!response.ok || result?.success === false) {
+          console.log("SMS RESPONSE:", verificationId, result);
+
+          if (!response.ok) {
             smsStatus.textContent = "Waiting for SMS...";
             setTimeout(checkSMS, 5000);
             return;
           }
 
-          const list = Array.isArray(result?.sms_list)
+          const smsList = Array.isArray(result?.sms_list)
             ? result.sms_list
             : Array.isArray(result?.sms)
               ? result.sms
               : [];
 
-          const latest = list.length
-            ? list[list.length - 1]
+          const latestSms = smsList.length
+            ? smsList[smsList.length - 1]
             : null;
 
           const sms =
-            result?.code ||
             (typeof result?.sms === "string" ? result.sms : null) ||
-            latest?.formatted ||
-            latest?.raw ||
+            result?.code ||
+            latestSms?.formatted ||
+            latestSms?.raw ||
             null;
 
           if (sms) {
@@ -5157,7 +5148,7 @@
         } catch (error) {
           console.error("SMS retrieval error:", error);
           smsStatus.textContent = "Waiting for SMS...";
-          setTimeout(checkSMS, 7000);
+          setTimeout(checkSMS, 5000);
         }
       }
 
