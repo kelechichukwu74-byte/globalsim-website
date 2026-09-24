@@ -1,8 +1,6 @@
-// api/SMS.js
-
 import { sureVerificationRequest, quote } from "./_lib.js";
 
-function extractSms(data) {
+function extractSMS(data) {
   if (!data || typeof data !== "object") {
     return {
       sms: null,
@@ -10,47 +8,40 @@ function extractSms(data) {
     };
   }
 
-  const candidates = [
+  const sources = [
     data,
     data.verification,
     data.data,
-    data.result,
-    data.sms,
-    data.message
+    data.result
   ].filter(Boolean);
 
   let sms = null;
   let code = null;
 
-  for (const item of candidates) {
-    if (typeof item === "string") {
-      if (!sms) sms = item;
-      continue;
-    }
-
-    if (typeof item !== "object") continue;
+  for (const source of sources) {
+    if (!source || typeof source !== "object") continue;
 
     if (!sms) {
       sms =
-        item.sms ??
-        item.sms_code ??
-        item.sms_content ??
-        item.content ??
-        item.text ??
+        source.sms ??
+        source.sms_code ??
+        source.sms_content ??
+        source.content ??
+        source.text ??
         null;
     }
 
     if (!code) {
       code =
-        item.code ??
-        item.verification_code ??
-        item.otp ??
-        item.otp_code ??
+        source.code ??
+        source.verification_code ??
+        source.verificationCode ??
+        source.otp ??
+        source.otp_code ??
         null;
     }
   }
 
-  // If there is a code but no separate SMS text, use the code as SMS.
   if (!sms && code) {
     sms = String(code);
   }
@@ -69,9 +60,14 @@ export default async function handler(req, res) {
     });
   }
 
-  const id = String(req.query?.id || "").trim();
+  const verificationId = String(
+    req.query?.id ||
+    req.query?.verificationId ||
+    req.query?.verification_id ||
+    ""
+  ).trim();
 
-  if (!id) {
+  if (!verificationId) {
     return res.status(400).json({
       success: false,
       error: "Verification ID is required."
@@ -79,40 +75,32 @@ export default async function handler(req, res) {
   }
 
   try {
-    const data = await sureVerificationRequest(
-      `/verifications/sms/${quote(id)}`
+    const providerResponse = await sureVerificationRequest(
+      `/verifications/sms/${quote(verificationId)}`
     );
 
-    const extracted = extractSms(data);
+    const result = extractSMS(providerResponse);
 
     return res.status(200).json({
       success: true,
-      verification_id: id,
-
-      // What the frontend can display
-      sms: extracted.sms,
-      code: extracted.code,
-
-      // Provider response preserved for debugging/future compatibility
-      provider_response: data
+      verification_id: verificationId,
+      sms: result.sms,
+      code: result.code,
+      message: providerResponse?.message || null,
+      data: providerResponse
     });
 
   } catch (error) {
-    console.error("SureVerification SMS error:", error);
+    console.error("SMS API error:", error);
 
-    const status =
-      Number.isInteger(error?.status) &&
-      error.status >= 400 &&
-      error.status < 600
-        ? error.status
-        : 502;
-
-    return res.status(status).json({
+    return res.status(502).json({
       success: false,
-      verification_id: id,
+      verification_id: verificationId,
+      sms: null,
+      code: null,
       error:
         error?.message ||
-        "Unable to load SMS from SureVerification."
+        "Unable to retrieve SMS from SureVerification."
     });
   }
 }
