@@ -5084,40 +5084,56 @@
         item.verification?.requestId ||
         item.verification?.id;
 
-      if (!verificationId) {
-        console.warn(
-          "No provider verification ID found for active number:",
-          item
-        );
+      const smsStatus =
+        $(`smsStatus-${index}`);
+
+      const smsContent =
+        $(`smsContent-${index}`);
+
+      if (!smsStatus || !smsContent) {
         return;
       }
 
-      const smsStatus = $(`smsStatus-${index}`);
-      const smsContent = $(`smsContent-${index}`);
-
-      if (!smsStatus || !smsContent) return;
+      if (!verificationId) {
+        smsStatus.textContent =
+          "SMS unavailable";
+        smsContent.innerHTML = `
+          <div class="sms-waiting">
+            Verification ID is not available for this number.
+          </div>
+        `;
+        console.warn("Missing provider_verification_id:", item);
+        return;
+      }
 
       async function checkSMS() {
         try {
           const response = await fetch(
-            `/api/sms?id=${encodeURIComponent(verificationId)}`
+            `/api/sms?id=${encodeURIComponent(String(verificationId))}`,
+            { cache: "no-store" }
           );
 
           const result = await response.json().catch(() => ({}));
 
-          if (!response.ok) {
+          if (!response.ok || result?.success === false) {
             smsStatus.textContent = "Waiting for SMS...";
-            setTimeout(checkSMS, 7000);
+            setTimeout(checkSMS, 5000);
             return;
           }
 
-          const latest = Array.isArray(result?.sms_list) && result.sms_list.length
-            ? result.sms_list[result.sms_list.length - 1]
+          const list = Array.isArray(result?.sms_list)
+            ? result.sms_list
+            : Array.isArray(result?.sms)
+              ? result.sms
+              : [];
+
+          const latest = list.length
+            ? list[list.length - 1]
             : null;
 
           const sms =
-            result?.sms ||
             result?.code ||
+            (typeof result?.sms === "string" ? result.sms : null) ||
             latest?.formatted ||
             latest?.raw ||
             null;
@@ -5137,6 +5153,7 @@
 
           smsStatus.textContent = "Waiting for SMS...";
           setTimeout(checkSMS, 5000);
+
         } catch (error) {
           console.error("SMS retrieval error:", error);
           smsStatus.textContent = "Waiting for SMS...";
@@ -5146,6 +5163,7 @@
 
       checkSMS();
     }
+
 
     /* =========================================================
        CANCEL ACTIVE NUMBER
