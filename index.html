@@ -5812,26 +5812,18 @@
       const countryId = countrySelect.value;
       const serviceOption = serviceSelect.options[serviceSelect.selectedIndex];
       const server = serverSelect.value;
+      const serviceName =
+        serviceOption?.dataset?.name ||
+        serviceOption?.textContent?.trim() ||
+        serviceOption?.value ||
+        "";
 
       adminPricingSelectedProviderPrice = null;
       providerInput.value = "Loading provider price...";
       if (status) status.textContent = "";
 
-      if (!countryId || !serviceOption?.value || !server) {
+      if (!countryId || !serviceName || !server) {
         providerInput.value = "Select country, service and server";
-        return;
-      }
-
-      let providerIds = {};
-      try {
-        providerIds = JSON.parse(serviceOption.dataset.providerIds || "{}");
-      } catch (_) {}
-
-      const providerServiceId = providerIds[server];
-
-      if (!providerServiceId) {
-        providerInput.value = "Service not available on this server";
-        if (status) status.textContent = "This service is not supplied by the selected server for this country.";
         return;
       }
 
@@ -5839,12 +5831,14 @@
         const countryOption = countrySelect.options[countrySelect.selectedIndex];
         const countryName = countryOption?.dataset?.name || countryOption?.textContent?.trim() || "";
 
+        // Send the service name to the server. The API resolves the correct
+        // provider-specific service ID from that server's live service list.
         const response = await fetch(
           `/api/price?countryId=${encodeURIComponent(countryId)}` +
           `&countryName=${encodeURIComponent(countryName)}` +
-          `&service=${encodeURIComponent(providerServiceId)}` +
+          `&service=${encodeURIComponent(serviceName)}` +
           `&server=${encodeURIComponent(server)}`,
-          { cache: "no-store" }
+          { cache: "no-store", headers: { Accept: "application/json" } }
         );
 
         const data = await response.json().catch(() => ({}));
@@ -5856,6 +5850,9 @@
         const price = Number(data.provider_price);
         adminPricingSelectedProviderPrice = price;
         providerInput.value = formatMoney(price);
+        if (status) status.textContent = data.provider_service_id
+          ? `Provider service: ${data.provider_service_id}`
+          : "Provider price loaded.";
 
       } catch (error) {
         console.error("Provider price error:", error);
