@@ -1,7 +1,7 @@
 const BASE_URL = "https://sureverifications.com/api/v1";
 
 function normalizeCountry(country) {
-  return String(country || "")
+  return String(country ?? "")
     .trim()
     .toLowerCase()
     .replace(/\s+/g, " ");
@@ -10,39 +10,31 @@ function normalizeCountry(country) {
 export function isUSA(country) {
   const value = normalizeCountry(country);
 
-  return [
-    "us",
-    "usa",
-    "united states",
-    "united states of america"
-  ].includes(value);
+  return (
+    value === "us" ||
+    value === "usa" ||
+    value === "united states" ||
+    value === "united states of america"
+  );
 }
 
 export function getServerForCountry(country) {
-  if (isUSA(country)) {
-    return "usa-server-2";
-  }
-
-  return "global-server-2";
+  return isUSA(country)
+    ? "usa-server-2"
+    : "global-server-2";
 }
 
 export function getServersForCountry(country) {
-  if (isUSA(country)) {
-    return ["usa-server-2"];
-  }
-
-  return [
-    "global-server-2",
-    "global-server-1"
-  ];
+  return isUSA(country)
+    ? ["usa-server-2"]
+    : ["global-server-2", "global-server-1"];
 }
 
 export async function sureVerificationRequest(
   path,
   options = {}
 ) {
-  const apiKey =
-    process.env.SUREVERIFICATION_API_KEY;
+  const apiKey = process.env.SUREVERIFICATION_API_KEY;
 
   if (!apiKey) {
     throw new Error(
@@ -50,36 +42,37 @@ export async function sureVerificationRequest(
     );
   }
 
-  const response = await fetch(
-    `${BASE_URL}${path}`,
-    {
-      method:
-        options.method || "GET",
+  const requestPath = String(path || "").trim();
 
+  if (!requestPath.startsWith("/")) {
+    throw new Error(
+      "SureVerification API path must start with '/'."
+    );
+  }
+
+  const response = await fetch(
+    `${BASE_URL}${requestPath}`,
+    {
+      method: options.method || "GET",
       headers: {
         Accept: "application/json",
         "x-api-key": apiKey,
         ...(options.headers || {})
       },
-
       ...(options.body !== undefined
-        ? {
-            body: options.body
-          }
+        ? { body: options.body }
         : {})
     }
   );
 
-  const responseText =
-    await response.text();
+  const responseText = await response.text();
 
   let data = {};
 
   try {
-    data =
-      responseText
-        ? JSON.parse(responseText)
-        : {};
+    data = responseText
+      ? JSON.parse(responseText)
+      : {};
   } catch {
     throw new Error(
       `SureVerification returned invalid JSON (HTTP ${response.status}).`
