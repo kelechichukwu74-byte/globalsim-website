@@ -1,12 +1,15 @@
 import { sureVerificationRequest } from "./_lib.js";
 
-const SUPABASE_URL =
-  process.env.SUPABASE_URL ||
-  "https://rfitbmkizfmwfqqskwhy.supabase.co";
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+function q(value) { return encodeURIComponent(String(value ?? "")); }
 
-function q(value) {
-  return encodeURIComponent(String(value ?? ""));
+function jsonError(value, fallback = "Provider request failed.") {
+  if (value == null) return fallback;
+  if (typeof value === "string") return value;
+  try {
+    if (value.message) return String(value.message);
+    if (value.error) return typeof value.error === "string" ? value.error : JSON.stringify(value.error);
+    return JSON.stringify(value);
+  } catch (_) { return fallback; }
 }
 
 function unwrapServices(data) {
@@ -17,174 +20,95 @@ function unwrapServices(data) {
   return [];
 }
 
-function serviceNameOf(row) {
-  return String(
-    row?.name ?? row?.serviceName ?? row?.service_name ?? row?.title ?? row?.service?.name ?? ""
-  ).trim();
+function serviceName(row) {
+  return String(row?.name ?? row?.serviceName ?? row?.service_name ?? row?.title ?? row?.service?.name ?? "").trim();
 }
-
-function serviceIdOf(row) {
-  return String(
-    row?.id ?? row?.serviceId ?? row?.service_id ?? row?.service?.id ?? ""
-  ).trim();
+function serviceId(row) {
+  return String(row?.id ?? row?.serviceId ?? row?.service_id ?? row?.service?.id ?? "").trim();
 }
 
 function findService(rows, requested) {
-  const wanted = String(requested ?? "").trim().toLowerCase();
-  if (!wanted) return null;
-
-  return (
-    rows.find(row => serviceIdOf(row).toLowerCase() === wanted) ||
-    rows.find(row => serviceNameOf(row).toLowerCase() === wanted) ||
-    rows.find(row => serviceNameOf(row).toLowerCase().includes(wanted)) ||
-    rows.find(row => wanted.includes(serviceNameOf(row).toLowerCase()) && serviceNameOf(row)) ||
-    null
-  );
+  const wanted = String(requested || "").trim().toLowerCase();
+  return rows.find(r => serviceId(r).toLowerCase() === wanted) ||
+         rows.find(r => serviceName(r).toLowerCase() === wanted) ||
+         rows.find(r => serviceName(r).toLowerCase().includes(wanted)) ||
+         rows.find(r => wanted.includes(serviceName(r).toLowerCase()) && serviceName(r)) || null;
 }
 
-async function getServerServiceId(server, countryId, requestedService) {
-  const data = await sureVerificationRequest(
-    `/${server}/services?country_id=${q(countryId)}`
-  );
-  const rows = unwrapServices(data);
-  const match = findService(rows, requestedService);
-
-  if (!match) {
-    const available = rows.slice(0, 12).map(row => serviceNameOf(row) || serviceIdOf(row)).filter(Boolean);
-    throw new Error(
-      `Service "${requestedService}" is not available on ${server}.` +
-      (available.length ? ` Available examples: ${available.join(", ")}` : "")
-    );
-  }
-
-  return {
-    id: serviceIdOf(match),
-    name: serviceNameOf(match) || requestedService,
-    raw: match
-  };
-}
-
-function extractPrice(data, requestedServiceId, requestedServiceName) {
+function extractPrice(data, id, name) {
   const direct = [
     data?.price?.price,
     data?.price?.amount,
     data?.data?.price?.price,
     data?.data?.price?.amount,
     data?.amount,
-    data?.data?.amount
+    data?.data?.amount,
+    data?.price
   ];
-
-  for (const value of direct) {
-    const n = Number(value);
+  for (const v of direct) {
+    if (typeof v === "object") continue;
+    const n = Number(v);
     if (Number.isFinite(n) && n > 0) return n;
   }
 
-  const rows = Array.isArray(data?.prices)
-    ? data.prices
-    : Array.isArray(data?.data?.prices)
-      ? data.data.prices
-      : [];
+  const lists = [
+    data?.prices,
+    data?.data?.prices,
+    Array.isArray(data) ? data : null
+  ].filter(Array.isArray);
 
-  const wantedId = String(requestedServiceId || "").trim().toLowerCase();
-  const wantedName = String(requestedServiceName || "").trim().toLowerCase();
-
-  const row =
-    rows.find(x => String(x?.service?.id ?? x?.service_id ?? x?.id ?? "").trim().toLowerCase() === wantedId) ||
-    rows.find(x => String(x?.service?.name ?? x?.name ?? "").trim().toLowerCase() === wantedName) ||
-    null;
-
-  if (row) {
-    const n = Number(row?.price ?? row?.amount ?? row?.selling_price);
-    if (Number.isFinite(n) && n > 0) return n;
+  for (const rows of lists) {
+    const match = rows.find(row => {
+      const rid = String(row?.service?.id ?? row?.service_id ?? row?.id ?? "").toLowerCase();
+      const rn = String(row?.service?.name ?? row?.name ?? "").toLowerCase();
+      return rid === String(id || "").toLowerCase() || rn === String(name || "").toLowerCase();
+    });
+    if (match) {
+      const n = Number(match?.price ?? match?.amount ?? match?.selling_price);
+      if (Number.isFinite(n) && n > 0) return n;
+    }
   }
-
   return null;
 }
 
-async function supabaseRequest(path, options = {}) {
-  if (!SUPABASE_SERVICE_ROLE_KEY) throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    method: options.method || "GET",
-    headers: {
-      apikey: SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      Accept: "application/json",
-      "Content-Type": "application/json"
-    },
-    ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {})
-  });
-  const text = await response.text();
-  let data = {};
-  try { data = text ? JSON.parse(text) : {}; }
-  catch { throw new Error(`Supabase returned invalid JSON (HTTP ${response.status}).`); }
-  if (!response.ok) throw new Error(data?.message || data?.hint || `Supabase request failed (HTTP ${response.status}).`);
-  return data;
+async function getService(server, countryId, requested) {
+  const data = await sureVerificationRequest(`/${server}/services?country_id=${q(countryId)}`);
+  const rows = unwrapServices(data);
+  const match = findService(rows, requested);
+  if (!match) {
+    const available = rows.slice(0, 20).map(r => `${serviceName(r) || "?"} [${serviceId(r) || "?"}]`).filter(Boolean);
+    throw new Error(`Service "${requested}" not found on ${server}. ${available.length ? `Available: ${available.join(", ")}` : "Provider returned no services."}`);
+  }
+  return { id: serviceId(match), name: serviceName(match) || requested };
 }
 
-async function getProviderPrice({ server, countryId, service }) {
-  if (!server || !countryId || !service) throw new Error("Country, service and server are required.");
-
-  // Resolve the logical service name to the exact provider service ID for this server.
-  const providerService = await getServerServiceId(server, countryId, service);
+async function providerPrice(server, countryId, service) {
+  const svc = await getService(server, countryId, service);
   let data;
-
   if (server === "global-server-2") {
-    // Global Server 2's price endpoint returns a list of service tiers and does not
-    // take country/service query parameters according to the provider documentation.
     data = await sureVerificationRequest("/global-server-2/price");
-  } else if (["usa-server-1", "usa-server-2", "global-server-1"].includes(server)) {
-    data = await sureVerificationRequest(
-      `/${server}/price?country_id=${q(countryId)}&service=${q(providerService.id)}`
-    );
   } else {
-    throw new Error("Invalid provider server.");
+    data = await sureVerificationRequest(`/${server}/price?country_id=${q(countryId)}&service=${q(svc.id)}`);
   }
-
-  const price = extractPrice(data, providerService.id, providerService.name);
-  if (!Number.isFinite(price) || price <= 0) {
-    throw new Error(`Provider returned no price for ${providerService.name} (${providerService.id}) on ${server}.`);
-  }
-
-  return { price, providerService, raw: data };
+  const price = extractPrice(data, svc.id, svc.name);
+  if (price == null) throw new Error(`Provider returned a successful response but no price for ${svc.name} (${svc.id}) on ${server}.`);
+  return { price, service: svc, raw: data };
 }
 
 export default async function handler(req, res) {
+  if (req.method !== "GET") return res.status(405).json({ success:false, error:"Method not allowed." });
+  const countryId = String(req.query?.countryId || "").trim();
+  const countryName = String(req.query?.countryName || "").trim();
+  const service = String(req.query?.service || "").trim();
+  const server = String(req.query?.server || "").trim();
+  if (!countryId || !service || !server) return res.status(400).json({success:false,error:"countryId, service and server are required."});
+
   try {
-    if (req.method !== "GET") return res.status(405).json({ success: false, error: "Method not allowed." });
-
-    const countryId = String(req.query?.countryId || "").trim();
-    const countryName = String(req.query?.countryName || "").trim();
-    const service = String(req.query?.service || "").trim();
-    const server = String(req.query?.server || "").trim();
-
-    if (!countryId || !service || !server) {
-      return res.status(400).json({ success: false, error: "countryId, service and server are required." });
-    }
-
-    const result = await getProviderPrice({ server, countryId, service });
-    let selling_price = null;
-
-    try {
-      const rows = await supabaseRequest(
-        `product_prices?country_id=eq.${q(countryId)}&service_id=eq.${q(result.providerService.id)}&select=selling_price&limit=1`
-      );
-      selling_price = rows?.[0]?.selling_price ?? null;
-    } catch (_) {}
-
-    return res.status(200).json({
-      success: true,
-      countryId,
-      countryName,
-      service,
-      server,
-      provider_service_id: result.providerService.id,
-      provider_service_name: result.providerService.name,
-      provider_price: result.price,
-      selling_price,
-      raw: result.raw
-    });
-  } catch (error) {
-    console.error("Provider price error:", error);
-    return res.status(502).json({ success: false, error: error?.message || "Unable to load provider price." });
+    const result = await providerPrice(server, countryId, service);
+    return res.status(200).json({success:true,countryId,countryName,service,server,provider_service_id:result.service.id,provider_service_name:result.service.name,provider_price:result.price});
+  } catch (err) {
+    const message = jsonError(err?.message || err, "Unable to load provider price.");
+    console.error("Provider price error", {server,countryId,service,error:message});
+    return res.status(502).json({success:false,error:message,server,countryId,service});
   }
 }
