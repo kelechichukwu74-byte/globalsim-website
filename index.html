@@ -1792,7 +1792,7 @@
                     <select
                       id="serviceSelect"
                       class="form-control"
-                      onchange="handleCustomerServiceChange()"
+                      onchange="updatePurchasePreview()"
                     >
 
                       <option value="">
@@ -1800,30 +1800,6 @@
                       </option>
 
                     </select>
-
-                  </div>
-
-                  <div class="form-group">
-
-                    <label for="purchaseServerSelect">
-                      Server Option
-                    </label>
-
-                    <select
-                      id="purchaseServerSelect"
-                      class="form-control"
-                      onchange="updatePurchasePreview()"
-                      disabled
-                    >
-                      <option value="">
-                        Select a service first
-                      </option>
-                    </select>
-
-                    <div
-                      id="purchaseServerStatus"
-                      style="margin-top:6px;font-size:11px;color:#64748b;"
-                    ></div>
 
                   </div>
 
@@ -1861,18 +1837,6 @@
                       </span>
 
                       <strong id="previewService">
-                        —
-                      </strong>
-
-                    </div>
-
-                    <div class="price-preview-row">
-
-                      <span>
-                        Server
-                      </span>
-
-                      <strong id="previewServer">
                         —
                       </strong>
 
@@ -4539,6 +4503,7 @@
         });
 
         renderBuyServices(buyServicesCache);
+        loadCustomerProviderServers();
 
         if (!buyServicesCache.length) {
           serviceSelect.innerHTML =
@@ -4589,102 +4554,6 @@
       }).join(" | ");
     }
 
-    function getServerLabel(server) {
-
-      const labels = {
-        "usa-server-1": "USA Server 1",
-        "usa-server-2": "USA Server 2",
-        "global-server-1": "Global Server 1",
-        "global-server-2": "Global Server 2"
-      };
-
-      return labels[server] || server;
-    }
-
-    function getServiceServerOptions(service) {
-
-      const order = [
-        "usa-server-1",
-        "usa-server-2",
-        "global-server-1",
-        "global-server-2"
-      ];
-
-      return order
-        .filter(server => {
-          const provider = service?.providers?.[server];
-          const price = service?.prices?.[server];
-
-          return Boolean(
-            provider &&
-            price &&
-            Number.isFinite(Number(price.price)) &&
-            Number(price.price) > 0
-          );
-        })
-        .map(server => {
-          const price = service.prices[server];
-          const provider = service.providers[server];
-
-          return {
-            server,
-            label: getServerLabel(server),
-            price: Number(price.price),
-            serviceId: String(
-              price.serviceId ||
-              provider.id ||
-              ""
-            ),
-            serviceName: price.serviceName || service.name
-          };
-        });
-    }
-
-    function renderBuyServerOptions(service) {
-
-      const serverSelect = $("purchaseServerSelect");
-      const status = $("purchaseServerStatus");
-
-      if (!serverSelect) return;
-
-      const options = getServiceServerOptions(service);
-
-      if (!options.length) {
-        serverSelect.innerHTML =
-          '<option value="">No server price available</option>';
-        serverSelect.disabled = true;
-        if (status) {
-          status.textContent =
-            "No server has a selling price set for this service.";
-        }
-        return;
-      }
-
-      const preferred =
-        service.purchaseServer &&
-        options.some(option => option.server === service.purchaseServer)
-          ? service.purchaseServer
-          : options[0].server;
-
-      serverSelect.disabled = false;
-      serverSelect.innerHTML =
-        '<option value="">Select a server</option>' +
-        options.map(option => `
-          <option value="${escapeHtml(option.server)}"
-            data-price="${escapeHtml(String(option.price))}"
-            data-service-id="${escapeHtml(option.serviceId)}">
-            ${escapeHtml(option.label)} — ${escapeHtml(formatMoney(option.price))}
-          </option>
-        `).join("");
-
-      serverSelect.value = preferred;
-
-      if (status) {
-        status.textContent =
-          `${options.length} server option${options.length === 1 ? "" : "s"} available.`;
-      }
-    }
-
     function renderBuyServices(list) {
 
       const serviceSelect = $("serviceSelect");
@@ -4699,34 +4568,23 @@
 
         option.value = String(index);
 
-        option.textContent = service.name;
+        option.textContent =
+          `${service.name} — ${formatServerPriceList(service)}`;
+
         option.dataset.serviceName = service.name;
-        option.dataset.raw = JSON.stringify(service);
+        option.dataset.price =
+          service.purchasePrice != null
+            ? service.purchasePrice
+            : "";
+        option.dataset.server =
+          service.purchaseServer || "";
+        option.dataset.providerServiceId =
+          service.purchaseServiceId || "";
+        option.dataset.raw =
+          JSON.stringify(service);
 
         serviceSelect.appendChild(option);
       });
-
-      const serverSelect = $("purchaseServerSelect");
-
-      if (!list.length) {
-        if (serverSelect) {
-          serverSelect.innerHTML =
-            '<option value="">Select a service first</option>';
-          serverSelect.disabled = true;
-        }
-        return;
-      }
-
-      const first = serviceSelect.options[1];
-
-      if (first) {
-        serviceSelect.value = first.value;
-        let firstService = null;
-        try {
-          firstService = JSON.parse(first.dataset.raw || "{}");
-        } catch (_) {}
-        renderBuyServerOptions(firstService || {});
-      }
     }
 
     function filterBuyServices() {
@@ -4749,40 +4607,91 @@
       updatePurchasePreview();
     }
 
-    /* =========================================================
-       CUSTOMER SERVICE / SERVER SELECTION
-       ========================================================= */
-
-    function handleCustomerServiceChange() {
+    function ensureCustomerProviderServerSelector() {
 
       const serviceSelect = $("serviceSelect");
-      const serverSelect = $("purchaseServerSelect");
+      if (!serviceSelect) return null;
 
-      const option =
-        serviceSelect?.options?.[serviceSelect.selectedIndex];
+      let selector = $("customerProviderServer");
+
+      if (selector) return selector;
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "form-group";
+      wrapper.id = "customerProviderServerWrapper";
+      wrapper.style.marginTop = "12px";
+
+      const label = document.createElement("label");
+      label.htmlFor = "customerProviderServer";
+      label.textContent = "Seller / Server";
+
+      selector = document.createElement("select");
+      selector.id = "customerProviderServer";
+      selector.className = "form-control";
+      selector.innerHTML = '<option value="">Select seller / server</option>';
+
+      selector.addEventListener("change", updatePurchasePreview);
+
+      wrapper.appendChild(label);
+      wrapper.appendChild(selector);
+      serviceSelect.parentNode.insertBefore(wrapper, serviceSelect.nextSibling);
+
+      return selector;
+    }
+
+    function loadCustomerProviderServers() {
+
+      const selector = ensureCustomerProviderServerSelector();
+      if (!selector) return;
+
+      const serviceSelect = $("serviceSelect");
+      const previousServer = selector.value || "";
+      const option = serviceSelect?.options[serviceSelect.selectedIndex];
 
       let service = null;
-
       try {
         service = option?.dataset?.raw
           ? JSON.parse(option.dataset.raw)
           : null;
       } catch (_) {}
 
-      if (!service) {
-        if (serverSelect) {
-          serverSelect.innerHTML =
-            '<option value="">Select a service first</option>';
-          serverSelect.disabled = true;
-        }
-        updatePurchasePreview();
-        return;
+      const prices = service?.prices || {};
+      const providers = service?.providers || {};
+      const serverLabels = {
+        "usa-server-1": "USA Server 1",
+        "usa-server-2": "USA Server 2",
+        "global-server-1": "Global Server 1",
+        "global-server-2": "Global Server 2"
+      };
+
+      const rows = Object.keys(prices)
+        .filter(server =>
+          providers[server] &&
+          Number(prices[server]?.price) > 0 &&
+          prices[server]?.serviceId
+        )
+        .map(server => ({
+          server,
+          price: Number(prices[server].price),
+          serviceId: String(prices[server].serviceId),
+          name: serverLabels[server] || server
+        }));
+
+      selector.innerHTML =
+        '<option value="">Select seller / server</option>' +
+        rows.map(row =>
+          `<option value="${escapeHtml(row.server)}" data-price="${row.price}" data-service-id="${escapeHtml(row.serviceId)}">${escapeHtml(row.name)} — ${formatMoney(row.price)}</option>`
+        ).join("");
+
+      const currentServer = previousServer || service?.selectedServer || "";
+      if (currentServer && rows.some(row => row.server === currentServer)) {
+        selector.value = currentServer;
       }
 
-      renderBuyServerOptions(service);
-      updatePurchasePreview();
+      if (!selector.value && rows.length === 1) {
+        selector.value = rows[0].server;
+      }
     }
-
 
     /* =========================================================
        PURCHASE PREVIEW
@@ -4792,7 +4701,6 @@
 
       const countrySelect = $("countrySelect");
       const serviceSelect = $("serviceSelect");
-      const serverSelect = $("purchaseServerSelect");
 
       const countryOption =
         countrySelect.options[countrySelect.selectedIndex];
@@ -4818,22 +4726,17 @@
           : null;
       } catch (_) {}
 
-      const serverOption =
-        serverSelect?.options?.[serverSelect.selectedIndex];
+      loadCustomerProviderServers();
 
-      const price =
-        serverOption?.dataset?.price ||
-        "";
+      const serverSelect = $("customerProviderServer");
+      const selectedServer = serverSelect?.value || "";
+      const selectedServerPrice = selectedServer
+        ? Number(service?.prices?.[selectedServer]?.price)
+        : NaN;
 
-      const serverName =
-        serverOption?.textContent?.trim() ||
-        "—";
-
-      const previewServer = $("previewServer");
-
-      if (previewServer) {
-        previewServer.textContent = serverName;
-      }
+      const price = Number.isFinite(selectedServerPrice) && selectedServerPrice > 0
+        ? selectedServerPrice
+        : null;
 
       $("previewPrice").textContent =
         price !== undefined &&
@@ -4845,10 +4748,8 @@
       $("purchaseButton").disabled =
         !countrySelect.value ||
         !serviceOption?.value ||
-        !serverSelect?.value ||
         !price ||
-        Number(price) <= 0 ||
-        !service;
+        Number(price) <= 0;
     }
 
     /* =========================================================
@@ -4926,44 +4827,30 @@
       } catch (_) {}
 
 
-      const serverSelect =
-        $("purchaseServerSelect");
-
-      const serverOption =
-        serverSelect?.options?.[serverSelect.selectedIndex];
-
+      const serverSelect = $("customerProviderServer");
       const selectedProviderServer =
-        String(serverSelect?.value || "").trim();
+        serverSelect?.value ||
+        "";
 
-      const serviceCountryPriceId =
-        String(
-          serverOption?.dataset?.serviceId ||
-          serviceData.prices?.[selectedProviderServer]?.serviceId ||
-          serviceData.providers?.[selectedProviderServer]?.id ||
-          ""
-        ).trim();
-
-      if (!selectedProviderServer || !serviceCountryPriceId) {
-        showToast(
-          "Select a server option before purchasing.",
-          "error"
-        );
+      if (!selectedProviderServer) {
+        showToast("Select the seller / server you want first.", "error");
         return;
       }
 
-      const selectedPrice = Number(
-        serverOption?.dataset?.price ||
-        serviceData.prices?.[selectedProviderServer]?.price ||
-        0
-      );
+      const selectedServerRow =
+        serviceData?.prices?.[selectedProviderServer] || null;
 
-      if (!Number.isFinite(selectedPrice) || selectedPrice <= 0) {
-        showToast(
-          "The selected server does not have a valid selling price.",
-          "error"
-        );
+      const selectedProviderServiceId =
+        selectedServerRow?.serviceId ||
+        serviceOption.dataset.providerServiceId ||
+        "";
+
+      if (!selectedProviderServiceId) {
+        showToast("The selected seller / server is not configured for this service.", "error");
         return;
       }
+
+      const serviceCountryPriceId = selectedProviderServiceId;
 
 
       const button =
@@ -5007,7 +4894,7 @@
 
               quantity: 1,
 
-              autoSearchServer: true,
+              autoSearchServer: false,
 
               providerServer: selectedProviderServer,
 
