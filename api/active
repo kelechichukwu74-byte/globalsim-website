@@ -11,6 +11,8 @@ const SUPABASE_PUBLISHABLE_KEY =
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+const SMS_HOLD_MS = 60 * 1000;
+
 function quote(value) {
   return encodeURIComponent(String(value ?? ""));
 }
@@ -21,11 +23,9 @@ function getBearerToken(req) {
     req.headers?.Authorization ||
     "";
 
-  if (!header.startsWith("Bearer ")) {
-    return null;
-  }
-
-  return header.slice(7).trim();
+  return header.startsWith("Bearer ")
+    ? header.slice(7).trim()
+    : null;
 }
 
 async function getAuthenticatedUser(req) {
@@ -111,8 +111,7 @@ async function hasRefund(orderId) {
     `wallet_transactions` +
     `?type=eq.refund` +
     `&reference_id=eq.${quote(orderId)}` +
-    `&select=id,amount,created_at` +
-    `&limit=1`
+    `&select=id&limit=1`
   );
 
   return Boolean(rows?.length);
@@ -122,7 +121,6 @@ async function refundExpiredOrder(order) {
   if (!order?.id || !order?.user_id) {
     return {
       refunded: false,
-      alreadyRefunded: false,
       amount: 0
     };
   }
@@ -130,7 +128,6 @@ async function refundExpiredOrder(order) {
   if (await hasRefund(order.id)) {
     return {
       refunded: true,
-      alreadyRefunded: true,
       amount: Number(order.customer_price || 0)
     };
   }
@@ -141,7 +138,6 @@ async function refundExpiredOrder(order) {
   if (!Number.isFinite(amount) || amount <= 0) {
     return {
       refunded: false,
-      alreadyRefunded: false,
       amount: 0
     };
   }
@@ -155,16 +151,13 @@ async function refundExpiredOrder(order) {
   const wallet = walletRows?.[0];
 
   if (!wallet) {
-    await supabaseRequest(
-      "wallets",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          user_id: order.user_id,
-          balance: amount
-        })
-      }
-    );
+    await supabaseRequest("wallets", {
+      method: "POST",
+      body: JSON.stringify({
+        user_id: order.user_id,
+        balance: amount
+      })
+    });
 
     await supabaseRequest(
       "wallet_transactions",
@@ -185,7 +178,6 @@ async function refundExpiredOrder(order) {
 
     return {
       refunded: true,
-      alreadyRefunded: false,
       amount
     };
   }
@@ -193,8 +185,7 @@ async function refundExpiredOrder(order) {
   const before =
     Number(wallet.balance || 0);
 
-  const after =
-    before + amount;
+  const after = before + amount;
 
   await supabaseRequest(
     `wallets?user_id=eq.${quote(order.user_id)}`,
@@ -227,7 +218,6 @@ async function refundExpiredOrder(order) {
 
   return {
     refunded: true,
-    alreadyRefunded: false,
     amount
   };
 }
@@ -236,46 +226,55 @@ async function markExpired(order) {
   const refund =
     await refundExpiredOrder(order);
 
-  await supabaseRequest(
-    `orders?id=eq.${quote(order.id)}` +
-    `&user_id=eq.${quote(order.user_id)}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify({
-        status: "expired",
-        updated_at:
-          new Date().toISOString()
-      })
-    }
-  );
+  const rows =
+    await supabaseRequest(
+      `orders?id=eq.${quote(order.id)}` +
+      `&user_id=eq.${quote(order.user_id)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          status: "expired",
+          updated_at:
+            new Date().toISOString()
+        })
+      }
+    );
 
   return {
-    ...order,
+    ...(rows?.[0] || order),
     status: "expired",
     refund
   };
 }
 
 /*
- * Get SMS directly from SureVerification.
+ * Provider verification ID.
  *
- * The provider verification ID is preferred.
- * provider_order_id is used as fallback because
- * your existing orders may have request_id stored there.
+ * The SureVerification SMS endpoint requires:
+ *
+ * /verifications/sms/:verificationId
+ *
+ * Prefer provider_verification_id.
+ * Fall back to provider_order_id for existing orders.
  */
-async function getVerificationSms(order) {
-  const verificationId =
+function getVerificationId(order) {
+  return String(
     order?.provider_verification_id ||
     order?.provider_order_id ||
-    "";
+    ""
+  ).trim();
+}
+
+async function getProviderSms(order) {
+  const verificationId =
+    getVerificationId(order);
 
   if (!verificationId) {
     return {
-      sms: null,
       code: null,
-      sms_received: false,
-      sms_list: [],
-      sms_error: "Verification ID is missing."
+      sms: null,
+      received: false,
+      error: "Verification ID is missing."
     };
   }
 
@@ -283,39 +282,30 @@ async function getVerificationSms(order) {
     const data =
       await sureVerificationRequest(
         `/verifications/sms/${encodeURIComponent(
-          String(verificationId)
+          verificationId
         )}`
       );
 
-    const smsList =
+    const list =
       Array.isArray(data?.sms)
         ? data.sms
         : [];
 
-    if (!smsList.length) {
-      return {
-        sms: null,
-        code: null,
-        sms_received: false,
-        sms_list: [],
-        sms_error: null
-      };
-    }
-
-    const latestSms =
-      smsList[smsList.length - 1];
+    const latest =
+      list.length
+        ? list[list.length - 1]
+        : null;
 
     const code =
-      latestSms?.formatted ||
-      latestSms?.raw ||
+      latest?.formatted ||
+      latest?.raw ||
       null;
 
     return {
-      sms: code,
       code,
-      sms_received: Boolean(code),
-      sms_list: smsList,
-      sms_error: null
+      sms: code,
+      received: Boolean(code),
+      error: null
     };
 
   } catch (error) {
@@ -325,48 +315,54 @@ async function getVerificationSms(order) {
     );
 
     return {
-      sms: null,
       code: null,
-      sms_received: false,
-      sms_list: [],
-      sms_error:
+      sms: null,
+      received: false,
+      error:
         error?.message ||
         "Unable to retrieve SMS."
     };
   }
 }
 
-async function completeOrder(order, userId) {
-  if (!order?.id) {
-    throw new Error("Order ID is required.");
-  }
+async function markSmsReceived(order) {
+  const now =
+    new Date().toISOString();
 
-  if (order.user_id !== userId) {
-    throw new Error("Unauthorized.");
-  }
+  const rows =
+    await supabaseRequest(
+      `orders?id=eq.${quote(order.id)}` +
+      `&user_id=eq.${quote(order.user_id)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          status: "sms_received",
+          updated_at: now
+        })
+      }
+    );
 
-  const status =
-    String(order.status || "").toLowerCase();
+  return rows?.[0] || {
+    ...order,
+    status: "sms_received",
+    updated_at: now
+  };
+}
 
-  if (
-    !["active", "pending"].includes(status)
-  ) {
-    return order;
-  }
-
-  const rows = await supabaseRequest(
-    `orders?id=eq.${quote(order.id)}` +
-    `&user_id=eq.${quote(userId)}` +
-    `&select=*`,
-    {
-      method: "PATCH",
-      body: JSON.stringify({
-        status: "completed",
-        updated_at:
-          new Date().toISOString()
-      })
-    }
-  );
+async function completeOrder(order) {
+  const rows =
+    await supabaseRequest(
+      `orders?id=eq.${quote(order.id)}` +
+      `&user_id=eq.${quote(order.user_id)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          status: "completed",
+          updated_at:
+            new Date().toISOString()
+        })
+      }
+    );
 
   return rows?.[0] || {
     ...order,
@@ -374,13 +370,76 @@ async function completeOrder(order, userId) {
   };
 }
 
-export default async function handler(req, res) {
+function formatNumber(order, sms = {}) {
+  return {
+    id: order.id,
 
-  /*
-   * GET
-   * Loads active numbers AND checks SureVerification
-   * for a received SMS code.
-   */
+    order_id:
+      order.id,
+
+    provider_order_id:
+      order.provider_order_id,
+
+    provider_verification_id:
+      order.provider_verification_id,
+
+    verification_id:
+      getVerificationId(order),
+
+    phone_number:
+      order.phone_number,
+
+    number:
+      order.phone_number,
+
+    service_name:
+      order.service_name,
+
+    service:
+      order.service_name,
+
+    country_name:
+      order.country_name,
+
+    status:
+      order.status,
+
+    customer_price:
+      Number(order.customer_price || 0),
+
+    selling_price:
+      Number(order.customer_price || 0),
+
+    provider_cost:
+      Number(order.provider_cost || 0),
+
+    created_at:
+      order.created_at,
+
+    updated_at:
+      order.updated_at,
+
+    provider_expired_at:
+      order.provider_expired_at,
+
+    expired_at:
+      order.provider_expired_at,
+
+    sms:
+      sms.sms || null,
+
+    code:
+      sms.code || null,
+
+    sms_received:
+      Boolean(sms.received),
+
+    sms_error:
+      sms.error || null
+  };
+}
+
+export default async function handler(req, res) {
 
   if (req.method === "GET") {
 
@@ -399,24 +458,61 @@ export default async function handler(req, res) {
       const activeNumbers = [];
       const expiredNumbers = [];
 
-      for (const order of orders || []) {
+      for (const originalOrder of orders || []) {
+
+        let order = originalOrder;
 
         const status =
-          String(
-            order.status || ""
-          ).toLowerCase();
+          String(order.status || "")
+            .toLowerCase();
+
+        /*
+         * Already received SMS.
+         *
+         * Keep it visible for exactly 1 minute,
+         * then move it to Order History.
+         */
+        if (status === "sms_received") {
+
+          const receivedAt =
+            new Date(order.updated_at);
+
+          const elapsed =
+            Date.now() -
+            receivedAt.getTime();
+
+          if (
+            !Number.isNaN(
+              receivedAt.getTime()
+            ) &&
+            elapsed >= SMS_HOLD_MS
+          ) {
+
+            await completeOrder(order);
+
+            continue;
+          }
+
+          const sms =
+            await getProviderSms(order);
+
+          activeNumbers.push(
+            formatNumber(order, sms)
+          );
+
+          continue;
+        }
 
         if (
-          !["active", "pending"].includes(status)
+          !["active", "pending"]
+            .includes(status)
         ) {
           continue;
         }
 
         /*
-         * Check exact provider expiry time.
+         * Exact provider expiry time.
          */
-        let expired = false;
-
         const expiresAt =
           order.provider_expired_at
             ? new Date(
@@ -428,22 +524,15 @@ export default async function handler(req, res) {
           expiresAt &&
           !Number.isNaN(
             expiresAt.getTime()
-          )
+          ) &&
+          expiresAt.getTime() <= Date.now()
         ) {
-          expired =
-            expiresAt.getTime() <= Date.now();
-        }
 
-        /*
-         * Provider number has expired.
-         */
-        if (expired) {
-
-          const expiredOrder =
+          const expired =
             await markExpired(order);
 
           expiredNumbers.push({
-            ...expiredOrder,
+            ...expired,
 
             order_id:
               order.id,
@@ -469,11 +558,11 @@ export default async function handler(req, res) {
             status: "expired",
 
             refunded:
-              expiredOrder.refund?.refunded ||
+              expired.refund?.refunded ||
               false,
 
             refund_amount:
-              expiredOrder.refund?.amount ||
+              expired.refund?.amount ||
               0
           });
 
@@ -481,93 +570,33 @@ export default async function handler(req, res) {
         }
 
         /*
-         * IMPORTANT:
-         * Ask SureVerification for SMS.
+         * Poll SureVerification for SMS.
          */
         const sms =
-          await getVerificationSms(order);
+          await getProviderSms(order);
 
-        activeNumbers.push({
+        /*
+         * SMS arrived.
+         *
+         * Change status to sms_received.
+         * updated_at becomes the exact beginning
+         * of the one-minute Active timer.
+         */
+        if (sms.received) {
 
-          id:
-            order.id,
+          order =
+            await markSmsReceived(order);
 
-          order_id:
-            order.id,
+          activeNumbers.push(
+            formatNumber(order, sms)
+          );
 
-          provider_order_id:
-            order.provider_order_id,
+          continue;
+        }
 
-          provider_verification_id:
-            order.provider_verification_id,
-
-          verification_id:
-            order.provider_verification_id ||
-            order.provider_order_id,
-
-          phone_number:
-            order.phone_number,
-
-          number:
-            order.phone_number,
-
-          service_name:
-            order.service_name,
-
-          service:
-            order.service_name,
-
-          country_name:
-            order.country_name,
-
-          status:
-            order.status,
-
-          customer_price:
-            Number(
-              order.customer_price || 0
-            ),
-
-          selling_price:
-            Number(
-              order.customer_price || 0
-            ),
-
-          provider_cost:
-            Number(
-              order.provider_cost || 0
-            ),
-
-          created_at:
-            order.created_at,
-
-          updated_at:
-            order.updated_at,
-
-          provider_expired_at:
-            order.provider_expired_at,
-
-          expired_at:
-            order.provider_expired_at,
-
-          /*
-           * SMS information
-           */
-          sms:
-            sms.sms,
-
-          code:
-            sms.code,
-
-          sms_received:
-            sms.sms_received,
-
-          sms_list:
-            sms.sms_list,
-
-          sms_error:
-            sms.sms_error || null
-        });
+        activeNumbers.push(
+          formatNumber(order, sms)
+        );
       }
 
       return res.status(200).json({
@@ -610,10 +639,8 @@ export default async function handler(req, res) {
 
   /*
    * POST
-   * Moves a number from Active Numbers
-   * to Order History after SMS is received.
-   *
-   * NO REFUND.
+   * Manual move to Order History.
+   * No refund.
    */
 
   if (req.method === "POST") {
@@ -638,7 +665,8 @@ export default async function handler(req, res) {
       if (!orderId) {
         return res.status(400).json({
           success: false,
-          error: "Order ID is required."
+          error:
+            "Order ID is required."
         });
       }
 
@@ -660,19 +688,13 @@ export default async function handler(req, res) {
       }
 
       const completed =
-        await completeOrder(
-          order,
-          user.id
-        );
+        await completeOrder(order);
 
       return res.status(200).json({
         success: true,
-
         message:
           "Number moved to order history.",
-
-        order:
-          completed
+        order: completed
       });
 
     } catch (error) {
