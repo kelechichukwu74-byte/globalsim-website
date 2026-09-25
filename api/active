@@ -1,3 +1,5 @@
+import { sureVerificationRequest } from "./_lib.js";
+
 const SUPABASE_URL =
   process.env.SUPABASE_URL ||
   "https://rfitbmkizfmwfqqskwhy.supabase.co";
@@ -254,6 +256,86 @@ async function markExpired(order) {
   };
 }
 
+/*
+ * Get SMS directly from SureVerification.
+ *
+ * The provider verification ID is preferred.
+ * provider_order_id is used as fallback because
+ * your existing orders may have request_id stored there.
+ */
+async function getVerificationSms(order) {
+  const verificationId =
+    order?.provider_verification_id ||
+    order?.provider_order_id ||
+    "";
+
+  if (!verificationId) {
+    return {
+      sms: null,
+      code: null,
+      sms_received: false,
+      sms_list: [],
+      sms_error: "Verification ID is missing."
+    };
+  }
+
+  try {
+    const data =
+      await sureVerificationRequest(
+        `/verifications/sms/${encodeURIComponent(
+          String(verificationId)
+        )}`
+      );
+
+    const smsList =
+      Array.isArray(data?.sms)
+        ? data.sms
+        : [];
+
+    if (!smsList.length) {
+      return {
+        sms: null,
+        code: null,
+        sms_received: false,
+        sms_list: [],
+        sms_error: null
+      };
+    }
+
+    const latestSms =
+      smsList[smsList.length - 1];
+
+    const code =
+      latestSms?.formatted ||
+      latestSms?.raw ||
+      null;
+
+    return {
+      sms: code,
+      code,
+      sms_received: Boolean(code),
+      sms_list: smsList,
+      sms_error: null
+    };
+
+  } catch (error) {
+    console.error(
+      "SureVerification SMS error:",
+      error
+    );
+
+    return {
+      sms: null,
+      code: null,
+      sms_received: false,
+      sms_list: [],
+      sms_error:
+        error?.message ||
+        "Unable to retrieve SMS."
+    };
+  }
+}
+
 async function completeOrder(order, userId) {
   if (!order?.id) {
     throw new Error("Order ID is required.");
@@ -296,7 +378,8 @@ export default async function handler(req, res) {
 
   /*
    * GET
-   * Loads the user's active numbers.
+   * Loads active numbers AND checks SureVerification
+   * for a received SMS code.
    */
 
   if (req.method === "GET") {
@@ -329,6 +412,9 @@ export default async function handler(req, res) {
           continue;
         }
 
+        /*
+         * Check exact provider expiry time.
+         */
         let expired = false;
 
         const expiresAt =
@@ -348,6 +434,9 @@ export default async function handler(req, res) {
             expiresAt.getTime() <= Date.now();
         }
 
+        /*
+         * Provider number has expired.
+         */
         if (expired) {
 
           const expiredOrder =
@@ -355,23 +444,34 @@ export default async function handler(req, res) {
 
           expiredNumbers.push({
             ...expiredOrder,
-            order_id: order.id,
+
+            order_id:
+              order.id,
+
             phone_number:
               order.phone_number,
+
             service_name:
               order.service_name,
+
             country_name:
               order.country_name,
+
             provider_verification_id:
               order.provider_verification_id,
+
             provider_order_id:
               order.provider_order_id,
+
             expired_at:
               order.provider_expired_at,
+
             status: "expired",
+
             refunded:
               expiredOrder.refund?.refunded ||
               false,
+
             refund_amount:
               expiredOrder.refund?.amount ||
               0
@@ -380,10 +480,20 @@ export default async function handler(req, res) {
           continue;
         }
 
-        activeNumbers.push({
-          id: order.id,
+        /*
+         * IMPORTANT:
+         * Ask SureVerification for SMS.
+         */
+        const sms =
+          await getVerificationSms(order);
 
-          order_id: order.id,
+        activeNumbers.push({
+
+          id:
+            order.id,
+
+          order_id:
+            order.id,
 
           provider_order_id:
             order.provider_order_id,
@@ -392,7 +502,8 @@ export default async function handler(req, res) {
             order.provider_verification_id,
 
           verification_id:
-            order.provider_verification_id,
+            order.provider_verification_id ||
+            order.provider_order_id,
 
           phone_number:
             order.phone_number,
@@ -437,7 +548,25 @@ export default async function handler(req, res) {
             order.provider_expired_at,
 
           expired_at:
-            order.provider_expired_at
+            order.provider_expired_at,
+
+          /*
+           * SMS information
+           */
+          sms:
+            sms.sms,
+
+          code:
+            sms.code,
+
+          sms_received:
+            sms.sms_received,
+
+          sms_list:
+            sms.sms_list,
+
+          sms_error:
+            sms.sms_error || null
         });
       }
 
@@ -478,7 +607,6 @@ export default async function handler(req, res) {
       });
     }
   }
-
 
   /*
    * POST
@@ -539,9 +667,12 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         success: true,
+
         message:
           "Number moved to order history.",
-        order: completed
+
+        order:
+          completed
       });
 
     } catch (error) {
@@ -559,7 +690,6 @@ export default async function handler(req, res) {
       });
     }
   }
-
 
   return res.status(405).json({
     success: false,
