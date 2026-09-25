@@ -2515,7 +2515,7 @@
                   <div class="form-group">
                     <label for="adminPricingServiceSearch">Service</label>
                     <input id="adminPricingServiceSearch" type="search" class="form-control" placeholder="Search service..." autocomplete="off" disabled oninput="filterAdminPricingServices()" />
-                    <select id="adminPricingService" class="form-control" onchange="loadAdminPricingProviderPrice()">
+                    <select id="adminPricingService" class="form-control" onchange="adminPricingServiceChanged()">
                       <option value="">Select a service</option>
                     </select>
                   </div>
@@ -5954,6 +5954,21 @@
       }
     }
 
+    function adminPricingServiceChanged() {
+      const serviceSelect = $("adminPricingService");
+      const serviceOption = serviceSelect?.options[serviceSelect.selectedIndex];
+      adminPricingSelectedProviderServiceId = String(serviceOption?.value || "").trim();
+      adminPricingSelectedProviderServiceName = String(
+        serviceOption?.dataset?.name || serviceOption?.textContent || ""
+      ).trim();
+      const status = $("adminPricingStatus");
+      if (status) {
+        status.textContent = serviceSelect?.value
+          ? "Enter the selling price and tap Save Price."
+          : "Select a service.";
+      }
+    }
+
     async function loadAdminPricingServices() {
       const countrySelect = $("adminPricingCountry");
       const serviceSelect = $("adminPricingService");
@@ -6017,7 +6032,7 @@
         adminPricingSelectedProviderServiceId = "";
         adminPricingSelectedProviderServiceName = "";
         if (providerInput) providerInput.value = "";
-        if (status) status.textContent = "Select a service to load the provider price.";
+        if (status) status.textContent = "Select a service and enter the selling price.";
 
       } catch (error) {
         console.error("Admin pricing services error:", error);
@@ -6158,7 +6173,7 @@
             serviceName: serviceOption?.dataset?.name || serviceOption?.textContent?.trim() || "",
             sellingPrice,
             providerServer: server,
-            providerServiceId: adminPricingSelectedProviderServiceId || serviceId
+            providerServiceId: serviceId
           })
         });
 
