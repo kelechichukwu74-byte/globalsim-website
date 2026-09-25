@@ -1,125 +1,61 @@
 // api/Active.js
 
-import {
-  sureVerificationRequest
-} from "./_lib.js";
-
 const SUPABASE_URL =
   process.env.SUPABASE_URL ||
-  "https://rfitbmkizfmwfqqskwhy.supabase.co";
+  "https://jvfpbqzndxqzvsygqvpg.supabase.co";
 
 const SUPABASE_PUBLISHABLE_KEY =
-  process.env.SUPABASE_PUBLISHABLE_KEY ||
-  "sb_publishable_erjKhsDOoyhbHDExvQ7RQ_gpGcK0C-";
+  process.env.SUPABASE_ANON_KEY ||
+  "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
 
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+const SURE_BASE_URL = "https://sureverifications.com/api/v1";
 
-function quote(value) {
-  return encodeURIComponent(
-    String(value ?? "")
-  );
+const ALLOWED_SERVERS = new Set([
+  "usa-server-1",
+  "usa-server-2",
+  "global-server-1",
+  "global-server-2"
+]);
+
+function parseProviderDate(value) {
+  if (!value) return null;
+
+  const text = String(value).trim();
+
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(text)) {
+    return new Date(text.replace(" ", "T") + "Z");
+  }
+
+  const date = new Date(text);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
-
-function getBearerToken(req) {
-  const header =
-    req.headers?.authorization ||
-    req.headers?.Authorization ||
-    "";
-
-  if (!header.startsWith("Bearer ")) {
-    return null;
-  }
-
-  return header.slice(7).trim();
+function json(res, status, data) {
+  res.status(status).json(data);
 }
 
+async function supabaseRequest(path, options = {}) {
+  const response = await fetch(`${SUPABASE_URL}${path}`, {
+    method: options.method || "GET",
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    },
+    ...(options.body !== undefined ? { body: options.body } : {})
+  });
 
-async function getAuthenticatedUser(req) {
-  const token =
-    getBearerToken(req);
-
-  if (!token) {
-    throw new Error("Unauthorized.");
-  }
-
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/auth/v1/user`,
-      {
-        headers: {
-          apikey:
-            SUPABASE_PUBLISHABLE_KEY,
-          Authorization:
-            `Bearer ${token}`,
-          Accept:
-            "application/json"
-        }
-      }
-    );
-
-  if (!response.ok) {
-    throw new Error("Unauthorized.");
-  }
-
-  const user =
-    await response.json();
-
-  if (!user?.id) {
-    throw new Error("Unauthorized.");
-  }
-
-  return user;
-}
-
-
-async function supabaseRequest(
-  path,
-  options = {}
-) {
-  if (!SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not configured."
-    );
-  }
-
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/${path}`,
-      {
-        ...options,
-        headers: {
-          apikey:
-            SUPABASE_SERVICE_ROLE_KEY,
-          Authorization:
-            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          "Content-Type":
-            "application/json",
-          Accept:
-            "application/json",
-          Prefer:
-            "return=representation",
-          ...(options.headers || {})
-        }
-      }
-    );
-
-  const text =
-    await response.text();
+  const text = await response.text();
 
   let data = {};
-
   try {
-    data =
-      text
-        ? JSON.parse(text)
-        : {};
+    data = text ? JSON.parse(text) : {};
   } catch {
-    throw new Error(
-      `Supabase returned invalid JSON (HTTP ${response.status}).`
-    );
+    data = { raw: text };
   }
 
   if (!response.ok) {
@@ -127,678 +63,305 @@ async function supabaseRequest(
       data?.message ||
       data?.error ||
       data?.hint ||
-      data?.details ||
-      `Supabase request failed (HTTP ${response.status}).`
+      `Supabase request failed (${response.status})`
     );
   }
 
   return data;
 }
 
+async function getAuthenticatedUser(req) {
+  const authHeader = req.headers.authorization || "";
 
-/*
- * Provider timestamps returned by
- * SureVerification have this format:
- *
- * YYYY-MM-DD HH:mm:ss
- *
- * Treat the provider timestamp as UTC
- * when no timezone is supplied.
- */
-
-function parseProviderExpiry(value) {
-  if (!value) {
+  if (!authHeader.toLowerCase().startsWith("bearer ")) {
     return null;
   }
 
-  const raw =
-    String(value).trim();
+  const token = authHeader.slice(7).trim();
 
-  if (!raw) {
-    return null;
-  }
+  if (!token) return null;
 
-  if (
-    /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
-      .test(raw)
-  ) {
-    const iso =
-      raw.replace(
-        " ",
-        "T"
-      ) + "Z";
-
-    const date =
-      new Date(iso);
-
-    if (
-      !Number.isNaN(
-        date.getTime()
-      )
-    ) {
-      return date;
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${token}`
     }
-  }
+  });
 
-  const date =
-    new Date(raw);
+  if (!response.ok) return null;
 
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-    return null;
-  }
-
-  return date;
+  return await response.json();
 }
 
+async function providerRequest(path) {
+  const apiKey = process.env.SUREVERIFICATION_API_KEY;
 
-async function getSmsForVerification(
-  verificationId
-) {
-  if (
-    verificationId === null ||
-    verificationId === undefined ||
-    String(verificationId).trim() === ""
-  ) {
-    return {
-      sms: null,
-      smsList: [],
-      received: false
-    };
+  if (!apiKey) {
+    throw new Error("SUREVERIFICATION_API_KEY is not configured.");
   }
+
+  const response = await fetch(`${SURE_BASE_URL}${path}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "x-api-key": apiKey
+    }
+  });
+
+  const text = await response.text();
+
+  let data = {};
 
   try {
-    const data =
-      await sureVerificationRequest(
-        `/verifications/sms/${encodeURIComponent(
-          String(verificationId)
-        )}`
-      );
-
-    const smsList =
-      Array.isArray(
-        data?.sms
-      )
-        ? data.sms
-        : [];
-
-    const latest =
-      smsList.length
-        ? smsList[
-            smsList.length - 1
-          ]
-        : null;
-
-    const code =
-      latest?.formatted ||
-      latest?.raw ||
-      null;
-
-    return {
-      sms:
-        code
-          ? String(code)
-          : null,
-
-      smsList,
-
-      received:
-        Boolean(code)
-    };
-
-  } catch (error) {
-    return {
-      sms: null,
-      smsList: [],
-      received: false,
-      error:
-        error?.message ||
-        "Unable to retrieve SMS."
-    };
-  }
-}
-
-
-/*
- * Try the correct numeric verification ID first.
- *
- * For old orders that were created before this fix,
- * provider_verification_id may be missing.
- *
- * We then try provider_order_id as a compatibility
- * fallback.
- */
-
-async function findSms(order) {
-  const identifiers = [];
-
-  if (
-    order?.provider_verification_id !==
-      null &&
-    order?.provider_verification_id !==
-      undefined &&
-    String(
-      order.provider_verification_id
-    ).trim()
-  ) {
-    identifiers.push(
-      String(
-        order.provider_verification_id
-      ).trim()
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error(
+      `SureVerification returned invalid JSON (HTTP ${response.status}).`
     );
   }
 
-  if (
-    order?.provider_order_id !==
-      null &&
-    order?.provider_order_id !==
-      undefined &&
-    String(
-      order.provider_order_id
-    ).trim()
-  ) {
-    const requestId =
-      String(
-        order.provider_order_id
-      ).trim();
-
-    if (
-      !identifiers.includes(
-        requestId
-      )
-    ) {
-      identifiers.push(
-        requestId
-      );
-    }
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+      data?.error ||
+      `SureVerification returned HTTP ${response.status}.`
+    );
   }
 
-  for (
-    const identifier of identifiers
-  ) {
-    const result =
-      await getSmsForVerification(
-        identifier
-      );
+  return data;
+}
 
-    if (
-      result.received
-    ) {
-      return {
-        ...result,
-        verificationId:
-          identifier
-      };
-    }
-  }
+function extractSms(data) {
+  const list = Array.isArray(data?.sms)
+    ? data.sms
+    : Array.isArray(data?.messages)
+      ? data.messages
+      : Array.isArray(data?.data)
+        ? data.data
+        : [];
+
+  const normalized = list.map((item) => ({
+    from: item?.from ?? null,
+    raw: item?.raw ?? item?.code ?? item?.otp ?? null,
+    formatted:
+      item?.formatted ??
+      item?.code ??
+      item?.otp ??
+      item?.raw ??
+      null,
+    created_at: item?.created_at ?? null
+  }));
+
+  const latest = normalized.length
+    ? normalized[normalized.length - 1]
+    : null;
+
+  const code =
+    latest?.formatted ||
+    latest?.raw ||
+    null;
 
   return {
-    sms: null,
-    smsList: [],
-    received: false,
-    verificationId:
-      identifiers[0] ||
-      null
+    sms: normalized,
+    code,
+    sms_received: Boolean(code),
+    smsCode: code,
+    verificationCode: code,
+    otp: code
   };
 }
 
-
-async function markOrder(
-  orderId,
-  patch
-) {
-  return await supabaseRequest(
-    `orders?id=eq.${quote(
-      orderId
-    )}`,
+async function updateOrder(id, values) {
+  return supabaseRequest(
+    `/rest/v1/orders?id=eq.${encodeURIComponent(id)}`,
     {
       method: "PATCH",
-      body:
-        JSON.stringify(
-          patch
-        )
+      headers: {
+        Prefer: "return=minimal"
+      },
+      body: JSON.stringify(values)
     }
   );
 }
 
-
-/*
- * ---------------------------------------------------------
- * GET ACTIVE NUMBERS
- * ---------------------------------------------------------
- */
-
-async function getActiveOrders(
-  userId
-) {
-  return await supabaseRequest(
-    `orders?user_id=eq.${quote(
-      userId
-    )}&select=*&order=created_at.desc&limit=100`
-  );
-}
-
-
-export default async function handler(
-  req,
-  res
-) {
-  if (
-    req.method !== "GET" &&
-    req.method !== "POST"
-  ) {
-    return res.status(405).json({
+export default async function handler(req, res) {
+  if (req.method !== "GET") {
+    return json(res, 405, {
       success: false,
-      error:
-        "Method not allowed."
+      error: "Method not allowed."
     });
   }
 
   try {
-    const user =
-      await getAuthenticatedUser(
-        req
-      );
-
-    /*
-     * POST:
-     *
-     * Keep compatibility with the existing
-     * Active endpoint.
-     *
-     * This does NOT refund the user.
-     */
-    if (
-      req.method === "POST"
-    ) {
-      const body =
-        typeof req.body === "string"
-          ? JSON.parse(
-              req.body
-            )
-          : (
-              req.body || {}
-            );
-
-      const orderId =
-        body.orderId ||
-        body.order_id ||
-        body.id;
-
-      if (!orderId) {
-        return res.status(400).json({
-          success: false,
-          error:
-            "Order ID is required."
-        });
-      }
-
-      const rows =
-        await supabaseRequest(
-          `orders?id=eq.${quote(
-            orderId
-          )}&user_id=eq.${quote(
-            user.id
-          )}&select=*&limit=1`
-        );
-
-      if (!rows?.length) {
-        return res.status(404).json({
-          success: false,
-          error:
-            "Order not found."
-        });
-      }
-
-      const order =
-        rows[0];
-
-      /*
-       * POST is only used to mark the
-       * order completed manually.
-       *
-       * No refund.
-       */
-      const updated =
-        await markOrder(
-          order.id,
-          {
-            status:
-              "completed",
-            updated_at:
-              new Date().toISOString()
-          }
-        );
-
-      return res.status(200).json({
-        success: true,
-        order:
-          updated?.[0] ||
-          null
+    if (!SUPABASE_SERVICE_ROLE_KEY) {
+      return json(res, 500, {
+        success: false,
+        error: "SUPABASE_SERVICE_ROLE_KEY is not configured."
       });
     }
 
+    const user = await getAuthenticatedUser(req);
 
-    /*
-     * -----------------------------------------------------
-     * GET
-     * -----------------------------------------------------
-     */
+    if (!user?.id) {
+      return json(res, 401, {
+        success: false,
+        error: "Unauthorized."
+      });
+    }
 
-    const orders =
-      await getActiveOrders(
+    const orders = await supabaseRequest(
+      `/rest/v1/orders?user_id=eq.${encodeURIComponent(
         user.id
-      );
+      )}&order=created_at.desc`,
+      {
+        headers: {
+          Accept: "application/json"
+        }
+      }
+    );
 
-    const now =
-      Date.now();
+    const activeOrders = [];
 
-    const active =
-      [];
+    for (const order of Array.isArray(orders) ? orders : []) {
+      const currentStatus = String(order.status || "").toLowerCase();
 
-    for (
-      const order of orders
-    ) {
-      const status =
-        String(
-          order?.status ||
-          ""
-        )
-          .trim()
-          .toLowerCase();
-
-
-      /*
-       * Completed/expired orders
-       * belong to Order History.
-       */
       if (
-        status ===
-          "completed" ||
-        status ===
-          "expired" ||
-        status ===
-          "cancelled" ||
-        status ===
-          "canceled"
+        [
+          "completed",
+          "cancelled",
+          "canceled",
+          "expired",
+          "refunded"
+        ].includes(currentStatus)
       ) {
         continue;
       }
 
+      const expiry = parseProviderDate(order.provider_expired_at);
 
-      /*
-       * ---------------------------------------------------
-       * EXACT PROVIDER EXPIRY
-       * ---------------------------------------------------
-       */
-
-      const expiryDate =
-        parseProviderExpiry(
-          order?.provider_expired_at
-        );
-
-      if (
-        expiryDate &&
-        expiryDate.getTime() <=
-          now
-      ) {
+      if (expiry && Date.now() >= expiry.getTime()) {
         try {
-          await markOrder(
-            order.id,
-            {
-              status:
-                "expired",
-              updated_at:
-                new Date().toISOString()
-            }
-          );
-        } catch (
-          updateError
-        ) {
-          console.error(
-            "Failed to mark expired order:",
-            updateError
-          );
-        }
+          await updateOrder(order.id, {
+            status: "expired",
+            updated_at: new Date().toISOString()
+          });
+        } catch {}
 
         continue;
       }
 
+      const verificationId =
+        order.provider_verification_id ||
+        null;
 
-      /*
-       * ---------------------------------------------------
-       * GET SMS
-       * ---------------------------------------------------
-       */
+      if (!verificationId) {
+        activeOrders.push({
+          ...order,
+          sms: [],
+          code: null,
+          smsCode: null,
+          verificationCode: null,
+          otp: null,
+          sms_received: false,
+          sms_error: "Provider verification ID is missing."
+        });
 
-      const smsResult =
-        await findSms(
-          order
+        continue;
+      }
+
+      let smsResult = {
+        sms: [],
+        code: null,
+        sms_received: false,
+        smsCode: null,
+        verificationCode: null,
+        otp: null
+      };
+
+      let smsError = null;
+
+      try {
+        const providerData = await providerRequest(
+          `/verifications/sms/${encodeURIComponent(
+            verificationId
+          )}`
         );
 
+        smsResult = extractSms(providerData);
+      } catch (error) {
+        smsError = error?.message || "Unable to retrieve SMS.";
+      }
 
-      /*
-       * ---------------------------------------------------
-       * SMS RECEIVED
-       * ---------------------------------------------------
-       *
-       * When the first SMS arrives:
-       *
-       * status = sms_received
-       * updated_at = time SMS was first seen
-       *
-       * The number remains visible for
-       * one minute.
-       */
+      if (smsResult.sms_received) {
+        const firstReceivedAt =
+          parseProviderDate(order.sms_received_at) ||
+          new Date();
 
-      if (
-        smsResult.received
-      ) {
-        let smsReceivedAt =
-          null;
-
-        if (
-          status ===
-          "sms_received"
-        ) {
-          const previous =
-            new Date(
-              order.updated_at
-            );
-
-          if (
-            !Number.isNaN(
-              previous.getTime()
-            )
-          ) {
-            smsReceivedAt =
-              previous;
-          }
+        if (!order.sms_received_at) {
+          try {
+            await updateOrder(order.id, {
+              status: "sms_received",
+              sms_received_at: firstReceivedAt.toISOString(),
+              updated_at: new Date().toISOString()
+            });
+          } catch {}
         }
 
-        /*
-         * First time code is detected.
-         */
-        if (
-          !smsReceivedAt
-        ) {
-          smsReceivedAt =
-            new Date();
+        const removeAt =
+          firstReceivedAt.getTime() + 60 * 1000;
 
+        if (Date.now() >= removeAt) {
           try {
-            const updated =
-              await markOrder(
-                order.id,
-                {
-                  status:
-                    "sms_received",
-                  updated_at:
-                    smsReceivedAt.toISOString()
-                }
-              );
-
-            if (
-              updated?.[0]
-            ) {
-              Object.assign(
-                order,
-                updated[0]
-              );
-            }
-          } catch (
-            updateError
-          ) {
-            console.error(
-              "Failed to save SMS received time:",
-              updateError
-            );
-          }
-        }
-
-
-        const receivedTime =
-          smsReceivedAt.getTime();
-
-        const elapsed =
-          now -
-          receivedTime;
-
-
-        /*
-         * After one minute:
-         * remove from Active,
-         * keep in Order History.
-         */
-        if (
-          elapsed >=
-          60 * 1000
-        ) {
-          try {
-            await markOrder(
-              order.id,
-              {
-                status:
-                  "completed",
-                updated_at:
-                  new Date().toISOString()
-              }
-            );
-          } catch (
-            updateError
-          ) {
-            console.error(
-              "Failed to complete SMS order:",
-              updateError
-            );
-          }
+            await updateOrder(order.id, {
+              status: "completed",
+              updated_at: new Date().toISOString()
+            });
+          } catch {}
 
           continue;
         }
 
-
-        active.push({
+        activeOrders.push({
           ...order,
-
-          status:
-            "sms_received",
-
-          sms:
-            smsResult.sms,
-
-          code:
-            smsResult.sms,
-
-          sms_received:
-            true,
-
-          sms_list:
-            smsResult.smsList,
-
-          provider_verification_id:
-            order.provider_verification_id ||
-            smsResult.verificationId,
-
-          verification_id:
-            order.provider_verification_id ||
-            smsResult.verificationId
+          status: "sms_received",
+          sms_received_at:
+            order.sms_received_at ||
+            firstReceivedAt.toISOString(),
+          sms: smsResult.sms,
+          code: smsResult.code,
+          smsCode: smsResult.smsCode,
+          verificationCode: smsResult.verificationCode,
+          otp: smsResult.otp,
+          sms_received: true,
+          sms_error: smsError,
+          active_until: new Date(removeAt).toISOString()
         });
 
         continue;
       }
 
-
-      /*
-       * ---------------------------------------------------
-       * STILL WAITING FOR SMS
-       * ---------------------------------------------------
-       */
-
-      active.push({
+      activeOrders.push({
         ...order,
-
-        sms:
-          null,
-
-        code:
-          null,
-
-        sms_received:
-          false,
-
-        sms_list:
-          [],
-
-        provider_verification_id:
-          order.provider_verification_id ||
-          null,
-
-        verification_id:
-          order.provider_verification_id ||
-          null
+        sms: smsResult.sms,
+        code: null,
+        smsCode: null,
+        verificationCode: null,
+        otp: null,
+        sms_received: false,
+        sms_error: smsError
       });
     }
 
-
-    return res.status(200).json({
+    return json(res, 200, {
       success: true,
-
-      active,
-
-      numbers:
-        active,
-
-      count:
-        active.length
+      active: activeOrders,
+      numbers: activeOrders,
+      count: activeOrders.length
     });
-
   } catch (error) {
-    console.error(
-      "Active API error:",
-      error
-    );
-
-    const message =
-      error?.message ||
-      "Unable to load active numbers.";
-
-    if (
-      message ===
-      "Unauthorized."
-    ) {
-      return res.status(401).json({
-        success: false,
-        error:
-          message
-      });
-    }
-
-    return res.status(500).json({
+    return json(res, 500, {
       success: false,
-      error:
-        message
+      error: error?.message || "Failed to load active numbers."
     });
   }
 }
