@@ -1,7 +1,7 @@
 import { sureVerificationRequest } from "./_lib.js";
 
 function encode(value) {
-  return encodeURIComponent(String(value ?? ""));
+  return encodeURIComponent(String(value ?? "").trim());
 }
 
 export default async function handler(req, res) {
@@ -13,9 +13,9 @@ export default async function handler(req, res) {
   }
 
   const verificationId = String(
-    req.query?.id ||
     req.query?.verificationId ||
     req.query?.verification_id ||
+    req.query?.id ||
     ""
   ).trim();
 
@@ -27,55 +27,44 @@ export default async function handler(req, res) {
   }
 
   try {
-    const data =
-      await sureVerificationRequest(
-        `/verifications/sms/${encode(
-          verificationId
-        )}`
-      );
+    const data = await sureVerificationRequest(
+      `/verifications/sms/${encode(verificationId)}`
+    );
 
-    const smsList =
-      Array.isArray(data?.sms)
-        ? data.sms
-        : [];
+    const smsList = Array.isArray(data?.sms)
+      ? data.sms
+      : [];
 
-    const latestSms =
-      smsList.length > 0
-        ? smsList[smsList.length - 1]
-        : null;
+    const latest = smsList.length
+      ? smsList[smsList.length - 1]
+      : null;
 
     const code =
-      latestSms?.formatted ||
-      latestSms?.raw ||
+      latest?.formatted ||
+      latest?.raw ||
       null;
 
     return res.status(200).json({
       success: true,
-      verification_id:
-        verificationId,
+      verification_id: verificationId,
       sms: code,
-      code: code,
-      sms_received:
-        Boolean(code),
+      code,
+      sms_received: Boolean(code),
       sms_list: smsList
     });
 
   } catch (error) {
-    console.error(
-      "SMS API error:",
-      error
-    );
+    console.error("SMS API error:", error);
 
     return res.status(502).json({
       success: false,
-      verification_id:
-        verificationId,
+      verification_id: verificationId,
       sms: null,
       code: null,
       sms_received: false,
       error:
         error?.message ||
-        "Unable to retrieve SMS from SureVerification."
+        "Unable to retrieve SMS."
     });
   }
 }
