@@ -5825,15 +5825,21 @@
         serverSelect.value = isUSAAdminPricingCountry() ? "usa-server-2" : "global-server-2";
       }
 
-      const server = serverSelect.value;
+      const server = String(serverSelect.value || "").trim();
+
+      if (!server) {
+        serverSelect.value = isUSAAdminPricingCountry() ? "global-server-2" : "global-server-2";
+      }
+
+      const selectedServer = String(serverSelect.value || "").trim();
       serviceSelect.innerHTML = '<option value="">Loading services...</option>';
-      if (providerInput) providerInput.value = "Loading...";
-      if (status) status.textContent = "Loading provider services...";
+      if (providerInput) providerInput.value = "Manual selling price";
+      if (status) status.textContent = `Loading services from ${selectedServer}...`;
 
       try {
         const query =
           `/api/services?countryId=${encodeURIComponent(countryId)}` +
-          `&server=${encodeURIComponent(server)}`;
+          `&server=${encodeURIComponent(selectedServer)}`;
 
         const response = await fetch(query);
         const data = await response.json();
@@ -5861,14 +5867,14 @@
         adminPricingSelectedProviderServiceId = "";
         adminPricingSelectedProviderServiceName = "";
         if (providerInput) providerInput.value = "";
-        if (status) status.textContent = "Select a service to load the provider price.";
+        if (status) status.textContent = `Services loaded from ${selectedServer}. Select a service, then enter your manual selling price.`;
 
       } catch (error) {
         console.error("Admin pricing services error:", error);
         adminPricingServicesCache = [];
         if (serviceSearch) serviceSearch.disabled = true;
         serviceSelect.innerHTML = '<option value="">Unable to load services</option>';
-        if (providerInput) providerInput.value = "Price not available";
+        if (providerInput) providerInput.value = "Manual selling price";
         if (status) status.textContent = normalizeAdminPricingError(error, "Unable to load services.");
       }
     }
@@ -5932,48 +5938,61 @@
       const status = $("adminPricingStatus");
       const button = $("adminPricingSave");
 
+      const countryId = String(countrySelect?.value || "").trim();
+      const server = String(serverSelect?.value || "").trim();
+      const serviceId = String(serviceSelect?.value || "").trim();
+      const sellingPrice = Number(amountInput?.value);
+
       const countryOption =
         countrySelect?.options[countrySelect.selectedIndex];
-
       const serviceOption =
         serviceSelect?.options[serviceSelect.selectedIndex];
 
-      const countryId =
-        String(countrySelect?.value || "").trim();
-
-      const serviceId =
-        String(serviceSelect?.value || "").trim();
-
-      const server =
-        String(serverSelect?.value || "").trim();
+      const countryName =
+        countryOption?.dataset?.name ||
+        countryOption?.textContent?.trim() ||
+        "";
 
       const serviceName =
         serviceOption?.dataset?.name ||
         serviceOption?.textContent?.trim() ||
+        adminPricingServicesCache.find(
+          item => String(item.id) === serviceId
+        )?.name ||
         "";
 
-      const sellingPrice =
-        Number(amountInput?.value);
-
-      if (
-        !countryId ||
-        !server ||
-        !serviceId ||
-        !serviceName ||
-        !Number.isFinite(sellingPrice) ||
-        sellingPrice <= 0
-      ) {
-        if (status) {
-          status.textContent =
-            "Select a country, provider server, service and enter a valid selling price.";
-        }
+      // Give a precise message for the actual missing field instead of
+      // showing the same generic message for every validation failure.
+      if (!countryId) {
+        if (status) status.textContent = "Select a country first.";
         return;
       }
 
-      if (!["usa-server-1", "usa-server-2", "global-server-1", "global-server-2"].includes(server)) {
-        if (status) {
-          status.textContent = "Invalid provider server.";
-        }
+      if (!server) {
+        if (status) status.textContent = "Select Global Server 2 (or another provider server).";
+        return;
+      }
+
+      if (!serviceId || !serviceName) {
+        if (status) status.textContent = "Select a service first. For US + Global Server 2, select WhatsApp.";
+        return;
+      }
+
+      if (!Number.isFinite(sellingPrice) || sellingPrice <= 0) {
+        if (status) status.textContent = "Enter the selling price in ₦ before saving.";
+        if (amountInput) amountInput.focus();
+        return;
+      }
+
+      const allowedServers = [
+        "usa-server-1",
+        "usa-server-2",
+        "global-server-1",
+        "global-server-2"
+      ];
+
+      if (!allowedServers.includes(server)) {
+        if (status) status.textContent = "Invalid provider server.";
         return;
       }
 
@@ -5982,11 +6001,8 @@
         if (status) status.textContent = "Saving price...";
 
         const token = await getCurrentAccessToken();
-
         if (!token) {
-          throw new Error(
-            "Your admin session has expired. Please sign in again."
-          );
+          throw new Error("Your admin session has expired. Please sign in again.");
         }
 
         const response = await fetch("/api/admin-pricing", {
@@ -5997,26 +6013,16 @@
           },
           body: JSON.stringify({
             countryId,
-            countryName:
-              countryOption?.dataset?.name ||
-              countryOption?.textContent?.trim() ||
-              "",
-
+            countryName,
             serviceId,
             serviceName,
-
             providerServer: server,
-
-            /*
-             * Manual selling price only.
-             * Provider price is deliberately not required.
-             */
+            providerServiceId: serviceId,
             sellingPrice
           })
         });
 
-        const data =
-          await response.json().catch(() => ({}));
+        const data = await response.json().catch(() => ({}));
 
         if (!response.ok || !data?.success) {
           throw new Error(
@@ -6034,26 +6040,24 @@
               : "Selling price saved successfully.";
         }
 
-        if (amountInput) {
-          amountInput.value = "";
-        }
+        if (amountInput) amountInput.value = "";
 
         await loadAdminPricing();
 
-      } catch (error) {
-        console.error(
-          "Save pricing error:",
-          error
-        );
-
-        if (status) {
-          status.textContent =
-            normalizeAdminPricingError(
-              error,
-              "Unable to save selling price."
-            );
+        // Restore the selected server after the pricing table refreshes.
+        const refreshedServer = $("adminPricingServer");
+        if (refreshedServer) {
+          refreshedServer.value = server;
         }
 
+      } catch (error) {
+        console.error("Save pricing error:", error);
+        if (status) {
+          status.textContent = normalizeAdminPricingError(
+            error,
+            "Unable to save selling price."
+          );
+        }
       } finally {
         if (button) button.disabled = false;
       }
