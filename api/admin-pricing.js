@@ -26,7 +26,9 @@ function q(value) {
 
 async function supabaseRequest(path, options = {}) {
   if (!SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY is not configured."
+    );
   }
 
   const response = await fetch(
@@ -38,7 +40,8 @@ async function supabaseRequest(path, options = {}) {
         Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         "Content-Type": "application/json",
         Accept: "application/json",
-        Prefer: options.prefer || "return=representation"
+        Prefer:
+          options.prefer || "return=representation"
       },
       ...(options.body !== undefined
         ? { body: options.body }
@@ -52,7 +55,7 @@ async function supabaseRequest(path, options = {}) {
 
   try {
     data = text ? JSON.parse(text) : {};
-  } catch (_) {
+  } catch {
     data = {};
   }
 
@@ -85,7 +88,8 @@ async function getUser(req) {
     }
   );
 
-  const user = await response.json().catch(() => null);
+  const user =
+    await response.json().catch(() => null);
 
   if (!response.ok || !user?.id) {
     throw new Error("Unauthorized.");
@@ -102,7 +106,9 @@ async function requireAdmin(req) {
   );
 
   if (rows?.[0]?.role !== "admin") {
-    throw new Error("Administrator access required.");
+    throw new Error(
+      "Administrator access required."
+    );
   }
 
   return user;
@@ -119,6 +125,10 @@ export default async function handler(req, res) {
   try {
     await requireAdmin(req);
 
+    /*
+     * GET
+     * Load all saved manual selling prices.
+     */
     if (req.method === "GET") {
       const rows = await supabaseRequest(
         "product_prices?select=id,country_id,country_name,service_id,service_name,selling_price,is_active,provider_server,provider_service_id&order=country_name.asc,provider_server.asc,service_name.asc"
@@ -130,6 +140,10 @@ export default async function handler(req, res) {
       });
     }
 
+    /*
+     * POST
+     * Create or replace a manual selling price.
+     */
     if (req.method === "POST") {
       const body = req.body || {};
 
@@ -142,10 +156,10 @@ export default async function handler(req, res) {
       const providerServer =
         String(body.providerServer || "").trim();
 
-      const providerServiceId =
+      const serviceId =
         String(
-          body.providerServiceId ||
           body.serviceId ||
+          body.providerServiceId ||
           ""
         ).trim();
 
@@ -158,19 +172,21 @@ export default async function handler(req, res) {
       if (
         !countryId ||
         !providerServer ||
-        !providerServiceId ||
+        !serviceId ||
         !serviceName
       ) {
         return res.status(400).json({
           success: false,
-          error: "Country, server and service are required."
+          error:
+            "Country, provider server and service are required."
         });
       }
 
       if (!ALLOWED_SERVERS.has(providerServer)) {
         return res.status(400).json({
           success: false,
-          error: "Invalid provider server."
+          error:
+            "Invalid provider server."
         });
       }
 
@@ -180,49 +196,82 @@ export default async function handler(req, res) {
       ) {
         return res.status(400).json({
           success: false,
-          error: "Selling price must be greater than zero."
+          error:
+            "Selling price must be greater than zero."
         });
       }
 
-      const serviceMatch = q(
-        `(provider_service_id.eq.${providerServiceId},service_id.eq.${providerServiceId})`
-      );
-
-      const existing =
+      /*
+       * First check the normal service_id.
+       */
+      let existing =
         await supabaseRequest(
-          `product_prices?country_id=eq.${q(countryId)}&provider_server=eq.${q(providerServer)}&or=${serviceMatch}&select=id&limit=1`
+          `product_prices?country_id=eq.${q(countryId)}&provider_server=eq.${q(providerServer)}&service_id=eq.${q(serviceId)}&select=id&limit=1`
         );
+
+      /*
+       * Then check provider_service_id.
+       * This supports older prices already saved
+       * before the database was updated.
+       */
+      if (!existing?.[0]?.id) {
+        existing =
+          await supabaseRequest(
+            `product_prices?country_id=eq.${q(countryId)}&provider_server=eq.${q(providerServer)}&provider_service_id=eq.${q(serviceId)}&select=id&limit=1`
+          );
+      }
 
       const row = {
         country_id: countryId,
-        country_name: countryName || countryId,
-        service_id: providerServiceId,
+        country_name:
+          countryName || countryId,
+
+        service_id: serviceId,
         service_name: serviceName,
+
         selling_price: sellingPrice,
+
         is_active: true,
-        provider_server: providerServer,
-        provider_service_id: providerServiceId,
+
+        provider_server:
+          providerServer,
+
+        provider_service_id:
+          serviceId,
+
         provider_cost: 0
       };
 
       let saved;
 
+      /*
+       * Existing price:
+       * update/replace it.
+       */
       if (existing?.[0]?.id) {
-        saved = await supabaseRequest(
-          `product_prices?id=eq.${q(existing[0].id)}`,
-          {
-            method: "PATCH",
-            body: JSON.stringify(row)
-          }
-        );
-      } else {
-        saved = await supabaseRequest(
-          "product_prices",
-          {
-            method: "POST",
-            body: JSON.stringify(row)
-          }
-        );
+        saved =
+          await supabaseRequest(
+            `product_prices?id=eq.${q(existing[0].id)}`,
+            {
+              method: "PATCH",
+              body: JSON.stringify(row)
+            }
+          );
+      }
+
+      /*
+       * No existing price:
+       * create a new one.
+       */
+      else {
+        saved =
+          await supabaseRequest(
+            "product_prices",
+            {
+              method: "POST",
+              body: JSON.stringify(row)
+            }
+          );
       }
 
       return res.status(200).json({
@@ -231,6 +280,10 @@ export default async function handler(req, res) {
       });
     }
 
+    /*
+     * DELETE
+     * Delete a saved manual selling price.
+     */
     if (req.method === "DELETE") {
       const id =
         String(req.query?.id || "").trim();
@@ -238,7 +291,8 @@ export default async function handler(req, res) {
       if (!id) {
         return res.status(400).json({
           success: false,
-          error: "Price id is required."
+          error:
+            "Price id is required."
         });
       }
 
@@ -250,7 +304,8 @@ export default async function handler(req, res) {
       if (!existing?.[0]?.id) {
         return res.status(404).json({
           success: false,
-          error: "Selling price not found."
+          error:
+            "Selling price not found."
         });
       }
 
@@ -264,7 +319,8 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         success: true,
-        message: "Selling price deleted."
+        message:
+          "Selling price deleted."
       });
     }
 
@@ -286,7 +342,8 @@ export default async function handler(req, res) {
     const status =
       message === "Unauthorized."
         ? 401
-        : message === "Administrator access required."
+        : message ===
+          "Administrator access required."
           ? 403
           : 500;
 
