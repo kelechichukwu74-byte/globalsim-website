@@ -1,7 +1,9 @@
 // api/cancel.js
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const SUPABASE_SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const SUPABASE_PUBLISHABLE_KEY =
   process.env.SUPABASE_PUBLISHABLE_KEY ||
@@ -14,19 +16,19 @@ const SUREVERIFICATION_API_KEY =
 const SUREVERIFICATION_BASE_URL =
   "https://sureverifications.com/api/v1";
 
-const MIN_CANCEL_WAIT_MS = 2 * 60 * 1000; // 2 minutes
+const MIN_CANCEL_WAIT_MS = 2 * 60 * 1000;
 
 
 // ---------------------------------------------------------
-// BASIC HELPERS
+// HELPERS
 // ---------------------------------------------------------
 
 function json(res, status, data) {
-  res.status(status).json(data);
+  return res.status(status).json(data);
 }
 
 function encode(value) {
-  return encodeURIComponent(String(value));
+  return encodeURIComponent(String(value ?? ""));
 }
 
 function isUuid(value) {
@@ -37,14 +39,15 @@ function isUuid(value) {
 
 function formatRemaining(ms) {
   const seconds = Math.ceil(ms / 1000);
-
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
 
   if (minutes > 0) {
     return `${minutes} minute${minutes === 1 ? "" : "s"}${
       remainingSeconds > 0
-        ? ` ${remainingSeconds} second${remainingSeconds === 1 ? "" : "s"}`
+        ? ` ${remainingSeconds} second${
+            remainingSeconds === 1 ? "" : "s"
+          }`
         : ""
     }`;
   }
@@ -56,7 +59,7 @@ function formatRemaining(ms) {
 
 
 // ---------------------------------------------------------
-// SUPABASE REQUEST
+// SUPABASE
 // ---------------------------------------------------------
 
 async function supabaseRequest(path, options = {}) {
@@ -65,7 +68,9 @@ async function supabaseRequest(path, options = {}) {
   }
 
   if (!SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing.");
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY is missing."
+    );
   }
 
   const response = await fetch(
@@ -74,7 +79,8 @@ async function supabaseRequest(path, options = {}) {
       ...options,
       headers: {
         apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        Authorization:
+          `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         Accept: "application/json",
         "Content-Type": "application/json",
         ...(options.headers || {})
@@ -93,14 +99,13 @@ async function supabaseRequest(path, options = {}) {
   }
 
   if (!response.ok) {
-    const message =
+    throw new Error(
       data?.message ||
       data?.error_description ||
       data?.error ||
       data?.hint ||
-      `Supabase request failed (HTTP ${response.status})`;
-
-    throw new Error(message);
+      `Supabase request failed (HTTP ${response.status})`
+    );
   }
 
   return data;
@@ -108,7 +113,7 @@ async function supabaseRequest(path, options = {}) {
 
 
 // ---------------------------------------------------------
-// AUTHENTICATE CURRENT USER
+// AUTH
 // ---------------------------------------------------------
 
 async function getAuthenticatedUser(req) {
@@ -121,14 +126,13 @@ async function getAuthenticatedUser(req) {
     throw new Error("Authentication required.");
   }
 
-  const accessToken = authorization.slice(7).trim();
+  const accessToken =
+    authorization.slice(7).trim();
 
   if (!accessToken) {
-    throw new Error("Authentication token is missing.");
-  }
-
-  if (!SUPABASE_URL) {
-    throw new Error("SUPABASE_URL is missing.");
+    throw new Error(
+      "Authentication token is missing."
+    );
   }
 
   const response = await fetch(
@@ -137,7 +141,8 @@ async function getAuthenticatedUser(req) {
       method: "GET",
       headers: {
         apikey: SUPABASE_PUBLISHABLE_KEY,
-        Authorization: `Bearer ${accessToken}`
+        Authorization:
+          `Bearer ${accessToken}`
       }
     }
   );
@@ -153,7 +158,9 @@ async function getAuthenticatedUser(req) {
   }
 
   if (!response.ok || !data?.id) {
-    throw new Error("Your login session is invalid or expired.");
+    throw new Error(
+      "Your login session is invalid or expired."
+    );
   }
 
   return data;
@@ -165,62 +172,60 @@ async function getAuthenticatedUser(req) {
 // ---------------------------------------------------------
 
 async function findOrder(userId, identifier) {
-  if (!identifier) {
-    return null;
-  }
+  if (!identifier) return null;
 
   const value = String(identifier).trim();
 
-  // 1. Try order UUID
+  // 1. Order UUID
   if (isUuid(value)) {
-    const byId = await supabaseRequest(
-      `orders?id=eq.${encode(value)}&user_id=eq.${encode(
-        userId
-      )}&select=*&limit=1`
+    const rows = await supabaseRequest(
+      `orders?id=eq.${encode(value)}` +
+      `&user_id=eq.${encode(userId)}` +
+      `&select=*&limit=1`
     );
 
-    if (Array.isArray(byId) && byId.length > 0) {
-      return byId[0];
+    if (Array.isArray(rows) && rows.length) {
+      return rows[0];
     }
   }
 
-  // 2. Try provider order ID
-  const byProviderOrderId = await supabaseRequest(
-    `orders?provider_order_id=eq.${encode(
-      value
-    )}&user_id=eq.${encode(userId)}&select=*&limit=1`
+  // 2. Provider order ID
+  const providerOrder = await supabaseRequest(
+    `orders?provider_order_id=eq.${encode(value)}` +
+    `&user_id=eq.${encode(userId)}` +
+    `&select=*&limit=1`
   );
 
   if (
-    Array.isArray(byProviderOrderId) &&
-    byProviderOrderId.length > 0
+    Array.isArray(providerOrder) &&
+    providerOrder.length
   ) {
-    return byProviderOrderId[0];
+    return providerOrder[0];
   }
 
-  // 3. Try provider verification ID
-  const byVerificationId = await supabaseRequest(
-    `orders?provider_verification_id=eq.${encode(
-      value
-    )}&user_id=eq.${encode(userId)}&select=*&limit=1`
+  // 3. Provider verification ID
+  const verification = await supabaseRequest(
+    `orders?provider_verification_id=eq.${encode(value)}` +
+    `&user_id=eq.${encode(userId)}` +
+    `&select=*&limit=1`
   );
 
   if (
-    Array.isArray(byVerificationId) &&
-    byVerificationId.length > 0
+    Array.isArray(verification) &&
+    verification.length
   ) {
-    return byVerificationId[0];
+    return verification[0];
   }
 
-  // 4. Try phone number
-  const byPhone = await supabaseRequest(
-    `orders?phone_number=eq.${encode(
-      value
-    )}&user_id=eq.${encode(userId)}&select=*&order=created_at.desc&limit=1`
+  // 4. Phone number
+  const phone = await supabaseRequest(
+    `orders?phone_number=eq.${encode(value)}` +
+    `&user_id=eq.${encode(userId)}` +
+    `&select=*&order=created_at.desc&limit=1`
   );
 
-  if (Array.isArray(byPhone) && byPhone.length > 0) {
-    return byPhone[0];
+  if (Array.isArray(phone) && phone.length) {
+    return phone[0];
   }
 
   return null;
@@ -228,16 +233,17 @@ async function findOrder(userId, identifier) {
 
 
 // ---------------------------------------------------------
-// CHECK IF REFUND ALREADY EXISTS
+// REFUND CHECK
 // ---------------------------------------------------------
 
 async function hasRefund(order) {
   const rows = await supabaseRequest(
     `wallet_transactions?user_id=eq.${encode(
       order.user_id
-    )}&type=eq.refund&reference_id=eq.${encode(
-      order.id
-    )}&select=id&limit=1`
+    )}` +
+    `&type=eq.refund` +
+    `&reference_id=eq.${encode(order.id)}` +
+    `&select=id&limit=1`
   );
 
   return Array.isArray(rows) && rows.length > 0;
@@ -245,43 +251,38 @@ async function hasRefund(order) {
 
 
 // ---------------------------------------------------------
-// REFUND CUSTOMER
+// REFUND
 // ---------------------------------------------------------
 
 async function refundOrder(order) {
-  const alreadyRefunded = await hasRefund(order);
-
-  if (alreadyRefunded) {
+  if (await hasRefund(order)) {
     return {
       refunded: false,
       alreadyRefunded: true
     };
   }
 
-  const refundAmount = Number(order.customer_price || 0);
+  const refundAmount =
+    Number(order.customer_price || 0);
 
-  if (!Number.isFinite(refundAmount) || refundAmount <= 0) {
+  if (
+    !Number.isFinite(refundAmount) ||
+    refundAmount <= 0
+  ) {
     throw new Error(
       "Unable to refund this order because the customer price is invalid."
     );
   }
 
-  // Get wallet
   const wallets = await supabaseRequest(
-    `wallets?user_id=eq.${encode(
-      order.user_id
-    )}&select=*&limit=1`
+    `wallets?user_id=eq.${encode(order.user_id)}` +
+    `&select=*&limit=1`
   );
 
-  let wallet;
-
-  if (Array.isArray(wallets) && wallets.length > 0) {
-    wallet = wallets[0];
-  }
-
-  // -------------------------------------------------------
-  // CREATE WALLET IF IT DOES NOT EXIST
-  // -------------------------------------------------------
+  let wallet =
+    Array.isArray(wallets) && wallets.length
+      ? wallets[0]
+      : null;
 
   if (!wallet) {
     await supabaseRequest("wallets", {
@@ -296,7 +297,7 @@ async function refundOrder(order) {
     });
 
     await supabaseRequest(
-      `wallet_transactions`,
+      "wallet_transactions",
       {
         method: "POST",
         headers: {
@@ -323,12 +324,11 @@ async function refundOrder(order) {
     };
   }
 
-  // -------------------------------------------------------
-  // UPDATE EXISTING WALLET
-  // -------------------------------------------------------
+  const balanceBefore =
+    Number(wallet.balance || 0);
 
-  const balanceBefore = Number(wallet.balance || 0);
-  const balanceAfter = balanceBefore + refundAmount;
+  const balanceAfter =
+    balanceBefore + refundAmount;
 
   await supabaseRequest(
     `wallets?user_id=eq.${encode(order.user_id)}`,
@@ -339,17 +339,14 @@ async function refundOrder(order) {
       },
       body: JSON.stringify({
         balance: balanceAfter,
-        updated_at: new Date().toISOString()
+        updated_at:
+          new Date().toISOString()
       })
     }
   );
 
-  // -------------------------------------------------------
-  // RECORD REFUND TRANSACTION
-  // -------------------------------------------------------
-
   await supabaseRequest(
-    `wallet_transactions`,
+    "wallet_transactions",
     {
       method: "POST",
       headers: {
@@ -378,10 +375,13 @@ async function refundOrder(order) {
 
 
 // ---------------------------------------------------------
-// UPDATE ORDER STATUS
+// UPDATE ORDER
 // ---------------------------------------------------------
 
-async function updateOrderStatus(orderId, status) {
+async function updateOrderStatus(
+  orderId,
+  status
+) {
   await supabaseRequest(
     `orders?id=eq.${encode(orderId)}`,
     {
@@ -391,7 +391,8 @@ async function updateOrderStatus(orderId, status) {
       },
       body: JSON.stringify({
         status,
-        updated_at: new Date().toISOString()
+        updated_at:
+          new Date().toISOString()
       })
     }
   );
@@ -399,10 +400,13 @@ async function updateOrderStatus(orderId, status) {
 
 
 // ---------------------------------------------------------
-// SUREVERIFICATION REQUEST
+// SUREVERIFICATION
 // ---------------------------------------------------------
 
-async function sureVerificationRequest(path, options = {}) {
+async function sureVerificationRequest(
+  path,
+  options = {}
+) {
   if (!SUREVERIFICATION_API_KEY) {
     throw new Error(
       "SUREVERIFICATION_API_KEY is missing."
@@ -414,7 +418,8 @@ async function sureVerificationRequest(path, options = {}) {
     {
       ...options,
       headers: {
-        "x-api-key": SUREVERIFICATION_API_KEY,
+        "x-api-key":
+          SUREVERIFICATION_API_KEY,
         Accept: "application/json",
         "Content-Type": "application/json",
         ...(options.headers || {})
@@ -433,14 +438,14 @@ async function sureVerificationRequest(path, options = {}) {
   }
 
   if (!response.ok) {
-    const message =
+    const error = new Error(
       data?.message ||
       data?.error ||
       data?.detail ||
       data?.error_description ||
-      `SureVerification request failed (HTTP ${response.status})`;
+      `SureVerification request failed (HTTP ${response.status})`
+    );
 
-    const error = new Error(message);
     error.status = response.status;
     error.providerData = data;
 
@@ -452,15 +457,15 @@ async function sureVerificationRequest(path, options = {}) {
 
 
 // ---------------------------------------------------------
-// DETECT ALREADY EXPIRED / ALREADY CANCELLED RESPONSE
+// PROVIDER EXPIRED / INACTIVE
 // ---------------------------------------------------------
 
 function looksLikeExpiredOrInactive(error) {
   const message = String(
     error?.message ||
-      error?.providerData?.message ||
-      error?.providerData?.error ||
-      ""
+    error?.providerData?.message ||
+    error?.providerData?.error ||
+    ""
   ).toLowerCase();
 
   return (
@@ -479,13 +484,21 @@ function looksLikeExpiredOrInactive(error) {
 
 
 // ---------------------------------------------------------
-// MAIN HANDLER
+// MAIN
 // ---------------------------------------------------------
 
-export default async function handler(req, res) {
-  // Allow DELETE and POST
-  if (req.method !== "DELETE" && req.method !== "POST") {
-    res.setHeader("Allow", ["DELETE", "POST"]);
+export default async function handler(
+  req,
+  res
+) {
+  if (
+    req.method !== "DELETE" &&
+    req.method !== "POST"
+  ) {
+    res.setHeader(
+      "Allow",
+      ["DELETE", "POST"]
+    );
 
     return json(res, 405, {
       success: false,
@@ -494,15 +507,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    // -----------------------------------------------------
-    // AUTHENTICATION
-    // -----------------------------------------------------
-
-    const user = await getAuthenticatedUser(req);
-
-    // -----------------------------------------------------
-    // GET ORDER IDENTIFIER
-    // -----------------------------------------------------
+    const user =
+      await getAuthenticatedUser(req);
 
     const query = req.query || {};
 
@@ -511,56 +517,56 @@ export default async function handler(req, res) {
       query.orderId ||
       query.order_id ||
       query.phone ||
-      query.phone_number;
+      query.phone_number ||
+      query.verificationId ||
+      query.verification_id;
 
-    // Also support POST body
     if (!identifier && req.body) {
       if (typeof req.body === "string") {
         try {
           req.body = JSON.parse(req.body);
-        } catch {
-          // Ignore invalid JSON body
-        }
+        } catch {}
       }
 
-      if (req.body && typeof req.body === "object") {
+      if (
+        req.body &&
+        typeof req.body === "object"
+      ) {
         identifier =
           req.body.id ||
           req.body.orderId ||
           req.body.order_id ||
           req.body.phone ||
-          req.body.phone_number;
+          req.body.phone_number ||
+          req.body.verificationId ||
+          req.body.verification_id;
       }
     }
 
     if (!identifier) {
       return json(res, 400, {
         success: false,
-        error: "Order ID or phone number is required."
+        error:
+          "Order ID, phone number, or verification ID is required."
       });
     }
 
-    // -----------------------------------------------------
-    // FIND ORDER
-    // -----------------------------------------------------
-
-    const order = await findOrder(
-      user.id,
-      identifier
-    );
+    const order =
+      await findOrder(
+        user.id,
+        identifier
+      );
 
     if (!order) {
       return json(res, 404, {
         success: false,
-        error: "Active number order was not found."
+        error:
+          "Active number order was not found."
       });
     }
 
-    // -----------------------------------------------------
-    // ALREADY REFUNDED?
-    // -----------------------------------------------------
-
-    const alreadyRefunded = await hasRefund(order);
+    const alreadyRefunded =
+      await hasRefund(order);
 
     if (
       alreadyRefunded ||
@@ -577,17 +583,11 @@ export default async function handler(req, res) {
     }
 
     // -----------------------------------------------------
-    // IMPORTANT:
-    // CANCELLATION IS AVAILABLE AFTER 2 MINUTES.
-    //
-    // DO NOT CHECK provider_expired_at HERE.
-    // The provider does NOT need to be expired before
-    // the customer can manually cancel the number.
+    // MINIMUM 2-MINUTE PROVIDER WAIT
     // -----------------------------------------------------
 
-    const createdAt = new Date(
-      order.created_at
-    ).getTime();
+    const createdAt =
+      new Date(order.created_at).getTime();
 
     if (!Number.isFinite(createdAt)) {
       return json(res, 500, {
@@ -597,63 +597,32 @@ export default async function handler(req, res) {
       });
     }
 
-    const elapsed = Date.now() - createdAt;
+    const elapsed =
+      Date.now() - createdAt;
 
     if (elapsed < MIN_CANCEL_WAIT_MS) {
-      const remaining =
-        MIN_CANCEL_WAIT_MS - elapsed;
-
       return json(res, 400, {
         success: false,
-        error: `Please wait ${formatRemaining(
-          remaining
-        )} before cancelling this number.`
+        error:
+          `Please wait ${formatRemaining(
+            MIN_CANCEL_WAIT_MS - elapsed
+          )} before cancelling this number.`
       });
     }
 
     // -----------------------------------------------------
-    // IF PROVIDER ALREADY EXPIRED
-    // -----------------------------------------------------
+    // IMPORTANT FIX:
     //
-    // provider_expired_at is used for determining that the
-    // provider has already expired the number.
+    // Your current purchase code stores the provider
+    // request_id in provider_order_id.
     //
-    // It is NOT used as the manual cancellation requirement.
-    // -----------------------------------------------------
-
-    if (order.provider_expired_at) {
-      const providerExpiredAt = new Date(
-        order.provider_expired_at
-      ).getTime();
-
-      if (
-        Number.isFinite(providerExpiredAt) &&
-        providerExpiredAt <= Date.now()
-      ) {
-        await updateOrderStatus(
-          order.id,
-          "expired"
-        );
-
-        const refund = await refundOrder(order);
-
-        return json(res, 200, {
-          success: true,
-          expired: true,
-          refunded: refund.refunded || refund.alreadyRefunded,
-          amount: refund.amount || Number(order.customer_price || 0),
-          message:
-            "Number expired and your money has been returned to your wallet."
-        });
-      }
-    }
-
-    // -----------------------------------------------------
-    // GET PROVIDER VERIFICATION ID
+    // Therefore use provider_verification_id FIRST,
+    // then provider_order_id as fallback.
     // -----------------------------------------------------
 
     const verificationId =
-      order.provider_verification_id;
+      order.provider_verification_id ||
+      order.provider_order_id;
 
     if (!verificationId) {
       return json(res, 409, {
@@ -664,7 +633,7 @@ export default async function handler(req, res) {
     }
 
     // -----------------------------------------------------
-    // CANCEL NUMBER AT SUREVERIFICATION
+    // CANCEL AT SUREVERIFICATION
     // -----------------------------------------------------
 
     let providerResponse;
@@ -680,10 +649,6 @@ export default async function handler(req, res) {
           }
         );
     } catch (providerError) {
-      // ---------------------------------------------------
-      // PROVIDER SAYS NUMBER IS ALREADY EXPIRED/INACTIVE
-      // ---------------------------------------------------
-
       if (
         looksLikeExpiredOrInactive(
           providerError
@@ -711,10 +676,6 @@ export default async function handler(req, res) {
         });
       }
 
-      // ---------------------------------------------------
-      // OTHER PROVIDER ERROR
-      // ---------------------------------------------------
-
       console.error(
         "SureVerification cancellation error:",
         providerError
@@ -729,7 +690,7 @@ export default async function handler(req, res) {
     }
 
     // -----------------------------------------------------
-    // PROVIDER CANCELLATION SUCCESSFUL
+    // PROVIDER CANCELLED SUCCESSFULLY
     // -----------------------------------------------------
 
     await updateOrderStatus(
@@ -738,14 +699,11 @@ export default async function handler(req, res) {
     );
 
     // -----------------------------------------------------
-    // REFUND CUSTOMER
+    // REFUND
     // -----------------------------------------------------
 
-    const refund = await refundOrder(order);
-
-    // -----------------------------------------------------
-    // SUCCESS RESPONSE
-    // -----------------------------------------------------
+    const refund =
+      await refundOrder(order);
 
     return json(res, 200, {
       success: true,
@@ -756,7 +714,10 @@ export default async function handler(req, res) {
       amount:
         refund.amount ||
         Number(order.customer_price || 0),
-      provider_response: providerResponse,
+      verification_id:
+        String(verificationId),
+      provider_response:
+        providerResponse,
       message:
         "Number cancelled and your money has been returned to your wallet."
     });
