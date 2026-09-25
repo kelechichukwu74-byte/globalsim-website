@@ -9,67 +9,48 @@ const SUPABASE_PUBLISHABLE_KEY =
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-
 function bearer(req) {
   const value =
     req.headers?.authorization ||
     req.headers?.Authorization ||
     "";
-
   return String(value).startsWith("Bearer ")
     ? String(value).slice(7).trim()
     : "";
 }
 
+function q(value) {
+  return encodeURIComponent(String(value ?? ""));
+}
 
 async function supabaseRequest(path, options = {}) {
   if (!SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not configured."
-    );
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
   }
 
   const response = await fetch(
     `${SUPABASE_URL}/rest/v1/${path}`,
     {
       method: options.method || "GET",
-
       headers: {
         apikey: SUPABASE_SERVICE_ROLE_KEY,
-
-        Authorization:
-          `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-
-        "Content-Type":
-          "application/json",
-
-        Accept:
-          "application/json",
-
-        Prefer:
-          options.prefer ||
-          "return=representation",
-
-        ...(options.headers || {})
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Prefer: options.prefer || "return=representation"
       },
-
       ...(options.body !== undefined
         ? { body: options.body }
         : {})
     }
   );
 
-  const text =
-    await response.text();
+  const text = await response.text();
 
   let data = {};
-
   try {
-    data =
-      text
-        ? JSON.parse(text)
-        : {};
-  } catch {
+    data = text ? JSON.parse(text) : {};
+  } catch (_) {
     data = {};
   }
 
@@ -85,7 +66,6 @@ async function supabaseRequest(path, options = {}) {
   return data;
 }
 
-
 async function getUser(req) {
   const token = bearer(req);
 
@@ -93,65 +73,38 @@ async function getUser(req) {
     throw new Error("Unauthorized.");
   }
 
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/auth/v1/user`,
-      {
-        headers: {
-          apikey:
-            SUPABASE_PUBLISHABLE_KEY,
-
-          Authorization:
-            `Bearer ${token}`
-        }
+  const response = await fetch(
+    `${SUPABASE_URL}/auth/v1/user`,
+    {
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${token}`
       }
-    );
+    }
+  );
 
-  const user =
-    await response
-      .json()
-      .catch(() => null);
+  const user = await response.json().catch(() => null);
 
-  if (
-    !response.ok ||
-    !user?.id
-  ) {
+  if (!response.ok || !user?.id) {
     throw new Error("Unauthorized.");
   }
 
   return user;
 }
 
-
 async function requireAdmin(req) {
-  const user =
-    await getUser(req);
+  const user = await getUser(req);
 
-  const rows =
-    await supabaseRequest(
-      `profiles?id=eq.${encodeURIComponent(
-        user.id
-      )}&select=id,role&limit=1`
-    );
+  const rows = await supabaseRequest(
+    `profiles?id=eq.${q(user.id)}&select=id,role&limit=1`
+  );
 
-  if (
-    rows?.[0]?.role !== "admin"
-  ) {
-    throw new Error(
-      "Administrator access required."
-    );
+  if (rows?.[0]?.role !== "admin") {
+    throw new Error("Administrator access required.");
   }
 
   return user;
 }
-
-
-function quote(value) {
-  return encodeURIComponent(
-    String(value ?? "")
-  );
-}
-
 
 const ALLOWED_SERVERS = new Set([
   "usa-server-1",
@@ -160,38 +113,17 @@ const ALLOWED_SERVERS = new Set([
   "global-server-2"
 ]);
 
+export default async function handler(req, res) {
 
-export default async function handler(
-  req,
-  res
-) {
   try {
+
     await requireAdmin(req);
 
-    /*
-     * LOAD SAVED PRICES
-     */
     if (req.method === "GET") {
-      const rows =
-        await supabaseRequest(
-          "product_prices" +
-          "?select=" +
-          [
-            "id",
-            "country_id",
-            "country_name",
-            "service_id",
-            "service_name",
-            "selling_price",
-            "is_active",
-            "provider_server",
-            "provider_service_id",
-            "provider_cost"
-          ].join(",") +
-          "&order=country_name.asc," +
-          "provider_server.asc," +
-          "service_name.asc"
-        );
+
+      const rows = await supabaseRequest(
+        "product_prices?select=id,country_id,country_name,service_id,service_name,selling_price,is_active,provider_server,provider_service_id&order=country_name.asc,provider_server.asc,service_name.asc"
+      );
 
       return res.status(200).json({
         success: true,
@@ -199,210 +131,152 @@ export default async function handler(
       });
     }
 
+    if (req.method === "POST") {
 
-    /*
-     * ONLY POST IS ALLOWED FOR SAVING
-     */
-    if (req.method !== "POST") {
-      return res.status(405).json({
-        success: false,
-        error:
-          "Method not allowed."
-      });
-    }
+      const body = req.body || {};
 
+      const countryId =
+        String(body.countryId || "").trim();
 
-    const body =
-      req.body || {};
+      const countryName =
+        String(body.countryName || "").trim();
 
+      const providerServer =
+        String(body.providerServer || "").trim();
 
-    const countryId =
-      String(
-        body.countryId || ""
-      ).trim();
+      const providerServiceId =
+        String(
+          body.providerServiceId ||
+          body.serviceId ||
+          ""
+        ).trim();
 
+      const serviceName =
+        String(body.serviceName || "").trim();
 
-    const countryName =
-      String(
-        body.countryName || ""
-      ).trim();
+      const sellingPrice =
+        Number(body.sellingPrice);
 
+      if (
+        !countryId ||
+        !providerServer ||
+        !providerServiceId ||
+        !serviceName
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: "Country, server and service are required."
+        });
+      }
 
-    const providerServer =
-      String(
-        body.providerServer || ""
-      ).trim();
+      if (!ALLOWED_SERVERS.has(providerServer)) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid provider server."
+        });
+      }
 
+      if (
+        !Number.isFinite(sellingPrice) ||
+        sellingPrice <= 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: "Selling price must be greater than zero."
+        });
+      }
 
-    const providerServiceId =
-      String(
-        body.providerServiceId ||
-        body.serviceId ||
-        ""
-      ).trim();
-
-
-    const serviceName =
-      String(
-        body.serviceName || ""
-      ).trim();
-
-
-    const sellingPrice =
-      Number(
-        body.sellingPrice
-      );
-
-
-    if (
-      !countryId ||
-      !providerServer ||
-      !providerServiceId ||
-      !serviceName
-    ) {
-      return res.status(400).json({
-        success: false,
-        error:
-          "Country, server and service are required."
-      });
-    }
-
-
-    if (
-      !ALLOWED_SERVERS.has(
-        providerServer
-      )
-    ) {
-      return res.status(400).json({
-        success: false,
-        error:
-          "Invalid provider server."
-      });
-    }
-
-
-    if (
-      !Number.isFinite(
-        sellingPrice
-      ) ||
-      sellingPrice <= 0
-    ) {
-      return res.status(400).json({
-        success: false,
-        error:
-          "Selling price must be greater than zero."
-      });
-    }
-
-
-    /*
-     * FIND EXISTING PRICE
-     *
-     * Country + server + provider service
-     * identifies the saved price.
-     */
-    const existing =
-      await supabaseRequest(
-        `product_prices` +
-        `?country_id=eq.${quote(
-          countryId
-        )}` +
-        `&provider_server=eq.${quote(
-          providerServer
-        )}` +
-        `&provider_service_id=eq.${quote(
-          providerServiceId
-        )}` +
-        `&select=id` +
-        `&limit=1`
-      );
-
-
-    /*
-     * MANUAL PRICING
-     *
-     * Provider price is NOT required.
-     */
-    const row = {
-      country_id:
-        countryId,
-
-      country_name:
-        countryName ||
-        countryId,
-
-      service_id:
-        providerServiceId,
-
-      service_name:
-        serviceName,
-
-      selling_price:
-        sellingPrice,
-
-      is_active:
-        true,
-
-      provider_server:
-        providerServer,
-
-      provider_service_id:
-        providerServiceId,
-
-      provider_cost:
-        0
-    };
-
-
-    let saved;
-
-
-    /*
-     * UPDATE EXISTING PRICE
-     */
-    if (
-      existing?.[0]?.id
-    ) {
-      saved =
+      const existing =
         await supabaseRequest(
-          `product_prices?id=eq.${quote(
-            existing[0].id
-          )}`,
+          `product_prices?country_id=eq.${q(countryId)}&provider_server=eq.${q(providerServer)}&provider_service_id=eq.${q(providerServiceId)}&select=id&limit=1`
+        );
+
+      const row = {
+        country_id: countryId,
+        country_name: countryName || countryId,
+        service_id: providerServiceId,
+        service_name: serviceName,
+        selling_price: sellingPrice,
+        is_active: true,
+        provider_server: providerServer,
+        provider_service_id: providerServiceId,
+        provider_cost: 0
+      };
+
+      let saved;
+
+      if (existing?.[0]?.id) {
+
+        saved = await supabaseRequest(
+          `product_prices?id=eq.${q(existing[0].id)}`,
           {
             method: "PATCH",
-
-            body:
-              JSON.stringify(row)
+            body: JSON.stringify(row)
           }
         );
-    }
 
+      } else {
 
-    /*
-     * CREATE NEW PRICE
-     */
-    else {
-      saved =
-        await supabaseRequest(
+        saved = await supabaseRequest(
           "product_prices",
           {
             method: "POST",
-
-            body:
-              JSON.stringify(row)
+            body: JSON.stringify(row)
           }
         );
+      }
+
+      return res.status(200).json({
+        success: true,
+        price: saved?.[0] || null
+      });
     }
 
+    if (req.method === "DELETE") {
 
-    return res.status(200).json({
-      success: true,
+      const id =
+        String(req.query?.id || "").trim();
 
-      price:
-        saved?.[0] || null
+      if (!id) {
+        return res.status(400).json({
+          success: false,
+          error: "Price id is required."
+        });
+      }
+
+      const existing =
+        await supabaseRequest(
+          `product_prices?id=eq.${q(id)}&select=id`
+        );
+
+      if (!existing?.[0]?.id) {
+        return res.status(404).json({
+          success: false,
+          error: "Selling price not found."
+        });
+      }
+
+      await supabaseRequest(
+        `product_prices?id=eq.${q(id)}`,
+        {
+          method: "DELETE",
+          prefer: "return=minimal"
+        }
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Selling price deleted."
+      });
+    }
+
+    return res.status(405).json({
+      success: false,
+      error: "Method not allowed."
     });
 
   } catch (error) {
+
     console.error(
       "Admin pricing error:",
       error
@@ -410,13 +284,16 @@ export default async function handler(
 
     const message =
       error?.message ||
-      "Unable to process server pricing.";
+      "Unable to process pricing request.";
 
-    return res.status(
+    const status =
       message === "Unauthorized."
         ? 401
-        : 500
-    ).json({
+        : message === "Administrator access required."
+          ? 403
+          : 500;
+
+    return res.status(status).json({
       success: false,
       error: message
     });
