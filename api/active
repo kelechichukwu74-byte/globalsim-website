@@ -1,4 +1,8 @@
-import { sureVerificationRequest } from "./_lib.js";
+// api/Active.js
+
+import {
+  sureVerificationRequest
+} from "./_lib.js";
 
 const SUPABASE_URL =
   process.env.SUPABASE_URL ||
@@ -6,16 +10,18 @@ const SUPABASE_URL =
 
 const SUPABASE_PUBLISHABLE_KEY =
   process.env.SUPABASE_PUBLISHABLE_KEY ||
-  "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
+  "sb_publishable_erjKhsDOoyhbHDExvQ7RQ_gpGcK0C-";
 
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const SMS_HOLD_MS = 60 * 1000;
 
 function quote(value) {
-  return encodeURIComponent(String(value ?? ""));
+  return encodeURIComponent(
+    String(value ?? "")
+  );
 }
+
 
 function getBearerToken(req) {
   const header =
@@ -23,34 +29,43 @@ function getBearerToken(req) {
     req.headers?.Authorization ||
     "";
 
-  return header.startsWith("Bearer ")
-    ? header.slice(7).trim()
-    : null;
+  if (!header.startsWith("Bearer ")) {
+    return null;
+  }
+
+  return header.slice(7).trim();
 }
 
+
 async function getAuthenticatedUser(req) {
-  const token = getBearerToken(req);
+  const token =
+    getBearerToken(req);
 
   if (!token) {
     throw new Error("Unauthorized.");
   }
 
-  const response = await fetch(
-    `${SUPABASE_URL}/auth/v1/user`,
-    {
-      headers: {
-        apikey: SUPABASE_PUBLISHABLE_KEY,
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json"
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/auth/v1/user`,
+      {
+        headers: {
+          apikey:
+            SUPABASE_PUBLISHABLE_KEY,
+          Authorization:
+            `Bearer ${token}`,
+          Accept:
+            "application/json"
+        }
       }
-    }
-  );
+    );
 
   if (!response.ok) {
     throw new Error("Unauthorized.");
   }
 
-  const user = await response.json();
+  const user =
+    await response.json();
 
   if (!user?.id) {
     throw new Error("Unauthorized.");
@@ -59,35 +74,48 @@ async function getAuthenticatedUser(req) {
   return user;
 }
 
-async function supabaseRequest(path, options = {}) {
+
+async function supabaseRequest(
+  path,
+  options = {}
+) {
   if (!SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error(
       "SUPABASE_SERVICE_ROLE_KEY is not configured."
     );
   }
 
-  const response = await fetch(
-    `${SUPABASE_URL}/rest/v1/${path}`,
-    {
-      ...options,
-      headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization:
-          `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Prefer: "return=representation",
-        ...(options.headers || {})
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/rest/v1/${path}`,
+      {
+        ...options,
+        headers: {
+          apikey:
+            SUPABASE_SERVICE_ROLE_KEY,
+          Authorization:
+            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          "Content-Type":
+            "application/json",
+          Accept:
+            "application/json",
+          Prefer:
+            "return=representation",
+          ...(options.headers || {})
+        }
       }
-    }
-  );
+    );
 
-  const text = await response.text();
+  const text =
+    await response.text();
 
   let data = {};
 
   try {
-    data = text ? JSON.parse(text) : {};
+    data =
+      text
+        ? JSON.parse(text)
+        : {};
   } catch {
     throw new Error(
       `Supabase returned invalid JSON (HTTP ${response.status}).`
@@ -97,6 +125,7 @@ async function supabaseRequest(path, options = {}) {
   if (!response.ok) {
     throw new Error(
       data?.message ||
+      data?.error ||
       data?.hint ||
       data?.details ||
       `Supabase request failed (HTTP ${response.status}).`
@@ -106,175 +135,78 @@ async function supabaseRequest(path, options = {}) {
   return data;
 }
 
-async function hasRefund(orderId) {
-  const rows = await supabaseRequest(
-    `wallet_transactions` +
-    `?type=eq.refund` +
-    `&reference_id=eq.${quote(orderId)}` +
-    `&select=id&limit=1`
-  );
-
-  return Boolean(rows?.length);
-}
-
-async function refundExpiredOrder(order) {
-  if (!order?.id || !order?.user_id) {
-    return {
-      refunded: false,
-      amount: 0
-    };
-  }
-
-  if (await hasRefund(order.id)) {
-    return {
-      refunded: true,
-      amount: Number(order.customer_price || 0)
-    };
-  }
-
-  const amount =
-    Number(order.customer_price || 0);
-
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return {
-      refunded: false,
-      amount: 0
-    };
-  }
-
-  const walletRows =
-    await supabaseRequest(
-      `wallets?user_id=eq.${quote(order.user_id)}` +
-      `&select=user_id,balance&limit=1`
-    );
-
-  const wallet = walletRows?.[0];
-
-  if (!wallet) {
-    await supabaseRequest("wallets", {
-      method: "POST",
-      body: JSON.stringify({
-        user_id: order.user_id,
-        balance: amount
-      })
-    });
-
-    await supabaseRequest(
-      "wallet_transactions",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          user_id: order.user_id,
-          type: "refund",
-          amount,
-          balance_before: 0,
-          balance_after: amount,
-          reference_id: order.id,
-          description:
-            "Refund for expired virtual number order"
-        })
-      }
-    );
-
-    return {
-      refunded: true,
-      amount
-    };
-  }
-
-  const before =
-    Number(wallet.balance || 0);
-
-  const after = before + amount;
-
-  await supabaseRequest(
-    `wallets?user_id=eq.${quote(order.user_id)}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify({
-        balance: after,
-        updated_at:
-          new Date().toISOString()
-      })
-    }
-  );
-
-  await supabaseRequest(
-    "wallet_transactions",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        user_id: order.user_id,
-        type: "refund",
-        amount,
-        balance_before: before,
-        balance_after: after,
-        reference_id: order.id,
-        description:
-          "Refund for expired virtual number order"
-      })
-    }
-  );
-
-  return {
-    refunded: true,
-    amount
-  };
-}
-
-async function markExpired(order) {
-  const refund =
-    await refundExpiredOrder(order);
-
-  const rows =
-    await supabaseRequest(
-      `orders?id=eq.${quote(order.id)}` +
-      `&user_id=eq.${quote(order.user_id)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({
-          status: "expired",
-          updated_at:
-            new Date().toISOString()
-        })
-      }
-    );
-
-  return {
-    ...(rows?.[0] || order),
-    status: "expired",
-    refund
-  };
-}
 
 /*
- * Provider verification ID.
+ * Provider timestamps returned by
+ * SureVerification have this format:
  *
- * The SureVerification SMS endpoint requires:
+ * YYYY-MM-DD HH:mm:ss
  *
- * /verifications/sms/:verificationId
- *
- * Prefer provider_verification_id.
- * Fall back to provider_order_id for existing orders.
+ * Treat the provider timestamp as UTC
+ * when no timezone is supplied.
  */
-function getVerificationId(order) {
-  return String(
-    order?.provider_verification_id ||
-    order?.provider_order_id ||
-    ""
-  ).trim();
+
+function parseProviderExpiry(value) {
+  if (!value) {
+    return null;
+  }
+
+  const raw =
+    String(value).trim();
+
+  if (!raw) {
+    return null;
+  }
+
+  if (
+    /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
+      .test(raw)
+  ) {
+    const iso =
+      raw.replace(
+        " ",
+        "T"
+      ) + "Z";
+
+    const date =
+      new Date(iso);
+
+    if (
+      !Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return date;
+    }
+  }
+
+  const date =
+    new Date(raw);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return null;
+  }
+
+  return date;
 }
 
-async function getProviderSms(order) {
-  const verificationId =
-    getVerificationId(order);
 
-  if (!verificationId) {
+async function getSmsForVerification(
+  verificationId
+) {
+  if (
+    verificationId === null ||
+    verificationId === undefined ||
+    String(verificationId).trim() === ""
+  ) {
     return {
-      code: null,
       sms: null,
-      received: false,
-      error: "Verification ID is missing."
+      smsList: [],
+      received: false
     };
   }
 
@@ -282,18 +214,22 @@ async function getProviderSms(order) {
     const data =
       await sureVerificationRequest(
         `/verifications/sms/${encodeURIComponent(
-          verificationId
+          String(verificationId)
         )}`
       );
 
-    const list =
-      Array.isArray(data?.sms)
+    const smsList =
+      Array.isArray(
+        data?.sms
+      )
         ? data.sms
         : [];
 
     const latest =
-      list.length
-        ? list[list.length - 1]
+      smsList.length
+        ? smsList[
+            smsList.length - 1
+          ]
         : null;
 
     const code =
@@ -302,21 +238,21 @@ async function getProviderSms(order) {
       null;
 
     return {
-      code,
-      sms: code,
-      received: Boolean(code),
-      error: null
+      sms:
+        code
+          ? String(code)
+          : null,
+
+      smsList,
+
+      received:
+        Boolean(code)
     };
 
   } catch (error) {
-    console.error(
-      "SureVerification SMS error:",
-      error
-    );
-
     return {
-      code: null,
       sms: null,
+      smsList: [],
       received: false,
       error:
         error?.message ||
@@ -325,342 +261,172 @@ async function getProviderSms(order) {
   }
 }
 
-async function markSmsReceived(order) {
-  const now =
-    new Date().toISOString();
 
-  const rows =
-    await supabaseRequest(
-      `orders?id=eq.${quote(order.id)}` +
-      `&user_id=eq.${quote(order.user_id)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({
-          status: "sms_received",
-          updated_at: now
-        })
-      }
+/*
+ * Try the correct numeric verification ID first.
+ *
+ * For old orders that were created before this fix,
+ * provider_verification_id may be missing.
+ *
+ * We then try provider_order_id as a compatibility
+ * fallback.
+ */
+
+async function findSms(order) {
+  const identifiers = [];
+
+  if (
+    order?.provider_verification_id !==
+      null &&
+    order?.provider_verification_id !==
+      undefined &&
+    String(
+      order.provider_verification_id
+    ).trim()
+  ) {
+    identifiers.push(
+      String(
+        order.provider_verification_id
+      ).trim()
     );
-
-  return rows?.[0] || {
-    ...order,
-    status: "sms_received",
-    updated_at: now
-  };
-}
-
-async function completeOrder(order) {
-  const rows =
-    await supabaseRequest(
-      `orders?id=eq.${quote(order.id)}` +
-      `&user_id=eq.${quote(order.user_id)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({
-          status: "completed",
-          updated_at:
-            new Date().toISOString()
-        })
-      }
-    );
-
-  return rows?.[0] || {
-    ...order,
-    status: "completed"
-  };
-}
-
-function formatNumber(order, sms = {}) {
-  return {
-    id: order.id,
-
-    order_id:
-      order.id,
-
-    provider_order_id:
-      order.provider_order_id,
-
-    provider_verification_id:
-      order.provider_verification_id,
-
-    verification_id:
-      getVerificationId(order),
-
-    phone_number:
-      order.phone_number,
-
-    number:
-      order.phone_number,
-
-    service_name:
-      order.service_name,
-
-    service:
-      order.service_name,
-
-    country_name:
-      order.country_name,
-
-    status:
-      order.status,
-
-    customer_price:
-      Number(order.customer_price || 0),
-
-    selling_price:
-      Number(order.customer_price || 0),
-
-    provider_cost:
-      Number(order.provider_cost || 0),
-
-    created_at:
-      order.created_at,
-
-    updated_at:
-      order.updated_at,
-
-    provider_expired_at:
-      order.provider_expired_at,
-
-    expired_at:
-      order.provider_expired_at,
-
-    sms:
-      sms.sms || null,
-
-    code:
-      sms.code || null,
-
-    sms_received:
-      Boolean(sms.received),
-
-    sms_error:
-      sms.error || null
-  };
-}
-
-export default async function handler(req, res) {
-
-  if (req.method === "GET") {
-
-    try {
-
-      const user =
-        await getAuthenticatedUser(req);
-
-      const orders =
-        await supabaseRequest(
-          `orders?user_id=eq.${quote(user.id)}` +
-          `&select=*` +
-          `&order=created_at.desc`
-        );
-
-      const activeNumbers = [];
-      const expiredNumbers = [];
-
-      for (const originalOrder of orders || []) {
-
-        let order = originalOrder;
-
-        const status =
-          String(order.status || "")
-            .toLowerCase();
-
-        /*
-         * Already received SMS.
-         *
-         * Keep it visible for exactly 1 minute,
-         * then move it to Order History.
-         */
-        if (status === "sms_received") {
-
-          const receivedAt =
-            new Date(order.updated_at);
-
-          const elapsed =
-            Date.now() -
-            receivedAt.getTime();
-
-          if (
-            !Number.isNaN(
-              receivedAt.getTime()
-            ) &&
-            elapsed >= SMS_HOLD_MS
-          ) {
-
-            await completeOrder(order);
-
-            continue;
-          }
-
-          const sms =
-            await getProviderSms(order);
-
-          activeNumbers.push(
-            formatNumber(order, sms)
-          );
-
-          continue;
-        }
-
-        if (
-          !["active", "pending"]
-            .includes(status)
-        ) {
-          continue;
-        }
-
-        /*
-         * Exact provider expiry time.
-         */
-        const expiresAt =
-          order.provider_expired_at
-            ? new Date(
-                order.provider_expired_at
-              )
-            : null;
-
-        if (
-          expiresAt &&
-          !Number.isNaN(
-            expiresAt.getTime()
-          ) &&
-          expiresAt.getTime() <= Date.now()
-        ) {
-
-          const expired =
-            await markExpired(order);
-
-          expiredNumbers.push({
-            ...expired,
-
-            order_id:
-              order.id,
-
-            phone_number:
-              order.phone_number,
-
-            service_name:
-              order.service_name,
-
-            country_name:
-              order.country_name,
-
-            provider_verification_id:
-              order.provider_verification_id,
-
-            provider_order_id:
-              order.provider_order_id,
-
-            expired_at:
-              order.provider_expired_at,
-
-            status: "expired",
-
-            refunded:
-              expired.refund?.refunded ||
-              false,
-
-            refund_amount:
-              expired.refund?.amount ||
-              0
-          });
-
-          continue;
-        }
-
-        /*
-         * Poll SureVerification for SMS.
-         */
-        const sms =
-          await getProviderSms(order);
-
-        /*
-         * SMS arrived.
-         *
-         * Change status to sms_received.
-         * updated_at becomes the exact beginning
-         * of the one-minute Active timer.
-         */
-        if (sms.received) {
-
-          order =
-            await markSmsReceived(order);
-
-          activeNumbers.push(
-            formatNumber(order, sms)
-          );
-
-          continue;
-        }
-
-        activeNumbers.push(
-          formatNumber(order, sms)
-        );
-      }
-
-      return res.status(200).json({
-        success: true,
-
-        numbers:
-          activeNumbers,
-
-        activations:
-          activeNumbers,
-
-        data:
-          activeNumbers,
-
-        expired:
-          expiredNumbers,
-
-        count:
-          activeNumbers.length,
-
-        expired_count:
-          expiredNumbers.length
-      });
-
-    } catch (error) {
-
-      console.error(
-        "Active numbers API error:",
-        error
+  }
+
+  if (
+    order?.provider_order_id !==
+      null &&
+    order?.provider_order_id !==
+      undefined &&
+    String(
+      order.provider_order_id
+    ).trim()
+  ) {
+    const requestId =
+      String(
+        order.provider_order_id
+      ).trim();
+
+    if (
+      !identifiers.includes(
+        requestId
+      )
+    ) {
+      identifiers.push(
+        requestId
       );
-
-      return res.status(500).json({
-        success: false,
-        error:
-          error?.message ||
-          "Unable to load active numbers."
-      });
     }
   }
 
-  /*
-   * POST
-   * Manual move to Order History.
-   * No refund.
-   */
+  for (
+    const identifier of identifiers
+  ) {
+    const result =
+      await getSmsForVerification(
+        identifier
+      );
 
-  if (req.method === "POST") {
+    if (
+      result.received
+    ) {
+      return {
+        ...result,
+        verificationId:
+          identifier
+      };
+    }
+  }
 
-    try {
+  return {
+    sms: null,
+    smsList: [],
+    received: false,
+    verificationId:
+      identifiers[0] ||
+      null
+  };
+}
 
-      const user =
-        await getAuthenticatedUser(req);
 
+async function markOrder(
+  orderId,
+  patch
+) {
+  return await supabaseRequest(
+    `orders?id=eq.${quote(
+      orderId
+    )}`,
+    {
+      method: "PATCH",
+      body:
+        JSON.stringify(
+          patch
+        )
+    }
+  );
+}
+
+
+/*
+ * ---------------------------------------------------------
+ * GET ACTIVE NUMBERS
+ * ---------------------------------------------------------
+ */
+
+async function getActiveOrders(
+  userId
+) {
+  return await supabaseRequest(
+    `orders?user_id=eq.${quote(
+      userId
+    )}&select=*&order=created_at.desc&limit=100`
+  );
+}
+
+
+export default async function handler(
+  req,
+  res
+) {
+  if (
+    req.method !== "GET" &&
+    req.method !== "POST"
+  ) {
+    return res.status(405).json({
+      success: false,
+      error:
+        "Method not allowed."
+    });
+  }
+
+  try {
+    const user =
+      await getAuthenticatedUser(
+        req
+      );
+
+    /*
+     * POST:
+     *
+     * Keep compatibility with the existing
+     * Active endpoint.
+     *
+     * This does NOT refund the user.
+     */
+    if (
+      req.method === "POST"
+    ) {
       const body =
         typeof req.body === "string"
-          ? JSON.parse(req.body || "{}")
-          : (req.body || {});
+          ? JSON.parse(
+              req.body
+            )
+          : (
+              req.body || {}
+            );
 
       const orderId =
-        String(
-          body.orderId ||
-          body.id ||
-          ""
-        ).trim();
+        body.orderId ||
+        body.order_id ||
+        body.id;
 
       if (!orderId) {
         return res.status(400).json({
@@ -672,49 +438,367 @@ export default async function handler(req, res) {
 
       const rows =
         await supabaseRequest(
-          `orders?id=eq.${quote(orderId)}` +
-          `&user_id=eq.${quote(user.id)}` +
-          `&select=*` +
-          `&limit=1`
+          `orders?id=eq.${quote(
+            orderId
+          )}&user_id=eq.${quote(
+            user.id
+          )}&select=*&limit=1`
         );
 
-      const order = rows?.[0];
-
-      if (!order) {
+      if (!rows?.length) {
         return res.status(404).json({
           success: false,
-          error: "Order not found."
+          error:
+            "Order not found."
         });
       }
 
-      const completed =
-        await completeOrder(order);
+      const order =
+        rows[0];
+
+      /*
+       * POST is only used to mark the
+       * order completed manually.
+       *
+       * No refund.
+       */
+      const updated =
+        await markOrder(
+          order.id,
+          {
+            status:
+              "completed",
+            updated_at:
+              new Date().toISOString()
+          }
+        );
 
       return res.status(200).json({
         success: true,
-        message:
-          "Number moved to order history.",
-        order: completed
-      });
-
-    } catch (error) {
-
-      console.error(
-        "Complete active number error:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-        error:
-          error?.message ||
-          "Unable to complete number."
+        order:
+          updated?.[0] ||
+          null
       });
     }
-  }
 
-  return res.status(405).json({
-    success: false,
-    error: "Method not allowed."
-  });
+
+    /*
+     * -----------------------------------------------------
+     * GET
+     * -----------------------------------------------------
+     */
+
+    const orders =
+      await getActiveOrders(
+        user.id
+      );
+
+    const now =
+      Date.now();
+
+    const active =
+      [];
+
+    for (
+      const order of orders
+    ) {
+      const status =
+        String(
+          order?.status ||
+          ""
+        )
+          .trim()
+          .toLowerCase();
+
+
+      /*
+       * Completed/expired orders
+       * belong to Order History.
+       */
+      if (
+        status ===
+          "completed" ||
+        status ===
+          "expired" ||
+        status ===
+          "cancelled" ||
+        status ===
+          "canceled"
+      ) {
+        continue;
+      }
+
+
+      /*
+       * ---------------------------------------------------
+       * EXACT PROVIDER EXPIRY
+       * ---------------------------------------------------
+       */
+
+      const expiryDate =
+        parseProviderExpiry(
+          order?.provider_expired_at
+        );
+
+      if (
+        expiryDate &&
+        expiryDate.getTime() <=
+          now
+      ) {
+        try {
+          await markOrder(
+            order.id,
+            {
+              status:
+                "expired",
+              updated_at:
+                new Date().toISOString()
+            }
+          );
+        } catch (
+          updateError
+        ) {
+          console.error(
+            "Failed to mark expired order:",
+            updateError
+          );
+        }
+
+        continue;
+      }
+
+
+      /*
+       * ---------------------------------------------------
+       * GET SMS
+       * ---------------------------------------------------
+       */
+
+      const smsResult =
+        await findSms(
+          order
+        );
+
+
+      /*
+       * ---------------------------------------------------
+       * SMS RECEIVED
+       * ---------------------------------------------------
+       *
+       * When the first SMS arrives:
+       *
+       * status = sms_received
+       * updated_at = time SMS was first seen
+       *
+       * The number remains visible for
+       * one minute.
+       */
+
+      if (
+        smsResult.received
+      ) {
+        let smsReceivedAt =
+          null;
+
+        if (
+          status ===
+          "sms_received"
+        ) {
+          const previous =
+            new Date(
+              order.updated_at
+            );
+
+          if (
+            !Number.isNaN(
+              previous.getTime()
+            )
+          ) {
+            smsReceivedAt =
+              previous;
+          }
+        }
+
+        /*
+         * First time code is detected.
+         */
+        if (
+          !smsReceivedAt
+        ) {
+          smsReceivedAt =
+            new Date();
+
+          try {
+            const updated =
+              await markOrder(
+                order.id,
+                {
+                  status:
+                    "sms_received",
+                  updated_at:
+                    smsReceivedAt.toISOString()
+                }
+              );
+
+            if (
+              updated?.[0]
+            ) {
+              Object.assign(
+                order,
+                updated[0]
+              );
+            }
+          } catch (
+            updateError
+          ) {
+            console.error(
+              "Failed to save SMS received time:",
+              updateError
+            );
+          }
+        }
+
+
+        const receivedTime =
+          smsReceivedAt.getTime();
+
+        const elapsed =
+          now -
+          receivedTime;
+
+
+        /*
+         * After one minute:
+         * remove from Active,
+         * keep in Order History.
+         */
+        if (
+          elapsed >=
+          60 * 1000
+        ) {
+          try {
+            await markOrder(
+              order.id,
+              {
+                status:
+                  "completed",
+                updated_at:
+                  new Date().toISOString()
+              }
+            );
+          } catch (
+            updateError
+          ) {
+            console.error(
+              "Failed to complete SMS order:",
+              updateError
+            );
+          }
+
+          continue;
+        }
+
+
+        active.push({
+          ...order,
+
+          status:
+            "sms_received",
+
+          sms:
+            smsResult.sms,
+
+          code:
+            smsResult.sms,
+
+          sms_received:
+            true,
+
+          sms_list:
+            smsResult.smsList,
+
+          provider_verification_id:
+            order.provider_verification_id ||
+            smsResult.verificationId,
+
+          verification_id:
+            order.provider_verification_id ||
+            smsResult.verificationId
+        });
+
+        continue;
+      }
+
+
+      /*
+       * ---------------------------------------------------
+       * STILL WAITING FOR SMS
+       * ---------------------------------------------------
+       */
+
+      active.push({
+        ...order,
+
+        sms:
+          null,
+
+        code:
+          null,
+
+        sms_received:
+          false,
+
+        sms_list:
+          [],
+
+        provider_verification_id:
+          order.provider_verification_id ||
+          null,
+
+        verification_id:
+          order.provider_verification_id ||
+          null
+      });
+    }
+
+
+    return res.status(200).json({
+      success: true,
+
+      active,
+
+      numbers:
+        active,
+
+      count:
+        active.length
+    });
+
+  } catch (error) {
+    console.error(
+      "Active API error:",
+      error
+    );
+
+    const message =
+      error?.message ||
+      "Unable to load active numbers.";
+
+    if (
+      message ===
+      "Unauthorized."
+    ) {
+      return res.status(401).json({
+        success: false,
+        error:
+          message
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error:
+        message
+    });
+  }
 }
