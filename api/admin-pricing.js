@@ -2,29 +2,32 @@ const SUPABASE_URL =
   process.env.SUPABASE_URL ||
   "https://rfitbmkizfmwfqqskwhy.supabase.co";
 
-const SUPABASE_PUBLISHABLE_KEY =
-  process.env.SUPABASE_PUBLISHABLE_KEY ||
-  "sb_publishable_erjKhsDOoyhbHDExvQ7RQ_gpGcK0C-";
-
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-function bearer(req) {
-  const value =
+const SUPABASE_AUTH_KEY =
+  process.env.SUPABASE_PUBLISHABLE_KEY ||
+  process.env.SUPABASE_ANON_KEY;
+
+function getBearerToken(req) {
+  const authorization =
     req.headers?.authorization ||
     req.headers?.Authorization ||
     "";
 
-  return String(value).startsWith("Bearer ")
-    ? String(value).slice(7).trim()
-    : "";
+  if (!authorization) return "";
+
+  const match =
+    String(authorization).match(/^Bearer\s+(.+)$/i);
+
+  return match ? match[1].trim() : "";
 }
 
-function q(value) {
+function encode(value) {
   return encodeURIComponent(String(value ?? ""));
 }
 
-async function supabaseRequest(path, options = {}) {
+async function supabaseRest(path, options = {}) {
   if (!SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error(
       "SUPABASE_SERVICE_ROLE_KEY is not configured."
@@ -35,16 +38,24 @@ async function supabaseRequest(path, options = {}) {
     `${SUPABASE_URL}/rest/v1/${path}`,
     {
       method: options.method || "GET",
+
       headers: {
         apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        Authorization:
+          `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+
         "Content-Type": "application/json",
         Accept: "application/json",
+
         Prefer:
-          options.prefer || "return=representation"
+          options.prefer ||
+          "return=representation"
       },
+
       ...(options.body !== undefined
-        ? { body: options.body }
+        ? {
+            body: options.body
+          }
         : {})
     }
   );
@@ -71,41 +82,84 @@ async function supabaseRequest(path, options = {}) {
   return data;
 }
 
-async function getUser(req) {
-  const token = bearer(req);
+
+/* =========================================================
+   VERIFY SIGNED-IN USER
+   ========================================================= */
+
+async function getAuthenticatedUser(req) {
+  const token = getBearerToken(req);
 
   if (!token) {
-    throw new Error("Unauthorized.");
+    throw new Error(
+      "No authentication token was provided."
+    );
+  }
+
+  if (!SUPABASE_AUTH_KEY) {
+    throw new Error(
+      "SUPABASE_PUBLISHABLE_KEY or SUPABASE_ANON_KEY is not configured."
+    );
   }
 
   const response = await fetch(
     `${SUPABASE_URL}/auth/v1/user`,
     {
+      method: "GET",
+
       headers: {
-        apikey: SUPABASE_PUBLISHABLE_KEY,
+        apikey: SUPABASE_AUTH_KEY,
         Authorization: `Bearer ${token}`
       }
     }
   );
 
-  const user =
-    await response.json().catch(() => null);
+  const text = await response.text();
+
+  let user = null;
+
+  try {
+    user = text ? JSON.parse(text) : null;
+  } catch {
+    user = null;
+  }
 
   if (!response.ok || !user?.id) {
-    throw new Error("Unauthorized.");
+    console.error(
+      "Supabase authentication failed:",
+      response.status,
+      user
+    );
+
+    throw new Error(
+      "Your admin session has expired. Please sign out and sign in again."
+    );
   }
 
   return user;
 }
 
+
+/* =========================================================
+   VERIFY ADMIN ROLE
+   ========================================================= */
+
 async function requireAdmin(req) {
-  const user = await getUser(req);
+  const user =
+    await getAuthenticatedUser(req);
 
-  const rows = await supabaseRequest(
-    `profiles?id=eq.${q(user.id)}&select=id,role&limit=1`
-  );
+  const profiles =
+    await supabaseRest(
+      `profiles?id=eq.${encode(user.id)}&select=id,role&limit=1`
+    );
 
-  if (rows?.[0]?.role !== "admin") {
+  if (!profiles?.length) {
+    throw new Error(
+      "Admin profile was not found."
+    );
+  }
+
+  if (profiles[0].role !== "admin") {
     throw new Error(
       "Administrator access required."
     );
@@ -114,6 +168,11 @@ async function requireAdmin(req) {
   return user;
 }
 
+
+/* =========================================================
+   ALLOWED SERVERS
+   ========================================================= */
+
 const ALLOWED_SERVERS = new Set([
   "usa-server-1",
   "usa-server-2",
@@ -121,40 +180,76 @@ const ALLOWED_SERVERS = new Set([
   "global-server-2"
 ]);
 
+
+/* =========================================================
+   MAIN HANDLER
+   ========================================================= */
+
 export default async function handler(req, res) {
   try {
-    await requireAdmin(req);
 
     /*
-     * GET
-     * Load all saved manual selling prices.
+     * Only an authenticated administrator
+     * can use this API.
      */
+    await requireAdmin(req);
+
+
+    /* =====================================================
+       GET
+       Load all saved selling prices.
+       ===================================================== */
+
     if (req.method === "GET") {
-      const rows = await supabaseRequest(
-        "product_prices?select=id,country_id,country_name,service_id,service_name,selling_price,is_active,provider_server,provider_service_id&order=country_name.asc,provider_server.asc,service_name.asc"
-      );
+
+      const prices =
+        await supabaseRest(
+          "product_prices" +
+          "?select=" +
+          "id," +
+          "country_id," +
+          "country_name," +
+          "service_id," +
+          "service_name," +
+          "selling_price," +
+          "is_active," +
+          "provider_server," +
+          "provider_service_id" +
+          "&order=country_name.asc,provider_server.asc,service_name.asc"
+        );
 
       return res.status(200).json({
         success: true,
-        prices: rows || []
+        prices: prices || []
       });
     }
 
-    /*
-     * POST
-     * Create or replace a manual selling price.
-     */
+
+    /* =====================================================
+       POST
+       Save or replace a selling price.
+       ===================================================== */
+
     if (req.method === "POST") {
+
       const body = req.body || {};
 
       const countryId =
-        String(body.countryId || "").trim();
+        String(
+          body.countryId || ""
+        ).trim();
 
       const countryName =
-        String(body.countryName || "").trim();
+        String(
+          body.countryName || ""
+        ).trim();
 
       const providerServer =
-        String(body.providerServer || "").trim();
+        String(
+          body.providerServer ||
+          body.server ||
+          ""
+        ).trim();
 
       const serviceId =
         String(
@@ -164,25 +259,47 @@ export default async function handler(req, res) {
         ).trim();
 
       const serviceName =
-        String(body.serviceName || "").trim();
+        String(
+          body.serviceName || ""
+        ).trim();
 
       const sellingPrice =
-        Number(body.sellingPrice);
+        Number(
+          body.sellingPrice
+        );
 
-      if (
-        !countryId ||
-        !providerServer ||
-        !serviceId ||
-        !serviceName
-      ) {
+
+      /* -----------------------------
+         Validate country
+         ----------------------------- */
+
+      if (!countryId) {
         return res.status(400).json({
           success: false,
           error:
-            "Country, provider server and service are required."
+            "Please select a country."
         });
       }
 
-      if (!ALLOWED_SERVERS.has(providerServer)) {
+
+      /* -----------------------------
+         Validate server
+         ----------------------------- */
+
+      if (!providerServer) {
+        return res.status(400).json({
+          success: false,
+          error:
+            "Please select a provider server."
+        });
+      }
+
+
+      if (
+        !ALLOWED_SERVERS.has(
+          providerServer
+        )
+      ) {
         return res.status(400).json({
           success: false,
           error:
@@ -190,48 +307,102 @@ export default async function handler(req, res) {
         });
       }
 
+
+      /* -----------------------------
+         Validate service
+         ----------------------------- */
+
+      if (!serviceId || !serviceName) {
+        return res.status(400).json({
+          success: false,
+          error:
+            "Please select a service."
+        });
+      }
+
+
+      /* -----------------------------
+         Validate price
+         ----------------------------- */
+
       if (
-        !Number.isFinite(sellingPrice) ||
+        !Number.isFinite(
+          sellingPrice
+        ) ||
         sellingPrice <= 0
       ) {
         return res.status(400).json({
           success: false,
           error:
-            "Selling price must be greater than zero."
+            "Please enter a valid selling price."
         });
       }
 
-      /*
-       * First check the normal service_id.
-       */
-      let existing =
-        await supabaseRequest(
-          `product_prices?country_id=eq.${q(countryId)}&provider_server=eq.${q(providerServer)}&service_id=eq.${q(serviceId)}&select=id&limit=1`
-        );
 
       /*
-       * Then check provider_service_id.
-       * This supports older prices already saved
-       * before the database was updated.
+       * Look for an existing price
+       * for this exact:
+       *
+       * Country
+       * +
+       * Provider Server
+       * +
+       * Service
+       *
+       * If found, update it.
        */
-      if (!existing?.[0]?.id) {
+
+      let existing =
+        await supabaseRest(
+          "product_prices" +
+          `?country_id=eq.${encode(countryId)}` +
+          `&provider_server=eq.${encode(providerServer)}` +
+          `&service_id=eq.${encode(serviceId)}` +
+          "&select=id" +
+          "&limit=1"
+        );
+
+
+      /*
+       * Also support older records
+       * that stored the service ID
+       * in provider_service_id.
+       */
+
+      if (!existing?.length) {
+
         existing =
-          await supabaseRequest(
-            `product_prices?country_id=eq.${q(countryId)}&provider_server=eq.${q(providerServer)}&provider_service_id=eq.${q(serviceId)}&select=id&limit=1`
+          await supabaseRest(
+            "product_prices" +
+            `?country_id=eq.${encode(countryId)}` +
+            `&provider_server=eq.${encode(providerServer)}` +
+            `&provider_service_id=eq.${encode(serviceId)}` +
+            "&select=id" +
+            "&limit=1"
           );
       }
 
-      const row = {
-        country_id: countryId,
+
+      const priceRow = {
+
+        country_id:
+          countryId,
+
         country_name:
-          countryName || countryId,
+          countryName ||
+          countryId,
 
-        service_id: serviceId,
-        service_name: serviceName,
+        service_id:
+          serviceId,
 
-        selling_price: sellingPrice,
+        service_name:
+          serviceName,
 
-        is_active: true,
+        selling_price:
+          sellingPrice,
+
+        is_active:
+          true,
 
         provider_server:
           providerServer,
@@ -239,67 +410,111 @@ export default async function handler(req, res) {
         provider_service_id:
           serviceId,
 
-        provider_cost: 0
+        /*
+         * Provider price is NOT used.
+         * Your selling price is manual.
+         */
+        provider_cost:
+          0
       };
+
 
       let saved;
 
-      /*
-       * Existing price:
-       * update/replace it.
-       */
+
+      /* -----------------------------
+         UPDATE EXISTING PRICE
+         ----------------------------- */
+
       if (existing?.[0]?.id) {
+
         saved =
-          await supabaseRequest(
-            `product_prices?id=eq.${q(existing[0].id)}`,
+          await supabaseRest(
+            `product_prices?id=eq.${encode(
+              existing[0].id
+            )}`,
             {
               method: "PATCH",
-              body: JSON.stringify(row)
+
+              body:
+                JSON.stringify(
+                  priceRow
+                )
             }
           );
+
+        return res.status(200).json({
+          success: true,
+          action: "updated",
+          message:
+            "Selling price updated successfully.",
+          price:
+            saved?.[0] || null
+        });
       }
 
-      /*
-       * No existing price:
-       * create a new one.
-       */
-      else {
-        saved =
-          await supabaseRequest(
-            "product_prices",
-            {
-              method: "POST",
-              body: JSON.stringify(row)
-            }
-          );
-      }
+
+      /* -----------------------------
+         CREATE NEW PRICE
+         ----------------------------- */
+
+      saved =
+        await supabaseRest(
+          "product_prices",
+          {
+            method: "POST",
+
+            body:
+              JSON.stringify(
+                priceRow
+              )
+          }
+        );
+
 
       return res.status(200).json({
         success: true,
-        price: saved?.[0] || null
+        action: "created",
+        message:
+          "Selling price saved successfully.",
+        price:
+          saved?.[0] || null
       });
     }
 
-    /*
-     * DELETE
-     * Delete a saved manual selling price.
-     */
+
+    /* =====================================================
+       DELETE
+       Delete a saved selling price.
+       ===================================================== */
+
     if (req.method === "DELETE") {
+
       const id =
-        String(req.query?.id || "").trim();
+        String(
+          req.query?.id || ""
+        ).trim();
 
       if (!id) {
         return res.status(400).json({
           success: false,
           error:
-            "Price id is required."
+            "Price ID is required."
         });
       }
 
+
+      /*
+       * Confirm that the price exists.
+       */
+
       const existing =
-        await supabaseRequest(
-          `product_prices?id=eq.${q(id)}&select=id`
+        await supabaseRest(
+          `product_prices?id=eq.${encode(id)}` +
+          "&select=id" +
+          "&limit=1"
         );
+
 
       if (!existing?.[0]?.id) {
         return res.status(404).json({
@@ -309,29 +524,43 @@ export default async function handler(req, res) {
         });
       }
 
-      await supabaseRequest(
-        `product_prices?id=eq.${q(id)}`,
+
+      /*
+       * Delete it.
+       */
+
+      await supabaseRest(
+        `product_prices?id=eq.${encode(id)}`,
         {
           method: "DELETE",
-          prefer: "return=minimal"
+          prefer:
+            "return=minimal"
         }
       );
+
 
       return res.status(200).json({
         success: true,
         message:
-          "Selling price deleted."
+          "Selling price deleted successfully."
       });
     }
 
+
+    /* =====================================================
+       METHOD NOT ALLOWED
+       ===================================================== */
+
     return res.status(405).json({
       success: false,
-      error: "Method not allowed."
+      error:
+        "Method not allowed."
     });
 
   } catch (error) {
+
     console.error(
-      "Admin pricing error:",
+      "Admin pricing API error:",
       error
     );
 
@@ -339,13 +568,29 @@ export default async function handler(req, res) {
       error?.message ||
       "Unable to process pricing request.";
 
-    const status =
-      message === "Unauthorized."
-        ? 401
-        : message ===
-          "Administrator access required."
-          ? 403
-          : 500;
+    let status = 500;
+
+    if (
+      message.includes(
+        "authentication"
+      ) ||
+      message.includes(
+        "session"
+      ) ||
+      message.includes(
+        "No authentication"
+      )
+    ) {
+      status = 401;
+    }
+
+    if (
+      message.includes(
+        "Administrator access required"
+      )
+    ) {
+      status = 403;
+    }
 
     return res.status(status).json({
       success: false,
