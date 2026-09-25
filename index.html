@@ -5882,46 +5882,70 @@
 
       if (!countrySelect || !serviceSelect || !serverSelect || !providerInput) return;
 
-      const countryId = countrySelect.value;
+      const countryId = String(countrySelect.value || "").trim();
       const countryOption = countrySelect.options[countrySelect.selectedIndex];
       const serviceOption = serviceSelect.options[serviceSelect.selectedIndex];
+      const serviceId = String(serviceOption?.value || "").trim();
       const serviceName = serviceOption?.dataset?.name || serviceOption?.textContent?.trim() || "";
-      const server = serverSelect.value;
+      const server = String(serverSelect.value || "").trim();
 
-      if (!countryId || !serviceName || !server) {
+      if (!countryId || !serviceId || !serviceName || !server) {
         providerInput.value = "";
         adminPricingSelectedProviderPrice = null;
+        adminPricingSelectedProviderServiceId = "";
+        adminPricingSelectedProviderServiceName = "";
         return;
       }
 
       providerInput.value = "Loading...";
+      adminPricingSelectedProviderPrice = null;
       if (status) status.textContent = "Loading provider price...";
 
       try {
-        const query =
-          `/api/price?countryId=${encodeURIComponent(countryId)}` +
-          `&countryName=${encodeURIComponent(countryOption?.dataset?.name || countryOption?.textContent?.trim() || "")}` +
-          `&service=${encodeURIComponent(serviceName)}` +
-          `&server=${encodeURIComponent(server)}`;
+        const params = new URLSearchParams();
+        params.set("countryId", countryId);
+        params.set(
+          "countryName",
+          countryOption?.dataset?.name || countryOption?.textContent?.trim() || ""
+        );
+        params.set("serviceId", serviceId);
+        params.set("serviceName", serviceName);
+        params.set("server", server);
 
-        const response = await fetch(query);
-        const data = await response.json();
+        const response = await fetch(`/api/price?${params.toString()}`);
+        const data = await response.json().catch(() => ({}));
 
         if (!response.ok || !data?.success) {
-          throw new Error(normalizeAdminPricingError(data?.error, "Provider price not available."));
+          throw new Error(
+            normalizeAdminPricingError(
+              data?.error,
+              "Provider price not available."
+            )
+          );
         }
 
-        const providerPrice = Number(data.provider_price ?? data.provider_cost ?? data.price);
+        const providerPrice = Number(
+          data.provider_price ??
+          data.provider_cost ??
+          data.price
+        );
+
         if (!Number.isFinite(providerPrice) || providerPrice <= 0) {
           throw new Error("Provider returned no valid price.");
         }
 
         adminPricingSelectedProviderPrice = providerPrice;
-        adminPricingSelectedProviderServiceId = String(data.provider_service_id || serviceSelect.value || "");
-        adminPricingSelectedProviderServiceName = String(data.provider_service_name || serviceName);
+        adminPricingSelectedProviderServiceId = String(
+          data.provider_service_id || serviceId
+        );
+        adminPricingSelectedProviderServiceName = String(
+          data.provider_service_name || serviceName
+        );
 
         providerInput.value = formatMoney(providerPrice);
-        if (status) status.textContent = `Provider price loaded from ${server}.`;
+        if (status) {
+          status.textContent = `Provider price loaded from ${server}.`;
+        }
 
       } catch (error) {
         console.error("Admin pricing provider price error:", error);
@@ -5929,7 +5953,12 @@
         adminPricingSelectedProviderServiceId = "";
         adminPricingSelectedProviderServiceName = "";
         providerInput.value = "Price not available";
-        if (status) status.textContent = normalizeAdminPricingError(error, "Provider price not available.");
+        if (status) {
+          status.textContent = normalizeAdminPricingError(
+            error,
+            "Provider price not available."
+          );
+        }
       }
     }
 
