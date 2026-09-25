@@ -4,7 +4,7 @@ const SUPABASE_URL =
 
 const SUPABASE_PUBLISHABLE_KEY =
   process.env.SUPABASE_PUBLISHABLE_KEY ||
-  "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
+  "sb_publishable_erjKhsDOoyhbHDExvQ7RQ_gpGcK0C-";
 
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -14,6 +14,7 @@ function bearer(req) {
     req.headers?.authorization ||
     req.headers?.Authorization ||
     "";
+
   return String(value).startsWith("Bearer ")
     ? String(value).slice(7).trim()
     : "";
@@ -48,6 +49,7 @@ async function supabaseRequest(path, options = {}) {
   const text = await response.text();
 
   let data = {};
+
   try {
     data = text ? JSON.parse(text) : {};
   } catch (_) {
@@ -114,13 +116,10 @@ const ALLOWED_SERVERS = new Set([
 ]);
 
 export default async function handler(req, res) {
-
   try {
-
     await requireAdmin(req);
 
     if (req.method === "GET") {
-
       const rows = await supabaseRequest(
         "product_prices?select=id,country_id,country_name,service_id,service_name,selling_price,is_active,provider_server,provider_service_id&order=country_name.asc,provider_server.asc,service_name.asc"
       );
@@ -132,7 +131,6 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST") {
-
       const body = req.body || {};
 
       const countryId =
@@ -186,9 +184,13 @@ export default async function handler(req, res) {
         });
       }
 
+      const serviceMatch = q(
+        `(provider_service_id.eq.${providerServiceId},service_id.eq.${providerServiceId})`
+      );
+
       const existing =
         await supabaseRequest(
-          `product_prices?country_id=eq.${q(countryId)}&provider_server=eq.${q(providerServer)}&provider_service_id=eq.${q(providerServiceId)}&select=id&limit=1`
+          `product_prices?country_id=eq.${q(countryId)}&provider_server=eq.${q(providerServer)}&or=${serviceMatch}&select=id&limit=1`
         );
 
       const row = {
@@ -206,7 +208,6 @@ export default async function handler(req, res) {
       let saved;
 
       if (existing?.[0]?.id) {
-
         saved = await supabaseRequest(
           `product_prices?id=eq.${q(existing[0].id)}`,
           {
@@ -214,9 +215,7 @@ export default async function handler(req, res) {
             body: JSON.stringify(row)
           }
         );
-
       } else {
-
         saved = await supabaseRequest(
           "product_prices",
           {
@@ -233,7 +232,6 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "DELETE") {
-
       const id =
         String(req.query?.id || "").trim();
 
@@ -276,7 +274,6 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-
     console.error(
       "Admin pricing error:",
       error
