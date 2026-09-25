@@ -1,433 +1,255 @@
-import { sureVerificationRequest } from "./_lib.js";
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://rfitbmkizfmwfqqskwhy.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || "sb_publishable_erjKhsDOoyhbjHDExvQ7RQ_gpGcK0C-";
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const SERVERS = [
+function bearer(req) {
+  const value = req.headers?.authorization || req.headers?.Authorization || "";
+  return String(value).startsWith("Bearer ")
+    ? String(value).slice(7).trim()
+    : "";
+}
+
+async function supabaseRequest(path, options = {}) {
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
+  }
+
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/${path}`,
+    {
+      method: options.method || "GET",
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Prefer: options.prefer || "return=representation",
+        ...(options.headers || {})
+      },
+      ...(options.body !== undefined
+        ? { body: options.body }
+        : {})
+    }
+  );
+
+  const text = await response.text();
+  let data = {};
+
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = {};
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+      data?.error ||
+      data?.hint ||
+      `Supabase returned HTTP ${response.status}.`
+    );
+  }
+
+  return data;
+}
+
+async function getUser(req) {
+  const token = bearer(req);
+
+  if (!token) {
+    throw new Error("Unauthorized.");
+  }
+
+  const response = await fetch(
+    `${SUPABASE_URL}/auth/v1/user`,
+    {
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+
+  const user = await response
+    .json()
+    .catch(() => null);
+
+  if (!response.ok || !user?.id) {
+    throw new Error("Unauthorized.");
+  }
+
+  return user;
+}
+
+async function requireAdmin(req) {
+  const user = await getUser(req);
+
+  const rows = await supabaseRequest(
+    `profiles?id=eq.${encodeURIComponent(user.id)}&select=id,role&limit=1`
+  );
+
+  if (rows?.[0]?.role !== "admin") {
+    throw new Error(
+      "Administrator access required."
+    );
+  }
+
+  return user;
+}
+
+function quote(value) {
+  return encodeURIComponent(
+    String(value ?? "")
+  );
+}
+
+const ALLOWED_SERVERS = new Set([
   "usa-server-1",
   "usa-server-2",
   "global-server-1",
   "global-server-2"
-];
-
-function clean(value) {
-  return String(value ?? "").trim();
-}
-
-function getServices(data) {
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.services)) return data.services;
-  if (Array.isArray(data?.data)) return data.data;
-  if (Array.isArray(data?.data?.services)) {
-    return data.data.services;
-  }
-  return [];
-}
-
-function serviceId(service) {
-  return clean(
-    service?.id ??
-    service?.service_id ??
-    service?.serviceId ??
-    service?.service?.id
-  );
-}
-
-function serviceName(service) {
-  return clean(
-    service?.name ??
-    service?.service_name ??
-    service?.serviceName ??
-    service?.title ??
-    service?.service?.name
-  );
-}
-
-function findService(services, requestedId, requestedName) {
-  const id = clean(requestedId).toLowerCase();
-  const name = clean(requestedName).toLowerCase();
-
-  if (id) {
-    const exactId = services.find(
-      service =>
-        serviceId(service).toLowerCase() === id
-    );
-
-    if (exactId) {
-      return exactId;
-    }
-  }
-
-  if (name) {
-    const exactName = services.find(
-      service =>
-        serviceName(service).toLowerCase() === name
-    );
-
-    if (exactName) {
-      return exactName;
-    }
-
-    const partialName = services.find(
-      service =>
-        serviceName(service)
-          .toLowerCase()
-          .includes(name)
-    );
-
-    if (partialName) {
-      return partialName;
-    }
-  }
-
-  return null;
-}
-
-function numberOrNull(value) {
-  const number = Number(value);
-
-  return Number.isFinite(number) && number > 0
-    ? number
-    : null;
-}
-
-function extractPrice(data, selectedService) {
-  const directPrices = [
-    data?.price?.price,
-    data?.price?.amount,
-    data?.price,
-    data?.amount,
-    data?.data?.price?.price,
-    data?.data?.price?.amount,
-    data?.data?.price,
-    data?.data?.amount
-  ];
-
-  for (const value of directPrices) {
-    const price = numberOrNull(value);
-
-    if (price !== null) {
-      return price;
-    }
-  }
-
-  const lists = [
-    data?.prices,
-    data?.data?.prices,
-    Array.isArray(data) ? data : null
-  ].filter(Array.isArray);
-
-  const wantedId =
-    serviceId(selectedService).toLowerCase();
-
-  const wantedName =
-    serviceName(selectedService).toLowerCase();
-
-  for (const list of lists) {
-    for (const row of list) {
-      const rowId = clean(
-        row?.service?.id ??
-        row?.service_id ??
-        row?.serviceId ??
-        row?.id
-      ).toLowerCase();
-
-      const rowName = clean(
-        row?.service?.name ??
-        row?.service_name ??
-        row?.serviceName ??
-        row?.name
-      ).toLowerCase();
-
-      const matches =
-        rowId === wantedId ||
-        rowName === wantedName ||
-        (
-          wantedName &&
-          rowName.includes(wantedName)
-        ) ||
-        (
-          rowName &&
-          wantedName.includes(rowName)
-        );
-
-      if (!matches) {
-        continue;
-      }
-
-      const price =
-        numberOrNull(row?.price) ??
-        numberOrNull(row?.amount) ??
-        numberOrNull(row?.provider_price) ??
-        numberOrNull(row?.selling_price);
-
-      if (price !== null) {
-        return price;
-      }
-    }
-  }
-
-  return null;
-}
-
-async function getProviderService({
-  server,
-  countryId,
-  requestedServiceId,
-  requestedServiceName
-}) {
-  const query = new URLSearchParams();
-
-  query.set(
-    "country_id",
-    String(countryId)
-  );
-
-  const response =
-    await sureVerificationRequest(
-      `/${server}/services?${query.toString()}`
-    );
-
-  const services =
-    getServices(response);
-
-  if (!services.length) {
-    throw new Error(
-      `No services were returned by ${server}.`
-    );
-  }
-
-  const selected =
-    findService(
-      services,
-      requestedServiceId,
-      requestedServiceName
-    );
-
-  if (!selected) {
-    throw new Error(
-      `Service "${requestedServiceName || requestedServiceId}" was not found on ${server}.`
-    );
-  }
-
-  const id = serviceId(selected);
-  const name = serviceName(selected);
-
-  if (!id) {
-    throw new Error(
-      `SureVerification did not return a service ID for ${name || requestedServiceName}.`
-    );
-  }
-
-  return {
-    id,
-    name
-  };
-}
-
-async function getPrice({
-  server,
-  countryId,
-  requestedServiceId,
-  requestedServiceName
-}) {
-  const providerService =
-    await getProviderService({
-      server,
-      countryId,
-      requestedServiceId,
-      requestedServiceName
-    });
-
-  let response;
-
-  /*
-   * Global Server 2:
-   * price endpoint does not require country_id/service.
-   */
-  if (server === "global-server-2") {
-    response =
-      await sureVerificationRequest(
-        "/global-server-2/price"
-      );
-  } else {
-    const query =
-      new URLSearchParams();
-
-    query.set(
-      "country_id",
-      String(countryId)
-    );
-
-    query.set(
-      "service",
-      providerService.id
-    );
-
-    response =
-      await sureVerificationRequest(
-        `/${server}/price?${query.toString()}`
-      );
-  }
-
-  const price =
-    extractPrice(
-      response,
-      providerService
-    );
-
-  if (price === null) {
-    throw new Error(
-      `SureVerification returned no valid price for ${providerService.name} on ${server}. Provider service ID: ${providerService.id}.`
-    );
-  }
-
-  return {
-    price,
-    service: providerService
-  };
-}
-
-function errorMessage(error) {
-  if (!error) {
-    return "Provider price not available.";
-  }
-
-  if (typeof error === "string") {
-    return error;
-  }
-
-  if (error?.message) {
-    return String(error.message);
-  }
-
-  if (error?.error) {
-    return String(error.error);
-  }
-
-  try {
-    return JSON.stringify(error);
-  } catch {
-    return "Provider price not available.";
-  }
-}
+]);
 
 export default async function handler(req, res) {
-  if (req.method !== "GET") {
-    return res.status(405).json({
-      success: false,
-      error: "Method not allowed."
-    });
-  }
-
-  const countryId =
-    clean(req.query?.countryId);
-
-  const countryName =
-    clean(req.query?.countryName);
-
-  const requestedServiceId =
-    clean(
-      req.query?.serviceId ||
-      req.query?.providerServiceId
-    );
-
-  const requestedServiceName =
-    clean(
-      req.query?.serviceName ||
-      req.query?.service
-    );
-
-  const server =
-    clean(req.query?.server);
-
-  if (!countryId) {
-    return res.status(400).json({
-      success: false,
-      error: "countryId is required."
-    });
-  }
-
-  if (!requestedServiceId && !requestedServiceName) {
-    return res.status(400).json({
-      success: false,
-      error:
-        "serviceId or service is required."
-    });
-  }
-
-  if (!server) {
-    return res.status(400).json({
-      success: false,
-      error: "server is required."
-    });
-  }
-
-  if (!SERVERS.includes(server)) {
-    return res.status(400).json({
-      success: false,
-      error:
-        `Invalid provider server: ${server}.`
-    });
-  }
-
   try {
-    const result =
-      await getPrice({
-        server,
-        countryId,
-        requestedServiceId,
-        requestedServiceName
+    await requireAdmin(req);
+
+    if (req.method === "GET") {
+      const rows = await supabaseRequest(
+        "product_prices?select=id,country_id,country_name,service_id,service_name,selling_price,is_active,provider_server,provider_service_id&order=country_name.asc,provider_server.asc,service_name.asc"
+      );
+
+      return res.status(200).json({
+        success: true,
+        prices: rows || []
       });
+    }
+
+    if (req.method !== "POST") {
+      return res.status(405).json({
+        success: false,
+        error: "Method not allowed."
+      });
+    }
+
+    const body = req.body || {};
+
+    const countryId = String(
+      body.countryId || ""
+    ).trim();
+
+    const countryName = String(
+      body.countryName || ""
+    ).trim();
+
+    const providerServer = String(
+      body.providerServer || ""
+    ).trim();
+
+    const providerServiceId = String(
+      body.providerServiceId ||
+      body.serviceId ||
+      ""
+    ).trim();
+
+    const serviceName = String(
+      body.serviceName || ""
+    ).trim();
+
+    const sellingPrice = Number(
+      body.sellingPrice
+    );
+
+    if (
+      !countryId ||
+      !providerServer ||
+      !providerServiceId ||
+      !serviceName
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          "Country, server and service are required."
+      });
+    }
+
+    if (!ALLOWED_SERVERS.has(providerServer)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid provider server."
+      });
+    }
+
+    if (
+      !Number.isFinite(sellingPrice) ||
+      sellingPrice <= 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          "Selling price must be greater than zero."
+      });
+    }
+
+    const existing = await supabaseRequest(
+      `product_prices?country_id=eq.${quote(countryId)}&provider_server=eq.${quote(providerServer)}&provider_service_id=eq.${quote(providerServiceId)}&select=id&limit=1`
+    );
+
+    const row = {
+      country_id: countryId,
+      country_name:
+        countryName || countryId,
+      service_id: providerServiceId,
+      service_name: serviceName,
+      selling_price: sellingPrice,
+      is_active: true,
+      provider_server: providerServer,
+      provider_service_id:
+        providerServiceId,
+      provider_cost: 0,
+      provider_price: 0
+    };
+
+    let saved;
+
+    if (existing?.[0]?.id) {
+      saved = await supabaseRequest(
+        `product_prices?id=eq.${quote(existing[0].id)}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(row)
+        }
+      );
+    } else {
+      saved = await supabaseRequest(
+        "product_prices",
+        {
+          method: "POST",
+          body: JSON.stringify(row)
+        }
+      );
+    }
 
     return res.status(200).json({
       success: true,
-
-      country_id:
-        countryId,
-
-      country_name:
-        countryName,
-
-      server,
-
-      requested_service:
-        requestedServiceName,
-
-      provider_service_id:
-        result.service.id,
-
-      provider_service_name:
-        result.service.name,
-
-      provider_price:
-        result.price,
-
-      provider_cost:
-        result.price
+      price: saved?.[0] || null
     });
 
   } catch (error) {
-    const message =
-      errorMessage(error);
-
     console.error(
-      "SureVerification provider price error:",
-      {
-        countryId,
-        countryName,
-        requestedServiceId,
-        requestedServiceName,
-        server,
-        error: message
-      }
+      "Admin manual pricing error:",
+      error
     );
 
-    return res.status(502).json({
+    const message =
+      error?.message ||
+      "Unable to process server pricing.";
+
+    return res.status(
+      message === "Unauthorized." ? 401 : 500
+    ).json({
       success: false,
-      error: message,
-      country_id: countryId,
-      country_name: countryName,
-      service: requestedServiceName,
-      service_id: requestedServiceId,
-      server
+      error: message
     });
   }
 }
