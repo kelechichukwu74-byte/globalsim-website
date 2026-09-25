@@ -5918,13 +5918,22 @@
                     <td>${escapeHtml(row.provider_server || "—")}</td>
                     <td>${formatMoney(row.selling_price)}</td>
                     <td>
-                      <button
-                        type="button"
-                        class="secondary-btn"
-                        onclick="deleteAdminPricing('${escapeHtml(String(row.id || ""))}')"
-                      >
-                        Delete
-                      </button>
+                      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <button
+                          type="button"
+                          class="secondary-btn"
+                          onclick="editAdminPricing('${escapeHtml(String(row.id || ""))}')"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          class="secondary-btn"
+                          onclick="deleteAdminPricing('${escapeHtml(String(row.id || ""))}')"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 `).join("")}
@@ -6161,7 +6170,7 @@
 
         if (status) status.textContent = "Selling price saved successfully.";
         amountInput.value = "";
-        if (providerInput) providerInput.value = formatMoney(providerPrice);
+        if (providerInput) providerInput.value = "";
         await loadAdminPricing();
 
       } catch (error) {
@@ -6169,6 +6178,72 @@
         if (status) status.textContent = normalizeAdminPricingError(error, "Unable to save selling price.");
       } finally {
         button.disabled = false;
+      }
+    }
+
+    async function editAdminPricing(id) {
+      if (!id) return;
+
+      const status = $("adminPricingStatus");
+      const amountInput = $("adminPricingAmount");
+      const countrySelect = $("adminPricingCountry");
+      const serverSelect = $("adminPricingServer");
+      const serviceSelect = $("adminPricingService");
+      const serviceSearch = $("adminPricingServiceSearch");
+
+      try {
+        const token = await getCurrentAccessToken();
+        if (!token) throw new Error("Unauthorized.");
+
+        const response = await fetch("/api/admin-pricing", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data?.success) {
+          throw new Error(normalizeAdminPricingError(data?.error, "Unable to load saved price."));
+        }
+
+        const row = (data.prices || []).find(item => String(item.id) === String(id));
+        if (!row) throw new Error("Saved price not found.");
+
+        // Select the country first.
+        countrySelect.value = String(row.country_id || "");
+
+        // Select the exact server used by this saved price.
+        serverSelect.value = String(row.provider_server || "");
+        if (!serverSelect.value) {
+          throw new Error("This saved price has no provider server.");
+        }
+
+        // Reload services for the selected country + server, then select the saved service.
+        await loadAdminPricingServices();
+
+        const savedServiceId = String(row.provider_service_id || row.service_id || "");
+        serviceSelect.value = savedServiceId;
+
+        // If the service is hidden by a search filter, clear the filter and select it again.
+        if (serviceSelect.value !== savedServiceId && serviceSearch) {
+          serviceSearch.value = "";
+          filterAdminPricingServices();
+          serviceSelect.value = savedServiceId;
+        }
+
+        amountInput.value = String(Number(row.selling_price || 0));
+
+        if (status) {
+          status.textContent = `Editing ${row.service_name || row.service_id || "service"} on ${row.provider_server}. Change the price and tap Save Price.`;
+        }
+
+        // Bring the pricing form into view on mobile.
+        document.getElementById("adminPricingAmount")?.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+      } catch (error) {
+        console.error("Edit pricing error:", error);
+        if (status) {
+          status.textContent = normalizeAdminPricingError(error, "Unable to edit selling price.");
+        }
       }
     }
 
