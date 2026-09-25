@@ -118,6 +118,7 @@ async function supabaseRequest(
   if (!response.ok) {
     throw new Error(
       data?.message ||
+      data?.error ||
       data?.hint ||
       data?.details ||
       `Supabase request failed (HTTP ${response.status}).`
@@ -150,18 +151,51 @@ function getVerification(data) {
 }
 
 
-function getVerificationId(data) {
+/*
+ * IMPORTANT:
+ *
+ * request_id and verification.id are DIFFERENT.
+ *
+ * request_id:
+ *   Used as the provider request reference.
+ *
+ * verification.id:
+ *   Numeric verification ID used by:
+ *   /verifications/sms/:verificationId
+ *   /verifications/cancel/:verificationId
+ */
+
+function getProviderRequestId(data) {
   const verification =
     getVerification(data);
 
   return (
     verification?.request_id ??
     verification?.requestId ??
-    verification?.verification_id ??
-    verification?.verificationId ??
-    verification?.id ??
     null
   );
+}
+
+
+function getProviderVerificationId(data) {
+  const verification =
+    getVerification(data);
+
+  const id =
+    verification?.id ??
+    verification?.verification_id ??
+    verification?.verificationId ??
+    null;
+
+  if (
+    id === null ||
+    id === undefined ||
+    String(id).trim() === ""
+  ) {
+    return null;
+  }
+
+  return String(id).trim();
 }
 
 
@@ -394,7 +428,7 @@ async function createWalletTransaction({
 
 /*
  * ---------------------------------------------------------
- * GET SERVICES FROM THE SELECTED SERVER
+ * SERVICES
  * ---------------------------------------------------------
  */
 
@@ -428,13 +462,6 @@ async function getServicesFromServer(
   return [];
 }
 
-
-/*
- * Resolve the service ID belonging to
- * the SERVER THE CUSTOMER SELECTED.
- *
- * We do NOT use another server to resolve it.
- */
 
 async function resolveServiceOnSelectedServer({
   server,
@@ -525,13 +552,6 @@ async function resolveServiceOnSelectedServer({
  * ---------------------------------------------------------
  * PURCHASE FROM SELECTED SERVER
  * ---------------------------------------------------------
- *
- * THIS IS THE MAIN FIX.
- *
- * The customer chooses the server.
- * That exact server is used.
- *
- * There is NO fallback.
  */
 
 async function purchaseFromSelectedServer({
@@ -554,19 +574,71 @@ async function purchaseFromSelectedServer({
   /*
    * GLOBAL SERVER 2
    *
-   * Its documented purchase endpoint
-   * does not use country_id/service.
+   * The documented endpoint is:
+   * POST /global-server-2/purchase
+   *
+   * Some provider responses/account configurations
+   * can return "country id is required".
+   *
+   * We first use the documented request.
+   * If that exact validation error occurs,
+   * retry using country_id + service.
    */
+
   if (
     server ===
     "global-server-2"
   ) {
-    return await sureVerificationRequest(
-      "/global-server-2/purchase",
-      {
-        method: "POST"
+    try {
+      return await sureVerificationRequest(
+        "/global-server-2/purchase",
+        {
+          method: "POST"
+        }
+      );
+    } catch (firstError) {
+      const firstMessage =
+        String(
+          firstError?.message ||
+          ""
+        ).toLowerCase();
+
+      const requiresCountry =
+        firstMessage.includes(
+          "country"
+        ) &&
+        (
+          firstMessage.includes(
+            "required"
+          ) ||
+          firstMessage.includes(
+            "field"
+          )
+        );
+
+      if (!requiresCountry) {
+        throw firstError;
       }
-    );
+
+      const providerService =
+        await resolveServiceOnSelectedServer({
+          server,
+          countryId,
+          serviceId,
+          serviceName
+        });
+
+      return await sureVerificationRequest(
+        `/global-server-2/purchase?country_id=${quote(
+          countryId
+        )}&service=${quote(
+          providerService.id
+        )}`,
+        {
+          method: "POST"
+        }
+      );
+    }
   }
 
 
@@ -574,10 +646,8 @@ async function purchaseFromSelectedServer({
    * USA SERVER 1
    * USA SERVER 2
    * GLOBAL SERVER 1
-   *
-   * Resolve the service ID from
-   * THIS SAME SERVER.
    */
+
   const providerService =
     await resolveServiceOnSelectedServer({
       server,
@@ -585,7 +655,6 @@ async function purchaseFromSelectedServer({
       serviceId,
       serviceName
     });
-
 
   return await sureVerificationRequest(
     `/${server}/purchase?country_id=${quote(
@@ -627,8 +696,21 @@ async function createOrder(
       body: JSON.stringify({
         user_id: userId,
 
+        /*
+         * KEEP request_id in provider_order_id
+         * for compatibility with existing orders.
+         */
         provider_order_id:
-          order.verificationId,
+          order.providerRequestId ||
+          null,
+
+        /*
+         * THIS is the numeric verification.id
+         * used by the SMS and cancel endpoints.
+         */
+        provider_verification_id:
+          order.providerVerificationId ||
+          null,
 
         service_country_price_id:
           order.serviceCountryPriceId ||
@@ -708,10 +790,6 @@ export default async function handler(
         : (req.body || {});
 
 
-    /*
-     * COUNTRY
-     */
-
     const countryId =
       body.countryId ??
       body.country_id;
@@ -721,10 +799,6 @@ export default async function handler(
       body.country_name ??
       "";
 
-
-    /*
-     * SERVICE
-     */
 
     const serviceId =
       body.serviceId ??
@@ -737,14 +811,6 @@ export default async function handler(
       body.service_name ??
       "";
 
-
-    /*
-     * SERVER SELECTED BY CUSTOMER
-     *
-     * We accept all common names so your existing
-     * frontend does not have to be rewritten just
-     * because the field is named differently.
-     */
 
     const selectedServer =
       body.providerServer ??
@@ -771,13 +837,6 @@ export default async function handler(
     }
 
 
-    /*
-     * SERVER IS NOW REQUIRED.
-     *
-     * NO getServerForCountry().
-     * NO automatic provider selection.
-     */
-
     if (!selectedServer) {
       return res.status(400).json({
         success: false,
@@ -802,12 +861,11 @@ export default async function handler(
 
     /*
      * -----------------------------------------------------
-     * GET MANUALLY CONFIGURED SELLING PRICE
-     * FOR THE SELECTED SERVER
+     * PRICING
      * -----------------------------------------------------
      */
 
-    let pricingRows =
+    const pricingRows =
       await supabaseRequest(
         `product_prices?country_id=eq.${quote(
           countryId
@@ -816,14 +874,6 @@ export default async function handler(
         )}&is_active=eq.true&select=*&limit=100`
       );
 
-
-    /*
-     * Some older rows may not have provider_server.
-     * If the exact server has no rows, do NOT silently
-     * use another server.
-     *
-     * We only return unavailable.
-     */
 
     if (
       !Array.isArray(
@@ -900,10 +950,6 @@ export default async function handler(
     }
 
 
-    /*
-     * If the frontend sent the UUID of the
-     * product_prices row.
-     */
     if (!pricing) {
       pricing =
         pricingRows.find(
@@ -958,7 +1004,7 @@ export default async function handler(
 
     /*
      * -----------------------------------------------------
-     * DEBIT WALLET
+     * DEBIT
      * -----------------------------------------------------
      */
 
@@ -975,11 +1021,7 @@ export default async function handler(
 
     /*
      * -----------------------------------------------------
-     * PURCHASE
-     *
-     * ONLY selectedServer.
-     *
-     * NO FALLBACK.
+     * PROVIDER PURCHASE
      * -----------------------------------------------------
      */
 
@@ -1038,8 +1080,13 @@ export default async function handler(
         providerData
       );
 
-    const verificationId =
-      getVerificationId(
+    const providerRequestId =
+      getProviderRequestId(
+        providerData
+      );
+
+    const providerVerificationId =
+      getProviderVerificationId(
         providerData
       );
 
@@ -1050,7 +1097,7 @@ export default async function handler(
 
 
     if (
-      !verificationId ||
+      !providerVerificationId ||
       !phoneNumber
     ) {
       try {
@@ -1070,7 +1117,7 @@ export default async function handler(
       debited = false;
 
       throw new Error(
-        "The provider did not return a valid number. Your wallet was refunded."
+        "The provider did not return a valid verification ID and number. Your wallet was refunded."
       );
     }
 
@@ -1111,7 +1158,9 @@ export default async function handler(
 
             serviceName,
 
-            verificationId,
+            providerRequestId,
+
+            providerVerificationId,
 
             phoneNumber,
 
@@ -1227,7 +1276,10 @@ export default async function handler(
         ...verification,
 
         request_id:
-          verificationId,
+          providerRequestId,
+
+        id:
+          providerVerificationId,
 
         number:
           phoneNumber
@@ -1250,7 +1302,6 @@ export default async function handler(
       balance:
         balanceAfter
     });
-
 
   } catch (error) {
     console.error(
