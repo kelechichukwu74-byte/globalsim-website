@@ -564,9 +564,10 @@ async function createOrder(userId, order) {
 
         phone_number:
           order.phoneNumber,
-
         provider_server:
-          order.providerServer
+          order.providerServer,
+        provider_base_url:
+          "https://sureverifications.com/api/v1"
       })
     }
   );
@@ -618,19 +619,26 @@ export default async function handler(req, res) {
       body.service_name ??
       "";
 
-    const selectedProviderServer =
+    const selectedServer =
       String(
         body.providerServer ??
-        body.provider_server ??
+        body.server ??
         ""
       ).trim();
 
-    const ALLOWED_SERVERS = new Set([
+    const allowedServers = new Set([
       "usa-server-1",
       "usa-server-2",
       "global-server-1",
       "global-server-2"
     ]);
+
+    if (!selectedServer || !allowedServers.has(selectedServer)) {
+      return res.status(400).json({
+        success: false,
+        error: "Seller / server is required."
+      });
+    }
 
     if (!countryId) {
       return res.status(400).json({
@@ -646,50 +654,29 @@ export default async function handler(req, res) {
       });
     }
 
-    if (!selectedProviderServer) {
-      return res.status(400).json({
-        success: false,
-        error: "Seller / server is required."
-      });
-    }
-
-    if (!ALLOWED_SERVERS.has(selectedProviderServer)) {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid seller / server."
-      });
-    }
-
     /*
-     * The customer price MUST match the exact seller/server selected
-     * by the customer. Never select a price from another server.
+     * The customer price always comes from your admin
+     * product_prices table. The browser cannot choose it.
      */
     let pricingRows =
       await supabaseRequest(
         `product_prices?country_id=eq.${quote(
           countryId
         )}&provider_server=eq.${quote(
-          selectedProviderServer
-        )}&provider_service_id=eq.${quote(
+          selectedServer
+        )}&service_id=eq.${quote(
           serviceId
-        )}&select=country_id,country_name,service_id,service_name,provider_service_id,provider_server,selling_price&limit=1`
+        )}&select=country_id,country_name,service_id,service_name,selling_price,provider_server,provider_service_id&limit=1`
       );
 
-    if (!Array.isArray(pricingRows) || !pricingRows.length) {
-      pricingRows =
-        await supabaseRequest(
-          `product_prices?country_id=eq.${quote(
-            countryId
-          )}&provider_server=eq.${quote(
-            selectedProviderServer
-          )}&service_id=eq.${quote(
-            serviceId
-          )}&select=country_id,country_name,service_id,service_name,provider_service_id,provider_server,selling_price&limit=1`
-        );
-    }
-
+    /*
+     * If the service ID stored by the frontend is not the
+     * same value stored in product_prices, try matching the
+     * configured service name for the same country.
+     */
     if (
-      (!Array.isArray(pricingRows) || !pricingRows.length) &&
+      (!Array.isArray(pricingRows) ||
+        !pricingRows.length) &&
       requestedServiceName
     ) {
       const countryRows =
@@ -697,8 +684,8 @@ export default async function handler(req, res) {
           `product_prices?country_id=eq.${quote(
             countryId
           )}&provider_server=eq.${quote(
-            selectedProviderServer
-          )}&select=country_id,country_name,service_id,service_name,provider_service_id,provider_server,selling_price`
+            selectedServer
+          )}&select=country_id,country_name,service_id,service_name,selling_price,provider_server,provider_service_id`
         );
 
       const wanted =
@@ -739,19 +726,10 @@ export default async function handler(req, res) {
       requestedServiceName ||
       String(serviceId);
 
-    const providerServiceId =
-      String(
-        pricing?.provider_service_id ||
-        pricing?.service_id ||
-        serviceId ||
-        ""
-      ).trim();
+    const usa = isUSA(countryId, countryCode, countryName);
 
-    if (!providerServiceId) {
-      throw new Error(
-        "The selected seller / server has no provider service configured."
-      );
-    }
+    /* The customer-selected server is the ONLY server used. */
+    const servers = [selectedServer];
 
     const debit =
       await debitWallet(
@@ -764,57 +742,90 @@ export default async function handler(req, res) {
 
     let providerData = null;
     let providerError = null;
+    let selectedServer = null;
+    let providerServiceId = null;
 
-    try {
-      console.log(
-        "SureVerification manual server purchase:",
-        {
-          server: selectedProviderServer,
-          countryId,
-          providerServiceId,
-          serviceName
-        }
-      );
-
-      if (selectedProviderServer === "global-server-2") {
-        /*
-         * SureVerification documents Global Server 2 purchase
-         * without query parameters. The selected server is still
-         * strictly respected; there is NO fallback to another server.
-         */
-        providerData =
-          await sureVerificationRequest(
-            "/global-server-2/purchase",
-            { method: "POST" }
+    for (const server of servers) {
+      try {
+        providerServiceId =
+          await resolveProviderServiceId(
+            server,
+            countryId,
+            serviceId,
+            serviceName
           );
-      } else {
-        providerData =
+
+        console.log(
+          "SureVerification purchase:",
+          {
+            server,
+            countryId,
+            requestedServiceId:
+              serviceId,
+            providerServiceId,
+            serviceName
+          }
+        );
+
+        const candidate =
           await sureVerificationRequest(
-            `/${selectedProviderServer}/purchase?country_id=${quote(
+            `/${server}/purchase?country_id=${quote(
               countryId
             )}&service=${quote(
               providerServiceId
             )}`,
-            { method: "POST" }
+            {
+              method: "POST"
+            }
           );
-      }
 
-      console.log(
-        "SureVerification response:",
-        JSON.stringify(providerData)
-      );
+        console.log(
+          "SureVerification response:",
+          JSON.stringify(candidate)
+        );
 
-    } catch (error) {
-      providerError = error;
-      console.error(
-        "Selected seller / server purchase failed:",
-        {
-          server: selectedProviderServer,
-          countryId,
-          providerServiceId,
-          message: error?.message
+        const candidateVerificationId =
+          getVerificationId(
+            candidate
+          );
+
+        const candidatePhoneNumber =
+          getPhoneNumber(candidate);
+
+        if (
+          candidateVerificationId &&
+          candidatePhoneNumber
+        ) {
+          providerData =
+            candidate;
+          selectedServer =
+            server;
+          break;
         }
-      );
+
+        providerError =
+          new Error(
+            "Provider did not return a valid number."
+          );
+      } catch (error) {
+        providerError =
+          error;
+
+        console.error(
+          "SureVerification purchase attempt failed:",
+          {
+            server,
+            countryId,
+            requestedServiceId:
+              serviceId,
+            providerServiceId,
+            message:
+              error?.message
+          }
+        );
+
+        // No fallback: never switch away from the customer's selected server.
+      }
     }
 
     if (!providerData) {
@@ -908,6 +919,8 @@ export default async function handler(req, res) {
 
           phoneNumber,
 
+          providerServer: selectedServer,
+
           sellingPrice,
 
           providerPrice:
@@ -916,9 +929,6 @@ export default async function handler(req, res) {
             )
               ? providerPrice
               : null,
-
-          providerServer:
-            selectedProviderServer,
 
           status:
             verification?.status ||
