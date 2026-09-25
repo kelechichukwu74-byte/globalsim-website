@@ -1,4 +1,8 @@
-import { sureVerificationRequest, quote } from "./_lib.js";
+import { sureVerificationRequest } from "./_lib.js";
+
+function encode(value) {
+  return encodeURIComponent(String(value ?? ""));
+}
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -23,13 +27,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    const data = await sureVerificationRequest(
-      `/verifications/sms/${quote(verificationId)}`
-    );
+    const data =
+      await sureVerificationRequest(
+        `/verifications/sms/${encode(
+          verificationId
+        )}`
+      );
 
-    const smsList = Array.isArray(data?.sms)
-      ? data.sms
-      : [];
+    const smsList =
+      Array.isArray(data?.sms)
+        ? data.sms
+        : [];
 
     const latestSms =
       smsList.length > 0
@@ -43,19 +51,25 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      verification_id: verificationId,
+      verification_id:
+        verificationId,
       sms: code,
       code: code,
-      sms_received: Boolean(code),
+      sms_received:
+        Boolean(code),
       sms_list: smsList
     });
 
   } catch (error) {
-    console.error("SMS API error:", error);
+    console.error(
+      "SMS API error:",
+      error
+    );
 
     return res.status(502).json({
       success: false,
-      verification_id: verificationId,
+      verification_id:
+        verificationId,
       sms: null,
       code: null,
       sms_received: false,
