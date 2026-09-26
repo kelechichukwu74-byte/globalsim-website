@@ -11,51 +11,89 @@ const SUPABASE_PUBLISHABLE_KEY =
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const SURE_BASE_URL = "https://sureverifications.com/api/v1";
-
-const ALLOWED_SERVERS = new Set([
-  "usa-server-1",
-  "usa-server-2",
-  "global-server-1",
-  "global-server-2"
-]);
-
-function parseProviderDate(value) {
-  if (!value) return null;
-
-  const text = String(value).trim();
-
-  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(text)) {
-    return new Date(text.replace(" ", "T") + "Z");
-  }
-
-  const date = new Date(text);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
+const SURE_BASE_URL =
+  "https://sureverifications.com/api/v1";
 
 function json(res, status, data) {
-  res.status(status).json(data);
+  return res.status(status).json(data);
 }
 
-async function supabaseRequest(path, options = {}) {
-  const response = await fetch(`${SUPABASE_URL}${path}`, {
-    method: options.method || "GET",
-    headers: {
-      apikey: SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      "Content-Type": "application/json",
-      ...(options.headers || {})
-    },
-    ...(options.body !== undefined ? { body: options.body } : {})
-  });
+async function getUser(req) {
+  const auth =
+    req.headers.authorization || "";
 
-  const text = await response.text();
+  if (
+    !auth
+      .toLowerCase()
+      .startsWith("bearer ")
+  ) {
+    return null;
+  }
+
+  const token =
+    auth.slice(7).trim();
+
+  if (!token) return null;
+
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/auth/v1/user`,
+      {
+        headers: {
+          apikey:
+            SUPABASE_PUBLISHABLE_KEY,
+          Authorization:
+            `Bearer ${token}`
+        }
+      }
+    );
+
+  if (!response.ok) {
+    return null;
+  }
+
+  return response.json();
+}
+
+async function supabaseRequest(
+  path,
+  options = {}
+) {
+  const response =
+    await fetch(
+      `${SUPABASE_URL}${path}`,
+      {
+        method:
+          options.method || "GET",
+        headers: {
+          apikey:
+            SUPABASE_SERVICE_ROLE_KEY,
+          Authorization:
+            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          "Content-Type":
+            "application/json",
+          ...(options.headers || {})
+        },
+        ...(options.body !== undefined
+          ? { body: options.body }
+          : {})
+      }
+    );
+
+  const text =
+    await response.text();
 
   let data = {};
+
   try {
-    data = text ? JSON.parse(text) : {};
+    data =
+      text
+        ? JSON.parse(text)
+        : {};
   } catch {
-    data = { raw: text };
+    data = {
+      raw: text
+    };
   }
 
   if (!response.ok) {
@@ -70,50 +108,73 @@ async function supabaseRequest(path, options = {}) {
   return data;
 }
 
-async function getAuthenticatedUser(req) {
-  const authHeader = req.headers.authorization || "";
+function parseProviderDate(
+  value
+) {
+  if (!value) return null;
 
-  if (!authHeader.toLowerCase().startsWith("bearer ")) {
-    return null;
+  const text =
+    String(value).trim();
+
+  if (
+    /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
+      .test(text)
+  ) {
+    return new Date(
+      text.replace(
+        " ",
+        "T"
+      ) + "Z"
+    );
   }
 
-  const token = authHeader.slice(7).trim();
+  const date =
+    new Date(text);
 
-  if (!token) return null;
-
-  const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-    headers: {
-      apikey: SUPABASE_PUBLISHABLE_KEY,
-      Authorization: `Bearer ${token}`
-    }
-  });
-
-  if (!response.ok) return null;
-
-  return await response.json();
+  return Number.isNaN(
+    date.getTime()
+  )
+    ? null
+    : date;
 }
 
-async function providerRequest(path) {
-  const apiKey = process.env.SUREVERIFICATION_API_KEY;
+async function providerSms(
+  verificationId
+) {
+  const apiKey =
+    process.env.SUREVERIFICATION_API_KEY;
 
   if (!apiKey) {
-    throw new Error("SUREVERIFICATION_API_KEY is not configured.");
+    throw new Error(
+      "SUREVERIFICATION_API_KEY is not configured."
+    );
   }
 
-  const response = await fetch(`${SURE_BASE_URL}${path}`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "x-api-key": apiKey
-    }
-  });
+  const response =
+    await fetch(
+      `${SURE_BASE_URL}/verifications/sms/${encodeURIComponent(
+        verificationId
+      )}`,
+      {
+        headers: {
+          Accept:
+            "application/json",
+          "x-api-key":
+            apiKey
+        }
+      }
+    );
 
-  const text = await response.text();
+  const text =
+    await response.text();
 
   let data = {};
 
   try {
-    data = text ? JSON.parse(text) : {};
+    data =
+      text
+        ? JSON.parse(text)
+        : {};
   } catch {
     throw new Error(
       `SureVerification returned invalid JSON (HTTP ${response.status}).`
@@ -131,30 +192,40 @@ async function providerRequest(path) {
   return data;
 }
 
-function extractSms(data) {
-  const list = Array.isArray(data?.sms)
-    ? data.sms
-    : Array.isArray(data?.messages)
-      ? data.messages
-      : Array.isArray(data?.data)
-        ? data.data
-        : [];
+function extractSms(
+  data
+) {
+  const sms =
+    Array.isArray(data?.sms)
+      ? data.sms
+      : [];
 
-  const normalized = list.map((item) => ({
-    from: item?.from ?? null,
-    raw: item?.raw ?? item?.code ?? item?.otp ?? null,
-    formatted:
-      item?.formatted ??
-      item?.code ??
-      item?.otp ??
-      item?.raw ??
-      null,
-    created_at: item?.created_at ?? null
-  }));
+  const formatted =
+    sms.map((item) => ({
+      from:
+        item?.from ?? null,
+      raw:
+        item?.raw ??
+        item?.code ??
+        item?.otp ??
+        null,
+      formatted:
+        item?.formatted ??
+        item?.code ??
+        item?.otp ??
+        item?.raw ??
+        null,
+      created_at:
+        item?.created_at ??
+        null
+    }));
 
-  const latest = normalized.length
-    ? normalized[normalized.length - 1]
-    : null;
+  const latest =
+    formatted.length
+      ? formatted[
+          formatted.length - 1
+        ]
+      : null;
 
   const code =
     latest?.formatted ||
@@ -162,68 +233,63 @@ function extractSms(data) {
     null;
 
   return {
-    sms: normalized,
+    sms:
+      formatted,
     code,
-    sms_received: Boolean(code),
-    smsCode: code,
-    verificationCode: code,
-    otp: code
+    sms_received:
+      Boolean(code),
+    smsCode:
+      code,
+    verificationCode:
+      code,
+    otp:
+      code
   };
 }
 
-async function updateOrder(id, values) {
-  return supabaseRequest(
-    `/rest/v1/orders?id=eq.${encodeURIComponent(id)}`,
-    {
-      method: "PATCH",
-      headers: {
-        Prefer: "return=minimal"
-      },
-      body: JSON.stringify(values)
-    }
-  );
-}
-
-export default async function handler(req, res) {
+export default async function handler(
+  req,
+  res
+) {
   if (req.method !== "GET") {
     return json(res, 405, {
       success: false,
-      error: "Method not allowed."
+      error:
+        "Method not allowed."
     });
   }
 
   try {
-    if (!SUPABASE_SERVICE_ROLE_KEY) {
-      return json(res, 500, {
-        success: false,
-        error: "SUPABASE_SERVICE_ROLE_KEY is not configured."
-      });
-    }
-
-    const user = await getAuthenticatedUser(req);
+    const user =
+      await getUser(req);
 
     if (!user?.id) {
       return json(res, 401, {
         success: false,
-        error: "Unauthorized."
+        error:
+          "Unauthorized."
       });
     }
 
-    const orders = await supabaseRequest(
-      `/rest/v1/orders?user_id=eq.${encodeURIComponent(
-        user.id
-      )}&order=created_at.desc`,
-      {
-        headers: {
-          Accept: "application/json"
-        }
-      }
-    );
+    const orders =
+      await supabaseRequest(
+        `/rest/v1/orders?user_id=eq.${encodeURIComponent(
+          user.id
+        )}&order=created_at.desc`
+      );
 
-    const activeOrders = [];
+    const active = [];
 
-    for (const order of Array.isArray(orders) ? orders : []) {
-      const currentStatus = String(order.status || "").toLowerCase();
+    for (
+      const order of
+        Array.isArray(orders)
+          ? orders
+          : []
+    ) {
+      const status =
+        String(
+          order.status || ""
+        ).toLowerCase();
 
       if (
         [
@@ -232,136 +298,203 @@ export default async function handler(req, res) {
           "canceled",
           "expired",
           "refunded"
-        ].includes(currentStatus)
+        ].includes(status)
       ) {
         continue;
       }
 
-      const expiry = parseProviderDate(order.provider_expired_at);
+      const expiry =
+        parseProviderDate(
+          order.provider_expired_at
+        );
 
-      if (expiry && Date.now() >= expiry.getTime()) {
+      if (
+        expiry &&
+        Date.now() >=
+          expiry.getTime()
+      ) {
         try {
-          await updateOrder(order.id, {
-            status: "expired",
-            updated_at: new Date().toISOString()
-          });
+          await supabaseRequest(
+            `/rest/v1/orders?id=eq.${encodeURIComponent(
+              order.id
+            )}`,
+            {
+              method:
+                "PATCH",
+              body:
+                JSON.stringify({
+                  status:
+                    "expired",
+                  updated_at:
+                    new Date().toISOString()
+                })
+            }
+          );
         } catch {}
 
         continue;
       }
 
       const verificationId =
-        order.provider_verification_id ||
-        null;
-
-      if (!verificationId) {
-        activeOrders.push({
-          ...order,
-          sms: [],
-          code: null,
-          smsCode: null,
-          verificationCode: null,
-          otp: null,
-          sms_received: false,
-          sms_error: "Provider verification ID is missing."
-        });
-
-        continue;
-      }
+        order.provider_verification_id
+          ? String(
+              order.provider_verification_id
+            )
+          : null;
 
       let smsResult = {
         sms: [],
         code: null,
         sms_received: false,
         smsCode: null,
-        verificationCode: null,
+        verificationCode:
+          null,
         otp: null
       };
 
       let smsError = null;
 
-      try {
-        const providerData = await providerRequest(
-          `/verifications/sms/${encodeURIComponent(
-            verificationId
-          )}`
-        );
+      if (verificationId) {
+        try {
+          const providerData =
+            await providerSms(
+              verificationId
+            );
 
-        smsResult = extractSms(providerData);
-      } catch (error) {
-        smsError = error?.message || "Unable to retrieve SMS.";
+          smsResult =
+            extractSms(
+              providerData
+            );
+        } catch (error) {
+          smsError =
+            error?.message ||
+            "Unable to retrieve SMS.";
+        }
+      } else {
+        smsError =
+          "Provider verification ID is missing.";
       }
 
-      if (smsResult.sms_received) {
-        const firstReceivedAt =
-          parseProviderDate(order.sms_received_at) ||
+      if (
+        smsResult.sms_received
+      ) {
+        const receivedAt =
+          parseProviderDate(
+            order.sms_received_at
+          ) ||
           new Date();
 
-        if (!order.sms_received_at) {
+        if (
+          !order.sms_received_at
+        ) {
           try {
-            await updateOrder(order.id, {
-              status: "sms_received",
-              sms_received_at: firstReceivedAt.toISOString(),
-              updated_at: new Date().toISOString()
-            });
+            await supabaseRequest(
+              `/rest/v1/orders?id=eq.${encodeURIComponent(
+                order.id
+              )}`,
+              {
+                method:
+                  "PATCH",
+                body:
+                  JSON.stringify({
+                    status:
+                      "sms_received",
+                    sms_received_at:
+                      receivedAt.toISOString(),
+                    updated_at:
+                      new Date().toISOString()
+                  })
+              }
+            );
           } catch {}
         }
 
         const removeAt =
-          firstReceivedAt.getTime() + 60 * 1000;
+          receivedAt.getTime() +
+          60000;
 
-        if (Date.now() >= removeAt) {
+        if (
+          Date.now() >=
+          removeAt
+        ) {
           try {
-            await updateOrder(order.id, {
-              status: "completed",
-              updated_at: new Date().toISOString()
-            });
+            await supabaseRequest(
+              `/rest/v1/orders?id=eq.${encodeURIComponent(
+                order.id
+              )}`,
+              {
+                method:
+                  "PATCH",
+                body:
+                  JSON.stringify({
+                    status:
+                      "completed",
+                    updated_at:
+                      new Date().toISOString()
+                  })
+              }
+            );
           } catch {}
 
           continue;
         }
 
-        activeOrders.push({
+        active.push({
           ...order,
-          status: "sms_received",
-          sms_received_at:
-            order.sms_received_at ||
-            firstReceivedAt.toISOString(),
-          sms: smsResult.sms,
-          code: smsResult.code,
-          smsCode: smsResult.smsCode,
-          verificationCode: smsResult.verificationCode,
-          otp: smsResult.otp,
-          sms_received: true,
-          sms_error: smsError,
-          active_until: new Date(removeAt).toISOString()
+          status:
+            "sms_received",
+          sms:
+            smsResult.sms,
+          code:
+            smsResult.code,
+          smsCode:
+            smsResult.smsCode,
+          verificationCode:
+            smsResult.verificationCode,
+          otp:
+            smsResult.otp,
+          sms_received:
+            true,
+          sms_error:
+            smsError
         });
 
         continue;
       }
 
-      activeOrders.push({
+      active.push({
         ...order,
-        sms: smsResult.sms,
-        code: null,
-        smsCode: null,
-        verificationCode: null,
-        otp: null,
-        sms_received: false,
-        sms_error: smsError
+        sms:
+          smsResult.sms,
+        code:
+          null,
+        smsCode:
+          null,
+        verificationCode:
+          null,
+        otp:
+          null,
+        sms_received:
+          false,
+        sms_error:
+          smsError
       });
     }
 
     return json(res, 200, {
       success: true,
-      active: activeOrders,
-      numbers: activeOrders,
-      count: activeOrders.length
+      active,
+      numbers:
+        active,
+      count:
+        active.length
     });
   } catch (error) {
     return json(res, 500, {
       success: false,
-      error: error?.message || "Failed to load active numbers."
+      error:
+        error?.message ||
+        "Failed to load active numbers."
     });
   }
 }
