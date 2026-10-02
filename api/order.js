@@ -1,7 +1,6 @@
 // api/order.js
 
 import { createClient } from "@supabase/supabase-js";
-import { sureVerificationRequest } from "./_lib.js";
 
 const SUPABASE_URL =
   process.env.SUPABASE_URL ||
@@ -10,108 +9,216 @@ const SUPABASE_URL =
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const supabase = createClient(
-  SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY
-);
+const SUREVERIFICATION_API_KEY =
+  process.env.SUREVERIFICATION_API_KEY ||
+  process.env.SURE_VERIFICATION_API_KEY ||
+  process.env.SURE_API_KEY;
 
-const ALLOWED_SERVERS = [
+const SUREVERIFICATION_BASE_URL =
+  "https://sureverifications.com/api/v1";
+
+const supabase =
+  SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(
+        SUPABASE_URL,
+        SUPABASE_SERVICE_ROLE_KEY
+      )
+    : null;
+
+const SERVERS = [
   "usa-server-1",
   "usa-server-2",
   "global-server-1",
   "global-server-2"
 ];
 
-function q(value) {
-  return encodeURIComponent(String(value ?? ""));
+function clean(value) {
+  return String(value ?? "").trim();
+}
+
+function encode(value) {
+  return encodeURIComponent(
+    String(value ?? "")
+  );
+}
+
+function normal(value) {
+  return clean(value).toLowerCase();
 }
 
 function isUuid(value) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    String(value || "")
+    clean(value)
   );
 }
 
-function normalize(value) {
-  return String(value ?? "")
-    .trim()
-    .toLowerCase();
+/*
+|--------------------------------------------------------------------------
+| SureVerification request
+|--------------------------------------------------------------------------
+*/
+
+async function sureRequest(
+  endpoint,
+  options = {}
+) {
+  if (!SUREVERIFICATION_API_KEY) {
+    throw new Error(
+      "SUREVERIFICATION_API_KEY is missing from Vercel Environment Variables."
+    );
+  }
+
+  const url =
+    `${SUREVERIFICATION_BASE_URL}` +
+    endpoint;
+
+  const headers = {
+    Accept: "application/json",
+    "x-api-key":
+      SUREVERIFICATION_API_KEY,
+    ...(options.headers || {})
+  };
+
+  let response;
+
+  try {
+    response = await fetch(
+      url,
+      {
+        ...options,
+        headers
+      }
+    );
+  } catch (error) {
+    throw new Error(
+      `Unable to connect to SureVerification: ${
+        error?.message ||
+        "Network error"
+      }`
+    );
+  }
+
+  const text =
+    await response.text();
+
+  let data;
+
+  try {
+    data = text
+      ? JSON.parse(text)
+      : {};
+  } catch {
+    data = {
+      raw: text
+    };
+  }
+
+  if (!response.ok) {
+    const providerMessage =
+      data?.message ||
+      data?.error ||
+      data?.errors
+        ? JSON.stringify(
+            data?.errors ||
+              data?.error ||
+              data?.message
+          )
+        : data?.raw ||
+          `HTTP ${response.status}`;
+
+    throw new Error(
+      `SureVerification ${response.status}: ${providerMessage}`
+    );
+  }
+
+  return data;
 }
 
-function getProviderServer(body) {
-  return (
+/*
+|--------------------------------------------------------------------------
+| Get values from request
+|--------------------------------------------------------------------------
+*/
+
+function getServer(body) {
+  return clean(
     body?.providerServer ||
-    body?.provider_server ||
-    body?.server ||
-    ""
-  ).trim();
-}
-
-function getProviderCountryId(body) {
-  return (
-    body?.providerCountryId ||
-    body?.provider_country_id ||
-    body?.providerCountryID ||
-    body?.countryProviderId ||
-    body?.country_provider_id ||
-    ""
-  ).trim();
+      body?.provider_server ||
+      body?.server
+  );
 }
 
 function getSupabaseCountryId(body) {
-  return (
+  return clean(
     body?.countryId ||
-    body?.country_id ||
-    body?.supabaseCountryId ||
-    body?.supabase_country_id ||
-    ""
-  ).trim();
+      body?.country_id ||
+      body?.supabaseCountryId ||
+      body?.supabase_country_id
+  );
+}
+
+function getProviderCountryId(body) {
+  return clean(
+    body?.providerCountryId ||
+      body?.provider_country_id ||
+      body?.providerCountryID ||
+      body?.countryProviderId ||
+      body?.country_provider_id
+  );
 }
 
 function getServiceId(body) {
-  return (
+  return clean(
     body?.providerServiceId ||
-    body?.provider_service_id ||
-    body?.serviceId ||
-    body?.service_id ||
-    body?.serviceCode ||
-    body?.service_code ||
-    ""
-  ).trim();
+      body?.provider_service_id ||
+      body?.serviceId ||
+      body?.service_id ||
+      body?.serviceCode ||
+      body?.service_code
+  );
 }
 
 function getServiceName(body) {
-  return (
+  return clean(
     body?.serviceName ||
-    body?.service_name ||
-    ""
-  ).trim();
+      body?.service_name
+  );
 }
 
 function getCountryName(body) {
-  return (
+  return clean(
     body?.countryName ||
-    body?.country_name ||
-    ""
-  ).trim();
+      body?.country_name
+  );
 }
 
-function getServerFromCountry(countryName, requestedServer) {
+/*
+|--------------------------------------------------------------------------
+| Determine server
+|--------------------------------------------------------------------------
+*/
+
+function determineServer(
+  requestedServer,
+  countryName
+) {
   if (
-    requestedServer &&
-    ALLOWED_SERVERS.includes(requestedServer)
+    SERVERS.includes(
+      requestedServer
+    )
   ) {
     return requestedServer;
   }
 
-  const country = normalize(countryName);
+  const country =
+    normal(countryName);
 
   if (
-    country === "united states" ||
-    country === "united states of america" ||
     country === "usa" ||
     country === "us" ||
-    country === "america"
+    country === "united states" ||
+    country ===
+      "united states of america"
   ) {
     return "usa-server-1";
   }
@@ -119,439 +226,530 @@ function getServerFromCountry(countryName, requestedServer) {
   return "global-server-1";
 }
 
-async function getWallet(userId) {
-  const { data, error } = await supabase
-    .from("wallets")
-    .select("id,user_id,balance")
-    .eq("user_id", userId)
-    .maybeSingle();
+/*
+|--------------------------------------------------------------------------
+| Find customer price
+|--------------------------------------------------------------------------
+*/
 
-  if (error) {
-    throw new Error(
-      `Unable to load wallet: ${error.message}`
-    );
-  }
-
-  if (!data) {
-    throw new Error(
-      "Wallet not found for this account."
-    );
-  }
-
-  return data;
-}
-
-async function updateWallet(
-  walletId,
-  balance
-) {
-  const { data, error } = await supabase
-    .from("wallets")
-    .update({
-      balance: Number(balance)
-    })
-    .eq("id", walletId)
-    .select("id,user_id,balance")
-    .single();
-
-  if (error) {
-    throw new Error(
-      `Unable to update wallet: ${error.message}`
-    );
-  }
-
-  return data;
-}
-
-async function recordWalletTransaction({
-  userId,
-  amount,
-  balanceBefore,
-  balanceAfter,
-  description,
-  reference
-}) {
-  const { error } = await supabase
-    .from("wallet_transactions")
-    .insert({
-      user_id: userId,
-      amount: Number(amount),
-      balance_before: Number(balanceBefore),
-      balance_after: Number(balanceAfter),
-      description,
-      reference
-    });
-
-  if (error) {
-    console.error(
-      "Wallet transaction recording error:",
-      error
-    );
-  }
-}
-
-async function findCustomerPrice({
-  supabaseCountryId,
-  providerCountryId,
+async function findProductPrice({
+  countryId,
   serviceId,
   serviceName,
   server
 }) {
-  let rows = [];
+  if (!supabase) {
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY is missing."
+    );
+  }
 
   /*
-   * First use the provider service ID.
+   * provider_service_id = "wa"
    *
-   * Example:
-   * serviceId = "wa"
-   *
-   * IMPORTANT:
-   * "wa" is NOT a UUID and must never be compared
-   * against product_prices.id.
+   * Do NOT use product_prices.id for "wa".
    */
 
   if (serviceId) {
-    let query = supabase
-      .from("product_prices")
-      .select(
-        `
-        id,
-        country_id,
-        country_name,
-        service_id,
-        service_name,
-        selling_price,
-        provider_server,
-        provider_service_id
-        `
-      )
-      .eq("is_active", true)
-      .eq(
-        "provider_service_id",
-        serviceId
-      );
+    let query =
+      supabase
+        .from("product_prices")
+        .select(
+          "id,country_id,country_name,service_id,service_name,selling_price,provider_server,provider_service_id"
+        )
+        .eq(
+          "provider_service_id",
+          serviceId
+        )
+        .eq(
+          "is_active",
+          true
+        )
+        .limit(1);
 
-    if (supabaseCountryId) {
-      query = query.eq(
-        "country_id",
-        supabaseCountryId
-      );
+    if (countryId) {
+      query =
+        query.eq(
+          "country_id",
+          countryId
+        );
     }
 
     if (server) {
-      query = query.eq(
-        "provider_server",
-        server
-      );
+      query =
+        query.eq(
+          "provider_server",
+          server
+        );
     }
 
-    const result = await query.limit(1);
+    const {
+      data,
+      error
+    } = await query;
 
-    if (result.error) {
+    if (error) {
       throw new Error(
-        `Unable to find customer price: ${result.error.message}`
+        `Product price lookup failed: ${error.message}`
       );
     }
 
-    rows = result.data || [];
+    if (data?.length) {
+      return data[0];
+    }
   }
 
   /*
-   * Fallback to service_id ONLY when it is
-   * actually a UUID.
+   * Only use service_id if the supplied value
+   * is actually a UUID.
    */
 
-  if (!rows.length && isUuid(serviceId)) {
-    let query = supabase
-      .from("product_prices")
-      .select(
-        `
-        id,
-        country_id,
-        country_name,
-        service_id,
-        service_name,
-        selling_price,
-        provider_server,
-        provider_service_id
-        `
-      )
-      .eq("is_active", true)
-      .eq("service_id", serviceId);
+  if (
+    serviceId &&
+    isUuid(serviceId)
+  ) {
+    let query =
+      supabase
+        .from("product_prices")
+        .select(
+          "id,country_id,country_name,service_id,service_name,selling_price,provider_server,provider_service_id"
+        )
+        .eq(
+          "service_id",
+          serviceId
+        )
+        .eq(
+          "is_active",
+          true
+        )
+        .limit(1);
 
-    if (supabaseCountryId) {
-      query = query.eq(
-        "country_id",
-        supabaseCountryId
-      );
+    if (countryId) {
+      query =
+        query.eq(
+          "country_id",
+          countryId
+        );
     }
 
     if (server) {
-      query = query.eq(
-        "provider_server",
-        server
-      );
+      query =
+        query.eq(
+          "provider_server",
+          server
+        );
     }
 
-    const result = await query.limit(1);
+    const {
+      data,
+      error
+    } = await query;
 
-    if (result.error) {
+    if (error) {
       throw new Error(
-        `Unable to find customer price: ${result.error.message}`
+        `Product price lookup failed: ${error.message}`
       );
     }
 
-    rows = result.data || [];
+    if (data?.length) {
+      return data[0];
+    }
   }
 
   /*
-   * Final fallback by service name.
+   * Service-name fallback.
    */
 
-  if (!rows.length && serviceName) {
-    let query = supabase
-      .from("product_prices")
-      .select(
-        `
-        id,
-        country_id,
-        country_name,
-        service_id,
-        service_name,
-        selling_price,
-        provider_server,
-        provider_service_id
-        `
-      )
-      .eq("is_active", true)
-      .ilike(
-        "service_name",
-        serviceName
-      );
+  if (serviceName) {
+    let query =
+      supabase
+        .from("product_prices")
+        .select(
+          "id,country_id,country_name,service_id,service_name,selling_price,provider_server,provider_service_id"
+        )
+        .ilike(
+          "service_name",
+          serviceName
+        )
+        .eq(
+          "is_active",
+          true
+        )
+        .limit(1);
 
-    if (supabaseCountryId) {
-      query = query.eq(
-        "country_id",
-        supabaseCountryId
-      );
+    if (countryId) {
+      query =
+        query.eq(
+          "country_id",
+          countryId
+        );
     }
 
     if (server) {
-      query = query.eq(
-        "provider_server",
-        server
-      );
+      query =
+        query.eq(
+          "provider_server",
+          server
+        );
     }
 
-    const result = await query.limit(1);
+    const {
+      data,
+      error
+    } = await query;
 
-    if (result.error) {
+    if (error) {
       throw new Error(
-        `Unable to find customer price: ${result.error.message}`
+        `Product price lookup failed: ${error.message}`
       );
     }
 
-    rows = result.data || [];
-  }
-
-  return rows[0] || null;
-}
-
-async function resolveProviderService({
-  server,
-  providerCountryId,
-  serviceId,
-  serviceName
-}) {
-  if (!providerCountryId) {
-    throw new Error(
-      `${server} requires a provider country_id.`
-    );
-  }
-
-  const response =
-    await sureVerificationRequest(
-      `/${server}/services?country_id=${q(
-        providerCountryId
-      )}`
-    );
-
-  const services =
-    response?.services ||
-    response?.data?.services ||
-    [];
-
-  if (!Array.isArray(services)) {
-    throw new Error(
-      `${server} returned an invalid services response.`
-    );
-  }
-
-  const wantedId =
-    normalize(serviceId);
-
-  const wantedName =
-    normalize(serviceName);
-
-  const found =
-    services.find(
-      (service) =>
-        wantedId &&
-        normalize(service?.id) === wantedId
-    ) ||
-    services.find(
-      (service) =>
-        wantedName &&
-        normalize(service?.name) === wantedName
-    );
-
-  if (!found) {
-    throw new Error(
-      `Service "${serviceName || serviceId}" is not available on ${server} for country ${providerCountryId}.`
-    );
-  }
-
-  return found;
-}
-
-async function getProviderPrice({
-  server,
-  providerCountryId,
-  serviceId
-}) {
-  const response =
-    await sureVerificationRequest(
-      `/${server}/price?country_id=${q(
-        providerCountryId
-      )}&service=${q(serviceId)}`
-    );
-
-  return response;
-}
-
-function extractProviderPrice(response) {
-  const possiblePrices = [
-    response?.price,
-    response?.provider_price,
-    response?.data?.price,
-    response?.data?.provider_price
-  ];
-
-  for (const value of possiblePrices) {
-    if (
-      value !== undefined &&
-      value !== null &&
-      value !== "" &&
-      !Number.isNaN(Number(value))
-    ) {
-      return Number(value);
-    }
-  }
-
-  if (Array.isArray(response?.prices)) {
-    const first = response.prices[0];
-
-    if (
-      first?.price !== undefined &&
-      first?.price !== null
-    ) {
-      return Number(first.price);
+    if (data?.length) {
+      return data[0];
     }
   }
 
   return null;
 }
 
-async function getGlobal2PriceTier({
+/*
+|--------------------------------------------------------------------------
+| Get provider services
+|--------------------------------------------------------------------------
+*/
+
+async function getProviderServices(
+  server,
+  providerCountryId
+) {
+  if (!providerCountryId) {
+    throw new Error(
+      `${server}: provider country_id is required.`
+    );
+  }
+
+  return await sureRequest(
+    `/${server}/services?country_id=${encode(
+      providerCountryId
+    )}`
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Resolve provider service
+|--------------------------------------------------------------------------
+*/
+
+async function resolveService({
+  server,
+  providerCountryId,
   serviceId,
   serviceName
 }) {
-  /*
-   * Global Server 2 price endpoint:
-   *
-   * GET /global-server-2/price
-   *
-   * It returns:
-   *
-   * {
-   *   prices: [
-   *     {
-   *       service: {
-   *         id: "wa",
-   *         name: "Whatsapp",
-   *         stocks: 100
-   *       },
-   *       price: 1604,
-   *       id: 1
-   *     }
-   *   ]
-   * }
-   */
+  const result =
+    await getProviderServices(
+      server,
+      providerCountryId
+    );
 
-  const response =
-    await sureVerificationRequest(
+  const services =
+    result?.services ||
+    result?.data?.services ||
+    [];
+
+  if (
+    !Array.isArray(services)
+  ) {
+    throw new Error(
+      `${server}: invalid services response.`
+    );
+  }
+
+  const wantedId =
+    normal(serviceId);
+
+  const wantedName =
+    normal(serviceName);
+
+  const service =
+    services.find(
+      item =>
+        wantedId &&
+        normal(item?.id) ===
+          wantedId
+    ) ||
+    services.find(
+      item =>
+        wantedName &&
+        normal(item?.name) ===
+          wantedName
+    );
+
+  if (!service) {
+    throw new Error(
+      `${server}: service "${
+        serviceName ||
+        serviceId
+      }" was not found for country ${providerCountryId}.`
+    );
+  }
+
+  return service;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Global Server 2 price
+|--------------------------------------------------------------------------
+*/
+
+async function getGlobal2Price(
+  serviceId,
+  serviceName
+) {
+  const result =
+    await sureRequest(
       "/global-server-2/price"
     );
 
   const prices =
-    response?.prices ||
-    response?.data?.prices ||
+    result?.prices ||
+    result?.data?.prices ||
     [];
 
-  if (!Array.isArray(prices)) {
+  if (
+    !Array.isArray(prices)
+  ) {
     throw new Error(
       "Global Server 2 returned an invalid price response."
     );
   }
 
-  const wantedId =
-    normalize(serviceId);
+  const id =
+    normal(serviceId);
 
-  const wantedName =
-    normalize(serviceName);
+  const name =
+    normal(serviceName);
 
   const matching =
-    prices.filter((tier) => {
-      const tierService =
-        tier?.service || {};
+    prices.filter(item => {
+      const service =
+        item?.service || {};
 
       return (
-        (wantedId &&
-          normalize(tierService?.id) === wantedId) ||
-        (wantedName &&
-          normalize(tierService?.name) === wantedName)
+        (
+          id &&
+          normal(service.id) === id
+        ) ||
+        (
+          name &&
+          normal(service.name) === name
+        )
       );
     });
 
   if (!matching.length) {
     throw new Error(
-      `Global Server 2 has no price tier for ${serviceName || serviceId}.`
+      `Global Server 2 has no price options for ${
+        serviceName ||
+        serviceId
+      }.`
     );
   }
 
   /*
-   * Select a tier that has stock.
+   * Prefer a tier with stock.
    */
 
-  const available =
-    matching.find(
-      (tier) =>
-        Number(tier?.stocks ?? 0) > 0
-    );
-
-  return available || matching[0];
-}
-
-function extractVerification(purchase) {
   return (
-    purchase?.verification ||
-    purchase?.data?.verification ||
-    purchase?.data ||
-    purchase
+    matching.find(
+      item =>
+        Number(
+          item?.stocks ??
+            item?.service
+              ?.stocks ??
+            0
+        ) > 0
+    ) ||
+    matching[0]
   );
 }
 
-function extractNumber(verification) {
+/*
+|--------------------------------------------------------------------------
+| Other server price
+|--------------------------------------------------------------------------
+*/
+
+async function getNormalServerPrice({
+  server,
+  countryId,
+  serviceId
+}) {
+  const result =
+    await sureRequest(
+      `/${server}/price?country_id=${encode(
+        countryId
+      )}&service=${encode(
+        serviceId
+      )}`
+    );
+
+  const price =
+    result?.price ??
+    result?.provider_price ??
+    result?.data?.price ??
+    result?.data?.provider_price;
+
+  if (
+    price !== undefined &&
+    price !== null
+  ) {
+    return Number(price);
+  }
+
+  if (
+    Array.isArray(
+      result?.prices
+    ) &&
+    result.prices.length
+  ) {
+    return Number(
+      result.prices[0]?.price || 0
+    );
+  }
+
+  return 0;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Global Server 2 purchase
+|--------------------------------------------------------------------------
+*/
+
+async function purchaseGlobal2({
+  countryId,
+  serviceId,
+  tierId
+}) {
+  if (!countryId) {
+    throw new Error(
+      "Global Server 2: country_id is required."
+    );
+  }
+
+  if (!serviceId) {
+    throw new Error(
+      "Global Server 2: service is required."
+    );
+  }
+
+  if (
+    tierId === undefined ||
+    tierId === null
+  ) {
+    throw new Error(
+      "Global Server 2: price tier ID is required."
+    );
+  }
+
+  /*
+   * The provider documentation confirms:
+   *
+   * POST /global-server-2/purchase
+   *
+   * We send the values in BOTH the query string
+   * and JSON body. This makes the request compatible
+   * with validation that expects either location.
+   */
+
+  const query =
+    `?country_id=${encode(
+      countryId
+    )}` +
+    `&service=${encode(
+      serviceId
+    )}` +
+    `&id=${encode(
+      tierId
+    )}`;
+
+  return await sureRequest(
+    `/global-server-2/purchase${query}`,
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type":
+          "application/json",
+        Accept:
+          "application/json"
+      },
+
+      body: JSON.stringify({
+        country_id:
+          countryId,
+
+        service:
+          serviceId,
+
+        id:
+          tierId
+      })
+    }
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Normal server purchase
+|--------------------------------------------------------------------------
+*/
+
+async function purchaseNormalServer({
+  server,
+  countryId,
+  serviceId
+}) {
+  return await sureRequest(
+    `/${server}/purchase?country_id=${encode(
+      countryId
+    )}&service=${encode(
+      serviceId
+    )}`,
+    {
+      method: "POST",
+
+      headers: {
+        Accept:
+          "application/json"
+      }
+    }
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Extract provider response
+|--------------------------------------------------------------------------
+*/
+
+function getVerification(
+  result
+) {
+  return (
+    result?.verification ||
+    result?.data?.verification ||
+    result?.data ||
+    result
+  );
+}
+
+function getPhone(
+  verification
+) {
   return (
     verification?.number ||
     verification?.phone_number ||
@@ -560,231 +758,397 @@ function extractNumber(verification) {
   );
 }
 
-function extractProviderOrderId(
-  verification,
-  purchase
+function getProviderOrderId(
+  result,
+  verification
 ) {
   return (
     verification?.request_id ||
     verification?.requestId ||
-    purchase?.request_id ||
-    purchase?.requestId ||
+    result?.request_id ||
+    result?.requestId ||
     verification?.id ||
-    purchase?.id ||
+    result?.id ||
     null
   );
 }
 
-async function createOrder({
-  userId,
-  productPrice,
-  providerPrice,
-  customerPrice,
-  providerOrderId,
-  phoneNumber,
-  status,
-  server,
-  serviceName,
-  countryName
-}) {
-  const profit =
-    Number(customerPrice) -
-    Number(providerPrice || 0);
+/*
+|--------------------------------------------------------------------------
+| Wallet
+|--------------------------------------------------------------------------
+*/
 
-  const { data, error } =
-    await supabase
-      .from("orders")
-      .insert({
-        user_id: userId,
-
-        provider_order_id:
-          providerOrderId
-            ? String(providerOrderId)
-            : null,
-
-        service_country_price_id:
-          productPrice?.id
-            ? String(productPrice.id)
-            : null,
-
-        service_name:
-          serviceName || null,
-
-        country_name:
-          countryName ||
-          productPrice?.country_name ||
-          null,
-
-        provider_cost:
-          Number(providerPrice || 0),
-
-        customer_price:
-          Number(customerPrice),
-
-        profit:
-          Number(profit),
-
-        status:
-          status || "active",
-
-        phone_number:
-          phoneNumber || null
-      })
-      .select("*")
-      .single();
+async function getWallet(
+  userId
+) {
+  const {
+    data,
+    error
+  } = await supabase
+    .from("wallets")
+    .select(
+      "id,user_id,balance"
+    )
+    .eq(
+      "user_id",
+      userId
+    )
+    .maybeSingle();
 
   if (error) {
     throw new Error(
-      `Unable to create order: ${error.message}`
+      `Wallet lookup failed: ${error.message}`
+    );
+  }
+
+  if (!data) {
+    throw new Error(
+      "Wallet not found."
     );
   }
 
   return data;
 }
 
-async function refundWallet({
-  wallet,
-  amount,
+async function setWalletBalance(
+  walletId,
+  balance
+) {
+  const {
+    data,
+    error
+  } = await supabase
+    .from("wallets")
+    .update({
+      balance:
+        Number(balance)
+    })
+    .eq(
+      "id",
+      walletId
+    )
+    .select(
+      "id,user_id,balance"
+    )
+    .single();
+
+  if (error) {
+    throw new Error(
+      `Wallet update failed: ${error.message}`
+    );
+  }
+
+  return data;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Wallet transaction
+|--------------------------------------------------------------------------
+*/
+
+async function createWalletTransaction({
   userId,
-  reason,
+  amount,
+  before,
+  after,
+  description,
   reference
 }) {
-  const currentBalance =
-    Number(wallet.balance || 0);
+  const {
+    error
+  } = await supabase
+    .from(
+      "wallet_transactions"
+    )
+    .insert({
+      user_id:
+        userId,
 
-  const refundAmount =
-    Number(amount || 0);
+      amount:
+        Number(amount),
 
-  const newBalance =
-    currentBalance + refundAmount;
+      balance_before:
+        Number(before),
 
-  await updateWallet(
-    wallet.id,
-    newBalance
-  );
+      balance_after:
+        Number(after),
 
-  await recordWalletTransaction({
-    userId,
-    amount: refundAmount,
-    balanceBefore: currentBalance,
-    balanceAfter: newBalance,
-    description: reason,
-    reference
-  });
+      description:
+        description,
 
-  return newBalance;
+      reference:
+        reference
+    });
+
+  if (error) {
+    /*
+     * The wallet has already been updated.
+     * Don't make a successful number purchase fail
+     * just because transaction history failed.
+     */
+    console.error(
+      "Wallet transaction insert failed:",
+      error
+    );
+  }
 }
+
+/*
+|--------------------------------------------------------------------------
+| Save order
+|--------------------------------------------------------------------------
+*/
+
+async function saveOrder({
+  userId,
+  product,
+  providerOrderId,
+  serviceName,
+  countryName,
+  providerCost,
+  customerPrice,
+  phone,
+  status
+}) {
+  const profit =
+    Number(customerPrice) -
+    Number(providerCost || 0);
+
+  const {
+    data,
+    error
+  } = await supabase
+    .from("orders")
+    .insert({
+      user_id:
+        userId,
+
+      provider_order_id:
+        providerOrderId
+          ? String(
+              providerOrderId
+            )
+          : null,
+
+      service_country_price_id:
+        product?.id
+          ? String(
+              product.id
+            )
+          : null,
+
+      service_name:
+        serviceName || null,
+
+      country_name:
+        countryName ||
+        product?.country_name ||
+        null,
+
+      provider_cost:
+        Number(
+          providerCost || 0
+        ),
+
+      customer_price:
+        Number(
+          customerPrice
+        ),
+
+      profit:
+        Number(profit),
+
+      status:
+        status || "active",
+
+      phone_number:
+        phone || null
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(
+      `Order save failed: ${error.message}`
+    );
+  }
+
+  return data;
+}
+
+/*
+|--------------------------------------------------------------------------
+| MAIN HANDLER
+|--------------------------------------------------------------------------
+*/
 
 export default async function handler(
   req,
   res
 ) {
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      success: false,
-      error: "Method not allowed."
-    });
-  }
-
-  if (!SUPABASE_SERVICE_ROLE_KEY) {
-    return res.status(500).json({
-      success: false,
-      error:
-        "SUPABASE_SERVICE_ROLE_KEY is not configured."
-    });
-  }
-
-  let charged = false;
-  let wallet = null;
-  let chargedAmount = 0;
-  let userId = null;
-  let orderReference = null;
-
   try {
-    const body =
-      typeof req.body === "string"
-        ? JSON.parse(req.body)
-        : req.body || {};
-
     /*
-     * ----------------------------------------------------
-     * AUTHENTICATION
-     * ----------------------------------------------------
+     * --------------------------------------------------
+     * METHOD
+     * --------------------------------------------------
      */
 
-    const authHeader =
-      req.headers.authorization ||
-      req.headers.Authorization ||
-      "";
-
-    const token =
-      authHeader.startsWith("Bearer ")
-        ? authHeader.substring(7)
-        : null;
-
-    if (!token) {
-      return res.status(401).json({
+    if (
+      req.method !==
+      "POST"
+    ) {
+      return res.status(405).json({
         success: false,
-        error: "Authentication required."
+        error:
+          "Method not allowed."
       });
     }
 
-    const {
-      data: {
-        user
-      },
-      error: authError
-    } =
-      await supabase.auth.getUser(token);
+    /*
+     * --------------------------------------------------
+     * CONFIGURATION
+     * --------------------------------------------------
+     */
 
     if (
-      authError ||
-      !user
+      !SUPABASE_SERVICE_ROLE_KEY
+    ) {
+      return res.status(500).json({
+        success: false,
+        error:
+          "SUPABASE_SERVICE_ROLE_KEY is missing from Vercel."
+      });
+    }
+
+    if (
+      !SUREVERIFICATION_API_KEY
+    ) {
+      return res.status(500).json({
+        success: false,
+        error:
+          "SUREVERIFICATION_API_KEY is missing from Vercel."
+      });
+    }
+
+    /*
+     * --------------------------------------------------
+     * BODY
+     * --------------------------------------------------
+     */
+
+    let body =
+      req.body || {};
+
+    if (
+      typeof body ===
+      "string"
+    ) {
+      try {
+        body =
+          JSON.parse(body);
+      } catch {
+        return res.status(400).json({
+          success: false,
+          error:
+            "Invalid JSON request body."
+        });
+      }
+    }
+
+    /*
+     * --------------------------------------------------
+     * AUTH
+     * --------------------------------------------------
+     */
+
+    const authorization =
+      req.headers.authorization ||
+      "";
+
+    if (
+      !authorization.startsWith(
+        "Bearer "
+      )
     ) {
       return res.status(401).json({
         success: false,
-        error: "Invalid or expired session."
+        error:
+          "Authentication required."
       });
     }
 
-    userId = user.id;
+    const token =
+      authorization.substring(
+        7
+      );
+
+    const {
+      data: authData,
+      error: authError
+    } =
+      await supabase.auth.getUser(
+        token
+      );
+
+    if (
+      authError ||
+      !authData?.user
+    ) {
+      return res.status(401).json({
+        success: false,
+        error:
+          "Invalid or expired session."
+      });
+    }
+
+    const user =
+      authData.user;
 
     /*
-     * ----------------------------------------------------
-     * INPUT
-     * ----------------------------------------------------
+     * --------------------------------------------------
+     * INPUTS
+     * --------------------------------------------------
      */
 
-    const requestedServer =
-      getProviderServer(body);
+    const server =
+      getServer(
+        body
+      );
 
-    const supabaseCountryId =
-      getSupabaseCountryId(body);
+    const countryId =
+      getSupabaseCountryId(
+        body
+      );
 
     const providerCountryId =
-      getProviderCountryId(body);
+      getProviderCountryId(
+        body
+      );
 
-    const requestedServiceId =
-      getServiceId(body);
+    const serviceId =
+      getServiceId(
+        body
+      );
 
-    const requestedServiceName =
-      getServiceName(body);
+    const serviceName =
+      getServiceName(
+        body
+      );
 
-    const requestedCountryName =
-      getCountryName(body);
+    const countryName =
+      getCountryName(
+        body
+      );
 
     /*
-     * IMPORTANT:
-     *
-     * The frontend should send:
-     *
-     * countryId        = Supabase country UUID
-     * providerCountryId = SureVerification country ID
-     *
-     * They are NOT the same thing.
+     * --------------------------------------------------
+     * VALIDATION
+     * --------------------------------------------------
      */
 
-    if (!supabaseCountryId) {
+    if (!countryId) {
       return res.status(400).json({
         success: false,
         error:
@@ -792,8 +1156,20 @@ export default async function handler(
       });
     }
 
-    if (!requestedServiceId &&
-        !requestedServiceName) {
+    if (
+      !providerCountryId
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          "providerCountryId is required."
+      });
+    }
+
+    if (
+      !serviceId &&
+      !serviceName
+    ) {
       return res.status(400).json({
         success: false,
         error:
@@ -801,335 +1177,319 @@ export default async function handler(
       });
     }
 
-    /*
-     * ----------------------------------------------------
-     * SERVER
-     * ----------------------------------------------------
-     */
-
-    const server =
-      getServerFromCountry(
-        requestedCountryName,
-        requestedServer
+    const actualServer =
+      determineServer(
+        server,
+        countryName
       );
 
-    if (!ALLOWED_SERVERS.includes(server)) {
+    if (
+      !SERVERS.includes(
+        actualServer
+      )
+    ) {
       return res.status(400).json({
         success: false,
         error:
-          `Invalid provider server: ${server}`
+          `Invalid provider server: ${actualServer}`
       });
     }
 
     /*
-     * ----------------------------------------------------
-     * CUSTOMER SELLING PRICE
-     * ----------------------------------------------------
+     * --------------------------------------------------
+     * FIND SELLING PRICE
+     * --------------------------------------------------
      */
 
-    const productPrice =
-      await findCustomerPrice({
-        supabaseCountryId,
-        providerCountryId,
-        serviceId: requestedServiceId,
-        serviceName: requestedServiceName,
-        server
+    const product =
+      await findProductPrice({
+        countryId,
+        serviceId,
+        serviceName,
+        server:
+          actualServer
       });
 
-    if (!productPrice) {
+    if (!product) {
       return res.status(404).json({
         success: false,
         error:
-          "No selling price has been configured for this country, service and server."
+          "No selling price is configured for this service, country and server."
       });
     }
 
     const customerPrice =
-      Number(productPrice.selling_price);
+      Number(
+        product.selling_price
+      );
 
     if (
-      !Number.isFinite(customerPrice) ||
+      !Number.isFinite(
+        customerPrice
+      ) ||
       customerPrice <= 0
     ) {
       return res.status(400).json({
         success: false,
         error:
-          "The selling price for this service is invalid."
+          "The configured selling price is invalid."
       });
     }
 
     /*
-     * ----------------------------------------------------
-     * PROVIDER COUNTRY ID
-     * ----------------------------------------------------
-     */
-
-    /*
-     * Prefer the explicit providerCountryId.
-     *
-     * This is critical for Global Server 2 because
-     * SureVerification expects its own country ID,
-     * e.g. 236.
-     */
-
-    let actualProviderCountryId =
-      providerCountryId;
-
-    if (!actualProviderCountryId) {
-      /*
-       * If the frontend did not send the provider
-       * country ID, do NOT send the Supabase UUID
-       * to SureVerification.
-       *
-       * For the current implementation, this must
-       * be supplied by the frontend/provider mapping.
-       */
-
-      return res.status(400).json({
-        success: false,
-        error:
-          `${server} requires providerCountryId (the SureVerification country ID).`
-      });
-    }
-
-    /*
-     * ----------------------------------------------------
-     * RESOLVE PROVIDER SERVICE
-     * ----------------------------------------------------
+     * --------------------------------------------------
+     * PROVIDER SERVICE
+     * --------------------------------------------------
      */
 
     const providerService =
-      await resolveProviderService({
-        server,
-        providerCountryId:
-          actualProviderCountryId,
-        serviceId:
-          requestedServiceId,
-        serviceName:
-          requestedServiceName
+      await resolveService({
+        server:
+          actualServer,
+
+        providerCountryId,
+
+        serviceId,
+
+        serviceName
       });
 
     const actualServiceId =
-      String(providerService.id);
+      clean(
+        providerService.id
+      );
 
     const actualServiceName =
-      providerService.name ||
-      requestedServiceName ||
+      clean(
+        providerService.name
+      ) ||
+      serviceName ||
       actualServiceId;
 
     /*
-     * ----------------------------------------------------
+     * --------------------------------------------------
      * PROVIDER PRICE
-     * ----------------------------------------------------
+     * --------------------------------------------------
      */
 
-    let providerCost = 0;
-    let global2Tier = null;
+    let providerCost =
+      0;
 
-    if (server === "global-server-2") {
-      /*
-       * Global Server 2:
-       *
-       * GET /global-server-2/price
-       *
-       * No country_id is supplied to this endpoint
-       * according to the documentation.
-       */
+    let global2Tier =
+      null;
 
+    if (
+      actualServer ===
+      "global-server-2"
+    ) {
       global2Tier =
-        await getGlobal2PriceTier({
-          serviceId:
-            actualServiceId,
-          serviceName:
-            actualServiceName
-        });
-
-      providerCost =
-        Number(global2Tier?.price || 0);
-
-    } else {
-      const priceResponse =
-        await getProviderPrice({
-          server,
-          providerCountryId:
-            actualProviderCountryId,
-          serviceId:
-            actualServiceId
-        });
+        await getGlobal2Price(
+          actualServiceId,
+          actualServiceName
+        );
 
       providerCost =
         Number(
-          extractProviderPrice(
-            priceResponse
-          ) || 0
+          global2Tier?.price ||
+            0
         );
+
+    } else {
+      providerCost =
+        await getNormalServerPrice({
+          server:
+            actualServer,
+
+          countryId:
+            providerCountryId,
+
+          serviceId:
+            actualServiceId
+        });
     }
 
     /*
-     * ----------------------------------------------------
+     * --------------------------------------------------
      * WALLET
-     * ----------------------------------------------------
+     * --------------------------------------------------
      */
 
-    wallet =
-      await getWallet(userId);
+    const wallet =
+      await getWallet(
+        user.id
+      );
 
-    const currentBalance =
-      Number(wallet.balance || 0);
+    const balanceBefore =
+      Number(
+        wallet.balance || 0
+      );
 
     if (
-      currentBalance < customerPrice
+      balanceBefore <
+      customerPrice
     ) {
       return res.status(400).json({
         success: false,
         error:
           "Insufficient wallet balance.",
+
         balance:
-          currentBalance,
+          balanceBefore,
+
         required:
           customerPrice
       });
     }
 
     /*
-     * ----------------------------------------------------
-     * DEDUCT WALLET
-     * ----------------------------------------------------
+     * --------------------------------------------------
+     * DEDUCT MONEY
+     * --------------------------------------------------
      */
 
-    const balanceAfterCharge =
-      currentBalance -
+    const balanceAfter =
+      balanceBefore -
       customerPrice;
 
-    await updateWallet(
+    await setWalletBalance(
       wallet.id,
-      balanceAfterCharge
+      balanceAfter
     );
 
-    charged = true;
-    chargedAmount = customerPrice;
-
-    orderReference =
-      `order-${Date.now()}-${Math.random()
+    const reference =
+      `ORDER-${Date.now()}-${Math.random()
         .toString(36)
-        .substring(2, 8)}`;
+        .substring(2, 8)
+        .toUpperCase()}`;
 
-    await recordWalletTransaction({
-      userId,
+    await createWalletTransaction({
+      userId:
+        user.id,
+
       amount:
         -customerPrice,
-      balanceBefore:
-        currentBalance,
-      balanceAfter:
-        balanceAfterCharge,
+
+      before:
+        balanceBefore,
+
+      after:
+        balanceAfter,
+
       description:
-        `Number purchase - ${actualServiceName} - ${requestedCountryName || productPrice.country_name || ""}`,
-      reference:
-        orderReference
+        `Number purchase - ${actualServiceName}`,
+
+      reference
     });
 
     /*
-     * ----------------------------------------------------
-     * PURCHASE
-     * ----------------------------------------------------
+     * --------------------------------------------------
+     * PURCHASE NUMBER
+     * --------------------------------------------------
      */
 
     let purchase;
 
-    if (server === "global-server-2") {
+    try {
+      if (
+        actualServer ===
+        "global-server-2"
+      ) {
+        purchase =
+          await purchaseGlobal2({
+            countryId:
+              providerCountryId,
+
+            serviceId:
+              actualServiceId,
+
+            tierId:
+              global2Tier.id
+          });
+      } else {
+        purchase =
+          await purchaseNormalServer({
+            server:
+              actualServer,
+
+            countryId:
+              providerCountryId,
+
+            serviceId:
+              actualServiceId
+          });
+      }
+
+    } catch (purchaseError) {
       /*
-       * ==================================================
-       * GLOBAL SERVER 2
-       * ==================================================
-       *
-       * SureVerification:
-       *
-       * POST
-       * /api/v1/global-server-2/purchase
-       *
-       * The country ID MUST be the provider country ID.
-       *
-       * Example:
-       *
-       * country_id = 236
-       * service    = wa
-       * id         = 1
-       *
-       * We send them as query parameters because the
-       * provider endpoint is a POST endpoint and the
-       * API is validating these fields.
+       * ------------------------------------------------
+       * PROVIDER PURCHASE FAILED
+       * REFUND CUSTOMER
+       * ------------------------------------------------
        */
 
-      const purchasePath =
-        `/global-server-2/purchase` +
-        `?country_id=${q(
-          actualProviderCountryId
-        )}` +
-        `&service=${q(
-          actualServiceId
-        )}` +
-        `&id=${q(
-          global2Tier.id
-        )}`;
-
-      purchase =
-        await sureVerificationRequest(
-          purchasePath,
-          {
-            method: "POST",
-            headers: {
-              Accept:
-                "application/json"
-            }
-          }
+      const latestWallet =
+        await getWallet(
+          user.id
         );
 
-    } else {
-      /*
-       * ==================================================
-       * OTHER THREE SERVERS
-       * ==================================================
-       */
-
-      purchase =
-        await sureVerificationRequest(
-          `/${server}/purchase` +
-          `?country_id=${q(
-            actualProviderCountryId
-          )}` +
-          `&service=${q(
-            actualServiceId
-          )}`,
-          {
-            method: "POST",
-            headers: {
-              Accept:
-                "application/json"
-            }
-          }
+      const refundBefore =
+        Number(
+          latestWallet.balance ||
+            0
         );
+
+      const refundAfter =
+        refundBefore +
+        customerPrice;
+
+      await setWalletBalance(
+        latestWallet.id,
+        refundAfter
+      );
+
+      await createWalletTransaction({
+        userId:
+          user.id,
+
+        amount:
+          customerPrice,
+
+        before:
+          refundBefore,
+
+        after:
+          refundAfter,
+
+        description:
+          "Refund - number purchase failed",
+
+        reference:
+          `${reference}-REFUND`
+      });
+
+      throw purchaseError;
     }
 
     /*
-     * ----------------------------------------------------
+     * --------------------------------------------------
      * PROVIDER RESPONSE
-     * ----------------------------------------------------
+     * --------------------------------------------------
      */
 
     const verification =
-      extractVerification(
+      getVerification(
         purchase
       );
 
-    const phoneNumber =
-      extractNumber(
+    const phone =
+      getPhone(
         verification
       );
 
     const providerOrderId =
-      extractProviderOrderId(
-        verification,
-        purchase
+      getProviderOrderId(
+        purchase,
+        verification
       );
 
     const status =
@@ -1138,54 +1498,92 @@ export default async function handler(
       "active";
 
     /*
-     * If provider did not actually return a number,
-     * treat the purchase as failed and refund.
+     * If provider didn't return a number,
+     * refund the customer.
      */
 
-    if (!phoneNumber) {
+    if (!phone) {
+      const latestWallet =
+        await getWallet(
+          user.id
+        );
+
+      const refundBefore =
+        Number(
+          latestWallet.balance ||
+            0
+        );
+
+      const refundAfter =
+        refundBefore +
+        customerPrice;
+
+      await setWalletBalance(
+        latestWallet.id,
+        refundAfter
+      );
+
+      await createWalletTransaction({
+        userId:
+          user.id,
+
+        amount:
+          customerPrice,
+
+        before:
+          refundBefore,
+
+        after:
+          refundAfter,
+
+        description:
+          "Refund - provider returned no number",
+
+        reference:
+          `${reference}-REFUND`
+      });
+
       throw new Error(
         purchase?.message ||
-        "Provider did not return a phone number."
+          "Provider did not return a phone number."
       );
     }
 
     /*
-     * ----------------------------------------------------
+     * --------------------------------------------------
      * SAVE ORDER
-     * ----------------------------------------------------
+     * --------------------------------------------------
      */
 
     const order =
-      await createOrder({
-        userId,
+      await saveOrder({
+        userId:
+          user.id,
 
-        productPrice,
-
-        providerPrice:
-          providerCost,
-
-        customerPrice,
+        product,
 
         providerOrderId,
-
-        phoneNumber,
-
-        status,
-
-        server,
 
         serviceName:
           actualServiceName,
 
         countryName:
-          requestedCountryName ||
-          productPrice.country_name
+          countryName ||
+          product.country_name,
+
+        providerCost,
+
+        customerPrice,
+
+        phone,
+
+        status
       });
 
     /*
-     * ----------------------------------------------------
+     * --------------------------------------------------
      * SUCCESS
-     * ----------------------------------------------------
+     * --------------------------------------------------
      */
 
     return res.status(200).json({
@@ -1195,10 +1593,11 @@ export default async function handler(
         purchase?.message ||
         "Number purchased successfully.",
 
-      server,
+      server:
+        actualServer,
 
-      countryId:
-        actualProviderCountryId,
+      providerCountryId:
+        providerCountryId,
 
       serviceId:
         actualServiceId,
@@ -1206,14 +1605,20 @@ export default async function handler(
       serviceName:
         actualServiceName,
 
-      price:
-        customerPrice,
+      number:
+        phone,
+
+      providerOrderId:
+        providerOrderId,
 
       providerPrice:
         providerCost,
 
+      customerPrice:
+        customerPrice,
+
       balance:
-        balanceAfterCharge,
+        balanceAfter,
 
       order,
 
@@ -1222,67 +1627,28 @@ export default async function handler(
 
   } catch (error) {
     console.error(
-      "Number purchase error:",
+      "ORDER API ERROR:",
       error
     );
 
     /*
-     * ----------------------------------------------------
-     * REFUND IF MONEY WAS ALREADY DEDUCTED
-     * ----------------------------------------------------
+     * IMPORTANT:
+     * Return the actual error instead of allowing
+     * Vercel to display FUNCTION_INVOCATION_FAILED.
      */
-
-    if (
-      charged &&
-      wallet &&
-      userId &&
-      chargedAmount > 0
-    ) {
-      try {
-        const { data: currentWallet } =
-          await supabase
-            .from("wallets")
-            .select(
-              "id,user_id,balance"
-            )
-            .eq(
-              "id",
-              wallet.id
-            )
-            .single();
-
-        if (currentWallet) {
-          await refundWallet({
-            wallet:
-              currentWallet,
-
-            amount:
-              chargedAmount,
-
-            userId,
-
-            reason:
-              "Refund for failed number purchase",
-
-            reference:
-              orderReference ||
-              `refund-${Date.now()}`
-          });
-        }
-      } catch (refundError) {
-        console.error(
-          "CRITICAL: Wallet refund failed:",
-          refundError
-        );
-      }
-    }
 
     return res.status(500).json({
       success: false,
 
       error:
         error?.message ||
-        "Unable to purchase number."
+        "Number purchase failed.",
+
+      details:
+        process.env.NODE_ENV !==
+        "production"
+          ? String(error?.stack || "")
+          : undefined
     });
   }
 }
