@@ -196,7 +196,7 @@ async function getUser(accessToken) {
 }
 
 /* =========================================================
-   LOAD ADMIN PRICE CONFIGURATION
+   GET ADMIN PRICE CONFIGURATION
 ========================================================= */
 
 async function getConfiguredPrice({
@@ -213,10 +213,6 @@ async function getConfiguredPrice({
 
   let rows = [];
 
-  /*
-   * If frontend sends the product_prices UUID,
-   * use it directly.
-   */
   if (priceId && isUuid(priceId)) {
     rows = await supabase(
       `product_prices?id=eq.${enc(priceId)}` +
@@ -225,9 +221,6 @@ async function getConfiguredPrice({
     );
   }
 
-  /*
-   * Otherwise find the configured service by name.
-   */
   if (!rows.length && serviceName) {
     rows = await supabase(
       `product_prices?service_name=ilike.${enc(
@@ -239,22 +232,13 @@ async function getConfiguredPrice({
     );
   }
 
-  /*
-   * Also support service_id if the frontend sends it.
-   */
-  if (!rows.length) {
+  if (!Array.isArray(rows) || !rows[0]) {
     throw new Error(
       `No active price configuration found for ${serviceName || "this service"} on ${providerServer}.`
     );
   }
 
   const price = rows[0];
-
-  if (!price) {
-    throw new Error(
-      "Price configuration is empty."
-    );
-  }
 
   if (!price.country_id) {
     throw new Error(
@@ -310,7 +294,7 @@ async function getProviderServices(
 }
 
 /* =========================================================
-   RESOLVE ACTUAL PROVIDER SERVICE
+   RESOLVE PROVIDER SERVICE
 ========================================================= */
 
 async function resolveProviderService({
@@ -325,19 +309,11 @@ async function resolveProviderService({
       countryId
     );
 
-  /*
-   * First match by service name.
-   *
-   * This is important because:
-   *
-   * Global Server 1 / USA servers:
-   * Whatsapp may have a long provider ID.
-   *
-   * Global Server 2:
-   * Whatsapp may be "wa".
-   */
   let match = null;
 
+  /*
+   * First match using service name.
+   */
   if (serviceName) {
     match = services.find(service =>
       sameText(
@@ -348,8 +324,7 @@ async function resolveProviderService({
   }
 
   /*
-   * If name didn't match, try configured provider
-   * service ID as a fallback.
+   * Fallback to configured provider service ID.
    */
   if (!match && configuredServiceId) {
     match = services.find(service =>
@@ -382,7 +357,7 @@ async function resolveProviderService({
 }
 
 /* =========================================================
-   PROVIDER PRICE
+   GET PROVIDER PRICE
 ========================================================= */
 
 async function getProviderPrice({
@@ -391,8 +366,9 @@ async function getProviderPrice({
   providerServiceId
 }) {
   /*
-   * Global Server 2 has a different price endpoint.
+   * GLOBAL SERVER 2
    */
+
   if (server === "global-server-2") {
     const data =
       await sureRequest(
@@ -429,27 +405,29 @@ async function getProviderPrice({
       );
     }
 
-    const selected = available[0];
+    const selected =
+      available[0];
 
     return {
-      cost: num(selected.price),
+      cost:
+        num(selected.price),
+
       priceId:
         selected.id != null
           ? String(selected.id)
           : null,
-      stocks: num(selected.stocks)
+
+      stocks:
+        num(selected.stocks)
     };
   }
 
   /*
-   * Global Server 1
-   * USA Server 1
-   * USA Server 2
-   *
-   * All use:
-   *
-   * /price?country_id=...&service=...
+   * GLOBAL SERVER 1
+   * USA SERVER 1
+   * USA SERVER 2
    */
+
   const data =
     await sureRequest(
       `/${server}/price` +
@@ -475,10 +453,6 @@ async function getProviderPrice({
     );
   }
 
-  /*
-   * Some providers return stocks = null.
-   * null does NOT automatically mean zero stock.
-   */
   const stocks =
     providerPrice?.service?.stocks;
 
@@ -494,7 +468,9 @@ async function getProviderPrice({
 
   return {
     cost,
+
     priceId: null,
+
     stocks:
       stocks == null
         ? null
@@ -513,14 +489,9 @@ async function purchaseNumber({
   globalServer2PriceId
 }) {
   /*
-   * Global Server 2
-   *
-   * Your provider has returned:
-   * "The country id field is required."
-   *
-   * Therefore explicitly send country_id,
-   * service and price tier ID.
+   * GLOBAL SERVER 2
    */
+
   if (server === "global-server-2") {
     const query =
       `?country_id=${enc(countryId)}` +
@@ -535,11 +506,14 @@ async function purchaseNumber({
       `/global-server-2/purchase${query}`,
       {
         method: "POST",
+
         body: JSON.stringify({
           country_id:
             String(countryId),
+
           service:
             String(providerServiceId),
+
           ...(globalServer2PriceId != null
             ? {
                 id:
@@ -552,10 +526,11 @@ async function purchaseNumber({
   }
 
   /*
-   * Global Server 1
-   * USA Server 1
-   * USA Server 2
+   * GLOBAL SERVER 1
+   * USA SERVER 1
+   * USA SERVER 2
    */
+
   return await sureRequest(
     `/${server}/purchase` +
       `?country_id=${enc(countryId)}` +
@@ -567,7 +542,7 @@ async function purchaseNumber({
 }
 
 /* =========================================================
-   EXTRACT PROVIDER VERIFICATION
+   EXTRACT PROVIDER RESPONSE
 ========================================================= */
 
 function extractVerification(data) {
@@ -624,8 +599,11 @@ function extractVerification(data) {
   return {
     phoneNumber:
       String(phoneNumber),
+
     providerOrderId,
+
     status,
+
     raw: data
   };
 }
@@ -636,9 +614,8 @@ function extractVerification(data) {
 
 async function getWallet(userId) {
   /*
-   * IMPORTANT:
-   *
    * wallets has:
+   *
    * user_id
    * balance
    * created_at
@@ -646,6 +623,7 @@ async function getWallet(userId) {
    *
    * There is NO wallets.id.
    */
+
   const rows =
     await supabase(
       `wallets?user_id=eq.${enc(userId)}` +
@@ -667,18 +645,17 @@ async function updateWallet(
   userId,
   balance
 ) {
-  /*
-   * Update by user_id.
-   */
   const rows =
     await supabase(
       `wallets?user_id=eq.${enc(userId)}`,
       {
         method: "PATCH",
+
         headers: {
           Prefer:
             "return=representation"
         },
+
         body: JSON.stringify({
           balance
         })
@@ -707,44 +684,57 @@ async function createWalletTransaction({
   description
 }) {
   /*
-   * wallet_transactions schema:
+   * IMPORTANT:
    *
-   * id
-   * user_id
-   * type
-   * amount
-   * balance_before
-   * balance_after
-   * reference_id
-   * description
-   * created_at
+   * Your database CHECK constraint allows:
    *
-   * reference_id is UUID and therefore we leave it null.
+   * deposit
+   * number_purchase
+   * refund
+   * adjustment
+   *
+   * Therefore the correct type is:
+   * number_purchase
    */
+
   await supabase(
     "wallet_transactions",
     {
       method: "POST",
+
       headers: {
-        Prefer: "return=minimal"
+        Prefer:
+          "return=minimal"
       },
+
       body: JSON.stringify({
-        user_id: userId,
-        type: "purchase",
-        amount,
+        user_id:
+          userId,
+
+        type:
+          "number_purchase",
+
+        amount:
+          amount,
+
         balance_before:
           balanceBefore,
+
         balance_after:
           balanceAfter,
-        reference_id: null,
-        description
+
+        reference_id:
+          null,
+
+        description:
+          description
       })
     }
   );
 }
 
 /* =========================================================
-   ORDER
+   CREATE ORDER
 ========================================================= */
 
 async function createOrder({
@@ -757,19 +747,23 @@ async function createOrder({
   status
 }) {
   const profit =
-    customerPrice - providerCost;
+    customerPrice -
+    providerCost;
 
   const rows =
     await supabase(
       "orders",
       {
         method: "POST",
+
         headers: {
           Prefer:
             "return=representation"
         },
+
         body: JSON.stringify({
-          user_id: userId,
+          user_id:
+            userId,
 
           provider_order_id:
             providerOrderId,
@@ -792,9 +786,11 @@ async function createOrder({
           customer_price:
             customerPrice,
 
-          profit,
+          profit:
+            profit,
 
-          status,
+          status:
+            status,
 
           phone_number:
             phoneNumber
@@ -808,7 +804,7 @@ async function createOrder({
 }
 
 /* =========================================================
-   MAIN HANDLER
+   MAIN API HANDLER
 ========================================================= */
 
 export default async function handler(
@@ -818,12 +814,15 @@ export default async function handler(
   if (req.method !== "POST") {
     return res.status(405).json({
       success: false,
-      error: "Method not allowed."
+      error:
+        "Method not allowed."
     });
   }
 
   try {
-    /* ---------------- AUTH ---------------- */
+    /* -----------------------------------------
+       AUTHENTICATION
+    ----------------------------------------- */
 
     const authorization =
       req.headers.authorization ||
@@ -839,7 +838,9 @@ export default async function handler(
     const user =
       await getUser(accessToken);
 
-    /* ---------------- INPUT ---------------- */
+    /* -----------------------------------------
+       REQUEST DATA
+    ----------------------------------------- */
 
     const body =
       req.body || {};
@@ -906,75 +907,56 @@ export default async function handler(
       });
     }
 
-    /* =====================================================
-       FIND ADMIN PRICE
-    ===================================================== */
+    /* -----------------------------------------
+       LOAD SELLING PRICE
+    ----------------------------------------- */
 
     const price =
       await getConfiguredPrice({
         priceId,
+
         countryId,
+
         serviceName,
-        providerServer: server
+
+        providerServer:
+          server
       });
 
-    if (!price) {
-      throw new Error(
-        "Price configuration could not be loaded."
-      );
-    }
-
-    /* =====================================================
-       RESOLVE ACTUAL PROVIDER SERVICE ID
-    ===================================================== */
+    /* -----------------------------------------
+       RESOLVE PROVIDER SERVICE ID
+    ----------------------------------------- */
 
     const providerService =
       await resolveProviderService({
         server,
+
         countryId:
           String(price.country_id),
+
         serviceName:
           price.service_name ||
           serviceName,
+
         configuredServiceId:
           price.provider_service_id ||
           serviceId
       });
 
-    /*
-     * THIS IS THE IMPORTANT PART.
-     *
-     * We now use the provider's actual ID.
-     *
-     * Example:
-     *
-     * Global Server 1:
-     * wa in our DB
-     * ->
-     * 69c05c2e27c5759c68a8135e
-     *
-     * Global Server 2:
-     * wa
-     * ->
-     * wa
-     *
-     * USA servers:
-     * ->
-     * whatever ID their /services endpoint returns.
-     */
-
     const actualProviderServiceId =
       providerService.id;
 
-    /* =====================================================
-       GET REAL PROVIDER PRICE
-    ===================================================== */
+    /* -----------------------------------------
+       GET PROVIDER COST
+    ----------------------------------------- */
 
     const providerPrice =
       await getProviderPrice({
         server,
+
         countryId:
           String(price.country_id),
+
         providerServiceId:
           actualProviderServiceId
       });
@@ -988,9 +970,9 @@ export default async function handler(
       );
     }
 
-    /* =====================================================
-       CUSTOMER SELLING PRICE
-    ===================================================== */
+    /* -----------------------------------------
+       CUSTOMER PRICE
+    ----------------------------------------- */
 
     const customerPrice =
       num(price.selling_price);
@@ -1001,9 +983,9 @@ export default async function handler(
       );
     }
 
-    /* =====================================================
+    /* -----------------------------------------
        WALLET CHECK
-    ===================================================== */
+    ----------------------------------------- */
 
     const wallet =
       await getWallet(user.id);
@@ -1011,46 +993,54 @@ export default async function handler(
     const balanceBefore =
       num(wallet.balance);
 
-    if (balanceBefore <
-        customerPrice) {
+    if (
+      balanceBefore <
+      customerPrice
+    ) {
       return res.status(400).json({
         success: false,
+
         error:
           "Insufficient wallet balance.",
+
         balance:
           balanceBefore,
+
         required:
           customerPrice
       });
     }
 
-    /* =====================================================
+    /* -----------------------------------------
        PURCHASE NUMBER
-    ===================================================== */
+    ----------------------------------------- */
 
     const providerResponse =
       await purchaseNumber({
         server,
+
         countryId:
           String(price.country_id),
+
         providerServiceId:
           actualProviderServiceId,
+
         globalServer2PriceId:
           providerPrice.priceId
       });
 
-    /* =====================================================
-       EXTRACT NUMBER
-    ===================================================== */
+    /* -----------------------------------------
+       READ PROVIDER RESPONSE
+    ----------------------------------------- */
 
     const verification =
       extractVerification(
         providerResponse
       );
 
-    /* =====================================================
+    /* -----------------------------------------
        DEDUCT WALLET
-    ===================================================== */
+    ----------------------------------------- */
 
     const balanceAfter =
       balanceBefore -
@@ -1061,36 +1051,47 @@ export default async function handler(
       balanceAfter
     );
 
-    /* =====================================================
-       WALLET TRANSACTION
-    ===================================================== */
+    /* -----------------------------------------
+       RECORD WALLET TRANSACTION
+    ----------------------------------------- */
 
     await createWalletTransaction({
-      userId: user.id,
+      userId:
+        user.id,
+
       amount:
         customerPrice,
-      balanceBefore,
-      balanceAfter,
+
+      balanceBefore:
+        balanceBefore,
+
+      balanceAfter:
+        balanceAfter,
+
       description:
         `Number purchase - ${providerService.name} - ${price.country_name} - ${server}`
     });
 
-    /* =====================================================
-       CREATE ORDER
-    ===================================================== */
+    /* -----------------------------------------
+       RECORD ORDER
+    ----------------------------------------- */
 
     const order =
       await createOrder({
-        userId: user.id,
+        userId:
+          user.id,
 
         providerOrderId:
           verification.providerOrderId,
 
-        price,
+        price:
+          price,
 
-        providerCost,
+        providerCost:
+          providerCost,
 
-        customerPrice,
+        customerPrice:
+          customerPrice,
 
         phoneNumber:
           verification.phoneNumber,
@@ -1099,12 +1100,13 @@ export default async function handler(
           verification.status
       });
 
-    /* =====================================================
-       RESPONSE
-    ===================================================== */
+    /* -----------------------------------------
+       SUCCESS
+    ----------------------------------------- */
 
     return res.status(200).json({
-      success: true,
+      success:
+        true,
 
       message:
         "Number purchased successfully.",
@@ -1162,7 +1164,9 @@ export default async function handler(
     );
 
     return res.status(500).json({
-      success: false,
+      success:
+        false,
+
       error:
         error?.message ||
         "Unable to purchase number."
